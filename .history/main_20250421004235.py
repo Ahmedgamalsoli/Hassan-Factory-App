@@ -22,6 +22,8 @@ from cloudinary.uploader import upload
 from urllib.parse import quote_plus
 
 ######################################################### Access Data Base ##############################################################################
+# Path to your database inside Google Drive folder
+# DB_PATH = r"I:/My Drive/Databases/Hassan_Factory.db"
 
 # Determine the base directory
 if getattr(sys, "frozen", False):
@@ -86,6 +88,7 @@ class SalesSystemApp:
 
 ########################################## Tables on Data Base ########################################
     def Connect_DB(self):
+        
         raw_password = "HassanFactory@1@6@6"
         encoded_password = quote_plus(raw_password)
         uri = f"mongodb+srv://hassanfactory116:{encoded_password}@hassan.fkplsys.mongodb.net/"
@@ -95,12 +98,7 @@ class SalesSystemApp:
             api_secret = "CVbnCea6qpqIG2VhOOJoP_tQKuI"
         )
 
-        client = MongoClient(uri,serverSelectionTimeoutMS=5000)
-        try:
-            client.admin.command('ping')
-            print("✅ Connected to MongoDB")
-        except Exception as e:
-            print("❌ MongoDB connection failed:", e)
+        client = MongoClient(uri)
         db = client["Hassan"]
         self.users_collection = db['Users']
 
@@ -339,7 +337,7 @@ class SalesSystemApp:
         self.topbar(show_back_button=True)
 
     def play_Error(self):
-        sound_path = os.path.join(BASE_DIR, 'Static', 'sounds', 'Error.mp3')
+        sound_path = os.path.join(BASE_DIR, 'Static', 'sounds', 'Test.mp3')
         if os.path.exists(sound_path):
             threading.Thread(target=playsound, args=(sound_path,), daemon=True).start()
             print("done")

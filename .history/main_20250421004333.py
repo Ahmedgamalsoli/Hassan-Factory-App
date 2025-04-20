@@ -22,6 +22,8 @@ from cloudinary.uploader import upload
 from urllib.parse import quote_plus
 
 ######################################################### Access Data Base ##############################################################################
+# Path to your database inside Google Drive folder
+# DB_PATH = r"I:/My Drive/Databases/Hassan_Factory.db"
 
 # Determine the base directory
 if getattr(sys, "frozen", False):
@@ -85,24 +87,30 @@ class SalesSystemApp:
         self.selected_products = []   
 
 ########################################## Tables on Data Base ########################################
-    def Connect_DB(self):
-        raw_password = "HassanFactory@1@6@6"
-        encoded_password = quote_plus(raw_password)
-        uri = f"mongodb+srv://hassanfactory116:{encoded_password}@hassan.fkplsys.mongodb.net/"
-        cloudinary.config(
-            cloud_name = 'dv5dpzmhm', 
-            api_key = "229798327524238",
-            api_secret = "CVbnCea6qpqIG2VhOOJoP_tQKuI"
-        )
+def Connect_DB(self):
+    try:
+        uri = "mongodb+srv://hassanfactory116:<db_password>@hassan.fkplsys.mongodb.net/"
 
-        client = MongoClient(uri,serverSelectionTimeoutMS=5000)
-        try:
-            client.admin.command('ping')
-            print("✅ Connected to MongoDB")
-        except Exception as e:
-            print("❌ MongoDB connection failed:", e)
+        # MongoDB Atlas connection
+        client = MongoClient(uri, serverSelectionTimeoutMS=5000)  # timeout in 5 seconds
+
+        # Trigger a connection attempt
+        client.admin.command('ping')
+
+        # Select database and collection
         db = client["Hassan"]
         self.users_collection = db['Users']
+
+        # Cloudinary config
+        cloudinary.config(
+            cloud_name='dv5dpzmhm',
+            api_key="229798327524238",
+            api_secret="CVbnCea6qpqIG2VhOOJoP_tQKuI"
+        )
+
+    except Exception as e:
+        messagebox.showerror("Database Connection Error", f"An error occurred:\n{e}")
+        self.users_collection = None  # So you don't accidentally try using it elsewhere
 
 ############################################ Windows ########################################### 
     
@@ -339,7 +347,7 @@ class SalesSystemApp:
         self.topbar(show_back_button=True)
 
     def play_Error(self):
-        sound_path = os.path.join(BASE_DIR, 'Static', 'sounds', 'Error.mp3')
+        sound_path = os.path.join(BASE_DIR, 'Static', 'sounds', 'Test.mp3')
         if os.path.exists(sound_path):
             threading.Thread(target=playsound, args=(sound_path,), daemon=True).start()
             print("done")

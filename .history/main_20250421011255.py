@@ -22,6 +22,8 @@ from cloudinary.uploader import upload
 from urllib.parse import quote_plus
 
 ######################################################### Access Data Base ##############################################################################
+# Path to your database inside Google Drive folder
+# DB_PATH = r"I:/My Drive/Databases/Hassan_Factory.db"
 
 # Determine the base directory
 if getattr(sys, "frozen", False):
