@@ -22,6 +22,8 @@ from cloudinary.uploader import upload
 from urllib.parse import quote_plus
 
 ######################################################### Access Data Base ##############################################################################
+# Path to your database inside Google Drive folder
+# DB_PATH = r"I:/My Drive/Databases/Hassan_Factory.db"
 
 # Determine the base directory
 if getattr(sys, "frozen", False):
@@ -158,7 +160,7 @@ class SalesSystemApp:
 
             try:
                 user = self.users_collection.find_one({"username": username, "password": password})
-                # print(user)
+                print(user)
                 if user:
                     self.user_role = user.get("role", "Unknown")
                     messagebox.showinfo("Success", f"Login successful! Role: {self.user_role}")
