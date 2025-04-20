@@ -156,7 +156,7 @@ class SalesSystemApp:
 
             try:
                 user = self.users_collection.find_one({"username": username, "password": password})
-                print(user)
+                # print(user)
                 if user:
                     self.user_role = user.get("role", "Unknown")
                     messagebox.showinfo("Success", f"Login successful! Role: {self.user_role}")
