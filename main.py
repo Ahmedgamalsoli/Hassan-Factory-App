@@ -15,11 +15,15 @@ from io import BytesIO
 from playsound import playsound
 import threading  # To play sound without freezing the GUI
 
-
+from pymongo import MongoClient
+import cloudinary
+import cloudinary.uploader
+from cloudinary.uploader import upload
+from urllib.parse import quote_plus
 
 ######################################################### Access Data Base ##############################################################################
 # Path to your database inside Google Drive folder
-DB_PATH = r"I:/My Drive/Databases/Hassan_Factory.db"
+# DB_PATH = r"I:/My Drive/Databases/Hassan_Factory.db"
 
 # Determine the base directory
 if getattr(sys, "frozen", False):
@@ -39,7 +43,7 @@ class SalesSystemApp:
         self.root.attributes('-fullscreen', True)
         self.root.configure(bg="white")
         
-        self.create_table()
+        self.Connect_DB()
         
         self.language = "Arabic"  # default language
         self.translations = {
@@ -83,26 +87,20 @@ class SalesSystemApp:
         self.selected_products = []   
 
 ########################################## Tables on Data Base ########################################
+    def Connect_DB(self):
+        
+        raw_password = "HassanFactory@1@6@6"
+        encoded_password = quote_plus(raw_password)
+        uri = f"mongodb+srv://hassanfactory116:{encoded_password}@hassan.fkplsys.mongodb.net/"
+        cloudinary.config(
+            cloud_name = 'dv5dpzmhm', 
+            api_key = "229798327524238",
+            api_secret = "CVbnCea6qpqIG2VhOOJoP_tQKuI"
+        )
 
-    def create_table(self):
-
-        self.conn = sqlite3.connect(DB_PATH)
-        self.cursor = self.conn.cursor()
-        self.cursor.executescript("""
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT NOT NULL UNIQUE,
-                password TEXT NOT NULL,
-                role TEXT NOT NULL DEFAULT 'employee'
-            );   
-        """)
-        self.cursor.execute("INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)", ("Soliman", "1234", "employee"))
-       
-        #used in case of drop
-        # self.cursor.execute("DROP TABLE users")
-        # print("Droped")
-
-        self.conn.commit()  
+        client = MongoClient(uri)
+        db = client["Hassan"]
+        self.users_collection = db['Users']
 
 ############################################ Windows ########################################### 
     
@@ -157,26 +155,18 @@ class SalesSystemApp:
                 return
 
             try:
-                # Connect to the database
-                conn = sqlite3.connect(DB_PATH)
-                cursor = conn.cursor()
-
-                # Query to check username and password
-                cursor.execute("SELECT role FROM users WHERE username = ? AND password = ?", (username, password))
-                result = cursor.fetchone()
-                conn.close()
-
-                if result:
-                    # Extract the user's role
-                    self.user_role = result[0]
+                user = self.users_collection.find_one({"username": username, "password": password})
+                print(user)
+                if user:
+                    self.user_role = user.get("role", "Unknown")
                     messagebox.showinfo("Success", f"Login successful! Role: {self.user_role}")
-                    open_main_menu(self.user_role)  # Pass the role to the main menu function
+                    open_main_menu(self.user_role)
                 else:
-                    messagebox.showerror("Error", "Invalid username or password.")
-                    self.play_Error
-            except sqlite3.Error as e:
+                    self.silent_error_popup("Error", "Invalid username or password.")
+
+            except Exception as e:
                 messagebox.showerror("Database Error", f"An error occurred: {e}")
-                self.play_Error
+                self.play_Error()
 
 
         login_button = tk.Button(login_frame, text="Login", font=("Arial", 12), bg="lightblue", command=validate_login)
@@ -265,7 +255,7 @@ class SalesSystemApp:
         circular_img = Image.new("RGBA", size)
         circular_img.paste(img, (0, 0), mask)
         return ImageTk.PhotoImage(circular_img)
-    
+
     # To get the text button based on language
     def t(self, text):
         return self.translations.get(text, {}).get(self.language, text)
@@ -330,13 +320,14 @@ class SalesSystemApp:
                             font=("Arial", 20, "bold"), fg="black", bg="#dbb40f")
         time_label.place(relx=0.5, rely=0.5, anchor="center")
         self.update_time(time_label)
-
+        #TODO
         # User info frame
         user_frame = tk.Frame(top_bar, bg="#dbb40f")
         user_frame.pack(side="right", padx=10)
 
         username_label = tk.Label(user_frame, text=self.user_name, font=("Arial", 14), fg="black", bg="#dbb40f")
         username_label.pack(side="left")
+    
     def trash(self,user_role):
         # Clear current window
         for widget in self.root.winfo_children():
@@ -360,6 +351,31 @@ class SalesSystemApp:
     def play_success(self):
         sound_path = "C:\Main Files\SW Work\مصنع حسن سليم للمنتجات البلاستيكية system\Static\sounds\Test.mp3"
         threading.Thread(target=playsound, args=(sound_path,), daemon=True).start()
+    
+    def silent_error_popup(self, title, message):
+        self.play_Error()
+
+        popup = tk.Toplevel()
+        popup.title(title)
+        popup.geometry("300x120")
+        popup.resizable(False, False)
+        popup.grab_set()  # Makes it modal
+
+        main_x = self.root.winfo_x()
+        main_y = self.root.winfo_y()
+        main_width = self.root.winfo_width()
+        main_height = self.root.winfo_height()
+
+        popup_width = 300
+        popup_height = 120
+
+        pos_x = main_x + (main_width // 2) - (popup_width // 2)
+        pos_y = main_y + (main_height // 2) - (popup_height // 2)
+
+        popup.geometry(f"{popup_width}x{popup_height}+{pos_x}+{pos_y}")
+
+        tk.Label(popup, text=message, fg="red", font=("Arial", 12)).pack(pady=10)
+        tk.Button(popup, text="OK", width=10, command=popup.destroy).pack(pady=20)
 
 ######################### Main #########################################################
 
