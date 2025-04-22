@@ -20,7 +20,7 @@ import cloudinary
 import cloudinary.uploader
 from cloudinary.uploader import upload
 from urllib.parse import quote_plus
-
+from bson.objectid import ObjectId
 ######################################################### Access Data Base ##############################################################################
 
 # Determine the base directory
@@ -103,6 +103,19 @@ class SalesSystemApp:
             print("❌ MongoDB connection failed:", e)
         db = client["Hassan"]
         self.users_collection = db['Users']
+        self.products_collection = db['Products']
+        self.sales_collection = db['Sales']
+        self.customers_collection = db['Customers']
+        self.suppliers_collection = db['suppliers']
+        self.shipping_collection = db['shipping']
+        self.orders_collection = db['orders']
+        self.expenses_collection = db['expenses']
+        self.employee_appointments_collection = db['employee_appointments']
+        self.daily_shifts_collection = db['daily_shifts']
+        self.accounts_collection = db['accounts']
+        self.transactionss_collection = db['transactionss']
+        self.big_deals_collection = db['big_deals']
+        self.TEX_Claculations_collection = db['TEX_Claculations']
 
 ############################################ Windows ########################################### 
     
@@ -161,7 +174,8 @@ class SalesSystemApp:
                 # print(user)
                 if user:
                     self.user_role = user.get("role", "Unknown")
-                    messagebox.showinfo("Success", f"Login successful! Role: {self.user_role}")
+                    # messagebox.showinfo("Success", f"Login successful! Role: {self.user_role}")
+                    self.silent_error_popup("Success", f"Login successful! Role: {self.user_role}")
                     open_main_menu(self.user_role)
                 else:
                     self.silent_error_popup("Error", "Invalid username or password.")
@@ -240,9 +254,214 @@ class SalesSystemApp:
 
 
 ############################ Main Functions ########################################
+    def display_table(self):
+        db_name = self.db_name.get()
+        collection_name = self.table_name.get()
+        search_query = self.search_query.get()
+
+        if not db_name or not collection_name:
+            return
+        
+        current_collection = self.get_collection_by_name(collection_name.lower())  # Convert to lowercase for consistency
+        if not current_collection:
+            return
+        
+        for row in self.tree.get_children():
+            self.tree.delete(row)
+        
+        try:
+            # Fetch all documents
+            if search_query:
+                # Create a dynamic query based on the search term
+                first_document = current_collection.find_one()
+                if first_document:
+                    search_fields = list(first_document.keys())
+                    # Remove '_id' as we usually don't search by it directly
+                    if '_id' in search_fields:
+                        search_fields.remove('_id')
+                    or_conditions = [{"$expr": {"$regexMatch": {"input": {"$toString": f"${field}"}, "regex": search_query, "options": "i"}}} for field in search_fields]
+                    data = list(current_collection.find({"$or": or_conditions}))
+                else:
+                    data = [] # No documents to search in
+            else:
+                data = list(current_collection.find())
+
+            if data:
+                columns = list(data[0].keys())
+                if '_id' in columns:
+                    columns.remove('_id')
+                    columns.insert(0, self.t("ID")) # ROW ID
+
+                self.tree["columns"] = columns
+                for col in columns:
+                    self.tree.heading(col, text=col)
+                    self.tree.column(col, width=150, anchor="center", stretch=False)
+
+                for row_data in data:
+                    values = []
+                    record_id = row_data.get('_id', '')
+                    values.append(str(record_id)) # Display ObjectId as string
+                    for col in columns[1:]: # Start from the second column as the first is 'ID'
+                        values.append(row_data.get(col, ''))
+                    self.tree.insert("", "end", values=values)
+            else:
+                self.tree["columns"] = []
+                self.tree.delete(*self.tree.get_children())
+                messagebox.showinfo("Info", "No data found in this collection.")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Error displaying data: {e}")
+
+    def add_entry(self):
+        db_name = self.db_name.get() #TODO
+        collection_name = self.table_name.get()
+        if not db_name or not collection_name:
+            messagebox.showwarning("Warning", "Please select a database and table first")
+            return
+        
+        current_collection = self.get_collection_by_name(collection_name.lower())
+        if not current_collection:
+            return
+
+        # Get the fields from the first document to prompt for input
+        first_document = current_collection.find_one()
+        if not first_document:
+            messagebox.showinfo("Info", "The collection is empty. Cannot determine fields to add.")
+            return
+        
+        fields = [key for key in first_document.keys() if key != '_id']
+        new_entry = {}
+        for field in fields:
+            value = simpledialog.askstring("Input", f"Enter value for {field}:")
+            if value is None:
+                return
+            new_entry[field] = value
+
+        try:
+            current_collection.insert_one(new_entry)
+            self.display_table()
+            messagebox.showinfo("Success", "Record added successfully")
+        except Exception as e:
+            messagebox.showerror("Error", f"Error adding record: {e}")
+
+    def edit_entry(self):
+        db_name = self.db_name.get() #TODO
+        collection_name = self.table_name.get()
+        if not db_name or not collection_name:
+            messagebox.showwarning("Warning", "Please select a database and table first")
+            return
+
+        current_collection = self.get_collection_by_name(collection_name.lower())
+        if not current_collection:
+            return
+
+        selected_item = self.tree.selection()
+        if not selected_item:
+            messagebox.showwarning("Warning", "Please select a record to edit")
+            return
+
+        record_id_str  = self.tree.item(selected_item)['values'][0]
+        try:
+            record_id = ObjectId(record_id_str)
+        except Exception:
+            messagebox.showerror("Error", "Invalid ID format.")
+            return
+        
+        # Get the fields to edit (excluding _id)
+        first_document = current_collection.find_one({"_id": record_id})
+        if not first_document:
+            messagebox.showerror("Error", "Could not retrieve record for editing.")
+            return
+
+        fields = [key for key in first_document.keys() if key != '_id']
+        updated_values = {}
+
+        for field in fields:
+            current_value = first_document.get(field, '')
+            new_value = simpledialog.askstring("Edit", f"Enter new value for {field}:", initialvalue=current_value)
+            if new_value is None: #TODO this part could be removed ... (keep old value for example)
+                return
+            updated_values[field] = new_value
+
+        try:
+            current_collection.update_one({"_id": record_id}, {"$set": updated_values})
+            self.display_table()
+            messagebox.showinfo("Success", "Record updated successfully")
+        except Exception as e:
+            messagebox.showerror("Error", f"Error updating record: {e}")
+
+    def delete_entry(self):
+        db_name = self.db_name.get()
+        collection_name = self.collection_name.get()
+
+        if not db_name or not collection_name:
+            messagebox.showwarning("Warning", "Please select a database and collection first")
+            return
+
+        current_collection = self.get_collection_by_name(collection_name.lower())
+        if not current_collection:
+            return
+
+        selected_item = self.tree.selection()
+        if not selected_item:
+            messagebox.showwarning("Warning", "Please select a record to delete")
+            return
+
+        record_id_str = self.tree.item(selected_item)['values'][0]
+        try:
+            record_id = ObjectId(record_id_str)
+        except Exception:
+            messagebox.showerror("Error", "Invalid ID format.")
+            return
+
+        if messagebox.askyesno("Confirm", "Are you sure you want to delete this record?"):
+            try:
+                current_collection.delete_one({"_id": record_id})
+                self.display_table()
+                messagebox.showinfo("Success", "Record deleted successfully")
+            except Exception as e:
+                messagebox.showerror("Error", f"Error deleting record: {e}")
 
 ############################ Utility Functions ########################################
-
+    def get_collection_by_name(self, collection_name):
+        """Returns the appropriate MongoDB collection object based on the provided name.
+        Args:
+            collection_name (str): The name of the collection to access (e.g., "users", "products").
+        Returns:
+            pymongo.collection.Collection or None: The corresponding MongoDB collection object,
+                                                   or None if the name is not recognized."""
+        if collection_name == "users":
+            return self.users_collection
+        elif collection_name == "products":
+            return self.products_collection
+        elif collection_name == "sales":
+            return self.sales_collection
+        elif collection_name == "customers":
+            return self.customers_collection
+        elif collection_name == "suppliers":
+            return self.suppliers_collection
+        elif collection_name == "shipping":
+            return self.shipping_collection
+        elif collection_name == "orders":
+            return self.orders_collection
+        elif collection_name == "expenses":
+            return self.expenses_collection
+        elif collection_name == "employee_appointments":
+            return self.employee_appointments_collection
+        elif collection_name == "daily_shifts":
+            return self.daily_shifts_collection
+        elif collection_name == "accounts":
+            return self.accounts_collection
+        elif collection_name == "transactionss":
+            return self.transactionss_collection
+        elif collection_name == "big_deals":
+            return self.big_deals_collection
+        elif collection_name == "TEX_Claculations":
+            return self.TEX_Claculations_collection
+        else:
+            print(f"Warning: Collection name '{collection_name}' not recognized.")
+            return None
+        
     # Function to Create Circular Image
     def create_circular_image(self, image_path, size=(100, 100)):  
         """Creates a circular version of an image"""
