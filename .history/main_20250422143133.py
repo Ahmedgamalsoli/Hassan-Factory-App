@@ -162,7 +162,7 @@ class SalesSystemApp:
                 if user:
                     self.user_role = user.get("role", "Unknown")
                     # messagebox.showinfo("Success", f"Login successful! Role: {self.user_role}")
-                    self.silent_error_popup("Success", f"Login successful! Role: {self.user_role}")
+                    self.silent_error_popup("Success","Login successful! Role")
                     open_main_menu(self.user_role)
                 else:
                     self.silent_error_popup("Error", "Invalid username or password.")

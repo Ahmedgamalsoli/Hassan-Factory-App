@@ -377,7 +377,7 @@ class SalesSystemApp:
 
         popup.geometry(f"{popup_width}x{popup_height}+{pos_x}+{pos_y}")
 
-        tk.Label(popup, text=message, fg="red", font=("Arial", 12)).pack(pady=10)
+        tk.Label(popup, text=message, fg="#9b6411", font=("Arial", 12)).pack(pady=10)
         tk.Button(popup, text="OK", width=10, command=popup.destroy).pack(pady=20)
 
 ######################### Main #########################################################

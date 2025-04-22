@@ -161,8 +161,7 @@ class SalesSystemApp:
                 # print(user)
                 if user:
                     self.user_role = user.get("role", "Unknown")
-                    # messagebox.showinfo("Success", f"Login successful! Role: {self.user_role}")
-                    self.silent_error_popup("Success", f"Login successful! Role: {self.user_role}")
+                    messagebox.showinfo("Success", f"Login successful! Role: {self.user_role}")
                     open_main_menu(self.user_role)
                 else:
                     self.silent_error_popup("Error", "Invalid username or password.")
@@ -377,7 +376,7 @@ class SalesSystemApp:
 
         popup.geometry(f"{popup_width}x{popup_height}+{pos_x}+{pos_y}")
 
-        tk.Label(popup, text=message, fg="red", font=("Arial", 12)).pack(pady=10)
+        tk.Label(popup, text=message, fg="GOLD", font=("Arial", 12)).pack(pady=10)
         tk.Button(popup, text="OK", width=10, command=popup.destroy).pack(pady=20)
 
 ######################### Main #########################################################
