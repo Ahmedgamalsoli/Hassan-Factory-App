@@ -359,7 +359,7 @@ class SalesSystemApp:
 
         first_document = current_collection.find_one()
         fields = [key for key in first_document.keys() if key != '_id']
-        
+
         new_entry = {}
         for field in fields:
             value = simpledialog.askstring("Input", f"Enter value for {field}:")
