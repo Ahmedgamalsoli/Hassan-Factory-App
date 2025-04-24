@@ -106,16 +106,16 @@ class SalesSystemApp:
         self.products_collection = db['Products']
         self.sales_collection = db['Sales']
         self.customers_collection = db['Customers']
-        self.suppliers_collection = db['suppliers']
-        self.shipping_collection = db['shipping']
-        self.orders_collection = db['orders']
-        self.expenses_collection = db['expenses']
-        self.employee_appointments_collection = db['employee_appointments']
-        self.daily_shifts_collection = db['daily_shifts']
-        self.accounts_collection = db['accounts']
-        self.transactionss_collection = db['transactions']
-        self.big_deals_collection = db['big_deals']
-        self.TEX_Claculations_collection = db['TEX_Claculations']
+        self.suppliers_collection = db['Suppliers']
+        self.shipping_collection = db['Shipping']
+        self.orders_collection = db['Orders']
+        self.expenses_collection = db['Expenses']
+        self.employee_appointments_collection = db['Employee_appointments']
+        self.daily_shifts_collection = db['Daily_shifts']
+        self.accounts_collection = db['Accounts']
+        self.transactions_collection = db['Transactions']
+        self.big_deals_collection = db['Big_deals']
+        self.TEX_Calculations_collection = db['TEX_Calculations']
 
 ############################################ Windows ########################################### 
     
@@ -157,12 +157,14 @@ class SalesSystemApp:
         password_entry = tk.Entry(login_frame, font=("Arial", 12), bg="#f0f0f0", show="*")
         password_entry.place(x=150, y=190, width=200)
 
+        username_entry.bind("<Return>", lambda event: validate_login()) # Bind Enter key to trigger add_todo from name_entry
+        password_entry.bind("<Return>", lambda event: validate_login()) # Bind Enter key to trigger add_todo from name_entry
+        
         # Login Button
         def validate_login():
             username = username_entry.get()  # Assuming `username_entry` is the input field for the username
             password = password_entry.get()  # Assuming `password_entry` is the input field for the password
             self.user_name = username
-
             # Validate input
             if not username or not password:
                 self.play_Error()
@@ -234,7 +236,7 @@ class SalesSystemApp:
                 {"text": self.t("Accounting"), "command": lambda: self.trash(self.user_role)},
                 {"text": self.t("Reports"), "command": lambda: self.trash(self.user_role)},
                 {"text": self.t("Big Deals"), "command": lambda: self.trash(self.user_role)},
-                {"text": self.t("Database"), "command": lambda: self.trash(self.user_role)}
+                {"text": self.t("Database"), "command": lambda: self.check_access_and_open(self.user_role, db_name="clothes_sales.db", table_name="Users")}
             ])
 
         for btn_info in buttons:
@@ -252,6 +254,39 @@ class SalesSystemApp:
             btn.bind("<Enter>", lambda e, b=btn: b.config(bg="#e0e0e0"))
             btn.bind("<Leave>", lambda e, b=btn: b.config(bg="white"))
 
+    def manage_database_window(self, db_name=None, table_name=None):
+        self.db_name.set(db_name if db_name else "")
+        self.table_name.set(table_name if table_name else "")
+
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        # تحميل صورة الخلفية
+        self.topbar(show_back_button=True)
+
+        tk.Label(self.root, text="Select Database:", bg="#4a90e2", fg="white", font=("Arial", 12)).place(x=120, y=70)
+        db_dropdown = ttk.Combobox(self.root, textvariable=self.db_name, values=["clothes_sales.db"])
+        db_dropdown.place(x=250, y=70)
+
+        tk.Label(self.root, text="Select Table:", bg="#4a90e2", fg="white", font=("Arial", 12)).place(x=130, y=110)
+        table_dropdown = ttk.Combobox(self.root, textvariable=self.table_name, values=["Users", "Products", "Sales", "Customers","Suppliers","Shipping","Orders","Expenses","Employee_appointments","Daily_shifts","Accounts","Transactions","Big_deals","TEX_Calculations"])
+        table_dropdown.place(x=250, y=110)
+        table_dropdown.bind("<<ComboboxSelected>>", lambda e: self.display_table())
+
+        tk.Label(self.root, text="Search:", bg="#4a90e2", fg="white", font=("Arial", 12)).place(x=140, y=150)
+        search_entry = tk.Entry(self.root, textvariable=self.search_query)
+        search_entry.place(x=250, y=150)
+        tk.Button(self.root, text="Search", command=self.display_table).place(x=410, y=145)
+
+        self.tree = ttk.Treeview(self.root, show="headings")
+        self.tree.place(x=0, y=190)
+
+        tk.Button(self.root, text="Add Record", command=self.add_entry).place(width=120, height=40, x=100, y=450)
+        tk.Button(self.root, text="Edit Record", command=self.edit_entry).place(width=120, height=40, x=250, y=450)
+        tk.Button(self.root, text="Delete Record", command=self.delete_entry).place(width=120, height=40, x=400, y=450)
+
+        self.display_table()
+
 
 ############################ Main Functions ########################################
     def display_table(self):
@@ -262,10 +297,8 @@ class SalesSystemApp:
         if not db_name or not collection_name:
             return
         
-        current_collection = self.get_collection_by_name(collection_name.lower())  # Convert to lowercase for consistency
-        if not current_collection:
-            return
-        
+        current_collection = self.get_collection_by_name(collection_name)
+    
         for row in self.tree.get_children():
             self.tree.delete(row)
         
@@ -304,10 +337,10 @@ class SalesSystemApp:
                     for col in columns[1:]: # Start from the second column as the first is 'ID'
                         values.append(row_data.get(col, ''))
                     self.tree.insert("", "end", values=values)
-            else:
-                self.tree["columns"] = []
-                self.tree.delete(*self.tree.get_children())
-                messagebox.showinfo("Info", "No data found in this collection.")
+            # else:
+            #     self.tree["columns"] = []
+            #     self.tree.delete(*self.tree.get_children())
+            #     messagebox.showinfo("Info", "No data found in this collection.")
 
         except Exception as e:
             messagebox.showerror("Error", f"Error displaying data: {e}")
@@ -315,21 +348,18 @@ class SalesSystemApp:
     def add_entry(self):
         db_name = self.db_name.get() #TODO
         collection_name = self.table_name.get()
+        print("collection_name")
+        print(collection_name)
         if not db_name or not collection_name:
             messagebox.showwarning("Warning", "Please select a database and table first")
             return
         
-        current_collection = self.get_collection_by_name(collection_name.lower())
-        if not current_collection:
-            return
+        current_collection = self.get_collection_by_name(collection_name)
 
-        # Get the fields from the first document to prompt for input
+
         first_document = current_collection.find_one()
-        if not first_document:
-            messagebox.showinfo("Info", "The collection is empty. Cannot determine fields to add.")
-            return
-        
         fields = [key for key in first_document.keys() if key != '_id']
+        
         new_entry = {}
         for field in fields:
             value = simpledialog.askstring("Input", f"Enter value for {field}:")
@@ -351,9 +381,7 @@ class SalesSystemApp:
             messagebox.showwarning("Warning", "Please select a database and table first")
             return
 
-        current_collection = self.get_collection_by_name(collection_name.lower())
-        if not current_collection:
-            return
+        current_collection = self.get_collection_by_name(collection_name)
 
         selected_item = self.tree.selection()
         if not selected_item:
@@ -392,15 +420,13 @@ class SalesSystemApp:
 
     def delete_entry(self):
         db_name = self.db_name.get()
-        collection_name = self.collection_name.get()
+        collection_name = self.table_name.get()
 
         if not db_name or not collection_name:
             messagebox.showwarning("Warning", "Please select a database and collection first")
             return
 
-        current_collection = self.get_collection_by_name(collection_name.lower())
-        if not current_collection:
-            return
+        current_collection = self.get_collection_by_name(collection_name)
 
         selected_item = self.tree.selection()
         if not selected_item:
@@ -423,41 +449,46 @@ class SalesSystemApp:
                 messagebox.showerror("Error", f"Error deleting record: {e}")
 
 ############################ Utility Functions ########################################
+    def check_access_and_open(self, role, db_name, table_name):
+        allowed_roles = ["admin"]  # Define roles that can access this
+        if role in allowed_roles:
+            self.manage_database_window(db_name, table_name)
+        else:
+            messagebox.showwarning("Access Denied", "You do not have permission to access this page.")
+
     def get_collection_by_name(self, collection_name):
         """Returns the appropriate MongoDB collection object based on the provided name.
-        Args:
-            collection_name (str): The name of the collection to access (e.g., "users", "products").
-        Returns:
-            pymongo.collection.Collection or None: The corresponding MongoDB collection object,
+        Args: collection_name (str): The name of the collection to access (e.g., "Users", "Products").
+        Returns: pymongo.collection.Collection or None: The corresponding MongoDB collection object,
                                                    or None if the name is not recognized."""
-        if collection_name == "users":
+        if collection_name == "Users":
             return self.users_collection
-        elif collection_name == "products":
+        elif collection_name == "Products":
             return self.products_collection
-        elif collection_name == "sales":
+        elif collection_name == "Sales":
             return self.sales_collection
-        elif collection_name == "customers":
+        elif collection_name == "Customers":
             return self.customers_collection
-        elif collection_name == "suppliers":
+        elif collection_name == "Suppliers":
             return self.suppliers_collection
-        elif collection_name == "shipping":
+        elif collection_name == "Shipping":
             return self.shipping_collection
-        elif collection_name == "orders":
+        elif collection_name == "Orders":
             return self.orders_collection
-        elif collection_name == "expenses":
+        elif collection_name == "Expenses":
             return self.expenses_collection
-        elif collection_name == "employee_appointments":
+        elif collection_name == "Employee_appointments":
             return self.employee_appointments_collection
-        elif collection_name == "daily_shifts":
+        elif collection_name == "Daily_shifts":
             return self.daily_shifts_collection
-        elif collection_name == "accounts":
+        elif collection_name == "Accounts":
             return self.accounts_collection
-        elif collection_name == "transactionss":
-            return self.transactionss_collection
-        elif collection_name == "big_deals":
+        elif collection_name == "Transactions":
+            return self.transactions_collection
+        elif collection_name == "Big_deals":
             return self.big_deals_collection
-        elif collection_name == "TEX_Claculations":
-            return self.TEX_Claculations_collection
+        elif collection_name == "TEX_Calculations":
+            return self.TEX_Calculations_collection
         else:
             print(f"Warning: Collection name '{collection_name}' not recognized.")
             return None
