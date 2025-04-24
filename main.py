@@ -113,7 +113,7 @@ class SalesSystemApp:
         self.employee_appointments_collection = db['employee_appointments']
         self.daily_shifts_collection = db['daily_shifts']
         self.accounts_collection = db['accounts']
-        self.transactionss_collection = db['transactionss']
+        self.transactionss_collection = db['transactions']
         self.big_deals_collection = db['big_deals']
         self.TEX_Claculations_collection = db['TEX_Claculations']
 
