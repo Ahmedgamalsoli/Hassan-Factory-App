@@ -234,7 +234,7 @@ class SalesSystemApp:
                 {"text": self.t("Accounting"), "command": lambda: self.trash(self.user_role)},
                 {"text": self.t("Reports"), "command": lambda: self.trash(self.user_role)},
                 {"text": self.t("Big Deals"), "command": lambda: self.trash(self.user_role)},
-                {"text": self.t("Database"), "command": lambda: self.check_access_and_open(self.user_role, db_name="clothes_sales.db", table_name="users")}
+                {"text": self.t("Database"), "command": lambda: self.check_access_and_open(self.user_role)}
             ])
 
         for btn_info in buttons:
@@ -251,7 +251,7 @@ class SalesSystemApp:
             btn.pack(side="left", padx=10, pady=10, ipadx=10, ipady=5)
             btn.bind("<Enter>", lambda e, b=btn: b.config(bg="#e0e0e0"))
             btn.bind("<Leave>", lambda e, b=btn: b.config(bg="white"))
-
+            
     def manage_database_window(self, db_name=None, table_name=None):
         self.db_name.set(db_name if db_name else "")
         self.table_name.set(table_name if table_name else "")
@@ -261,6 +261,15 @@ class SalesSystemApp:
 
         # تحميل صورة الخلفية
         self.topbar(show_back_button=True)
+
+        # Fetch available product codes from the database
+        def fetch_product_codes():
+            try:
+                self.cursor.execute("SELECT code FROM products")
+                return [row[0] for row in self.cursor.fetchall()]
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to fetch product codes: {str(e)}")
+                return []
 
         tk.Label(self.root, text="Select Database:", bg="#4a90e2", fg="white", font=("Arial", 12)).place(x=120, y=70)
         db_dropdown = ttk.Combobox(self.root, textvariable=self.db_name, values=["clothes_sales.db"])

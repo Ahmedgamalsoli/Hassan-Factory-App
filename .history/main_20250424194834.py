@@ -234,7 +234,7 @@ class SalesSystemApp:
                 {"text": self.t("Accounting"), "command": lambda: self.trash(self.user_role)},
                 {"text": self.t("Reports"), "command": lambda: self.trash(self.user_role)},
                 {"text": self.t("Big Deals"), "command": lambda: self.trash(self.user_role)},
-                {"text": self.t("Database"), "command": lambda: self.check_access_and_open(self.user_role, db_name="clothes_sales.db", table_name="users")}
+                {"text": self.t("Database"), "command": lambda: self.check_access_and_open(self.user_role)}
             ])
 
         for btn_info in buttons:
@@ -251,37 +251,6 @@ class SalesSystemApp:
             btn.pack(side="left", padx=10, pady=10, ipadx=10, ipady=5)
             btn.bind("<Enter>", lambda e, b=btn: b.config(bg="#e0e0e0"))
             btn.bind("<Leave>", lambda e, b=btn: b.config(bg="white"))
-
-    def manage_database_window(self, db_name=None, table_name=None):
-        self.db_name.set(db_name if db_name else "")
-        self.table_name.set(table_name if table_name else "")
-
-        for widget in self.root.winfo_children():
-            widget.destroy()
-
-        # تحميل صورة الخلفية
-        self.topbar(show_back_button=True)
-
-        tk.Label(self.root, text="Select Database:", bg="#4a90e2", fg="white", font=("Arial", 12)).place(x=120, y=70)
-        db_dropdown = ttk.Combobox(self.root, textvariable=self.db_name, values=["clothes_sales.db"])
-        db_dropdown.place(x=250, y=70)
-
-        tk.Label(self.root, text="Select Table:", bg="#4a90e2", fg="white", font=("Arial", 12)).place(x=130, y=110)
-        table_dropdown = ttk.Combobox(self.root, textvariable=self.table_name, values=["users", "products", "sales", "customers","suppliers","shipping","orders","expenses","employee_appointments","daily_shifts","accounts","transactionss","big_deals","TEX_Claculations"])
-        table_dropdown.place(x=250, y=110)
-        table_dropdown.bind("<<ComboboxSelected>>", lambda e: self.display_table())
-
-        tk.Label(self.root, text="Search:", bg="#4a90e2", fg="white", font=("Arial", 12)).place(x=140, y=150)
-        search_entry = tk.Entry(self.root, textvariable=self.search_query)
-        search_entry.place(x=250, y=150)
-        tk.Button(self.root, text="Search", command=self.display_table).place(x=410, y=145)
-
-        self.tree = ttk.Treeview(self.root, show="headings")
-        self.tree.place(x=0, y=190)
-
-        tk.Button(self.root, text="Add Record", command=self.add_entry).place(width=120, height=40, x=100, y=450)
-        tk.Button(self.root, text="Edit Record", command=self.edit_entry).place(width=120, height=40, x=250, y=450)
-        tk.Button(self.root, text="Delete Record", command=self.delete_entry).place(width=120, height=40, x=400, y=450)
 
 
 ############################ Main Functions ########################################
@@ -454,13 +423,6 @@ class SalesSystemApp:
                 messagebox.showerror("Error", f"Error deleting record: {e}")
 
 ############################ Utility Functions ########################################
-    def check_access_and_open(self, role, db_name, table_name):
-        allowed_roles = ["admin"]  # Define roles that can access this
-        if role in allowed_roles:
-            self.manage_database_window(db_name, table_name)
-        else:
-            messagebox.showwarning("Access Denied", "You do not have permission to access this page.")
-
     def get_collection_by_name(self, collection_name):
         """Returns the appropriate MongoDB collection object based on the provided name.
         Args:

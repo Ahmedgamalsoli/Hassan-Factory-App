@@ -234,7 +234,7 @@ class SalesSystemApp:
                 {"text": self.t("Accounting"), "command": lambda: self.trash(self.user_role)},
                 {"text": self.t("Reports"), "command": lambda: self.trash(self.user_role)},
                 {"text": self.t("Big Deals"), "command": lambda: self.trash(self.user_role)},
-                {"text": self.t("Database"), "command": lambda: self.check_access_and_open(self.user_role, db_name="clothes_sales.db", table_name="users")}
+                {"text": self.t("Database"), "command": lambda: self.check_access_and_open(self.user_role)}
             ])
 
         for btn_info in buttons:
