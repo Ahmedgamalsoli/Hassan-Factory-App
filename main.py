@@ -337,10 +337,13 @@ class SalesSystemApp:
                     for col in columns[1:]: # Start from the second column as the first is 'ID'
                         values.append(row_data.get(col, ''))
                     self.tree.insert("", "end", values=values)
-            # else:
-            #     self.tree["columns"] = []
-            #     self.tree.delete(*self.tree.get_children())
-            #     messagebox.showinfo("Info", "No data found in this collection.")
+            else:
+                # Show placeholder column and row
+                self.tree["columns"] = ("No Data",)
+                self.tree.heading("No Data", text="No Data Available")
+                self.tree.column("No Data", width=300, anchor="center", stretch=True)
+                self.tree.insert("", "end", values=("This collection has no documents.",))
+                return
 
         except Exception as e:
             messagebox.showerror("Error", f"Error displaying data: {e}")
