@@ -274,7 +274,7 @@ class SalesSystemApp:
 
         # Load images and create buttons
         images = []  # Keep references to prevent garbage collection
-        columns_per_row = 7  # Number of buttons per row
+        columns_per_row = 4  # Number of buttons per row
 
         try:
             for index, btn_info in enumerate(buttons):

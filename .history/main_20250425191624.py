@@ -232,41 +232,41 @@ class SalesSystemApp:
 
         # Define buttons with images, text, and commands
         buttons = [
-            {"text": self.t("Add New Product"), "image": "Exit.png", 
+            {"text": self.t("Add New Product"), "image": "Logo.png", 
             "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Place Orders"), "image": "Exit.png", 
+            {"text": self.t("Place Orders"), "image": "Logo.png", 
             "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Expenses"), "image": "Exit.png", 
+            {"text": self.t("Expenses"), "image": "Logo.png", 
             "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Returns"), "image": "Exit.png", 
+            {"text": self.t("Returns"), "image": "Logo.png", 
             "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Employees Appointments"), "image": "Exit.png", 
+            {"text": self.t("Employees Appointments"), "image": "Logo.png", 
             "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Daily Shifts"), "image": "Exit.png", 
+            {"text": self.t("Daily Shifts"), "image": "Logo.png", 
             "command": lambda: self.trash(self.user_role)}
         ]
 
         if self.user_role == "employee":
             buttons.extend([
-                {"text": self.t("View Product"), "image": "Exit.png", 
+                {"text": self.t("View Product"), "image": "Logo.png", 
                 "command": lambda: self.trash(self.user_role)},
-                {"text": self.t("View Orders"), "image": "Exit.png", 
+                {"text": self.t("View Orders"), "image": "Logo.png", 
                 "command": lambda: self.trash(self.user_role)},
-                {"text": self.t("View Customers"), "image": "Exit.png", 
+                {"text": self.t("View Customers"), "image": "Logo.png", 
                 "command": lambda: self.trash(self.user_role)}
             ])
 
         if self.user_role == "admin":
-            buttons.insert(1, {"text": self.t("Edit Product"), "image": "Exit.png", 
+            buttons.insert(1, {"text": self.t("Edit Product"), "image": "Logo.png", 
                             "command": lambda: self.trash(self.user_role)})
             buttons.extend([
-                {"text": self.t("Accounting"), "image": "Exit.png", 
+                {"text": self.t("Accounting"), "image": "Logo.png", 
                 "command": lambda: self.Accounting_Window()},
-                {"text": self.t("Reports"), "image": "Exit.png", 
+                {"text": self.t("Reports"), "image": "Logo.png", 
                 "command": lambda: self.trash(self.user_role)},
-                {"text": self.t("Big Deals"), "image": "Exit.png", 
+                {"text": self.t("Big Deals"), "image": "Logo.png", 
                 "command": lambda: self.trash(self.user_role)},
-                {"text": self.t("Database"), "image": "Exit.png", 
+                {"text": self.t("Database"), "image": "Logo.png", 
                 "command": lambda: self.check_access_and_open(self.user_role, 
                                                             db_name="clothes_sales.db", 
                                                             table_name="Employees")}
@@ -274,7 +274,7 @@ class SalesSystemApp:
 
         # Load images and create buttons
         images = []  # Keep references to prevent garbage collection
-        columns_per_row = 7  # Number of buttons per row
+        columns_per_row = 4  # Number of buttons per row
 
         try:
             for index, btn_info in enumerate(buttons):

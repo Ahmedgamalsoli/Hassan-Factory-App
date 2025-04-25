@@ -223,94 +223,54 @@ class SalesSystemApp:
         for widget in self.root.winfo_children():
             widget.destroy()
 
-        # Create the top bar
+        # make the top bar with change language button
         self.topbar(show_back_button=False)
 
-        # Main button frame
-        button_frame = tk.Frame(self.root, bg="white")
-        button_frame.pack(pady=30)
+        # Buttons frame
+        button_frame = tk.Frame(self.root, bg="White", bd=2, relief="solid")
+        button_frame.pack(pady=20, padx=20, fill="x")
+        # # we will implement it later
+        # self.Dashboard(self.user_role)
 
-        # Define buttons with images, text, and commands
         buttons = [
-            {"text": self.t("Add New Product"), "image": "Exit.png", 
-            "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Place Orders"), "image": "Exit.png", 
-            "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Expenses"), "image": "Exit.png", 
-            "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Returns"), "image": "Exit.png", 
-            "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Employees Appointments"), "image": "Exit.png", 
-            "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Daily Shifts"), "image": "Exit.png", 
-            "command": lambda: self.trash(self.user_role)}
+            {"text": self.t("Add New Product"), "command": lambda: self.trash(self.user_role)},
+            {"text": self.t("place Orders"), "command": lambda: self.trash(self.user_role)},
+            {"text": self.t("Expenses"), "command": lambda: self.trash(self.user_role)},
+            {"text": self.t("Returns"), "command": lambda: self.trash(self.user_role)},
+            {"text": self.t("Employees Appointments"), "command": lambda: self.trash(self.user_role)},
+            {"text": self.t("Daily Shifts"), "command": lambda: self.trash(self.user_role)}
         ]
 
         if self.user_role == "employee":
             buttons.extend([
-                {"text": self.t("View Product"), "image": "Exit.png", 
-                "command": lambda: self.trash(self.user_role)},
-                {"text": self.t("View Orders"), "image": "Exit.png", 
-                "command": lambda: self.trash(self.user_role)},
-                {"text": self.t("View Customers"), "image": "Exit.png", 
-                "command": lambda: self.trash(self.user_role)}
+                {"text": self.t("View Product"), "command": lambda: self.trash(self.user_role)},
+                {"text": self.t("View Orders"), "command": lambda: self.trash(self.user_role)},
+                {"text": self.t("View Customers"), "command": lambda: self.trash(self.user_role)}
             ])
 
         if self.user_role == "admin":
-            buttons.insert(1, {"text": self.t("Edit Product"), "image": "Exit.png", 
-                            "command": lambda: self.trash(self.user_role)})
+            buttons.insert(1, {"text": self.t("Edit Product"), "command": lambda: self.trash(self.user_role)})
             buttons.extend([
-                {"text": self.t("Accounting"), "image": "Exit.png", 
-                "command": lambda: self.Accounting_Window()},
-                {"text": self.t("Reports"), "image": "Exit.png", 
-                "command": lambda: self.trash(self.user_role)},
-                {"text": self.t("Big Deals"), "image": "Exit.png", 
-                "command": lambda: self.trash(self.user_role)},
-                {"text": self.t("Database"), "image": "Exit.png", 
-                "command": lambda: self.check_access_and_open(self.user_role, 
-                                                            db_name="clothes_sales.db", 
-                                                            table_name="Employees")}
+                {"text": self.t("Accounting"), "command": lambda: self.trash(self.user_role)},
+                {"text": self.t("Reports"), "command": lambda: self.trash(self.user_role)},
+                {"text": self.t("Big Deals"), "command": lambda: self.trash(self.user_role)},
+                {"text": self.t("Database"), "command": lambda: self.check_access_and_open(self.user_role, db_name="clothes_sales.db", table_name="Employees")}
             ])
 
-        # Load images and create buttons
-        images = []  # Keep references to prevent garbage collection
-        columns_per_row = 7  # Number of buttons per row
-
-        try:
-            for index, btn_info in enumerate(buttons):
-                # Load and resize image
-                img_path = os.path.join(BASE_DIR, "Static", "images", btn_info["image"])
-                img = Image.open(img_path).resize((100, 100), Image.LANCZOS)
-                photo_img = ImageTk.PhotoImage(img)
-                images.append(photo_img)
-
-                # Calculate grid position
-                row = index // columns_per_row
-                column = index % columns_per_row
-
-                # Create sub-frame for each button
-                sub_frame = tk.Frame(button_frame, bg="white")
-                sub_frame.grid(row=row, column=column, padx=20, pady=20)
-
-                # Image button
-                btn = tk.Button(sub_frame, image=photo_img, bd=0, 
-                            command=btn_info["command"])
-                btn.image = photo_img  # Keep reference
-                btn.pack()
-
-                # Text label
-                lbl = tk.Label(sub_frame, text=btn_info["text"], 
-                            font=("Arial", 10, "bold"), bg="white", fg="#003366")
-                lbl.pack(pady=5)
-
-        except Exception as e:
-            print(f"Error loading images: {e}")
-            # Fallback to text buttons if images fail
-            fallback_frame = tk.Frame(self.root, bg="white")
-            fallback_frame.pack(pady=20)
-            for btn_info in buttons:
-                tk.Button(fallback_frame, text=btn_info["text"], 
-                        command=btn_info["command"]).pack(side="left", padx=10)
+        for btn_info in buttons:
+            btn = tk.Button(
+                button_frame,
+                text=btn_info["text"],
+                font=("Arial", 11),
+                bg="white",
+                fg="black",
+                bd=1,
+                relief="solid",
+                command=btn_info["command"]
+            )
+            btn.pack(side="left", padx=10, pady=10, ipadx=10, ipady=5)
+            btn.bind("<Enter>", lambda e, b=btn: b.config(bg="#e0e0e0"))
+            btn.bind("<Leave>", lambda e, b=btn: b.config(bg="white"))
 
     def manage_database_window(self, db_name=None, table_name=None):
         self.db_name.set(db_name if db_name else "")

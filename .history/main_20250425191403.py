@@ -274,12 +274,12 @@ class SalesSystemApp:
 
         # Load images and create buttons
         images = []  # Keep references to prevent garbage collection
-        columns_per_row = 7  # Number of buttons per row
+        columns_per_row = 4  # Number of buttons per row
 
         try:
             for index, btn_info in enumerate(buttons):
                 # Load and resize image
-                img_path = os.path.join(BASE_DIR, "Static", "images", btn_info["image"])
+                img_path = f"C:/App/Static/images/{btn_info['image']}"    
                 img = Image.open(img_path).resize((100, 100), Image.LANCZOS)
                 photo_img = ImageTk.PhotoImage(img)
                 images.append(photo_img)
