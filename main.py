@@ -32,7 +32,24 @@ else:
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 class SalesSystemApp:
-  
+    fields = {
+        "Employees": [],  # array of strings
+        "Products": [],    # array of strings
+        "Customers": [],    # array of strings
+        "Sales": [],    # array of strings
+        "Suppliers": [],    # array of strings
+        "Shipping": [],    # array of strings
+        "Orders": [],    # array of strings
+        "Expenses": [],    # array of strings
+        "Employee_appointments": [],    # array of strings
+        "Daily_shifts": [],    # array of strings
+        "Accounts": [],    # array of strings
+        "Transactions": [],    # array of strings
+        "Big_deals": [],    # array of strings
+        "TEX_Calculations": [],    # array of strings
+    }
+
+
 ############################ Init ########################################################
 
     def __init__(self, root):
@@ -42,7 +59,9 @@ class SalesSystemApp:
         self.root.configure(bg="white")
         
         self.Connect_DB()
-        
+                    
+        self.stop_event = threading.Event()
+
         self.language = "Arabic"  # default language
         self.translations = {
             "Add New Product": {"Arabic": "إضافة منتج جديد", "English": "Add New Product"},
@@ -101,21 +120,23 @@ class SalesSystemApp:
             print("✅ Connected to MongoDB")
         except Exception as e:
             print("❌ MongoDB connection failed:", e)
+
         db = client["Hassan"]
-        self.users_collection = db['Users']
-        self.products_collection = db['Products']
-        self.sales_collection = db['Sales']
-        self.customers_collection = db['Customers']
-        self.suppliers_collection = db['Suppliers']
-        self.shipping_collection = db['Shipping']
-        self.orders_collection = db['Orders']
-        self.expenses_collection = db['Expenses']
+
+        self.customers_collection             = db['Customers']
+        self.employees_collection             = db['Employees']
+        self.products_collection              = db['Products']
+        self.sales_collection                 = db['Sales']
+        self.suppliers_collection             = db['Suppliers']
+        self.shipping_collection              = db['Shipping']
+        self.orders_collection                = db['Orders']
+        self.expenses_collection              = db['Expenses']
         self.employee_appointments_collection = db['Employee_appointments']
-        self.daily_shifts_collection = db['Daily_shifts']
-        self.accounts_collection = db['Accounts']
-        self.transactions_collection = db['Transactions']
-        self.big_deals_collection = db['Big_deals']
-        self.TEX_Calculations_collection = db['TEX_Calculations']
+        self.daily_shifts_collection          = db['Daily_shifts']
+        self.accounts_collection              = db['Accounts']
+        self.transactions_collection          = db['Transactions']
+        self.big_deals_collection             = db['Big_deals']
+        self.TEX_Calculations_collection      = db['TEX_Calculations']
 
 ############################################ Windows ########################################### 
     
@@ -167,24 +188,22 @@ class SalesSystemApp:
             self.user_name = username
             # Validate input
             if not username or not password:
-                self.play_Error()
-                messagebox.showerror("Error", "Both fields are required.")
+                self.silent_popup("Error", f"Both fields are required.",self.play_Error)
                 return
 
             try:
-                user = self.users_collection.find_one({"username": username, "password": password})
+                user = self.employees_collection.find_one({"username": username, "password": password})
                 # print(user)
                 if user:
                     self.user_role = user.get("role", "Unknown")
                     # messagebox.showinfo("Success", f"Login successful! Role: {self.user_role}")
-                    self.silent_error_popup("Success", f"Login successful! Role: {self.user_role}")
+                    self.silent_popup("Success", f"Login successful! Role: {self.user_role}",self.play_success)
                     open_main_menu(self.user_role)
                 else:
-                    self.silent_error_popup("Error", "Invalid username or password.")
+                    self.silent_popup("Error", "Invalid username or password.", self.play_Error)
 
             except Exception as e:
-                messagebox.showerror("Database Error", f"An error occurred: {e}")
-                self.play_Error()
+                self.silent_popup("Database Error", f"An error occurred: {e}", self.play_Error)
 
 
         login_button = tk.Button(login_frame, text="Login", font=("Arial", 12), bg="lightblue", command=validate_login)
@@ -197,8 +216,7 @@ class SalesSystemApp:
             if role:
                 self.main_menu()
             else:
-                print("Unknown role. Access denied.")
-                self.play_Error
+                self.silent_popup("Unknown role", "Access denied.", self.play_Error)
 
     def main_menu(self):
         # Clear current window
@@ -236,7 +254,7 @@ class SalesSystemApp:
                 {"text": self.t("Accounting"), "command": lambda: self.trash(self.user_role)},
                 {"text": self.t("Reports"), "command": lambda: self.trash(self.user_role)},
                 {"text": self.t("Big Deals"), "command": lambda: self.trash(self.user_role)},
-                {"text": self.t("Database"), "command": lambda: self.check_access_and_open(self.user_role, db_name="clothes_sales.db", table_name="Users")}
+                {"text": self.t("Database"), "command": lambda: self.check_access_and_open(self.user_role, db_name="clothes_sales.db", table_name="Employees")}
             ])
 
         for btn_info in buttons:
@@ -264,12 +282,8 @@ class SalesSystemApp:
         # تحميل صورة الخلفية
         self.topbar(show_back_button=True)
 
-        tk.Label(self.root, text="Select Database:", bg="#4a90e2", fg="white", font=("Arial", 12)).place(x=120, y=70)
-        db_dropdown = ttk.Combobox(self.root, textvariable=self.db_name, values=["clothes_sales.db"])
-        db_dropdown.place(x=250, y=70)
-
         tk.Label(self.root, text="Select Table:", bg="#4a90e2", fg="white", font=("Arial", 12)).place(x=130, y=110)
-        table_dropdown = ttk.Combobox(self.root, textvariable=self.table_name, values=["Users", "Products", "Sales", "Customers","Suppliers","Shipping","Orders","Expenses","Employee_appointments","Daily_shifts","Accounts","Transactions","Big_deals","TEX_Calculations"])
+        table_dropdown = ttk.Combobox(self.root, textvariable=self.table_name, values=["Employees", "Products", "Sales", "Customers","Suppliers","Shipping","Orders","Expenses","Employee_appointments","Daily_shifts","Accounts","Transactions","Big_deals","TEX_Calculations"])
         table_dropdown.place(x=250, y=110)
         table_dropdown.bind("<<ComboboxSelected>>", lambda e: self.display_table())
 
@@ -290,12 +304,8 @@ class SalesSystemApp:
 
 ############################ Main Functions ########################################
     def display_table(self):
-        db_name = self.db_name.get()
         collection_name = self.table_name.get()
         search_query = self.search_query.get()
-
-        if not db_name or not collection_name:
-            return
         
         current_collection = self.get_collection_by_name(collection_name)
     
@@ -328,7 +338,7 @@ class SalesSystemApp:
                 self.tree["columns"] = columns
                 for col in columns:
                     self.tree.heading(col, text=col)
-                    self.tree.column(col, width=150, anchor="center", stretch=False)
+                    self.tree.column(col, width=152, anchor="center", stretch=False)
 
                 for row_data in data:
                     values = []
@@ -349,26 +359,20 @@ class SalesSystemApp:
             messagebox.showerror("Error", f"Error displaying data: {e}")
 
     def add_entry(self):
-        db_name = self.db_name.get() #TODO
         collection_name = self.table_name.get()
-        print("collection_name")
-        print(collection_name)
-        if not db_name or not collection_name:
-            messagebox.showwarning("Warning", "Please select a database and table first")
-            return
-        
+
         current_collection = self.get_collection_by_name(collection_name)
 
-
-        first_document = current_collection.find_one()
-        fields = [key for key in first_document.keys() if key != '_id']
-
         new_entry = {}
+        fields = self.get_fields_by_name(collection_name)
+
         for field in fields:
-            value = simpledialog.askstring("Input", f"Enter value for {field}:")
+            dialog = AlwaysOnTopInputDialog(root, f"Enter value for {field}:")
+            value = dialog.get_result()
             if value is None:
-                return
+                return            
             new_entry[field] = value
+
 
         try:
             current_collection.insert_one(new_entry)
@@ -378,11 +382,7 @@ class SalesSystemApp:
             messagebox.showerror("Error", f"Error adding record: {e}")
 
     def edit_entry(self):
-        db_name = self.db_name.get() #TODO
         collection_name = self.table_name.get()
-        if not db_name or not collection_name:
-            messagebox.showwarning("Warning", "Please select a database and table first")
-            return
 
         current_collection = self.get_collection_by_name(collection_name)
 
@@ -422,12 +422,7 @@ class SalesSystemApp:
             messagebox.showerror("Error", f"Error updating record: {e}")
 
     def delete_entry(self):
-        db_name = self.db_name.get()
         collection_name = self.table_name.get()
-
-        if not db_name or not collection_name:
-            messagebox.showwarning("Warning", "Please select a database and collection first")
-            return
 
         current_collection = self.get_collection_by_name(collection_name)
 
@@ -461,11 +456,11 @@ class SalesSystemApp:
 
     def get_collection_by_name(self, collection_name):
         """Returns the appropriate MongoDB collection object based on the provided name.
-        Args: collection_name (str): The name of the collection to access (e.g., "Users", "Products").
+        Args: collection_name (str): The name of the collection to access (e.g., "Employees", "Products").
         Returns: pymongo.collection.Collection or None: The corresponding MongoDB collection object,
                                                    or None if the name is not recognized."""
-        if collection_name == "Users":
-            return self.users_collection
+        if collection_name == "Employees":
+            return self.employees_collection
         elif collection_name == "Products":
             return self.products_collection
         elif collection_name == "Sales":
@@ -496,6 +491,45 @@ class SalesSystemApp:
             print(f"Warning: Collection name '{collection_name}' not recognized.")
             return None
         
+
+    def get_fields_by_name(self, collection_name):
+        """Returns the appropriate fields array based on the provided collection name.
+        Args: collection_name (str): The name of the collection (e.g., "Employees", "Products").
+        Returns: list: A list of field names for the corresponding collection, or an empty list if the name is not recognized.
+        """
+        if collection_name == "Employees":
+            return ["name", "position", "salary", "department", "hire_date"]
+        elif collection_name == "Products":
+            return ["product_name", "category", "price", "stock_quantity", "supplier"]
+        elif collection_name == "Sales":
+            return ["sale_date", "product_id", "quantity", "total_price", "customer_id"]
+        elif collection_name == "Customers":
+            return ["customer_id", "name", "email", "phone", "address"]
+        elif collection_name == "Suppliers":
+            return ["supplier_id", "name", "contact_person", "phone", "address"]
+        elif collection_name == "Shipping":
+            return ["order_id", "shipping_date", "tracking_number", "shipping_address"]
+        elif collection_name == "Orders":
+            return ["order_id", "order_date", "customer_id", "total_amount", "status"]
+        elif collection_name == "Expenses":
+            return ["expense_id", "expense_type", "amount", "date", "description"]
+        elif collection_name == "Employee_appointments":
+            return ["appointment_id", "employee_id", "appointment_date", "appointment_type"]
+        elif collection_name == "Daily_shifts":
+            return ["shift_id", "employee_id", "shift_date", "start_time", "end_time"]
+        elif collection_name == "Accounts":
+            return ["account_id", "account_name", "balance", "account_type"]
+        elif collection_name == "Transactions":
+            return ["transaction_id", "account_id", "transaction_date", "amount", "transaction_type"]
+        elif collection_name == "Big_deals":
+            return ["deal_id", "deal_date", "customer_id", "product_id", "deal_value"]
+        elif collection_name == "TEX_Calculations":
+            return ["calculation_id", "product_id", "calculation_date", "value"]
+        else:
+            print(f"Warning: Collection name '{collection_name}' not recognized.")
+            return []
+        
+
     # Function to Create Circular Image
     def create_circular_image(self, image_path, size=(100, 100)):  
         """Creates a circular version of an image"""
@@ -530,7 +564,6 @@ class SalesSystemApp:
         # Top Bar
         top_bar = tk.Frame(self.root, bg="#dbb40f", height=60)
         top_bar.pack(fill="x")
-
         # Exit icon
         try:
             exit_image = Image.open(self.exit_icon_path)
@@ -540,8 +573,7 @@ class SalesSystemApp:
             exit_icon.pack(side="right", padx=10)
             exit_icon.bind("<Button-1>", lambda e: self.root.quit())
         except Exception as e:
-            print(f"Error loading exit icon: {e}")
-            self.play_Error
+            self.silent_popup("Error", "Error loading exit icon: {e}", self.play_Error)
 
         # Logout icon
         try:
@@ -551,8 +583,7 @@ class SalesSystemApp:
             logout_icon = tk.Button(top_bar, image=self.logout_photo, bg="#dbb40f", bd=0, command=self.open_login_window)
             logout_icon.pack(side="right", padx=10)
         except Exception as e:
-            print(f"Error loading logout icon: {e}")
-            self.play_Error
+            self.silent_popup("Error", "Error loading Logout icon: {e}", self.play_Error)
 
         # Left side: Language or Back button
         if show_back_button:
@@ -563,8 +594,7 @@ class SalesSystemApp:
                 back_icon = tk.Button(top_bar, image=self.back_photo, bg="#dbb40f", bd=0, command=self.main_menu)
                 back_icon.pack(side="left", padx=10)
             except Exception as e:
-                print(f"Error loading back icon: {e}")
-                self.play_Error
+                self.silent_popup("Error", "Error loading back icon: {e}", self.play_Error)
         else:
             lang_btn = tk.Button(top_bar, text=self.t("Change Language"), bg="#dbb40f", fg="black",
                                 font=("Arial", 10, "bold"), bd=0, command=self.toggle_language)
@@ -604,11 +634,27 @@ class SalesSystemApp:
         threading.Thread(target=playsound, args=(sound_path,), daemon=True).start()
 
     def play_success(self):
-        sound_path = "C:\Main Files\SW Work\مصنع حسن سليم للمنتجات البلاستيكية system\Static\sounds\Test.mp3"
-        threading.Thread(target=playsound, args=(sound_path,), daemon=True).start()
-    
-    def silent_error_popup(self, title, message):
-        self.play_Error()
+        sound_path = os.path.join(BASE_DIR, 'Static', 'sounds', 'Success.mp3')
+
+        def play_sound():
+            if os.path.exists(sound_path):
+                while not self.stop_event.is_set():  # Check if stop_event is set
+                    playsound(sound_path)
+                    break  # In this case, we'll play the sound only once.
+                print("done")
+            else:
+                print("Sound file not found:", sound_path)
+
+        # Create and start the thread to play sound
+        self.stop_event.clear()  # Clear the stop event before starting the thread
+        threading.Thread(target=play_sound, daemon=True).start()
+
+    def stop_sound(self):
+        """Method to stop the sound playing."""
+        self.stop_event.set()
+
+    def silent_popup(self, title, message, callback):
+        callback()
 
         popup = tk.Toplevel()
         popup.title(title)
@@ -631,6 +677,64 @@ class SalesSystemApp:
 
         tk.Label(popup, text=message, fg="red", font=("Arial", 12)).pack(pady=10)
         tk.Button(popup, text="OK", width=10, command=popup.destroy).pack(pady=20)
+        popup.wait_window()  # Blocks further execution until the popup is closed
+        self.stop_sound()
+
+
+######################### Auxiliary classes #########################################################
+class AlwaysOnTopInputDialog(tk.Toplevel):
+    def __init__(self, parent, prompt):
+        super().__init__(parent)
+        self.transient(parent)  # Make sure this dialog is always on top of the parent window
+        self.grab_set()  # Lock interaction to this dialog until it is closed
+
+        self.title("Input")
+        
+        # Create the widgets for the dialog
+        self.prompt_label = tk.Label(self, text=prompt)
+        self.prompt_label.pack(padx=10, pady=10)
+        
+        self.entry = tk.Entry(self)
+        self.entry.pack(padx=10, pady=10)
+        self.entry.focus_set()  # Set focus on the entry field
+
+        self.result = None
+        
+        self.ok_button = tk.Button(self, text="OK", command=self.on_ok)
+        self.ok_button.pack(pady=5)
+
+        self.after(1, self.adjust_geometry) 
+
+        # Center the dialog on the screen
+        self.center_dialog(parent)
+
+    def adjust_geometry(self):
+        # Set the fixed size of the dialog window after widget creation
+        self.geometry("300x150")  # Width=400, Height=150 (Fixed Size)
+
+    def center_dialog(self, parent):
+        # Get the screen width and height
+        screen_width = parent.winfo_screenwidth()
+        screen_height = parent.winfo_screenheight()
+
+        # Get the size of the dialog window
+        dialog_width = self.winfo_reqwidth()
+        dialog_height = self.winfo_reqheight()
+
+        # Calculate the position to center the dialog
+        x_position = (screen_width // 2) - (dialog_width // 2)
+        y_position = (screen_height // 2) - (dialog_height // 2)
+
+        # Set the geometry of the dialog window
+        self.geometry(f"{dialog_width}x{dialog_height}+{x_position}+{y_position}")
+
+    def on_ok(self):
+        self.result = self.entry.get()
+        self.destroy()  # Close the dialog when the user clicks OK
+
+    def get_result(self):
+        self.wait_window(self)  # Wait for this window to close and get the result
+        return self.result
 
 ######################### Main #########################################################
 
