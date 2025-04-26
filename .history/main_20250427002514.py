@@ -371,9 +371,11 @@ class SalesSystemApp:
         self.topbar(show_back_button=True)
 
         # MongoDB collections
-        customers_col = self.customers_collection
-        sales_col = 'sales'
-        # products_col = 'products'
+        customers_col = 'customers']
+        # self.db_name.set(customers_col if customers_col else "")
+        # self.table_name.set(table_name if table_name else "")
+        # sales_col = self.db['sales']
+        # products_col = self.db['products']
 
         # Frame for invoice form
         form_frame = tk.Frame(self.root, padx=20, pady=20)

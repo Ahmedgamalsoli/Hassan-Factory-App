@@ -334,7 +334,7 @@ class SalesSystemApp:
                         command=btn_info["command"]).pack(side="left", padx=10)
 
     def manage_database_window(self, db_name=None, table_name=None):
-        # self.db_name.set(db_name if db_name else "")
+        self.db_name.set(db_name if db_name else "")
         self.table_name.set(table_name if table_name else "")
 
         for widget in self.root.winfo_children():
@@ -362,47 +362,7 @@ class SalesSystemApp:
 
         self.display_table()
 
-    def new_sales_invoice(self, user_role):
-        # Clear current window
-        for widget in self.root.winfo_children():
-            widget.destroy()
 
-        # Create top bar
-        self.topbar(show_back_button=True)
-
-        # MongoDB collections
-        customers_col = self.customers_collection
-        sales_col = 'sales'
-        # products_col = 'products'
-
-        # Frame for invoice form
-        form_frame = tk.Frame(self.root, padx=20, pady=20)
-        form_frame.pack(fill=tk.BOTH, expand=True)
-
-        # Customer Dropdown with Search
-        tk.Label(form_frame, text="Customer:").grid(row=0, column=0, sticky='w')
-        self.customer_var = tk.StringVar()
-        self.customer_cb = ttk.Combobox(form_frame, textvariable=self.customer_var)
-        self.customer_cb.grid(row=0, column=1, padx=5, pady=5)
-        
-        # Fetch customers and set autocomplete
-        all_customers = [cust['Name'] for cust in customers_col.find()]
-        self.customer_cb['values'] = all_customers
-        self.customer_cb.bind('<KeyRelease>', lambda event: self.update_search(event, customers_col))
-
-        # Invoice Items Table
-        columns = ("Code", "Product", "Qty", "Price", "Total")
-        self.tree = ttk.Treeview(form_frame, columns=columns, show='headings')
-        for col in columns:
-            self.tree.heading(col, text=col)
-        self.tree.grid(row=2, column=0, columnspan=3, pady=10)
-
-        # Add Product Button
-        tk.Button(form_frame, text="Add Product", command=lambda: self.add_product(products_col)).grid(row=3, column=0)
-
-        # Save Invoice Button
-        tk.Button(form_frame, text="Save Invoice", 
-                command=lambda: self.save_invoice(sales_col, customers_col)).grid(row=4, column=1)
 ############################ Main Functions ########################################
     def display_table(self):
         collection_name = self.table_name.get()
@@ -592,141 +552,6 @@ class SalesSystemApp:
             print(f"Warning: Collection name '{collection_name}' not recognized.")
             return None
         
-    def update_search(self, event, collection):
-        value = event.widget.get()
-        if value == '':
-            data = [cust['Name'] for cust in collection.find()]
-        else:
-            data = [cust['Name'] for cust in collection.find({"Name": {"$regex": f'.*{value}.*', "$options": "i"}})]
-        self.customer_cb['values'] = data
-
-    def add_product(self, products_col):
-        # New window for product selection
-        product_win = tk.Toplevel()
-        product_win.title("Select Product")
-        
-        # Product Search and Selection
-        tk.Label(product_win, text="Search Product:").pack()
-        product_var = tk.StringVar()
-        product_cb = ttk.Combobox(product_win, textvariable=product_var)
-        product_cb.pack()
-        product_cb['values'] = [prod['product_name'] for prod in products_col.find()]
-        
-        # Add selected product to invoice
-        tk.Button(product_win, text="Add", command=lambda: self.add_to_invoice(product_var.get(), products_col)).pack()
-
-    def add_to_invoice(self, product_name, products_col):
-        product = products_col.find_one({"product_name": product_name})
-        if product:
-            self.tree.insert('', 'end', values=(
-                product['Code'],
-                product['product_name'],
-                1,  # Default quantity
-                product['price'],
-                product['price']  # Initial total
-            ))
-    def generate_invoice_number(self):
-        # Use a counter collection for sequential numbering
-        counter_col = self.db['counters']
-        counter = counter_col.find_one_and_update(
-            {'_id': 'invoice_number'},
-            {'$inc': {'sequence_value': 1}},
-            upsert=True,
-            return_document=True
-        )
-        return f"INV-{counter['sequence_value']:04d}"
-
-    def generate_sales_report(self, invoice_id):
-        # Fetch invoice data
-        sales_col = self.db['sales']
-        invoice = sales_col.find_one({'_id': invoice_id})
-        
-        # Fetch customer data
-        customers_col = self.db['customers']
-        customer = customers_col.find_one({'_id': invoice['customer_id']})
-        
-        # Create report window
-        report_win = tk.Toplevel()
-        report_win.title(f"Sales Report - {invoice['invoice_number']}")
-        
-        # Arabic labels with right-to-left layout
-        main_frame = tk.Frame(report_win)
-        main_frame.pack(padx=20, pady=20)
-        
-        # Header Section
-        tk.Label(main_frame, text="فاتورة بيع رقم", font=('Arial', 14, 'bold')).grid(row=0, column=4, sticky='e')
-        tk.Label(main_frame, text=invoice['invoice_number'], font=('Arial', 14)).grid(row=0, column=5, sticky='w')
-        
-        # Customer Information
-        tk.Label(main_frame, text="الاسم:", anchor='e').grid(row=1, column=4, sticky='e')
-        tk.Label(main_frame, text=customer['Name']).grid(row=1, column=5, sticky='w')
-        
-        # Date Information
-        tk.Label(main_frame, text="التاريخ:").grid(row=2, column=4, sticky='e')
-        tk.Label(main_frame, text=invoice['date'].strftime('%d/%m/%Y')).grid(row=2, column=5, sticky='w')
-        
-        # Items Table
-        columns = ('كود الصنف', 'الصنف', 'الكمية', 'سعر الوحدة', 'الإجمالي')
-        tree = ttk.Treeview(main_frame, columns=columns, show='headings', height=4)
-        
-        # Right-to-left column alignment
-        for col in columns:
-            tree.heading(col, text=col, anchor='e')
-            tree.column(col, anchor='e')
-        
-        tree.grid(row=3, column=0, columnspan=6, pady=10)
-        
-        # Add invoice items
-        products_col = self.db['products']
-        for item in invoice['items']:
-            product = products_col.find_one({'Code': item['product_code']})
-            tree.insert('', 'end', values=(
-                item['product_code'],
-                product['product_name'] if product else 'N/A',
-                item['quantity'],
-                f"{float(item['unit_price']):,.2f}",
-                f"{float(item['total']):,.2f}"
-            ))
-        
-        # Totals Section
-        totals_frame = tk.Frame(main_frame)
-        totals_frame.grid(row=4, column=0, columnspan=6, pady=10)
-        
-        totals_data = [
-            ("صافي الفاتورة", invoice['total']),
-            ("حساب سابق", invoice.get('previous_balance', 0)),
-            ("إجمالي الفاتورة", invoice['total'] + invoice.get('previous_balance', 0)),
-            ("المدفوع", invoice.get('amount_paid', 0)),
-            ("الباقي", invoice['balance'])
-        ]
-        
-        for i, (label, value) in enumerate(totals_data):
-            tk.Label(totals_frame, text=label, font=('Arial', 10, 'bold')).grid(row=i, column=0, sticky='e', padx=10)
-            tk.Label(totals_frame, text=f"{value:,.2f}", font=('Arial', 10)).grid(row=i, column=1, sticky='w')
-
-    def save_invoice(self, sales_col, customers_col):
-        # Get customer ID
-        customer = customers_col.find_one({"Name": self.customer_var.get()})
-        
-        # Prepare sales document
-        invoice = {
-            "invoice_number": self.generate_invoice_number(),
-            "date": datetime.now(),
-            "customer_id": customer['_id'],
-            "employee_id": self.user_role['_id'],  # Assuming user_role contains logged-in user
-            "items": [{
-                "product_code": item['values'][0],
-                "quantity": item['values'][2],
-                "unit_price": item['values'][3],
-                "total": item['values'][4]
-            } for item in self.tree.get_children()],
-            "total": sum(float(self.tree.item(item)['values'][4]) for item in self.tree.get_children()),
-            "balance": 0  # Add your balance calculation logic
-        }
-        
-        # Insert into MongoDB
-        sales_col.insert_one(invoice)
-        print("Invoice saved successfully!")
 
     def get_fields_by_name(self, collection_name):
         """Returns the appropriate fields array based on the provided collection name.
@@ -858,7 +683,47 @@ class SalesSystemApp:
 
         # make the top bar with change language button
         self.topbar(show_back_button=True)
+    def new_sales_invoice(self, user_role):
+        # Clear current window
+        for widget in self.root.winfo_children():
+            widget.destroy()
 
+        # Create top bar
+        self.topbar(show_back_button=True)
+
+        # MongoDB collections
+        customers_col = self.db['customers']
+        sales_col = self.db['sales']
+        products_col = self.db['products']
+
+        # Frame for invoice form
+        form_frame = tk.Frame(self.root, padx=20, pady=20)
+        form_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Customer Dropdown with Search
+        tk.Label(form_frame, text="Customer:").grid(row=0, column=0, sticky='w')
+        self.customer_var = tk.StringVar()
+        self.customer_cb = ttk.Combobox(form_frame, textvariable=self.customer_var)
+        self.customer_cb.grid(row=0, column=1, padx=5, pady=5)
+        
+        # Fetch customers and set autocomplete
+        all_customers = [cust['Name'] for cust in customers_col.find()]
+        self.customer_cb['values'] = all_customers
+        self.customer_cb.bind('<KeyRelease>', lambda event: self.update_search(event, customers_col))
+
+        # Invoice Items Table
+        columns = ("Code", "Product", "Qty", "Price", "Total")
+        self.tree = ttk.Treeview(form_frame, columns=columns, show='headings')
+        for col in columns:
+            self.tree.heading(col, text=col)
+        self.tree.grid(row=2, column=0, columnspan=3, pady=10)
+
+        # Add Product Button
+        tk.Button(form_frame, text="Add Product", command=lambda: self.add_product(products_col)).grid(row=3, column=0)
+
+        # Save Invoice Button
+        tk.Button(form_frame, text="Save Invoice", 
+                command=lambda: self.save_invoice(sales_col, customers_col)).grid(row=4, column=1)
 
     def play_Error(self):
         sound_path = os.path.join(BASE_DIR, 'Static', 'sounds', 'Error.mp3')

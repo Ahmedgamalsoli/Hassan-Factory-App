@@ -373,7 +373,7 @@ class SalesSystemApp:
         # MongoDB collections
         customers_col = self.customers_collection
         sales_col = 'sales'
-        # products_col = 'products'
+        products_col = 'products'
 
         # Frame for invoice form
         form_frame = tk.Frame(self.root, padx=20, pady=20)

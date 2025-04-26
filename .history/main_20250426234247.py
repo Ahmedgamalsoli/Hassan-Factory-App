@@ -334,7 +334,7 @@ class SalesSystemApp:
                         command=btn_info["command"]).pack(side="left", padx=10)
 
     def manage_database_window(self, db_name=None, table_name=None):
-        # self.db_name.set(db_name if db_name else "")
+        self.db_name.set(db_name if db_name else "")
         self.table_name.set(table_name if table_name else "")
 
         for widget in self.root.winfo_children():
@@ -371,9 +371,9 @@ class SalesSystemApp:
         self.topbar(show_back_button=True)
 
         # MongoDB collections
-        customers_col = self.customers_collection
-        sales_col = 'sales'
-        # products_col = 'products'
+        customers_col = self.db['customers']
+        sales_col = self.db['sales']
+        products_col = self.db['products']
 
         # Frame for invoice form
         form_frame = tk.Frame(self.root, padx=20, pady=20)
@@ -625,84 +625,6 @@ class SalesSystemApp:
                 product['price'],
                 product['price']  # Initial total
             ))
-    def generate_invoice_number(self):
-        # Use a counter collection for sequential numbering
-        counter_col = self.db['counters']
-        counter = counter_col.find_one_and_update(
-            {'_id': 'invoice_number'},
-            {'$inc': {'sequence_value': 1}},
-            upsert=True,
-            return_document=True
-        )
-        return f"INV-{counter['sequence_value']:04d}"
-
-    def generate_sales_report(self, invoice_id):
-        # Fetch invoice data
-        sales_col = self.db['sales']
-        invoice = sales_col.find_one({'_id': invoice_id})
-        
-        # Fetch customer data
-        customers_col = self.db['customers']
-        customer = customers_col.find_one({'_id': invoice['customer_id']})
-        
-        # Create report window
-        report_win = tk.Toplevel()
-        report_win.title(f"Sales Report - {invoice['invoice_number']}")
-        
-        # Arabic labels with right-to-left layout
-        main_frame = tk.Frame(report_win)
-        main_frame.pack(padx=20, pady=20)
-        
-        # Header Section
-        tk.Label(main_frame, text="فاتورة بيع رقم", font=('Arial', 14, 'bold')).grid(row=0, column=4, sticky='e')
-        tk.Label(main_frame, text=invoice['invoice_number'], font=('Arial', 14)).grid(row=0, column=5, sticky='w')
-        
-        # Customer Information
-        tk.Label(main_frame, text="الاسم:", anchor='e').grid(row=1, column=4, sticky='e')
-        tk.Label(main_frame, text=customer['Name']).grid(row=1, column=5, sticky='w')
-        
-        # Date Information
-        tk.Label(main_frame, text="التاريخ:").grid(row=2, column=4, sticky='e')
-        tk.Label(main_frame, text=invoice['date'].strftime('%d/%m/%Y')).grid(row=2, column=5, sticky='w')
-        
-        # Items Table
-        columns = ('كود الصنف', 'الصنف', 'الكمية', 'سعر الوحدة', 'الإجمالي')
-        tree = ttk.Treeview(main_frame, columns=columns, show='headings', height=4)
-        
-        # Right-to-left column alignment
-        for col in columns:
-            tree.heading(col, text=col, anchor='e')
-            tree.column(col, anchor='e')
-        
-        tree.grid(row=3, column=0, columnspan=6, pady=10)
-        
-        # Add invoice items
-        products_col = self.db['products']
-        for item in invoice['items']:
-            product = products_col.find_one({'Code': item['product_code']})
-            tree.insert('', 'end', values=(
-                item['product_code'],
-                product['product_name'] if product else 'N/A',
-                item['quantity'],
-                f"{float(item['unit_price']):,.2f}",
-                f"{float(item['total']):,.2f}"
-            ))
-        
-        # Totals Section
-        totals_frame = tk.Frame(main_frame)
-        totals_frame.grid(row=4, column=0, columnspan=6, pady=10)
-        
-        totals_data = [
-            ("صافي الفاتورة", invoice['total']),
-            ("حساب سابق", invoice.get('previous_balance', 0)),
-            ("إجمالي الفاتورة", invoice['total'] + invoice.get('previous_balance', 0)),
-            ("المدفوع", invoice.get('amount_paid', 0)),
-            ("الباقي", invoice['balance'])
-        ]
-        
-        for i, (label, value) in enumerate(totals_data):
-            tk.Label(totals_frame, text=label, font=('Arial', 10, 'bold')).grid(row=i, column=0, sticky='e', padx=10)
-            tk.Label(totals_frame, text=f"{value:,.2f}", font=('Arial', 10)).grid(row=i, column=1, sticky='w')
 
     def save_invoice(self, sales_col, customers_col):
         # Get customer ID
@@ -727,7 +649,7 @@ class SalesSystemApp:
         # Insert into MongoDB
         sales_col.insert_one(invoice)
         print("Invoice saved successfully!")
-
+        
     def get_fields_by_name(self, collection_name):
         """Returns the appropriate fields array based on the provided collection name.
         Args: collection_name (str): The name of the collection (e.g., "Employees", "Products").

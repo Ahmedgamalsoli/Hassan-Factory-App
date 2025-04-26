@@ -334,7 +334,7 @@ class SalesSystemApp:
                         command=btn_info["command"]).pack(side="left", padx=10)
 
     def manage_database_window(self, db_name=None, table_name=None):
-        # self.db_name.set(db_name if db_name else "")
+        self.db_name.set(db_name if db_name else "")
         self.table_name.set(table_name if table_name else "")
 
         for widget in self.root.winfo_children():
@@ -371,9 +371,9 @@ class SalesSystemApp:
         self.topbar(show_back_button=True)
 
         # MongoDB collections
-        customers_col = self.customers_collection
-        sales_col = 'sales'
-        # products_col = 'products'
+        customers_col = self.db['customers']
+        sales_col = self.db['sales']
+        products_col = self.db['products']
 
         # Frame for invoice form
         form_frame = tk.Frame(self.root, padx=20, pady=20)
@@ -703,7 +703,7 @@ class SalesSystemApp:
         for i, (label, value) in enumerate(totals_data):
             tk.Label(totals_frame, text=label, font=('Arial', 10, 'bold')).grid(row=i, column=0, sticky='e', padx=10)
             tk.Label(totals_frame, text=f"{value:,.2f}", font=('Arial', 10)).grid(row=i, column=1, sticky='w')
-
+    
     def save_invoice(self, sales_col, customers_col):
         # Get customer ID
         customer = customers_col.find_one({"Name": self.customer_var.get()})
