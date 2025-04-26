@@ -356,6 +356,19 @@ class SalesSystemApp:
         self.tree = ttk.Treeview(self.root, show="headings")
         self.tree.place(x=0, y=190)
 
+        # # Create scrollbars inside frame
+        # self.tree_xscroll = ttk.Scrollbar(self.tree_frame, orient="horizontal", command=self.tree.xview)
+        # self.tree_yscroll = ttk.Scrollbar(self.tree_frame, orient="vertical", command=self.tree.yview)
+
+        # # Attach scrollbars to tree
+        # self.tree.configure(xscrollcommand=self.tree_xscroll.set, yscrollcommand=self.tree_yscroll.set)
+
+        # # Place them manually
+        # self.tree.place(x=0, y=0, width=780, height=230)  # little smaller so scrollbars fit
+        # self.tree_xscroll.place(x=0, y=230, width=780, height=20)
+        # self.tree_yscroll.place(x=780, y=0, width=20, height=230)
+
+
         tk.Button(self.root, text="Add Record", command=self.add_entry).place(width=120, height=40, x=100, y=450)
         tk.Button(self.root, text="Edit Record", command=self.edit_entry).place(width=120, height=40, x=250, y=450)
         tk.Button(self.root, text="Delete Record", command=self.delete_entry).place(width=120, height=40, x=400, y=450)
@@ -409,7 +422,11 @@ class SalesSystemApp:
         search_query = self.search_query.get()
         
         current_collection = self.get_collection_by_name(collection_name)
-    
+        
+        # self.tree = ttk.Treeview(root)
+        # scrollbar = ttk.Scrollbar(root, orient="horizontal", command=self.tree.xview)
+        # self.tree.configure(yscrollcommand=scrollbar.set)
+
         for row in self.tree.get_children():
             self.tree.delete(row)
         
@@ -431,7 +448,7 @@ class SalesSystemApp:
                 data = list(current_collection.find())
 
             if data:
-                columns = list(data[0].keys())
+                columns = self.get_fields_by_name(collection_name)
                 if '_id' in columns:
                     columns.remove('_id')
                     columns.insert(0, self.t("ID")) # ROW ID
@@ -505,15 +522,15 @@ class SalesSystemApp:
             messagebox.showerror("Error", "Could not retrieve record for editing.")
             return
 
-        fields = [key for key in first_document.keys() if key != '_id']
+        fields = self.get_fields_by_name(collection_name)
         updated_values = {}
 
         for field in fields:
-            current_value = first_document.get(field, '')
-            new_value = simpledialog.askstring("Edit", f"Enter new value for {field}:", initialvalue=current_value)
-            if new_value is None: #TODO this part could be removed ... (keep old value for example)
-                return
-            updated_values[field] = new_value
+            dialog = AlwaysOnTopInputDialog(root, f"Enter value for {field}:")
+            value = dialog.get_result()
+            if value is None:
+                return            
+            updated_values[field] = value
 
         try:
             current_collection.update_one({"_id": record_id}, {"$set": updated_values})
@@ -734,37 +751,66 @@ class SalesSystemApp:
         Returns: list: A list of field names for the corresponding collection, or an empty list if the name is not recognized.
         """
         if collection_name == "Employees":
-            return ["id", "username", "salary", "department", "hire_date"]
+            return ["Name", "Password", "Id", "Role", "Join_Date", "National_id_pic", "Phone_number", "Address", "Salary"]
+        
         elif collection_name == "Products":
             return ["product_name", "category", "price", "stock_quantity", "supplier"]
+        
         elif collection_name == "Sales":
             return ["sale_date", "product_id", "quantity", "total_price", "customer_id"]
+        
         elif collection_name == "Customers":
-            return ["customer_id", "name", "email", "phone", "address"]
+            return ["Name", "Phone_number1", "Phone_number2", "Code", "Purchase_mgr_number", "Financial_mgr_number", "Purchase_mgr_name", 
+                    "Financial_mgr_name", "Email", "Company_address", "Extra_address", "Maps_link", "Bank_account",
+                    "Instapay", "E_wallet", "Accountant_name", "Accountant_number", "Sales_grade", "Growth_grade", "Frequency_grade", "Credit",
+                    "Debit"]
+        
         elif collection_name == "Suppliers":
-            return ["supplier_id", "name", "contact_person", "phone", "address"]
+            return ["Name", "Phone_number1", "Phone_number2", "Code", "Purchase_mgr_number", "Financial_mgr_number", "Purchase_mgr_name", 
+                    "Financial_mgr_name", "Email", "Company_address", "Extra_address", "Maps_link", "Bank_account",
+                    "Instapay", "E_wallet", "Accountant_name", "Accountant_number", "Sales_grade", "Growth_grade", "Frequency_grade", "Credit",
+                    "Debit" ]
+        
         elif collection_name == "Shipping":
             return ["order_id", "shipping_date", "tracking_number", "shipping_address"]
+        
         elif collection_name == "Orders":
             return ["order_id", "order_date", "customer_id", "total_amount", "status"]
+        
         elif collection_name == "Expenses":
             return ["expense_id", "expense_type", "amount", "date", "description"]
+        
         elif collection_name == "Employee_appointments":
             return ["appointment_id", "employee_id", "appointment_date", "appointment_type"]
+        
         elif collection_name == "Daily_shifts":
             return ["shift_id", "employee_id", "shift_date", "start_time", "end_time"]
+        
         elif collection_name == "Accounts":
             return ["account_id", "account_name", "balance", "account_type"]
+        
         elif collection_name == "Transactions":
             return ["transaction_id", "account_id", "transaction_date", "amount", "transaction_type"]
+        
         elif collection_name == "Big_deals":
             return ["deal_id", "deal_date", "customer_id", "product_id", "deal_value"]
+        
         elif collection_name == "TEX_Calculations":
             return ["calculation_id", "product_id", "calculation_date", "value"]
+        
         else:
             print(f"Warning: Collection name '{collection_name}' not recognized.")
             return []
         
+    def on_canvas_press(self, event):
+        self.tree.scan_mark(event.x, event.y)
+
+    def on_canvas_drag(self, event):
+        self.tree.scan_dragto(event.x, event.y, gain=1)
+
+    # Update scroll region dynamically
+    def update_scroll_region(self, event=None):
+        self.tree.configure(scrollregion=self.tree.bbox("all"))
 
     # Function to Create Circular Image
     def create_circular_image(self, image_path, size=(100, 100)):  
@@ -916,6 +962,7 @@ class SalesSystemApp:
 
         tk.Label(popup, text=message, fg="#b58612", font=("Arial", 12)).pack(pady=10)
         tk.Button(popup, text="OK", width=10, command=popup.destroy).pack(pady=20)
+
         popup.wait_window()  # Blocks further execution until the popup is closed
         self.stop_sound()
 
@@ -941,6 +988,7 @@ class AlwaysOnTopInputDialog(tk.Toplevel):
         
         self.ok_button = tk.Button(self, text="OK", command=self.on_ok)
         self.ok_button.pack(pady=5)
+        self.ok_button.bind("<Return>", lambda event: self.ok_button.invoke())
 
         self.after(1, self.adjust_geometry) 
 
