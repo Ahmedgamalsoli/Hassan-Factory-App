@@ -83,12 +83,12 @@ class SalesSystemApp:
             "New Purchase Invoice": {"Arabic": "فاتورة مشتريات جديدة", "English": "New Purchase Invoice"},
             "Receive Payment": {"Arabic": "استلام دفعة", "English": "Receive Payment"},
             "Make Payment": {"Arabic": "دفع دفعة", "English": "Make Payment"},
-            "Customers": {"Arabic": "العملاء", "English": "Customers"},
-            "Suppliers": {"Arabic": "الموردين", "English": "Suppliers"},
-            "Products": {"Arabic": "المنتجات", "English": "Products"},
-            "Materials": {"Arabic": "الخامات", "English": "Materials"},
-            # "Reports": {"Arabic": "التقارير", "English": "Reports"},
-            "Employees": {"Arabic": "الموظفين", "English": "Employees"},
+            # "Change Language": {"Arabic": "تغيير اللغة", "English": "Change Language"},
+            # "Change Language": {"Arabic": "تغيير اللغة", "English": "Change Language"},
+            # "Change Language": {"Arabic": "تغيير اللغة", "English": "Change Language"},
+            # "Change Language": {"Arabic": "تغيير اللغة", "English": "Change Language"},
+            # "Change Language": {"Arabic": "تغيير اللغة", "English": "Change Language"},
+            # "Change Language": {"Arabic": "تغيير اللغة", "English": "Change Language"},
         }
         self.db_name = tk.StringVar()
         self.table_name = tk.StringVar()
@@ -246,22 +246,14 @@ class SalesSystemApp:
             "command": lambda: self.trash(self.user_role)},
             {"text": self.t("New Purchase Invoice"), "image": "Purchase.png", 
             "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Receive Payment"), "image": "Recieve.png", 
+            {"text": self.t("Receive Payment"), "image": "Exit.png", 
             "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Make Payment"), "image": "payment.png", 
-            "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Customers"), "image": "customers.png", 
-            "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Suppliers"), "image": "suppliers.png", 
-            "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Employees"), "image": "Employees.png", 
-            "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Products"), "image": "Products.png", 
-            "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Materials"), "image": "Materials.png", 
-            "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Reports"), "image": "Reports.png", 
-            "command": lambda: self.trash(self.user_role)},
+            {"text": self.t("Make Payment"), "image": "Exit.png", 
+            "command": lambda: self.trash(self.user_role)}
+            # {"text": self.t("Employees Appointments"), "image": "Exit.png", 
+            # "command": lambda: self.trash(self.user_role)},
+            # {"text": self.t("Daily Shifts"), "image": "Exit.png", 
+            # "command": lambda: self.trash(self.user_role)}
         ]
 
         # if self.user_role == "employee":
@@ -284,7 +276,7 @@ class SalesSystemApp:
             #     "command": lambda: self.trash(self.user_role)},
             #     {"text": self.t("Big Deals"), "image": "Exit.png", 
             #     "command": lambda: self.trash(self.user_role)},
-                {"text": self.t("Database"), "image": "database.png", 
+                {"text": self.t("Database"), "image": "Exit.png", 
                 "command": lambda: self.check_access_and_open(self.user_role, 
                                                             db_name="clothes_sales.db", 
                                                             table_name="Employees")}
@@ -298,7 +290,7 @@ class SalesSystemApp:
             for index, btn_info in enumerate(buttons):
                 # Load and resize image
                 img_path = os.path.join(BASE_DIR, "Static", "images", btn_info["image"])
-                img = Image.open(img_path).resize((70, 70), Image.LANCZOS)
+                img = Image.open(img_path).resize((50, 50), Image.LANCZOS)
                 photo_img = ImageTk.PhotoImage(img)
                 images.append(photo_img)
 

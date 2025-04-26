@@ -260,7 +260,7 @@ class SalesSystemApp:
             "command": lambda: self.trash(self.user_role)},
             {"text": self.t("Materials"), "image": "Materials.png", 
             "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Reports"), "image": "Reports.png", 
+            {"text": self.t("Reports"), "image": "Exit.png", 
             "command": lambda: self.trash(self.user_role)},
         ]
 

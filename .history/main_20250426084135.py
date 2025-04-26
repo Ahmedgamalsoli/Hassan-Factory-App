@@ -83,12 +83,12 @@ class SalesSystemApp:
             "New Purchase Invoice": {"Arabic": "فاتورة مشتريات جديدة", "English": "New Purchase Invoice"},
             "Receive Payment": {"Arabic": "استلام دفعة", "English": "Receive Payment"},
             "Make Payment": {"Arabic": "دفع دفعة", "English": "Make Payment"},
-            "Customers": {"Arabic": "العملاء", "English": "Customers"},
-            "Suppliers": {"Arabic": "الموردين", "English": "Suppliers"},
-            "Products": {"Arabic": "المنتجات", "English": "Products"},
-            "Materials": {"Arabic": "الخامات", "English": "Materials"},
-            # "Reports": {"Arabic": "التقارير", "English": "Reports"},
-            "Employees": {"Arabic": "الموظفين", "English": "Employees"},
+            "Change Language": {"Arabic": "العملاء", "English": "Customers"},
+            "Change Language": {"Arabic": "الموردين", "English": "Suppliers"},
+            "Change Language": {"Arabic": "تغيير اللغة", "English": "Change Language"},
+            "Change Language": {"Arabic": "تغيير اللغة", "English": "Change Language"},
+            "Change Language": {"Arabic": "تغيير اللغة", "English": "Change Language"},
+            "Change Language": {"Arabic": "تغيير اللغة", "English": "Change Language"},
         }
         self.db_name = tk.StringVar()
         self.table_name = tk.StringVar()
@@ -249,19 +249,11 @@ class SalesSystemApp:
             {"text": self.t("Receive Payment"), "image": "Recieve.png", 
             "command": lambda: self.trash(self.user_role)},
             {"text": self.t("Make Payment"), "image": "payment.png", 
-            "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Customers"), "image": "customers.png", 
-            "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Suppliers"), "image": "suppliers.png", 
-            "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Employees"), "image": "Employees.png", 
-            "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Products"), "image": "Products.png", 
-            "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Materials"), "image": "Materials.png", 
-            "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Reports"), "image": "Reports.png", 
-            "command": lambda: self.trash(self.user_role)},
+            "command": lambda: self.trash(self.user_role)}
+            # {"text": self.t("Employees Appointments"), "image": "Exit.png", 
+            # "command": lambda: self.trash(self.user_role)},
+            # {"text": self.t("Daily Shifts"), "image": "Exit.png", 
+            # "command": lambda: self.trash(self.user_role)}
         ]
 
         # if self.user_role == "employee":

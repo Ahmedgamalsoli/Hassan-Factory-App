@@ -79,16 +79,9 @@ class SalesSystemApp:
             "Big Deals": {"Arabic": "الصفقات الكبيرة", "English": "Big Deals"},
             "Database": {"Arabic": "قاعدة البيانات", "English": "Database"},
             "Change Language": {"Arabic": "تغيير اللغة", "English": "Change Language"},
-            "New Sales Invoice": {"Arabic": "فاتورة مبيعات جديدة", "English": "New Sales Invoice"},
-            "New Purchase Invoice": {"Arabic": "فاتورة مشتريات جديدة", "English": "New Purchase Invoice"},
-            "Receive Payment": {"Arabic": "استلام دفعة", "English": "Receive Payment"},
-            "Make Payment": {"Arabic": "دفع دفعة", "English": "Make Payment"},
-            "Customers": {"Arabic": "العملاء", "English": "Customers"},
-            "Suppliers": {"Arabic": "الموردين", "English": "Suppliers"},
-            "Products": {"Arabic": "المنتجات", "English": "Products"},
-            "Materials": {"Arabic": "الخامات", "English": "Materials"},
-            # "Reports": {"Arabic": "التقارير", "English": "Reports"},
-            "Employees": {"Arabic": "الموظفين", "English": "Employees"},
+            "Change Language": {"Arabic": "فاتورة مبيعات جديدة", "English": "New Sales Invoice"},
+            "Change Language": {"Arabic": "فاتورة شراء جديدة", "English": "New Purchase Invoice"},
+            "Change Language": {"Arabic": "تغيير اللغة", "English": "Change Language"},
         }
         self.db_name = tk.StringVar()
         self.table_name = tk.StringVar()
@@ -242,49 +235,41 @@ class SalesSystemApp:
 
         # Define buttons with images, text, and commands
         buttons = [
-            {"text": self.t("New Sales Invoice"), "image": "Sales.png", 
+            {"text": self.t("Add New Product"), "image": "Exit.png", 
             "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("New Purchase Invoice"), "image": "Purchase.png", 
+            {"text": self.t("Place Orders"), "image": "Exit.png", 
             "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Receive Payment"), "image": "Recieve.png", 
+            {"text": self.t("Expenses"), "image": "Exit.png", 
             "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Make Payment"), "image": "payment.png", 
+            {"text": self.t("Returns"), "image": "Exit.png", 
             "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Customers"), "image": "customers.png", 
+            {"text": self.t("Employees Appointments"), "image": "Exit.png", 
             "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Suppliers"), "image": "suppliers.png", 
-            "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Employees"), "image": "Employees.png", 
-            "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Products"), "image": "Products.png", 
-            "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Materials"), "image": "Materials.png", 
-            "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Reports"), "image": "Reports.png", 
-            "command": lambda: self.trash(self.user_role)},
+            {"text": self.t("Daily Shifts"), "image": "Exit.png", 
+            "command": lambda: self.trash(self.user_role)}
         ]
 
-        # if self.user_role == "employee":
-        #     buttons.extend([
-        #         {"text": self.t("View Product"), "image": "Exit.png", 
-        #         "command": lambda: self.trash(self.user_role)},
-        #         {"text": self.t("View Orders"), "image": "Exit.png", 
-        #         "command": lambda: self.trash(self.user_role)},
-        #         {"text": self.t("View Customers"), "image": "Exit.png", 
-        #         "command": lambda: self.trash(self.user_role)}
-        #     ])
+        if self.user_role == "employee":
+            buttons.extend([
+                {"text": self.t("View Product"), "image": "Exit.png", 
+                "command": lambda: self.trash(self.user_role)},
+                {"text": self.t("View Orders"), "image": "Exit.png", 
+                "command": lambda: self.trash(self.user_role)},
+                {"text": self.t("View Customers"), "image": "Exit.png", 
+                "command": lambda: self.trash(self.user_role)}
+            ])
 
         if self.user_role == "admin":
-            # buttons.insert(1, {"text": self.t("Edit Product"), "image": "Exit.png", 
-            #                 "command": lambda: self.trash(self.user_role)})
+            buttons.insert(1, {"text": self.t("Edit Product"), "image": "Exit.png", 
+                            "command": lambda: self.trash(self.user_role)})
             buttons.extend([
-            #     {"text": self.t("Accounting"), "image": "Exit.png", 
-            #     "command": lambda: self.Accounting_Window()},
-            #     {"text": self.t("Reports"), "image": "Exit.png", 
-            #     "command": lambda: self.trash(self.user_role)},
-            #     {"text": self.t("Big Deals"), "image": "Exit.png", 
-            #     "command": lambda: self.trash(self.user_role)},
-                {"text": self.t("Database"), "image": "database.png", 
+                {"text": self.t("Accounting"), "image": "Exit.png", 
+                "command": lambda: self.Accounting_Window()},
+                {"text": self.t("Reports"), "image": "Exit.png", 
+                "command": lambda: self.trash(self.user_role)},
+                {"text": self.t("Big Deals"), "image": "Exit.png", 
+                "command": lambda: self.trash(self.user_role)},
+                {"text": self.t("Database"), "image": "Exit.png", 
                 "command": lambda: self.check_access_and_open(self.user_role, 
                                                             db_name="clothes_sales.db", 
                                                             table_name="Employees")}
@@ -298,7 +283,7 @@ class SalesSystemApp:
             for index, btn_info in enumerate(buttons):
                 # Load and resize image
                 img_path = os.path.join(BASE_DIR, "Static", "images", btn_info["image"])
-                img = Image.open(img_path).resize((70, 70), Image.LANCZOS)
+                img = Image.open(img_path).resize((100, 100), Image.LANCZOS)
                 photo_img = ImageTk.PhotoImage(img)
                 images.append(photo_img)
 

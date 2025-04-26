@@ -87,7 +87,7 @@ class SalesSystemApp:
             "Suppliers": {"Arabic": "الموردين", "English": "Suppliers"},
             "Products": {"Arabic": "المنتجات", "English": "Products"},
             "Materials": {"Arabic": "الخامات", "English": "Materials"},
-            # "Reports": {"Arabic": "التقارير", "English": "Reports"},
+            "Change Language": {"Arabic": "التقارير", "English": "Reports"},
             "Employees": {"Arabic": "الموظفين", "English": "Employees"},
         }
         self.db_name = tk.StringVar()
@@ -258,9 +258,9 @@ class SalesSystemApp:
             "command": lambda: self.trash(self.user_role)},
             {"text": self.t("Products"), "image": "Products.png", 
             "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Materials"), "image": "Materials.png", 
+            {"text": self.t("Daily Shifts"), "image": "Exit.png", 
             "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Reports"), "image": "Reports.png", 
+            {"text": self.t("Daily Shifts"), "image": "Exit.png", 
             "command": lambda: self.trash(self.user_role)},
         ]
 
