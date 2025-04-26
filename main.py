@@ -80,16 +80,6 @@ class SalesSystemApp:
             "Big Deals": {"Arabic": "الصفقات الكبيرة", "English": "Big Deals"},
             "Database": {"Arabic": "قاعدة البيانات", "English": "Database"},
             "Change Language": {"Arabic": "تغيير اللغة", "English": "Change Language"},
-            "New Sales Invoice": {"Arabic": "فاتورة مبيعات جديدة", "English": "New Sales Invoice"},
-            "New Purchase Invoice": {"Arabic": "فاتورة مشتريات جديدة", "English": "New Purchase Invoice"},
-            "Receive Payment": {"Arabic": "استلام دفعة", "English": "Receive Payment"},
-            "Make Payment": {"Arabic": "دفع دفعة", "English": "Make Payment"},
-            "Customers": {"Arabic": "العملاء", "English": "Customers"},
-            "Suppliers": {"Arabic": "الموردين", "English": "Suppliers"},
-            "Products": {"Arabic": "المنتجات", "English": "Products"},
-            "Materials": {"Arabic": "الخامات", "English": "Materials"},
-            # "Reports": {"Arabic": "التقارير", "English": "Reports"},
-            "Employees": {"Arabic": "الموظفين", "English": "Employees"},
         }
         self.db_name = tk.StringVar()
         self.table_name = tk.StringVar()
@@ -234,61 +224,38 @@ class SalesSystemApp:
         for widget in self.root.winfo_children():
             widget.destroy()
 
-        # Create the top bar
+        # make the top bar with change language button
         self.topbar(show_back_button=False)
 
-        # Main button frame
-        button_frame = tk.Frame(self.root, bg="white")
-        button_frame.pack(pady=30)
+        # Buttons frame
+        button_frame = tk.Frame(self.root, bg="White", bd=2, relief="solid")
+        button_frame.pack(pady=20, padx=20, fill="x")
+        # # we will implement it later
+        # self.Dashboard(self.user_role)
 
-        # Define buttons with images, text, and commands
         buttons = [
-            {"text": self.t("New Sales Invoice"), "image": "Sales.png", 
-            "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("New Purchase Invoice"), "image": "Purchase.png", 
-            "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Receive Payment"), "image": "Recieve.png", 
-            "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Make Payment"), "image": "payment.png", 
-            "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Customers"), "image": "customers.png", 
-            "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Suppliers"), "image": "suppliers.png", 
-            "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Employees"), "image": "Employees.png", 
-            "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Products"), "image": "Products.png", 
-            "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Materials"), "image": "Materials.png", 
-            "command": lambda: self.trash(self.user_role)},
-            {"text": self.t("Reports"), "image": "Reports.png", 
-            "command": lambda: self.trash(self.user_role)},
+            {"text": self.t("Add New Product"), "command": lambda: self.trash(self.user_role)},
+            {"text": self.t("place Orders"), "command": lambda: self.trash(self.user_role)},
+            {"text": self.t("Expenses"), "command": lambda: self.trash(self.user_role)},
+            {"text": self.t("Returns"), "command": lambda: self.trash(self.user_role)},
+            {"text": self.t("Employees Appointments"), "command": lambda: self.trash(self.user_role)},
+            {"text": self.t("Daily Shifts"), "command": lambda: self.trash(self.user_role)}
         ]
 
-        # if self.user_role == "employee":
-        #     buttons.extend([
-        #         {"text": self.t("View Product"), "image": "Exit.png", 
-        #         "command": lambda: self.trash(self.user_role)},
-        #         {"text": self.t("View Orders"), "image": "Exit.png", 
-        #         "command": lambda: self.trash(self.user_role)},
-        #         {"text": self.t("View Customers"), "image": "Exit.png", 
-        #         "command": lambda: self.trash(self.user_role)}
-        #     ])
+        if self.user_role == "employee":
+            buttons.extend([
+                {"text": self.t("View Product"), "command": lambda: self.trash(self.user_role)},
+                {"text": self.t("View Orders"), "command": lambda: self.trash(self.user_role)},
+                {"text": self.t("View Customers"), "command": lambda: self.trash(self.user_role)}
+            ])
 
         if self.user_role == "admin":
-            # buttons.insert(1, {"text": self.t("Edit Product"), "image": "Exit.png", 
-            #                 "command": lambda: self.trash(self.user_role)})
+            buttons.insert(1, {"text": self.t("Edit Product"), "command": lambda: self.trash(self.user_role)})
             buttons.extend([
-            #     {"text": self.t("Accounting"), "image": "Exit.png", 
-            #     "command": lambda: self.Accounting_Window()},
-            #     {"text": self.t("Reports"), "image": "Exit.png", 
-            #     "command": lambda: self.trash(self.user_role)},
-            #     {"text": self.t("Big Deals"), "image": "Exit.png", 
-            #     "command": lambda: self.trash(self.user_role)},
-                {"text": self.t("Database"), "image": "database.png", 
-                "command": lambda: self.check_access_and_open(self.user_role, 
-                                                            db_name="clothes_sales.db", 
-                                                            table_name="Employees")}
+                {"text": self.t("Accounting"), "command": lambda: self.trash(self.user_role)},
+                {"text": self.t("Reports"), "command": lambda: self.trash(self.user_role)},
+                {"text": self.t("Big Deals"), "command": lambda: self.trash(self.user_role)},
+                {"text": self.t("Database"), "command": lambda: self.check_access_and_open(self.user_role, db_name="clothes_sales.db", table_name="Employees")}
             ])
 
         # Load images and create buttons
@@ -467,11 +434,11 @@ class SalesSystemApp:
         updated_values = {}
 
         for field in fields:
-            current_value = first_document.get(field, '')
-            new_value = simpledialog.askstring("Edit", f"Enter new value for {field}:", initialvalue=current_value)
-            if new_value is None: #TODO this part could be removed ... (keep old value for example)
-                return
-            updated_values[field] = new_value
+            dialog = AlwaysOnTopInputDialog(root, f"Enter value for {field}:")
+            value = dialog.get_result()
+            if value is None:
+                return            
+            updated_values[field] = value
 
         try:
             current_collection.update_one({"_id": record_id}, {"$set": updated_values})
@@ -690,9 +657,9 @@ class SalesSystemApp:
         else:
             print("Sound file not found:", sound_path)
 
-    # def play_(self):
-    #     sound_path = os.path.join(BASE_DIR, 'Static', 'sounds', 'Error.mp3')
-    #     threading.Thread(target=playsound, args=(sound_path,), daemon=True).start()
+    def play_(self):
+        sound_path = os.path.join(BASE_DIR, 'Static', 'sounds', 'Error.mp3')
+        threading.Thread(target=playsound, args=(sound_path,), daemon=True).start()
 
     def play_success(self):
         sound_path = os.path.join(BASE_DIR, 'Static', 'sounds', 'Success.mp3')
@@ -736,7 +703,7 @@ class SalesSystemApp:
 
         popup.geometry(f"{popup_width}x{popup_height}+{pos_x}+{pos_y}")
 
-        tk.Label(popup, text=message, fg="#b58612", font=("Arial", 12)).pack(pady=10)
+        tk.Label(popup, text=message, fg="red", font=("Arial", 12)).pack(pady=10)
         tk.Button(popup, text="OK", width=10, command=popup.destroy).pack(pady=20)
         popup.wait_window()  # Blocks further execution until the popup is closed
         self.stop_sound()
