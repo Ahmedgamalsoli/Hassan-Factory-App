@@ -65,7 +65,7 @@ class SalesSystemApp:
 
         self.language = "Arabic"  # default language
         self.translations = {
-            "Add New Product": {"Arabic": "امر انتاج", "English": "Production order"},
+            "Add New Product": {"Arabic": "إضافة منتج جديد", "English": "Add New Product"},
             "Place Orders": {"Arabic": "تنفيذ الطلبات", "English": "Place Orders"},
             "Expenses": {"Arabic": "المصاريف", "English": "Expenses"},
             "Returns": {"Arabic": "المرتجعات", "English": "Returns"},
@@ -557,7 +557,7 @@ class SalesSystemApp:
         Returns: list: A list of field names for the corresponding collection, or an empty list if the name is not recognized.
         """
         if collection_name == "Employees":
-            return ["id", "username", "salary", "department", "hire_date"]
+            return ["name", "position", "salary", "department", "hire_date"]
         elif collection_name == "Products":
             return ["product_name", "category", "price", "stock_quantity", "supplier"]
         elif collection_name == "Sales":
@@ -661,7 +661,7 @@ class SalesSystemApp:
             lang_btn.pack(side="left", padx=10)
 
         # Time label
-        time_label = tk.Label(top_bar, text=datetime.now().strftime('%B %d, %Y %I:%M %p'),
+        time_label = tk.Label(top_bar, text=datetime.now().strftime('%B %d, %Y <--> %I:%M %p'),
                             font=("Arial", 20, "bold"), fg="black", bg="#dbb40f")
 
         time_label.place(relx=0.5, rely=0.5, anchor="center")

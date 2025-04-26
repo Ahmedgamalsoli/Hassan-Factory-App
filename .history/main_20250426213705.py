@@ -557,7 +557,7 @@ class SalesSystemApp:
         Returns: list: A list of field names for the corresponding collection, or an empty list if the name is not recognized.
         """
         if collection_name == "Employees":
-            return ["id", "username", "salary", "department", "hire_date"]
+            return ["name", "position", "salary", "department", "hire_date"]
         elif collection_name == "Products":
             return ["product_name", "category", "price", "stock_quantity", "supplier"]
         elif collection_name == "Sales":

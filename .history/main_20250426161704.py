@@ -65,7 +65,7 @@ class SalesSystemApp:
 
         self.language = "Arabic"  # default language
         self.translations = {
-            "Add New Product": {"Arabic": "امر انتاج", "English": "Production order"},
+            "Add New Product": {"Arabic": "إضافة منتج جديد", "English": "Add New Product"},
             "Place Orders": {"Arabic": "تنفيذ الطلبات", "English": "Place Orders"},
             "Expenses": {"Arabic": "المصاريف", "English": "Expenses"},
             "Returns": {"Arabic": "المرتجعات", "English": "Returns"},
@@ -557,7 +557,7 @@ class SalesSystemApp:
         Returns: list: A list of field names for the corresponding collection, or an empty list if the name is not recognized.
         """
         if collection_name == "Employees":
-            return ["id", "username", "salary", "department", "hire_date"]
+            return ["name", "position", "salary", "department", "hire_date"]
         elif collection_name == "Products":
             return ["product_name", "category", "price", "stock_quantity", "supplier"]
         elif collection_name == "Sales":
