@@ -99,7 +99,7 @@ class SalesSystemApp:
         self.user_name = ""  # Placeholder for dynamic user name
         self.user_role = ""  # Placeholder for user role
         self.all_customers = None  # Will be loaded on first search
-        self._after_id = None
+        
         self.logout_icon_path = os.path.join(BASE_DIR, "Static", "images", "Logout.png")  # Path to logout icon
         self.exit_icon_path   = os.path.join(BASE_DIR, "Static", "images", "Exit.png")  # Path to exit icon
         self.back_icon_path   = os.path.join(BASE_DIR, "Static", "images", "Back.png")  # Path to back icon
@@ -405,7 +405,7 @@ class SalesSystemApp:
         self.customer_cb.bind('<KeyRelease>', lambda event: self.update_search(event, customers_col))
 
         # Invoice Items Table
-        columns = self.get_fields_by_name("Sales")
+        columns = ("Code", "Product", "Qty", "Price", "Total")
         self.tree = ttk.Treeview(form_frame, columns=columns, show='headings')
         for col in columns:
             self.tree.heading(col, text=col)
@@ -609,102 +609,31 @@ class SalesSystemApp:
         else:
             print(f"Warning: Collection name '{collection_name}' not recognized.")
             return None
-
-    def get_fields_by_name(self, collection_name):
-        """Returns the appropriate fields array based on the provided collection name.
-        Args: collection_name (str): The name of the collection (e.g., "Employees", "Products").
-        Returns: list: A list of field names for the corresponding collection, or an empty list if the name is not recognized.
-        """
-        if collection_name == "Employees":
-            return ["Name", "Password", "Id", "Role", "Join_Date", "National_id_pic", "Phone_number", "Address", "Salary"]
         
-        elif collection_name == "Products":
-            return ["product_name", "category", "price", "stock_quantity", "supplier"]
-        
-        elif collection_name == "Sales":
-            return ["sale_date", "product_id", "quantity", "total_price", "customer_id"]
-        
-        elif collection_name == "Customers":
-            return ["Name", "Phone_number1", "Phone_number2", "Code", "Purchase_mgr_number", "Financial_mgr_number", "Purchase_mgr_name", 
-                    "Financial_mgr_name", "Email", "Company_address", "Extra_address", "Maps_link", "Bank_account",
-                    "Instapay", "E_wallet", "Accountant_name", "Accountant_number", "Sales_grade", "Growth_grade", "Frequency_grade", "Credit",
-                    "Debit"]
-        
-        elif collection_name == "Suppliers":
-            return ["Name", "Phone_number1", "Phone_number2", "Code", "Purchase_mgr_number", "Financial_mgr_number", "Purchase_mgr_name", 
-                    "Financial_mgr_name", "Email", "Company_address", "Extra_address", "Maps_link", "Bank_account",
-                    "Instapay", "E_wallet", "Accountant_name", "Accountant_number", "Sales_grade", "Growth_grade", "Frequency_grade", "Credit",
-                    "Debit" ]
-        
-        elif collection_name == "Shipping":
-            return ["order_id", "shipping_date", "tracking_number", "shipping_address"]
-        
-        elif collection_name == "Orders":
-            return ["order_id", "order_date", "customer_id", "total_amount", "status"]
-        
-        elif collection_name == "Expenses":
-            return ["expense_id", "expense_type", "amount", "date", "description"]
-        
-        elif collection_name == "Employee_appointments":
-            return ["appointment_id", "employee_id", "appointment_date", "appointment_type"]
-        
-        elif collection_name == "Daily_shifts":
-            return ["shift_id", "employee_id", "shift_date", "start_time", "end_time"]
-        
-        elif collection_name == "Accounts":
-            return ["account_id", "account_name", "balance", "account_type"]
-        
-        elif collection_name == "Transactions":
-            return ["transaction_id", "account_id", "transaction_date", "amount", "transaction_type"]
-        
-        elif collection_name == "Big_deals":
-            return ["deal_id", "deal_date", "customer_id", "product_id", "deal_value"]
-        
-        elif collection_name == "TEX_Calculations":
-            return ["calculation_id", "product_id", "calculation_date", "value"]
-        
-        else:
-            print(f"Warning: Collection name '{collection_name}' not recognized.")
-            return []
-
     def update_search(self, event, collection):
-        # Cancel any previous scheduled search **only if valid**
-        if hasattr(self, '_after_id') and self._after_id is not None:
-            try:
-                self.root.after_cancel(self._after_id)
-            except ValueError:
-                pass  # Ignore if it was already canceled
+        # Cancel any previous scheduled search
+        if hasattr(self, '_after_id'):
+            self.root.after_cancel(self._after_id)
         
-        # Mark that user is typing
-        self.is_typing = True
-        
-        # Schedule the search with the current text
+        # Schedule the search to run after 300ms
         self._after_id = self.root.after(300, self.perform_search, collection)
 
     def perform_search(self, collection):
-        # Mark that user is not typing anymore
-        self.is_typing = False
-
         search_term = self.customer_var.get()
-
-        # If search term is empty, you can clear the combobox
-        if search_term == "":
-            self.customer_cb['values'] = []
-            return
-
-        # Perform search
+        
+        # Update filtered list using MongoDB regex search
         filtered_customers = [cust['Name'] for cust in collection.find(
             {"Name": {"$regex": f"^{search_term}", "$options": "i"}}
         )]
         
-        # Update combobox values only if user is not typing
-        if not self.is_typing:
-            self.customer_cb['values'] = filtered_customers
-            
-            if filtered_customers:
-                self.customer_cb.event_generate('<Down>')
-            else:
-                self.customer_cb.event_generate('<Up>')  # Close dropdown
+        # Update combobox values
+        self.customer_cb['values'] = filtered_customers
+        
+        # Auto-open dropdown if there are results
+        if filtered_customers:
+            self.customer_cb.event_generate('<Down>')
+        else:
+            self.customer_cb.event_generate('<Up>')  # Close dropdown
 
     def add_product(self, products_col):
         # New window for product selection
@@ -834,7 +763,62 @@ class SalesSystemApp:
         sales_col.insert_one(invoice)
         print("Invoice saved successfully!")
 
-
+    def get_fields_by_name(self, collection_name):
+        """Returns the appropriate fields array based on the provided collection name.
+        Args: collection_name (str): The name of the collection (e.g., "Employees", "Products").
+        Returns: list: A list of field names for the corresponding collection, or an empty list if the name is not recognized.
+        """
+        if collection_name == "Employees":
+            return ["Name", "Password", "Id", "Role", "Join_Date", "National_id_pic", "Phone_number", "Address", "Salary"]
+        
+        elif collection_name == "Products":
+            return ["product_name", "category", "price", "stock_quantity", "supplier"]
+        
+        elif collection_name == "Sales":
+            return ["sale_date", "product_id", "quantity", "total_price", "customer_id"]
+        
+        elif collection_name == "Customers":
+            return ["Name", "Phone_number1", "Phone_number2", "Code", "Purchase_mgr_number", "Financial_mgr_number", "Purchase_mgr_name", 
+                    "Financial_mgr_name", "Email", "Company_address", "Extra_address", "Maps_link", "Bank_account",
+                    "Instapay", "E_wallet", "Accountant_name", "Accountant_number", "Sales_grade", "Growth_grade", "Frequency_grade", "Credit",
+                    "Debit"]
+        
+        elif collection_name == "Suppliers":
+            return ["Name", "Phone_number1", "Phone_number2", "Code", "Purchase_mgr_number", "Financial_mgr_number", "Purchase_mgr_name", 
+                    "Financial_mgr_name", "Email", "Company_address", "Extra_address", "Maps_link", "Bank_account",
+                    "Instapay", "E_wallet", "Accountant_name", "Accountant_number", "Sales_grade", "Growth_grade", "Frequency_grade", "Credit",
+                    "Debit" ]
+        
+        elif collection_name == "Shipping":
+            return ["order_id", "shipping_date", "tracking_number", "shipping_address"]
+        
+        elif collection_name == "Orders":
+            return ["order_id", "order_date", "customer_id", "total_amount", "status"]
+        
+        elif collection_name == "Expenses":
+            return ["expense_id", "expense_type", "amount", "date", "description"]
+        
+        elif collection_name == "Employee_appointments":
+            return ["appointment_id", "employee_id", "appointment_date", "appointment_type"]
+        
+        elif collection_name == "Daily_shifts":
+            return ["shift_id", "employee_id", "shift_date", "start_time", "end_time"]
+        
+        elif collection_name == "Accounts":
+            return ["account_id", "account_name", "balance", "account_type"]
+        
+        elif collection_name == "Transactions":
+            return ["transaction_id", "account_id", "transaction_date", "amount", "transaction_type"]
+        
+        elif collection_name == "Big_deals":
+            return ["deal_id", "deal_date", "customer_id", "product_id", "deal_value"]
+        
+        elif collection_name == "TEX_Calculations":
+            return ["calculation_id", "product_id", "calculation_date", "value"]
+        
+        else:
+            print(f"Warning: Collection name '{collection_name}' not recognized.")
+            return []
         
     def on_canvas_press(self, event):
         self.tree.scan_mark(event.x, event.y)

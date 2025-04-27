@@ -609,64 +609,7 @@ class SalesSystemApp:
         else:
             print(f"Warning: Collection name '{collection_name}' not recognized.")
             return None
-
-    def get_fields_by_name(self, collection_name):
-        """Returns the appropriate fields array based on the provided collection name.
-        Args: collection_name (str): The name of the collection (e.g., "Employees", "Products").
-        Returns: list: A list of field names for the corresponding collection, or an empty list if the name is not recognized.
-        """
-        if collection_name == "Employees":
-            return ["Name", "Password", "Id", "Role", "Join_Date", "National_id_pic", "Phone_number", "Address", "Salary"]
         
-        elif collection_name == "Products":
-            return ["product_name", "category", "price", "stock_quantity", "supplier"]
-        
-        elif collection_name == "Sales":
-            return ["sale_date", "product_id", "quantity", "total_price", "customer_id"]
-        
-        elif collection_name == "Customers":
-            return ["Name", "Phone_number1", "Phone_number2", "Code", "Purchase_mgr_number", "Financial_mgr_number", "Purchase_mgr_name", 
-                    "Financial_mgr_name", "Email", "Company_address", "Extra_address", "Maps_link", "Bank_account",
-                    "Instapay", "E_wallet", "Accountant_name", "Accountant_number", "Sales_grade", "Growth_grade", "Frequency_grade", "Credit",
-                    "Debit"]
-        
-        elif collection_name == "Suppliers":
-            return ["Name", "Phone_number1", "Phone_number2", "Code", "Purchase_mgr_number", "Financial_mgr_number", "Purchase_mgr_name", 
-                    "Financial_mgr_name", "Email", "Company_address", "Extra_address", "Maps_link", "Bank_account",
-                    "Instapay", "E_wallet", "Accountant_name", "Accountant_number", "Sales_grade", "Growth_grade", "Frequency_grade", "Credit",
-                    "Debit" ]
-        
-        elif collection_name == "Shipping":
-            return ["order_id", "shipping_date", "tracking_number", "shipping_address"]
-        
-        elif collection_name == "Orders":
-            return ["order_id", "order_date", "customer_id", "total_amount", "status"]
-        
-        elif collection_name == "Expenses":
-            return ["expense_id", "expense_type", "amount", "date", "description"]
-        
-        elif collection_name == "Employee_appointments":
-            return ["appointment_id", "employee_id", "appointment_date", "appointment_type"]
-        
-        elif collection_name == "Daily_shifts":
-            return ["shift_id", "employee_id", "shift_date", "start_time", "end_time"]
-        
-        elif collection_name == "Accounts":
-            return ["account_id", "account_name", "balance", "account_type"]
-        
-        elif collection_name == "Transactions":
-            return ["transaction_id", "account_id", "transaction_date", "amount", "transaction_type"]
-        
-        elif collection_name == "Big_deals":
-            return ["deal_id", "deal_date", "customer_id", "product_id", "deal_value"]
-        
-        elif collection_name == "TEX_Calculations":
-            return ["calculation_id", "product_id", "calculation_date", "value"]
-        
-        else:
-            print(f"Warning: Collection name '{collection_name}' not recognized.")
-            return []
-
     def update_search(self, event, collection):
         # Cancel any previous scheduled search **only if valid**
         if hasattr(self, '_after_id') and self._after_id is not None:
@@ -834,7 +777,62 @@ class SalesSystemApp:
         sales_col.insert_one(invoice)
         print("Invoice saved successfully!")
 
-
+    def get_fields_by_name(self, collection_name):
+        """Returns the appropriate fields array based on the provided collection name.
+        Args: collection_name (str): The name of the collection (e.g., "Employees", "Products").
+        Returns: list: A list of field names for the corresponding collection, or an empty list if the name is not recognized.
+        """
+        if collection_name == "Employees":
+            return ["Name", "Password", "Id", "Role", "Join_Date", "National_id_pic", "Phone_number", "Address", "Salary"]
+        
+        elif collection_name == "Products":
+            return ["product_name", "category", "price", "stock_quantity", "supplier"]
+        
+        elif collection_name == "Sales":
+            return ["sale_date", "product_id", "quantity", "total_price", "customer_id"]
+        
+        elif collection_name == "Customers":
+            return ["Name", "Phone_number1", "Phone_number2", "Code", "Purchase_mgr_number", "Financial_mgr_number", "Purchase_mgr_name", 
+                    "Financial_mgr_name", "Email", "Company_address", "Extra_address", "Maps_link", "Bank_account",
+                    "Instapay", "E_wallet", "Accountant_name", "Accountant_number", "Sales_grade", "Growth_grade", "Frequency_grade", "Credit",
+                    "Debit"]
+        
+        elif collection_name == "Suppliers":
+            return ["Name", "Phone_number1", "Phone_number2", "Code", "Purchase_mgr_number", "Financial_mgr_number", "Purchase_mgr_name", 
+                    "Financial_mgr_name", "Email", "Company_address", "Extra_address", "Maps_link", "Bank_account",
+                    "Instapay", "E_wallet", "Accountant_name", "Accountant_number", "Sales_grade", "Growth_grade", "Frequency_grade", "Credit",
+                    "Debit" ]
+        
+        elif collection_name == "Shipping":
+            return ["order_id", "shipping_date", "tracking_number", "shipping_address"]
+        
+        elif collection_name == "Orders":
+            return ["order_id", "order_date", "customer_id", "total_amount", "status"]
+        
+        elif collection_name == "Expenses":
+            return ["expense_id", "expense_type", "amount", "date", "description"]
+        
+        elif collection_name == "Employee_appointments":
+            return ["appointment_id", "employee_id", "appointment_date", "appointment_type"]
+        
+        elif collection_name == "Daily_shifts":
+            return ["shift_id", "employee_id", "shift_date", "start_time", "end_time"]
+        
+        elif collection_name == "Accounts":
+            return ["account_id", "account_name", "balance", "account_type"]
+        
+        elif collection_name == "Transactions":
+            return ["transaction_id", "account_id", "transaction_date", "amount", "transaction_type"]
+        
+        elif collection_name == "Big_deals":
+            return ["deal_id", "deal_date", "customer_id", "product_id", "deal_value"]
+        
+        elif collection_name == "TEX_Calculations":
+            return ["calculation_id", "product_id", "calculation_date", "value"]
+        
+        else:
+            print(f"Warning: Collection name '{collection_name}' not recognized.")
+            return []
         
     def on_canvas_press(self, event):
         self.tree.scan_mark(event.x, event.y)
