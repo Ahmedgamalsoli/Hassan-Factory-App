@@ -389,18 +389,6 @@ class SalesSystemApp:
         sales_col = self.get_collection_by_name("Sales")
         products_col = self.get_collection_by_name("Products")
 
-
-
-        # # Customer Dropdown with Search
-        # tk.Label(form_frame, text="Customer:",font=("Arial", 15, "bold")).grid(row=0, column=1, sticky='w')
-        # self.customer_var = tk.StringVar()
-        # self.customer_cb = ttk.Combobox(form_frame, textvariable=self.customer_var)
-        # self.customer_cb.grid(row=0, column=1, padx=5, pady=5)
-        
-        # # Fetch customers and set autocomplete
-        # all_customers = [cust['Name'] for cust in customers_col.find()]
-        # self.customer_cb['values'] = all_customers
-        # self.customer_cb.bind('<KeyRelease>', lambda event: self.update_search(event, customers_col))
         # Main form frame
         form_frame = tk.Frame(self.root, padx=20, pady=20)
         form_frame.pack(fill=tk.BOTH, expand=True)
@@ -413,7 +401,9 @@ class SalesSystemApp:
         tk.Label(customer_frame, text="Customer:", font=("Arial", 12, "bold")).grid(row=0, column=0, sticky='w')
         self.customer_var = tk.StringVar()
         self.customer_cb = ttk.Combobox(customer_frame, 
-                                    textvariable=self.customer_var)
+                                    textvariable=self.customer_var, 
+                                    width=28,
+                                    state='readonly')
         self.customer_cb.grid(row=0, column=1, sticky='w', padx=(5, 0))
 
         # Configure grid weights
@@ -440,12 +430,12 @@ class SalesSystemApp:
                             relief='ridge',
                             bg='#f0f0f0',
                             anchor='w',
-                            padx=0)
+                            padx=5)
             header.grid(row=0, column=col_idx, sticky='ew', padx=0, pady=0)
             header_row.columnconfigure(col_idx, weight=1)
 
         # Scrollable Canvas
-        canvas = tk.Canvas(form_frame, borderwidth=1, highlightthickness=1)
+        canvas = tk.Canvas(form_frame, borderwidth=0, highlightthickness=0)
         scrollbar = tk.Scrollbar(form_frame, orient="vertical", command=canvas.yview)
         self.rows_frame = tk.Frame(canvas)
         
@@ -468,20 +458,20 @@ class SalesSystemApp:
         self.entries = []
 
         def create_row(parent, row_number, bg_color):
-            row_frame = tk.Frame(parent,bg= bg_color)
+            row_frame = tk.Frame(parent)
             row_frame.grid(row=row_number, column=0, sticky='ew')
             
             row_entries = []
             for col_idx in range(len(columns)):
                 if parent == header_row:
                     # Header cell
-                    cell = tk.Label(row_frame, 
-                                text=columns[col_idx], 
-                                width=col_width,
-                                relief='ridge',
-                                bg='#f0f0f0',
-                                anchor='w',
-                                padx=5)
+                    # cell = tk.Label(row_frame, 
+                    #             text=columns[col_idx], 
+                    #             width=col_width,
+                    #             relief='ridge',
+                    #             bg='#f0f0f0',
+                    #             anchor='w',
+                    #             padx=4)
                 else:
                     # Data cell
                     cell = tk.Entry(row_frame, 
@@ -492,7 +482,7 @@ class SalesSystemApp:
                                 highlightthickness=1,
                                 highlightcolor="#e0e0e0")
                 
-                cell.grid(row=0, column=col_idx, sticky='ew', padx=5, pady=0)
+                cell.grid(row=0, column=col_idx, sticky='ew', padx=0, pady=0)
                 row_frame.columnconfigure(col_idx, weight=1)
                 
                 if parent != header_row:
@@ -506,7 +496,7 @@ class SalesSystemApp:
         def add_three_rows():
             current_row_count = len(self.entries)
             for i in range(3):
-                bg_color = 'white' if (current_row_count + i) % 2 == 0 else '#f0f0f0'
+                bg_color = 'white' if (current_row_count + i) % 2 == 0 else '#f8f8f8'
                 row_entries = create_row(self.rows_frame, current_row_count + i, bg_color)
                 self.entries.append(row_entries)
 

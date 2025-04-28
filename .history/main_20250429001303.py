@@ -389,7 +389,9 @@ class SalesSystemApp:
         sales_col = self.get_collection_by_name("Sales")
         products_col = self.get_collection_by_name("Products")
 
-
+        # # Frame for invoice form
+        # form_frame = tk.Frame(self.root, padx=20, pady=20)
+        # form_frame.pack(fill=tk.BOTH, expand=True)
 
         # # Customer Dropdown with Search
         # tk.Label(form_frame, text="Customer:",font=("Arial", 15, "bold")).grid(row=0, column=1, sticky='w')
@@ -413,7 +415,9 @@ class SalesSystemApp:
         tk.Label(customer_frame, text="Customer:", font=("Arial", 12, "bold")).grid(row=0, column=0, sticky='w')
         self.customer_var = tk.StringVar()
         self.customer_cb = ttk.Combobox(customer_frame, 
-                                    textvariable=self.customer_var)
+                                    textvariable=self.customer_var, 
+                                    width=28,
+                                    state='readonly')
         self.customer_cb.grid(row=0, column=1, sticky='w', padx=(5, 0))
 
         # Configure grid weights

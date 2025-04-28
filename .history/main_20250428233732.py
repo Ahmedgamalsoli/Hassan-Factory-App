@@ -389,18 +389,6 @@ class SalesSystemApp:
         sales_col = self.get_collection_by_name("Sales")
         products_col = self.get_collection_by_name("Products")
 
-
-
-        # # Customer Dropdown with Search
-        # tk.Label(form_frame, text="Customer:",font=("Arial", 15, "bold")).grid(row=0, column=1, sticky='w')
-        # self.customer_var = tk.StringVar()
-        # self.customer_cb = ttk.Combobox(form_frame, textvariable=self.customer_var)
-        # self.customer_cb.grid(row=0, column=1, padx=5, pady=5)
-        
-        # # Fetch customers and set autocomplete
-        # all_customers = [cust['Name'] for cust in customers_col.find()]
-        # self.customer_cb['values'] = all_customers
-        # self.customer_cb.bind('<KeyRelease>', lambda event: self.update_search(event, customers_col))
         # Main form frame
         form_frame = tk.Frame(self.root, padx=20, pady=20)
         form_frame.pack(fill=tk.BOTH, expand=True)
@@ -413,7 +401,9 @@ class SalesSystemApp:
         tk.Label(customer_frame, text="Customer:", font=("Arial", 12, "bold")).grid(row=0, column=0, sticky='w')
         self.customer_var = tk.StringVar()
         self.customer_cb = ttk.Combobox(customer_frame, 
-                                    textvariable=self.customer_var)
+                                    textvariable=self.customer_var, 
+                                    width=28,
+                                    state='readonly')
         self.customer_cb.grid(row=0, column=1, sticky='w', padx=(5, 0))
 
         # Configure grid weights
@@ -506,7 +496,7 @@ class SalesSystemApp:
         def add_three_rows():
             current_row_count = len(self.entries)
             for i in range(3):
-                bg_color = 'white' if (current_row_count + i) % 2 == 0 else '#f0f0f0'
+                bg_color = 'white' if (current_row_count + i) % 2 == 0 else '#f8f8f8'
                 row_entries = create_row(self.rows_frame, current_row_count + i, bg_color)
                 self.entries.append(row_entries)
 
