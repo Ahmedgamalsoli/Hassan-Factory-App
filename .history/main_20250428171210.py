@@ -207,7 +207,7 @@ class SalesSystemApp:
                 user = self.employees_collection.find_one({"Name": username, "Password": password})
                 # print(user)
                 if user:
-                    self.user_role = user.get("Role", "Unknown")
+                    self.user_role = user.get("role", "Unknown")
                     # messagebox.showinfo("Success", f"Login successful! Role: {self.user_role}")
                     self.silent_popup("Success", f"Login successful! Role: {self.user_role}",self.play_success)
                     open_main_menu(self.user_role)
@@ -385,145 +385,82 @@ class SalesSystemApp:
         self.topbar(show_back_button=True)
 
         # MongoDB collections
-        customers_col = self.get_collection_by_name("Customers")
+        customers_col = self.get_collection_by_name("Customers")#done
         sales_col = self.get_collection_by_name("Sales")
         products_col = self.get_collection_by_name("Products")
 
-        # Main form frame
+        # Frame for invoice form
         form_frame = tk.Frame(self.root, padx=20, pady=20)
         form_frame.pack(fill=tk.BOTH, expand=True)
 
-        # Customer Selection Frame
-        customer_frame = tk.Frame(form_frame, bd=1, relief=tk.SOLID, padx=5, pady=5)
-        customer_frame.grid(row=0, column=0, columnspan=2, sticky='w', pady=5)
-
-        # Label and Combobox
-        tk.Label(customer_frame, text="Customer:", font=("Arial", 12, "bold")).grid(row=0, column=0, sticky='w')
+        # Customer Dropdown with Search
+        tk.Label(form_frame, text="Customer:",font=("Arial", 15, "bold")).grid(row=0, column=1, sticky='w')
         self.customer_var = tk.StringVar()
-        self.customer_cb = ttk.Combobox(customer_frame, 
-                                    textvariable=self.customer_var, 
-                                    width=28,
-                                    state='readonly')
-        self.customer_cb.grid(row=0, column=1, sticky='w', padx=(5, 0))
-
-        # Configure grid weights
-        customer_frame.columnconfigure(1, weight=1)
+        self.customer_cb = ttk.Combobox(form_frame, textvariable=self.customer_var)
+        self.customer_cb.grid(row=0, column=1, padx=5, pady=5)
         
-        # Populate customers
+        # Fetch customers and set autocomplete
         all_customers = [cust['Name'] for cust in customers_col.find()]
         self.customer_cb['values'] = all_customers
         self.customer_cb.bind('<KeyRelease>', lambda event: self.update_search(event, customers_col))
 
-        # Invoice Items Grid ======================================================
-        columns = self.get_fields_by_name("Sales_Record")
-        col_width = 30  # Consistent width for all columns
-        
-        # Header Frame using same row structure
-        header_row = tk.Frame(form_frame, bg='#f0f0f0')
-        header_row.grid(row=2, column=0, columnspan=len(columns), sticky='nsew', pady=(20, 0))
-        
-        # Create headers using same grid structure as data rows
-        for col_idx, col in enumerate(columns):
-            header = tk.Label(header_row, 
-                            text=col, 
-                            width=col_width,
-                            relief='ridge',
-                            bg='#f0f0f0',
-                            anchor='w',
-                            padx=5)
-            header.grid(row=0, column=col_idx, sticky='ew', padx=0, pady=0)
-            header_row.columnconfigure(col_idx, weight=1)
+        # Invoice Items Table (Excel-like grid)
+        columns = self.get_fields_by_name("Sales_Record")  # Get column names
 
-        # Scrollable Canvas
-        canvas = tk.Canvas(form_frame, borderwidth=0, highlightthickness=0)
+        # Header Row
+        header_frame = tk.Frame(form_frame)
+        header_frame.grid(row=2, column=0, columnspan=len(columns), sticky='ew')
+        for idx, col in enumerate(columns):
+            tk.Label(header_frame, text=col, width=15, relief='ridge').grid(row=0, column=idx)
+
+        # Container for data rows with scrollbar
+        canvas = tk.Canvas(form_frame)
         scrollbar = tk.Scrollbar(form_frame, orient="vertical", command=canvas.yview)
         self.rows_frame = tk.Frame(canvas)
-        
-        # Canvas configuration
-        self.rows_frame.bind("<Configure>", lambda e: canvas.configure(
-            scrollregion=canvas.bbox("all")))
+        self.rows_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+
         canvas.create_window((0, 0), window=self.rows_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
 
-        # Grid layout
-        canvas.grid(row=3, column=0, columnspan=len(columns), sticky="nsew", pady=(0, 10))
-        scrollbar.grid(row=3, column=len(columns), sticky="ns", pady=(0, 10))
-        
+        canvas.grid(row=3, column=0, columnspan=len(columns)-1, sticky="nsew")
+        scrollbar.grid(row=3, column=len(columns), sticky="ns")
+
         # Configure grid weights
         form_frame.grid_rowconfigure(3, weight=1)
-        for i in range(len(columns)):
-            form_frame.columnconfigure(i, weight=1)
+        form_frame.grid_columnconfigure(0, weight=1)
 
-        # Entry management
-        self.entries = []
-
-        def create_row(parent, row_number, bg_color):
-            row_frame = tk.Frame(parent)
-            row_frame.grid(row=row_number, column=0, sticky='ew')
-            
-            row_entries = []
-            for col_idx in range(len(columns)):
-                if parent == header_row:
-                    # Header cell
-                    cell = tk.Label(row_frame, 
-                                text=columns[col_idx], 
-                                width=col_width,
-                                relief='ridge',
-                                bg='#f0f0f0',
-                                anchor='w',
-                                padx=5)
-                else:
-                    # Data cell
-                    cell = tk.Entry(row_frame, 
-                                width=col_width,
-                                relief='sunken',
-                                bg=bg_color,
-                                borderwidth=1,
-                                highlightthickness=1,
-                                highlightcolor="#e0e0e0")
-                
-                cell.grid(row=0, column=col_idx, sticky='ew', padx=0, pady=0)
-                row_frame.columnconfigure(col_idx, weight=1)
-                
-                if parent != header_row:
-                    row_entries.append(cell)
-            
-            return row_entries if parent != header_row else None
-
-        # Create header row
-        create_row(header_row, 0, None)
+        self.entries = []  # To keep track of all Entry widgets
 
         def add_three_rows():
-            current_row_count = len(self.entries)
-            for i in range(3):
-                bg_color = 'white' if (current_row_count + i) % 2 == 0 else '#f8f8f8'
-                row_entries = create_row(self.rows_frame, current_row_count + i, bg_color)
+            for _ in range(3):
+                row_number = len(self.entries)
+                row_entries = []
+                row_frame = tk.Frame(self.rows_frame)
+                row_frame.grid(row=row_number, column=0, sticky='ew')
+                
+                for col_idx in range(len(columns)):
+                    entry = tk.Entry(row_frame, width=17.5, relief='sunken')
+                    entry.grid(row=0, column=col_idx, padx=1, pady=1)
+                    row_entries.append(entry)
                 self.entries.append(row_entries)
 
-        # Initial rows
+        # Create initial 3 rows
         add_three_rows()
 
-        # Button Frame ============================================================
+        # Buttons Frame
         button_frame = tk.Frame(form_frame)
-        button_frame.grid(row=4, column=0, columnspan=len(columns), pady=10, sticky='ew')
-        
-        # Add Rows Button
-        tk.Button(button_frame, text="➕ Add 3 More Rows", command=add_three_rows,
-                bg='#4CAF50', fg='white').grid(row=0, column=0, padx=5, sticky='w')
-        
-        # Save Button
-        tk.Button(button_frame, text="💾 Save Invoice", 
-                command=lambda: self.save_invoice(sales_col, customers_col),
-                bg='#2196F3', fg='white').grid(row=0, column=1, padx=5, sticky='e')
-        
-        # Configure column weights
-        button_frame.columnconfigure(0, weight=1)
-        button_frame.columnconfigure(1, weight=1)
+        button_frame.grid(row=4, column=0, columnspan=len(columns), pady=10)
 
-        # Configure columns in rows frame
+        # Add More Entries Button
+        tk.Button(button_frame, text="Add 3 More Rows", command=add_three_rows).grid(row=0, column=0, padx=5)
+
+        # Save Invoice Button
+        tk.Button(button_frame, text="Save Invoice", 
+                command=lambda: self.save_invoice(sales_col, customers_col)).grid(row=0, column=1, padx=5)
+
+        # Configure rows_frame grid
         for i in range(len(columns)):
-            self.rows_frame.columnconfigure(i, weight=1)
-            # header_frame.columnconfigure(i, weight=1)
+            self.rows_frame.grid_columnconfigure(i, weight=1)
 ############################ Main Functions ########################################
     def display_table(self):
         collection_name = self.table_name.get()

@@ -416,7 +416,7 @@ class SalesSystemApp:
 
         # Invoice Items Grid ======================================================
         columns = self.get_fields_by_name("Sales_Record")
-        col_width = 30  # Consistent width for all columns
+        col_width = 28  # Consistent width for all columns
         
         # Header Frame using same row structure
         header_row = tk.Frame(form_frame, bg='#f0f0f0')
@@ -523,7 +523,7 @@ class SalesSystemApp:
         # Configure columns in rows frame
         for i in range(len(columns)):
             self.rows_frame.columnconfigure(i, weight=1)
-            # header_frame.columnconfigure(i, weight=1)
+            header_frame.columnconfigure(i, weight=1)
 ############################ Main Functions ########################################
     def display_table(self):
         collection_name = self.table_name.get()

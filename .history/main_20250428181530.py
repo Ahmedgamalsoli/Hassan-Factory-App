@@ -523,7 +523,7 @@ class SalesSystemApp:
         # Configure columns in rows frame
         for i in range(len(columns)):
             self.rows_frame.columnconfigure(i, weight=1)
-            # header_frame.columnconfigure(i, weight=1)
+            header_frame.columnconfigure(i, weight=1)
 ############################ Main Functions ########################################
     def display_table(self):
         collection_name = self.table_name.get()

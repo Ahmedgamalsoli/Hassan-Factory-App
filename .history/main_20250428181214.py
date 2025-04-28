@@ -416,23 +416,17 @@ class SalesSystemApp:
 
         # Invoice Items Grid ======================================================
         columns = self.get_fields_by_name("Sales_Record")
-        col_width = 30  # Consistent width for all columns
+        col_width = 24  # Consistent width for all columns
         
-        # Header Frame using same row structure
-        header_row = tk.Frame(form_frame, bg='#f0f0f0')
-        header_row.grid(row=2, column=0, columnspan=len(columns), sticky='nsew', pady=(20, 0))
+        # Header Frame
+        header_frame = tk.Frame(form_frame, bg='#f0f0f0')
+        header_frame.grid(row=2, column=0, columnspan=len(columns), sticky='w', pady=(20, 0))
         
-        # Create headers using same grid structure as data rows
-        for col_idx, col in enumerate(columns):
-            header = tk.Label(header_row, 
-                            text=col, 
-                            width=col_width,
-                            relief='ridge',
-                            bg='#f0f0f0',
-                            anchor='w',
-                            padx=5)
-            header.grid(row=0, column=col_idx, sticky='ew', padx=0, pady=0)
-            header_row.columnconfigure(col_idx, weight=1)
+        # Create headers with consistent column configuration
+        for idx, col in enumerate(columns):
+            tk.Label(header_frame, text=col, width=col_width-5, relief='ridge',
+                    bg='#f0f0f0', padx=7, anchor='w').grid(row=0, column=idx, sticky='w')
+            header_frame.columnconfigure(idx, weight=1)
 
         # Scrollable Canvas
         canvas = tk.Canvas(form_frame, borderwidth=0, highlightthickness=0)
@@ -457,47 +451,28 @@ class SalesSystemApp:
         # Entry management
         self.entries = []
 
-        def create_row(parent, row_number, bg_color):
-            row_frame = tk.Frame(parent)
-            row_frame.grid(row=row_number, column=0, sticky='ew')
-            
-            row_entries = []
-            for col_idx in range(len(columns)):
-                if parent == header_row:
-                    # Header cell
-                    cell = tk.Label(row_frame, 
-                                text=columns[col_idx], 
-                                width=col_width,
-                                relief='ridge',
-                                bg='#f0f0f0',
-                                anchor='w',
-                                padx=5)
-                else:
-                    # Data cell
-                    cell = tk.Entry(row_frame, 
-                                width=col_width,
-                                relief='sunken',
-                                bg=bg_color,
-                                borderwidth=1,
-                                highlightthickness=1,
-                                highlightcolor="#e0e0e0")
-                
-                cell.grid(row=0, column=col_idx, sticky='ew', padx=0, pady=0)
-                row_frame.columnconfigure(col_idx, weight=1)
-                
-                if parent != header_row:
-                    row_entries.append(cell)
-            
-            return row_entries if parent != header_row else None
-
-        # Create header row
-        create_row(header_row, 0, None)
-
         def add_three_rows():
             current_row_count = len(self.entries)
             for i in range(3):
-                bg_color = 'white' if (current_row_count + i) % 2 == 0 else '#f8f8f8'
-                row_entries = create_row(self.rows_frame, current_row_count + i, bg_color)
+                row_entries = []
+                row_frame = tk.Frame(self.rows_frame)
+                row_frame.grid(row=current_row_count+i, column=0, sticky='ew')
+                
+                for col_idx in range(len(columns)):
+                    # Create consistent entry cells
+                    entry = tk.Entry(row_frame, 
+                                    width=col_width,
+                                    relief='sunken',
+                                    bg='white' if (current_row_count+i) % 2 == 0 else '#f8f8f8',
+                                    borderwidth=1,
+                                    highlightthickness=1,
+                                    highlightcolor="#e0e0e0")
+                    entry.grid(row=0, column=col_idx, padx=0, pady=0, ipady=5, sticky='ew')
+                    
+                    # Configure column weights for alignment
+                    row_frame.columnconfigure(col_idx, weight=1)
+                    row_entries.append(entry)
+                
                 self.entries.append(row_entries)
 
         # Initial rows
@@ -523,7 +498,7 @@ class SalesSystemApp:
         # Configure columns in rows frame
         for i in range(len(columns)):
             self.rows_frame.columnconfigure(i, weight=1)
-            # header_frame.columnconfigure(i, weight=1)
+            header_frame.columnconfigure(i, weight=1)
 ############################ Main Functions ########################################
     def display_table(self):
         collection_name = self.table_name.get()
