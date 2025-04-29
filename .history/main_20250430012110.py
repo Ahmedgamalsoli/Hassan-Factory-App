@@ -1149,7 +1149,7 @@ class SalesSystemApp:
                 messagebox.showerror("خطأ", f"فشل في تنظيف الحقول: {str(e)}")
                 
     def generate_pdf(self, invoice_data):
-        """توليد ملف PDF بحجم A5 بتنسيق عربي مطابق للصورة"""
+        """توليد ملف PDF بحجم A5 بتنسيق عربي"""
         try:
             from reportlab.lib.pagesizes import A5
             from reportlab.pdfgen import canvas
@@ -1157,8 +1157,8 @@ class SalesSystemApp:
             from reportlab.pdfbase import pdfmetrics
             from reportlab.pdfbase.ttfonts import TTFont
             import os
-            from bidi.algorithm import get_display
-            import arabic_reshaper
+            from bidi.algorithm import get_display  # معالجة النصوص العربية
+            import arabic_reshaper  # إعادة تشكيل الحروف العربية
 
             # تسجيل الخط العربي
             arabic_font_path = os.path.join("Static", "Fonts", "Amiri-Regular.ttf")
@@ -1166,9 +1166,9 @@ class SalesSystemApp:
                 raise FileNotFoundError(f"ملف الخط غير موجود: {arabic_font_path}")
             pdfmetrics.registerFont(TTFont('Arabic', arabic_font_path))
 
-            # دالة معالجة النصوص العربية
+            # إعداد النصوص العربية
             def format_arabic(text):
-                reshaped_text = arabic_reshaper.reshape(str(text))
+                reshaped_text = arabic_reshaper.reshape(text)
                 return get_display(reshaped_text)
 
             # إنشاء مسار الحفظ
@@ -1181,94 +1181,74 @@ class SalesSystemApp:
             width, height = A5
             c.setFont("Arabic", 14)
 
-            # معلومات الشركة (الجزء العلوي)
-            company_info = [
-                format_arabic("فاتورة بيع رقم 58"),
-                format_arabic("حسن سليم"),
-                format_arabic("للمنتجات البلاستيكية"),
-                format_arabic("26/4/2025")
-            ]
-            y_position = height - 2*cm
-            for line in company_info:
-                c.drawRightString(width - 2*cm, y_position, line)
-                y_position -= 0.7*cm
+            # العنوان الرئيسي (معالجة النص)
+            title = format_arabic("مصنع حسن سليم للمنتجات البلاستيكية")
+            c.drawRightString(width - 2*cm, height - 2*cm, title)
 
-            # معلومات العميل (الجزء الأوسط)
-            customer_y = y_position - 1.5*cm
+            # معلومات الفاتورة
+            info_y = height - 4*cm
+            invoice_number = format_arabic(f"رقم الفاتورة: {invoice_data['Reciept_Number']}")
+            c.drawRightString(width - 2*cm, info_y, invoice_number)
+            
+            date = format_arabic(f"التاريخ: {invoice_data['Date']}")
+            c.drawRightString(2*cm, info_y, date)
+            
+            # معلومات العميل
             c.setFont("Arabic", 12)
-            customer_fields = [
-                ("التاريخ:", invoice_data['Date']),
-                ("اسم العميل:", invoice_data['Customer_name']),
-                ("العنوان:", invoice_data['Customer_address']),
-                ("التقييم:", "___")  # يمكن إضافته في invoice_data
+            c.drawRightString(width-2*cm, info_y-1.5*cm, "معلومات العميل:")
+            c.setFont("Arabic", 11)
+            customer_info = [
+                f"العنوان: {invoice_data['Customer_address']}",
+                f"الهاتف: {invoice_data['Customer_phone']}",
+                f"الاسم: {invoice_data['Customer_name']}"
             ]
-            for field, value in customer_fields:
-                text = f"{format_arabic(field)} {format_arabic(value)}"
-                c.drawString(2*cm, customer_y, text)
-                customer_y -= 0.7*cm
-
-            # جدول العناصر (مطابق للصورة)
-            headers = [
-                "كود الصيف",
-                "العدد",
-                "الوحدة",
-                "سعر الوحدة",
-                "الكمية",
-                "الإجمالي"
-            ]
-            col_positions = [  # مواضع الأعمدة من اليمين
-                width - 2*cm,
-                width - 4.5*cm,
-                width - 7*cm,
-                width - 9.5*cm,
-                width - 12*cm,
-                width - 15*cm
+            for i, line in enumerate(customer_info):
+                c.drawRightString(width-2*cm, info_y-3*cm-i*0.7*cm, line)
+            
+            # جدول العناصر
+            table_y = info_y-5*cm
+            headers = ["الإجمالي", "السعر", "الكمية", "الوحدة", "الصنف", "الكود"]
+            col_positions = [  # مواضيع أعمدة من اليمين إلى اليسار
+                width-2*cm,
+                width-4*cm,
+                width-7*cm,
+                width-10*cm,
+                width-13*cm,
+                width-16*cm
             ]
             
-            # رسم رأس الجدول
-            table_y = customer_y - 1.5*cm
+            # رأس الجدول
             c.setFont("Arabic", 12)
             for i, header in enumerate(headers):
-                c.drawRightString(col_positions[i], table_y, format_arabic(header))
-
+                c.drawRightString(col_positions[i], table_y, header)
+            
             # بيانات الجدول
             c.setFont("Arabic", 10)
             row_height = 0.7*cm
             for item in invoice_data["Items"]:
                 table_y -= row_height
                 columns = [
-                    item.get("Product_code", ""),
-                    str(item.get("numbering", "")),
-                    item.get("Unit", ""),
-                    f"{item.get('Unit_price', 0):.2f}",
-                    str(item.get('QTY', 0)),
-                    f"{item.get('Total_price', 0):.2f}"
+                    f"{item['Total_price']:.2f}",
+                    f"{item['Unit_price']:.2f}",
+                    f"{item['QTY']} × {item['numbering']}",
+                    item["Unit"],
+                    item["product_name"],
+                    item["Product_code"]
                 ]
                 for i, value in enumerate(columns):
-                    c.drawRightString(col_positions[i], table_y, format_arabic(value))
-
-            # الإجماليات (الجزء السفلي)
-            totals_y = table_y - 2*cm
-            totals = [
-                ("صافي الفاتورة:", invoice_data.get('Net_total', 0)),
-                ("حساب سابق:", invoice_data.get('Previous_balance', 0)),  # يجب إضافته في invoice_data
-                ("إجمالي الفاتورة:", invoice_data['Grand_total'])
-            ]
+                    c.drawRightString(col_positions[i], table_y, str(value))
             
-            c.setFont("Arabic", 12)
-            for label, value in totals:
-                text = f"{format_arabic(label)} {format_arabic(f'{value:,.2f}')}"
-                c.drawRightString(width - 2*cm, totals_y, text)
-                totals_y -= 0.7*cm
-
-            # التوقيع والبيان
+            # الإجماليات
+            c.setFont("Arabic", 14)
+            c.drawRightString(width-2*cm, table_y-2*cm, f"الإجمالي: {invoice_data['Grand_total']:.2f} ريال")
+            
+            # التوقيع
             c.setFont("Arabic", 10)
-            c.drawRightString(width - 2*cm, 2*cm, format_arabic("ختم وتوقيع المدير: ___________________"))
-            c.drawString(2*cm, 2*cm, format_arabic("البيان: ___________________"))
-
+            c.drawRightString(width-2*cm, 2*cm, "___________________ :ختم وتوقيع المدير")
+            
             c.save()
             return pdf_path
-
+            
         except Exception as e:
             messagebox.showerror("خطأ PDF", f"فشل في توليد الملف: {str(e)}")
             return None
