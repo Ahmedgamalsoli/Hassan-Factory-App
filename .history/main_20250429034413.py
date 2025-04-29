@@ -381,10 +381,6 @@ class SalesSystemApp:
         for widget in self.root.winfo_children():
             widget.destroy()
 
-        # Create mappings for two-way lookup
-        self.product_map = {}
-        self.name_to_code = {}
-        
         # Create top bar
         self.topbar(show_back_button=True)
 
@@ -401,52 +397,43 @@ class SalesSystemApp:
         customer_frame = tk.Frame(form_frame, bd=1, relief=tk.SOLID, padx=5, pady=5)
         customer_frame.grid(row=0, column=0, columnspan=2, sticky='w', pady=5)
 
-        # Customer Combobox with search
+        # Label and Combobox
         tk.Label(customer_frame, text="Customer:", font=("Arial", 12, "bold")).grid(row=0, column=0, sticky='w')
         self.customer_var = tk.StringVar()
-        self.customer_cb = ttk.Combobox(customer_frame, textvariable=self.customer_var)
-        self.customer_cb.grid(row=0, column=1, sticky='ew', padx=(5, 0))
+        self.customer_cb = ttk.Combobox(customer_frame, 
+                                    textvariable=self.customer_var)
+        self.customer_cb.grid(row=0, column=1, sticky='w', padx=(5, 0))
+
+        # Configure grid weights
         customer_frame.columnconfigure(1, weight=1)
         
-        # Populate and configure customers
+        # Populate customers
         all_customers = [cust['Name'] for cust in customers_col.find()]
         self.customer_cb['values'] = all_customers
-        self.customer_cb.bind('<KeyRelease>', 
-                            lambda e: self.filter_combobox(e, all_customers, self.customer_cb))
+        self.customer_cb.bind('<KeyRelease>', lambda event: self.update_search(event, customers_col))
 
-        # Get product data
-        try:
-            products = list(products_col.find())
-            for p in products:
-                code = str(p.get('product_code', '')).strip()
-                name = p.get('product_name', '')
-                self.product_map[code] = {
-                    'name': name,
-                    'unit': p.get('unit', ''),
-                    'price': float(p.get('Unit_Price', 0))
-                }
-                self.name_to_code[name] = code
-            product_codes = list(self.product_map.keys())
-            product_names = list({v['name'] for v in self.product_map.values()})
-            units = list({v['unit'] for v in self.product_map.values()})
-        except Exception as e:
-            messagebox.showerror("Database Error", f"Failed to load products: {str(e)}")
-            return
-
-        # Invoice Items Grid
+        # Invoice Items Grid ======================================================
         columns = self.get_fields_by_name("Sales_Header")
-        col_width = 29
-
-        # Header Row
+        col_width = 28  # Consistent width for all columns
+        
+        # Header Frame using same row structure
         header_row = tk.Frame(form_frame, bg='#f0f0f0')
         header_row.grid(row=2, column=0, columnspan=len(columns), sticky='nsew', pady=(20, 0))
+        
+        # Create headers using same grid structure as data rows
         for col_idx, col in enumerate(columns):
-            tk.Label(header_row, text=col, width=col_width, relief='ridge',
-                    bg='#f0f0f0', anchor='w').grid(row=0, column=col_idx, sticky='ew')
+            header = tk.Label(header_row, 
+                            text=col, 
+                            width=col_width,
+                            relief='ridge',
+                            bg='#f0f0f0',
+                            anchor='w',
+                            padx=0)
+            header.grid(row=0, column=col_idx, sticky='ew', padx=0, pady=0)
             header_row.columnconfigure(col_idx, weight=1)
 
         # Scrollable Canvas
-        canvas = tk.Canvas(form_frame, highlightthickness=0)
+        canvas = tk.Canvas(form_frame, borderwidth=1, highlightthickness=1)
         scrollbar = tk.Scrollbar(form_frame, orient="vertical", command=canvas.yview)
         self.rows_frame = tk.Frame(canvas)
         
@@ -456,54 +443,53 @@ class SalesSystemApp:
         canvas.create_window((0, 0), window=self.rows_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
 
-        canvas.grid(row=3, column=0, columnspan=len(columns), sticky="nsew")
-        scrollbar.grid(row=3, column=len(columns), sticky="ns")
+        # Grid layout
+        canvas.grid(row=3, column=0, columnspan=len(columns), sticky="nsew", pady=(0, 10))
+        scrollbar.grid(row=3, column=len(columns), sticky="ns", pady=(0, 10))
         
         # Configure grid weights
         form_frame.grid_rowconfigure(3, weight=1)
         for i in range(len(columns)):
             form_frame.columnconfigure(i, weight=1)
 
+        # Entry management
         self.entries = []
 
         def create_row(parent, row_number, bg_color):
-            row_frame = tk.Frame(parent, bg=bg_color)
+            row_frame = tk.Frame(parent,bg= bg_color)
             row_frame.grid(row=row_number, column=0, sticky='ew')
             
             row_entries = []
-            for col_idx, col in enumerate(columns):
-                if col == "Product_code":
-                    var = tk.StringVar()
-                    cb = ttk.Combobox(row_frame, textvariable=var, values=product_codes, width=col_width-2)
-                    cb.bind('<<ComboboxSelected>>', lambda e, r=row_number: self.update_product_info(r, "code"))
-                    cb.bind('<KeyRelease>', lambda e, fl=product_codes, cb=cb: self.filter_combobox(e, fl, cb))
-                    cb.grid(row=0, column=col_idx, sticky='ew')
-                    row_entries.append(cb)
-                elif col == "product_name":
-                    var = tk.StringVar()
-                    cb = ttk.Combobox(row_frame, textvariable=var, values=product_names, width=col_width-2)
-                    cb.bind('<<ComboboxSelected>>', lambda e, r=row_number: self.update_product_info(r, "name"))
-                    cb.bind('<KeyRelease>', lambda e, fl=product_names, cb=cb: self.filter_combobox(e, fl, cb))
-                    cb.grid(row=0, column=col_idx, sticky='ew')
-                    row_entries.append(cb)
-                elif col == "unit":
-                    var = tk.StringVar()
-                    cb = ttk.Combobox(row_frame, textvariable=var, values=units, width=col_width-2)
-                    cb.grid(row=0, column=col_idx, sticky='ew')
-                    row_entries.append(cb)
-                elif col in ["Unit_Price", "Total_QTY", "Total_Price"]:
-                    entry = tk.Entry(row_frame, width=col_width+1, relief='flat', state='readonly')
-                    entry.grid(row=0, column=col_idx, sticky='ew')
-                    row_entries.append(entry)
+            for col_idx in range(len(columns)):
+                if parent == header_row:
+                    # Header cell
+                    cell = tk.Label(row_frame, 
+                                text=columns[col_idx], 
+                                width=col_width,
+                                relief='ridge',
+                                bg='#f0f0f0',
+                                anchor='w',
+                                padx=5)
                 else:
-                    entry = tk.Entry(row_frame, width=col_width+1, relief='sunken')
-                    entry.bind('<KeyRelease>', lambda e, r=row_number: self.calculate_totals(r))
-                    entry.grid(row=0, column=col_idx, sticky='ew')
-                    row_entries.append(entry)
+                    # Data cell
+                    cell = tk.Entry(row_frame, 
+                                width=col_width,
+                                relief='sunken',
+                                bg=bg_color,
+                                borderwidth=1,
+                                highlightthickness=1,
+                                highlightcolor="#e0e0e0")
                 
+                cell.grid(row=0, column=col_idx, sticky='ew', padx=5, pady=0)
                 row_frame.columnconfigure(col_idx, weight=1)
+                
+                if parent != header_row:
+                    row_entries.append(cell)
             
-            return row_entries
+            return row_entries if parent != header_row else None
+
+        # Create header row
+        create_row(header_row, 0, None)
 
         def add_three_rows():
             current_row_count = len(self.entries)
@@ -515,75 +501,27 @@ class SalesSystemApp:
         # Initial rows
         add_three_rows()
 
-        # Buttons Frame
+        # Button Frame ============================================================
         button_frame = tk.Frame(form_frame)
         button_frame.grid(row=4, column=0, columnspan=len(columns), pady=10, sticky='ew')
         
+        # Add Rows Button
         tk.Button(button_frame, text="➕ Add 3 More Rows", command=add_three_rows,
                 bg='#4CAF50', fg='white').grid(row=0, column=0, padx=5, sticky='w')
+        
+        # Save Button
         tk.Button(button_frame, text="💾 Save Invoice", 
                 command=lambda: self.save_invoice(sales_col, customers_col),
                 bg='#2196F3', fg='white').grid(row=0, column=1, padx=5, sticky='e')
         
+        # Configure column weights
         button_frame.columnconfigure(0, weight=1)
         button_frame.columnconfigure(1, weight=1)
 
-    def filter_combobox(self, event, full_list, combobox):
-        """Filter combobox values based on user input"""
-        value = event.widget.get().lower()
-        filtered = [item for item in full_list if value in str(item).lower()]
-        combobox['values'] = filtered
-        if filtered:
-            combobox.event_generate('<Down>')
-
-    def update_product_info(self, row_idx, source):
-        """Update fields based on code or name selection"""
-        if source == "code":
-            product_code = self.entries[row_idx][0].get().strip()
-            product_info = self.product_map.get(product_code, {})
-            product_name = product_info.get('name', '')
-        else:  # source == "name"
-            product_name = self.entries[row_idx][1].get().strip()
-            product_code = self.name_to_code.get(product_name, '')
-            product_info = self.product_map.get(product_code, {})
-
-        # Update both dropdowns
-        self.entries[row_idx][0].set(product_code)
-        self.entries[row_idx][1].set(product_name)
-        
-        # Update unit and price
-        self.entries[row_idx][2].set(product_info.get('unit', ''))
-        
-        # Update Unit Price
-        self.entries[row_idx][6].config(state='normal')
-        self.entries[row_idx][6].delete(0, tk.END)
-        self.entries[row_idx][6].insert(0, f"{product_info.get('price', 0):.2f}")
-        self.entries[row_idx][6].config(state='readonly')
-        
-        self.calculate_totals(row_idx)
-
-    def calculate_totals(self, row_idx):
-        try:
-            qty = float(self.entries[row_idx][3].get() or 0)
-            numbering = float(self.entries[row_idx][4].get() or 0)
-            unit_price = float(self.entries[row_idx][6].get() or 0)
+        # Configure columns in rows frame
+        for i in range(len(columns)):
+            self.rows_frame.columnconfigure(i, weight=1)
             
-            total_qty = qty * numbering
-            total_price = unit_price * total_qty
-            
-            # Update Total QTY
-            self.entries[row_idx][5].config(state='normal')
-            self.entries[row_idx][5].delete(0, tk.END)
-            self.entries[row_idx][5].insert(0, f"{total_qty:.2f}")
-            self.entries[row_idx][5].config(state='readonly')
-            
-            # Update Total Price
-            self.entries[row_idx][7].config(state='normal')
-            self.entries[row_idx][7].delete(0, tk.END)
-            self.entries[row_idx][7].insert(0, f"{total_price:.2f}")
-            self.entries[row_idx][7].config(state='readonly')
-        except ValueError:
-            pass
 
 ############################ Main Functions ########################################
     def display_table(self):
@@ -793,7 +731,7 @@ class SalesSystemApp:
             return ["Product_code", "product_name", "unit", "QTY", "numbering","Total_QTY","Unit_Price","Total_Price","Date","Reciept_Number","Customer_Name","Customer_ID"]
 
         elif collection_name == "Sales_Header":
-            return ["Product_code", "product_name", "unit", "QTY", "numbering","Total_QTY","Unit_Price","Total_Price"]
+            return ["Product code", "Product Name", "unit", "QTY", "numbering Or Weight","Total QTY","Unit Price","Total Price"]
        
         elif collection_name == "Customers":
             return ["Name", "Phone_number1", "Phone_number2", "Code", "Purchase_mgr_number", "Financial_mgr_number", "Purchase_mgr_name", 

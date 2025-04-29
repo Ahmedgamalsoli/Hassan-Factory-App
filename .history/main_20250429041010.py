@@ -381,10 +381,6 @@ class SalesSystemApp:
         for widget in self.root.winfo_children():
             widget.destroy()
 
-        # Create mappings for two-way lookup
-        self.product_map = {}
-        self.name_to_code = {}
-        
         # Create top bar
         self.topbar(show_back_button=True)
 
@@ -401,18 +397,17 @@ class SalesSystemApp:
         customer_frame = tk.Frame(form_frame, bd=1, relief=tk.SOLID, padx=5, pady=5)
         customer_frame.grid(row=0, column=0, columnspan=2, sticky='w', pady=5)
 
-        # Customer Combobox with search
+        # Customer Combobox
         tk.Label(customer_frame, text="Customer:", font=("Arial", 12, "bold")).grid(row=0, column=0, sticky='w')
         self.customer_var = tk.StringVar()
         self.customer_cb = ttk.Combobox(customer_frame, textvariable=self.customer_var)
-        self.customer_cb.grid(row=0, column=1, sticky='ew', padx=(5, 0))
+        self.customer_cb.grid(row=0, column=1, sticky='w', padx=(5, 0))
         customer_frame.columnconfigure(1, weight=1)
         
-        # Populate and configure customers
+        # Populate customers
         all_customers = [cust['Name'] for cust in customers_col.find()]
         self.customer_cb['values'] = all_customers
-        self.customer_cb.bind('<KeyRelease>', 
-                            lambda e: self.filter_combobox(e, all_customers, self.customer_cb))
+        self.customer_cb.bind('<KeyRelease>', lambda event: self.update_search(event, customers_col))
 
         # Get product data
         try:
@@ -423,9 +418,9 @@ class SalesSystemApp:
                 self.product_map[code] = {
                     'name': name,
                     'unit': p.get('unit', ''),
-                    'price': float(p.get('Unit_Price', 0))
+                    'price': float(p.get('Unit_price', 0))
                 }
-                self.name_to_code[name] = code
+                self.name_to_code[name] = code  # Add to name mapping
             product_codes = list(self.product_map.keys())
             product_names = list({v['name'] for v in self.product_map.values()})
             units = list({v['unit'] for v in self.product_map.values()})
@@ -434,6 +429,8 @@ class SalesSystemApp:
             return
 
         # Invoice Items Grid
+        # columns = ["Product_code", "product_name", "unit", "QTY", "numbering", 
+        #         "Total_QTY", "Unit_Price", "Total_Price"]
         columns = self.get_fields_by_name("Sales_Header")
         col_width = 29
 
@@ -475,15 +472,13 @@ class SalesSystemApp:
                 if col == "Product_code":
                     var = tk.StringVar()
                     cb = ttk.Combobox(row_frame, textvariable=var, values=product_codes, width=col_width-2)
-                    cb.bind('<<ComboboxSelected>>', lambda e, r=row_number: self.update_product_info(r, "code"))
-                    cb.bind('<KeyRelease>', lambda e, fl=product_codes, cb=cb: self.filter_combobox(e, fl, cb))
+                    cb.bind('<<ComboboxSelected>>', 
+               lambda e, r=row_number: self.update_product_info(r, "code"))
                     cb.grid(row=0, column=col_idx, sticky='ew')
                     row_entries.append(cb)
                 elif col == "product_name":
                     var = tk.StringVar()
                     cb = ttk.Combobox(row_frame, textvariable=var, values=product_names, width=col_width-2)
-                    cb.bind('<<ComboboxSelected>>', lambda e, r=row_number: self.update_product_info(r, "name"))
-                    cb.bind('<KeyRelease>', lambda e, fl=product_names, cb=cb: self.filter_combobox(e, fl, cb))
                     cb.grid(row=0, column=col_idx, sticky='ew')
                     row_entries.append(cb)
                 elif col == "unit":
@@ -492,11 +487,11 @@ class SalesSystemApp:
                     cb.grid(row=0, column=col_idx, sticky='ew')
                     row_entries.append(cb)
                 elif col in ["Unit_Price", "Total_QTY", "Total_Price"]:
-                    entry = tk.Entry(row_frame, width=col_width+1, relief='flat', state='readonly')
+                    entry = tk.Entry(row_frame, width=col_width, relief='flat', state='readonly')
                     entry.grid(row=0, column=col_idx, sticky='ew')
                     row_entries.append(entry)
                 else:
-                    entry = tk.Entry(row_frame, width=col_width+1, relief='sunken')
+                    entry = tk.Entry(row_frame, width=col_width, relief='sunken')
                     entry.bind('<KeyRelease>', lambda e, r=row_number: self.calculate_totals(r))
                     entry.grid(row=0, column=col_idx, sticky='ew')
                     row_entries.append(entry)
@@ -527,14 +522,6 @@ class SalesSystemApp:
         
         button_frame.columnconfigure(0, weight=1)
         button_frame.columnconfigure(1, weight=1)
-
-    def filter_combobox(self, event, full_list, combobox):
-        """Filter combobox values based on user input"""
-        value = event.widget.get().lower()
-        filtered = [item for item in full_list if value in str(item).lower()]
-        combobox['values'] = filtered
-        if filtered:
-            combobox.event_generate('<Down>')
 
     def update_product_info(self, row_idx, source):
         """Update fields based on code or name selection"""

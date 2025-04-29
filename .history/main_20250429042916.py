@@ -423,7 +423,7 @@ class SalesSystemApp:
                 self.product_map[code] = {
                     'name': name,
                     'unit': p.get('unit', ''),
-                    'price': float(p.get('Unit_Price', 0))
+                    'price': float(p.get('Unit_price', 0))
                 }
                 self.name_to_code[name] = code
             product_codes = list(self.product_map.keys())

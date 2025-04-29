@@ -508,7 +508,7 @@ class SalesSystemApp:
         def add_three_rows():
             current_row_count = len(self.entries)
             for i in range(3):
-                bg_color = 'white' if (current_row_count + i) % 2 == 0 else '#f0f0f0'
+                bg_color = 'white' if (current_row_count + i) % 2 == 0 else 'black'
                 row_entries = create_row(self.rows_frame, current_row_count + i, bg_color)
                 self.entries.append(row_entries)
 
