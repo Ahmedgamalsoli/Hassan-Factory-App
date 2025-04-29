@@ -574,7 +574,6 @@ class SalesSystemApp:
         
         button_frame.columnconfigure(0, weight=1)
         button_frame.columnconfigure(1, weight=1)
-
     def handle_combobox_change(self, event, row_idx, field_type):
         """Handle changes in product code/name comboboxes"""
         value = event.widget.get().strip()
@@ -901,7 +900,7 @@ class SalesSystemApp:
             return ["product_name", "category", "price", "stock_quantity", "supplier"]
         
         elif collection_name == "Sales":
-            return ["product_code", "Product_name", "unit", "QTY", "numbering","Total_QTY","Unit_Price","Total Price","Date","Reciept_Number","Customer_name","Customer_code"]
+            return ["Product_code", "product_name", "unit", "QTY", "numbering","Total_QTY","Unit_Price","Total_Price","Date","Reciept_Number","Customer_Name","Customer_ID"]
 
         elif collection_name == "Sales_Header":
             return ["Product_code", "product_name", "unit", "QTY", "numbering","Total_QTY","Unit_Price","Total_Price"]
@@ -987,19 +986,291 @@ class SalesSystemApp:
                 self.customer_cb.event_generate('<Down>')
             else:
                 self.customer_cb.event_generate('<Up>')  # Close dropdown
+
+    # def add_product(self, products_col):
+    #     # New window for product selection
+    #     product_win = tk.Toplevel()
+    #     product_win.title("Select Product")
+        
+    #     # Product Search and Selection
+    #     tk.Label(product_win, text="Search Product:").pack()
+    #     product_var = tk.StringVar()
+    #     product_cb = ttk.Combobox(product_win, textvariable=product_var)
+    #     product_cb.pack()
+    #     product_cb['values'] = [prod['product_name'] for prod in products_col.find()]
+        
+    #     # Add selected product to invoice
+    #     tk.Button(product_win, text="Add", command=lambda: self.add_to_invoice(product_var.get(), products_col)).pack()
+
+    # def add_to_invoice(self, product_name, products_col):
+    #     """إضافة منتج للفاتورة"""
+    #     product = products_col.find_one({"product_name": product_name})
+    #     if product:
+    #         self.tree.insert('', 'end', values=(
+    #             product['product_code'],
+    #             product['product_name'],
+    #             "1",  # الكمية الافتراضية
+    #             product['Unit_price'],
+    #             product['Unit_price']  # الإجمالي المبدئي
+    #         ))
+
+    # def generate_sales_report(self, invoice_id):
+    #     """إنشاء تقرير المبيعات"""
+    #     sales_col = self.db['Sales']
+    #     invoice = sales_col.find_one({'_id': invoice_id})
+        
+    #     if not invoice:
+    #         messagebox.showerror("خطأ", "الفاتورة غير موجودة")
+    #         return
+
+    #     customers_col = self.db['Customers']
+    #     customer = customers_col.find_one({'Customer_code': invoice['Customer_code']})
+        
+    #     report_win = tk.Toplevel()
+    #     report_win.title(f"فاتورة بيع رقم - {invoice['Recital_number']}")
+        
+    #     main_frame = tk.Frame(report_win)
+    #     main_frame.pack(padx=20, pady=20, fill=tk.BOTH, expand=True)
+
+    #     # قسم الرأس
+    #     header_frame = tk.Frame(main_frame)
+    #     header_frame.grid(row=0, column=0, columnspan=2, sticky='e')
+        
+    #     header_data = [
+    #         ("فاتورة بيع رقم", invoice.get('Recital_number', 'N/A')),
+    #         ("التاريخ", invoice.get('Date', 'N/A')),
+    #         ("اسم العميل", customer.get('Name', 'N/A') if customer else 'N/A'),
+    #         ("العنوان", customer.get('Address', 'N/A') if customer else 'N/A'),
+    #         ("التقييم", customer.get('Rating', 'N/A') if customer else 'N/A')
+    #     ]
+        
+    #     for i, (label, value) in enumerate(header_data):
+    #         tk.Label(header_frame, text=f"{label}: {value}", 
+    #                 font=('Arial', 12), anchor='e').grid(row=i, column=0, sticky='e')
+
+    #     # جدول العناصر
+    #     columns = ('كود الصنف', 'الصنف', 'الوحدة', 'الكمية', 'العدد', 'سعر الوحدة', 'الإجمالي')
+    #     tree = ttk.Treeview(main_frame, columns=columns, show='headings', height=6)
+        
+    #     for col in columns:
+    #         tree.heading(col, text=col, anchor='e')
+    #         tree.column(col, anchor='e', width=100)
+        
+    #     tree.grid(row=1, column=0, columnspan=2, pady=10, sticky='nsew')
+
+    #     products_col = self.db['Products']
+    #     for item in invoice.get('Items', []):
+    #         product = products_col.find_one({'product_code': item.get('Product_code')})
+    #         tree.insert('', 'end', values=(
+    #             item.get('Product_code', ''),
+    #             product.get('product_name', 'N/A') if product else 'N/A',
+    #             item.get('Unit', ''),
+    #             f"{float(item.get('QTY', 0)):,.2f}",
+    #             f"{float(item.get('numbering', 0)):,.2f}",
+    #             f"{float(item.get('Unit_price', 0)):,.2f}",
+    #             f"{float(item.get('Total_price', 0)):,.2f}"
+    #         ))
+
+    #     # قسم الإجماليات
+    #     totals_frame = tk.Frame(main_frame)
+    #     totals_frame.grid(row=2, column=0, columnspan=2, pady=10, sticky='e')
+        
+    #     totals_data = [
+    #         ("صافي الفاتورة", invoice.get('Net_total', 0)),
+    #         ("حساب سابق", invoice.get('Previous_balance', 0)),
+    #         ("إجمالي الفاتورة", invoice.get('Grand_total', 0)),
+    #         ("المدفوع", invoice.get('Amount_paid', 0)),
+    #         ("الباقي", invoice.get('Remaining_balance', 0))
+    #     ]
+        
+    #     for i, (label, value) in enumerate(totals_data):
+    #         tk.Label(totals_frame, text=label, font=('Arial', 10, 'bold'), 
+    #                 anchor='e').grid(row=i, column=0, padx=10)
+    #         tk.Label(totals_frame, text=f"{float(value):,.2f}", 
+    #                 font=('Arial', 10), anchor='w').grid(row=i, column=1)
+    # def set_database(self, db_connection):
+    #     """تعيين اتصال قاعدة البيانات"""
+    #     self.db = db_connection
+
+    # def generate_pdf(self, invoice_data, file_path):
+    #     """توليد ملف PDF للفاتورة"""
+    #     try:
+    #         c = canvas.Canvas(file_path, pagesize=letter)
+            
+    #         # محتوى الفاتورة
+    #         c.setFont("Helvetica-Bold", 16)
+    #         c.drawString(100, 780, "مصنع حسن سليم للمنتجات البلاستيكية")
+    #         c.setFont("Helvetica-Bold", 14)
+    #         c.drawString(100, 750, f"رقم الفاتورة: {invoice_data['Recital_number']}")
+    #         c.drawString(100, 730, f"التاريخ: {invoice_data['Date']}")
+    #         c.drawString(100, 710, f"العميل: {invoice_data['Customer_name']}")
+            
+    #         # جدول العناصر
+    #         y_position = 670
+    #         headers = ["الصنف", "الكمية", "السعر", "الإجمالي"]
+    #         col_positions = [100, 220, 340, 460]
+            
+    #         c.setFont("Helvetica-Bold", 12)
+    #         for header, pos in zip(headers, col_positions):
+    #             c.drawString(pos, y_position, header)
+            
+    #         y_position -= 30
+    #         c.setFont("Helvetica", 10)
+    #         for item in invoice_data['Items']:
+    #             c.drawString(col_positions[0], y_position, item['product_name'])
+    #             c.drawString(col_positions[1], y_position, str(item['QTY']))
+    #             c.drawString(col_positions[2], y_position, f"{item['Unit_price']:,.2f}")
+    #             c.drawString(col_positions[3], y_position, f"{item['Total_price']:,.2f}")
+    #             y_position -= 20
+    #             if y_position < 100:  # تغيير الصفحة إذا لزم الأمر
+    #                 c.showPage()
+    #                 y_position = 750
+            
+    #         # الإجماليات
+    #         c.setFont("Helvetica-Bold", 12)
+    #         c.drawString(400, y_position-40, f"الإجمالي: {invoice_data['Grand_total']:,.2f} ريال")
+            
+    #         c.save()
+    #         return True
+    #     except Exception as e:
+    #         messagebox.showerror("خطأ", f"فشل في توليد PDF: {str(e)}")
+    #         return False
+    # def save_invoice(self, sales_col, customers_col):
+    #     """حفظ الفاتورة في قاعدة البيانات"""
+    #     try:
+    #         if not self.db:
+    #             messagebox.showerror("خطأ", "لم يتم تعيين اتصال قاعدة البيانات")
+    #             return
+    #         # التحقق من وجود بيانات العميل
+    #         customer_name = self.customer_var.get().strip()
+    #         if not customer_name:
+    #             messagebox.showerror("خطأ", "يرجى اختيار عميل")
+    #             return
+
+    #         customer = customers_col.find_one({"Name": customer_name})
+    #         if not customer:
+    #             messagebox.showerror("خطأ", "العميل غير مسجل! الرجاء التأكد من الاسم")
+    #             return
+
+    #         # التحقق من وجود عناصر في الفاتورة
+    #         if not any(row[0].get() or row[1].get() for row in self.entries):
+    #             messagebox.showerror("خطأ", "الفاتورة لا تحتوي على أي عناصر")
+    #             return
+
+    #         # تجهيز العناصر مع التحقق من البيانات
+    #         items = []
+    #         total_amount = 0.0
+    #         products_col = self.db['Products']
+            
+    #         for row in self.entries:
+    #             product_code = row[0].get().strip()
+    #             product_name = row[1].get().strip()
+                
+    #             # تخطي الصفوف الفارغة
+    #             if not product_code and not product_name:
+    #                 continue
+                    
+    #             # التحقق من وجود المنتج
+    #             product = products_col.find_one({
+    #                 "$or": [
+    #                     {"product_code": product_code},
+    #                     {"product_name": product_name}
+    #                 ]
+    #             })
+                
+    #             if not product:
+    #                 messagebox.showerror("خطأ", f"المنتج غير موجود: {product_code or product_name}")
+    #                 return
+
+    #             # التحقق من البيانات الرقمية
+    #             try:
+    #                 qty = float(row[3].get() or 0)
+    #                 numbering = float(row[4].get() or 0)
+    #                 unit_price = float(product['Unit_price'])
+    #                 total_price = qty * numbering * unit_price
+    #             except ValueError:
+    #                 messagebox.showerror("خطأ", "قيم غير صالحة في الحقول الرقمية")
+    #                 return
+
+    #             items.append({
+    #                 "Product_code": product['product_code'],
+    #                 "product_name": product['product_name'],
+    #                 "Unit": row[2].get().strip(),
+    #                 "QTY": qty,
+    #                 "numbering": numbering,
+    #                 "Unit_price": unit_price,
+    #                 "Total_price": total_price
+    #             })
+                
+    #             total_amount += total_price
+
+    #         # إنشاء رقم الفاتورة
+    #         try:
+    #             invoice_number = self.generate_invoice_number()
+    #         except Exception as e:
+    #             messagebox.showerror("خطأ", f"فشل في توليد رقم الفاتورة: {str(e)}")
+    #             return
+
+    #         # إنشاء وثيقة الفاتورة
+    #         invoice = {
+    #             "Recital_number": f"فاتورة رقم {invoice_number}",
+    #             "Date": datetime.now().strftime("%d/%m/%Y"),
+    #             "Customer_code": customer.get('Customer_code', 'CUST-001'),
+    #             "Customer_name": customer['Name'],
+    #             "Customer_address": customer.get('Address', ''),
+    #             "Items": items,
+    #             "Net_total": total_amount,
+    #             "Previous_balance": float(customer.get('Previous_balance', 0)),
+    #             "Grand_total": total_amount + float(customer.get('Previous_balance', 0)),
+    #             "Amount_paid": 0.0,
+    #             "Remaining_balance": total_amount + float(customer.get('Previous_balance', 0)),
+    #             "Status": "معلقة"
+    #         }
+
+    #         # إدخال البيانات مع التعامل مع الأخطاء
+    #         try:
+    #             sales_col.insert_one(invoice)
+    #             customers_col.update_one(
+    #                 {"_id": customer['_id']},
+    #                 {"$set": {"Previous_balance": invoice['Remaining_balance']}}
+    #             )
+    #             messagebox.showinfo("نجاح", f"تم حفظ الفاتورة {invoice['Recital_number']} بنجاح")
+                
+    #             # تحديث الواجهة بعد الحفظ
+    #             self.clear_invoice_form()
+    #             # توليد PDF بعد الحفظ
+    #             desktop = os.path.join(os.path.expanduser('~'), 'Desktop')
+    #             pdf_path = os.path.join(desktop, f"{invoice['Recital_number']}.pdf")
+                
+    #             if self.generate_pdf(invoice, pdf_path):
+    #                 messagebox.showinfo("نجاح", 
+    #                     f"تم حفظ:\n- الفاتورة في قاعدة البيانات\n- PDF هنا: {pdf_path}")               
+    #         except Exception as e:
+    #             messagebox.showerror("خطأ فادح", f"فشل في الإتصال بقاعدة البيانات: {str(e)}")
+
+
+    #     except Exception as e:
+    #         messagebox.showerror("خطأ غير متوقع", f"حدث خطأ غير متوقع: {str(e)}")
+
+    # def clear_invoice_form(self):
+    #     """مسح حقول الفاتورة"""
+    #     for row in self.entries:
+    #         for entry in row:
+    #             if isinstance(entry, ttk.Combobox):
+    #                 entry.set('')
+    #             elif isinstance(entry, tk.Entry):
+    #                 entry.delete(0, tk.END)
+
     
     def generate_invoice_number(self):
         """توليد رقم فاتورة تسلسلي"""
         try:
-            print(0)
-            sales_col = self.get_collection_by_name('Sales')
-            print(10)
+            sales_col = self.db["Sales"]
             last_invoice = sales_col.find_one(sort=[("Reciept_Number", -1)])
-            print(20)
+            
             # التحقق من وجود الفاتورة وتنسيقها
-            last_number = 1
+            last_number = 0
             if last_invoice:
-                print(1)
                 reciept_number = last_invoice.get("Reciept_Number")
                 if (
                     reciept_number 
@@ -1008,13 +1279,10 @@ class SalesSystemApp:
                 ):
                     try:
                         last_number = int(reciept_number.split("-")[-1])
-                        print(2)
                     except (ValueError, IndexError):
-                        last_number = 1
-                        print(3)
+                        last_number = 0
             
             new_number = last_number + 1
-            print(4)
             return f"INV-{new_number:04d}"
         
         except Exception as e:
@@ -1126,76 +1394,6 @@ class SalesSystemApp:
         except Exception as e:
             messagebox.showerror("خطأ فادح", f"فشل في العملية: {str(e)}")
 
-    def clear_invoice_form(self):
-            """تنظيف جميع حقول الفاتورة"""
-            try:
-                # تنظيف Combobox العميل
-                self.customer_var.set('')
-                
-                # تنظيف حقول العناصر
-                for row in self.entries:
-                    for entry in row:
-                        if isinstance(entry, ttk.Combobox):
-                            entry.set('')
-                        elif isinstance(entry, tk.Entry):
-                            entry.delete(0, tk.END)
-                
-                # إعادة تعيين القائمة
-                self.entries = []
-                # Modified create_row function with enhanced clearing
-                # columns = self.get_fields_by_name("Sales_Header")
-                # def create_row(parent, row_number, bg_color):
-                #     row_frame = tk.Frame(parent, bg=bg_color)
-                #     row_frame.grid(row=row_number, column=0, sticky='ew')
-                    
-                #     row_entries = []
-                #     for col_idx, col in enumerate(columns):
-                #         if col == "Product_code":
-                #             var = tk.StringVar()
-                #             cb = ttk.Combobox(row_frame, textvariable=var, values=product_codes, width=col_width-2)
-                #             cb.bind('<<ComboboxSelected>>', lambda e, r=row_number: self.update_product_info(r, "code"))
-                #             cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_combobox_change(e, r, "code"))
-                #             cb.grid(row=0, column=col_idx, sticky='ew')
-                #             row_entries.append(cb)
-                #         elif col == "product_name":
-                #             var = tk.StringVar()
-                #             cb = ttk.Combobox(row_frame, textvariable=var, values=product_names, width=col_width-2)
-                #             cb.bind('<<ComboboxSelected>>', lambda e, r=row_number: self.update_product_info(r, "name"))
-                #             cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_combobox_change(e, r, "name"))
-                #             cb.grid(row=0, column=col_idx, sticky='ew')
-                #             row_entries.append(cb)
-                #         elif col == "unit":
-                #             var = tk.StringVar()
-                #             cb = ttk.Combobox(row_frame, textvariable=var, values=[], width=col_width-2)
-                #             cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_unit_change(e, r))
-                #             cb.grid(row=0, column=col_idx, sticky='ew')
-                #             row_entries.append(cb)
-                #         elif col in ["Unit_Price", "Total_QTY", "Total_Price"]:
-                #             entry = tk.Entry(row_frame, width=col_width+1, relief='flat', state='readonly')
-                #             entry.grid(row=0, column=col_idx, sticky='ew')
-                #             row_entries.append(entry)
-                #         else:
-                #             entry = tk.Entry(row_frame, width=col_width+1, relief='sunken')
-                #             entry.bind('<KeyRelease>', lambda e, r=row_number: self.calculate_totals(r))
-                #             entry.grid(row=0, column=col_idx, sticky='ew')
-                #             row_entries.append(entry)
-                        
-                #         row_frame.columnconfigure(col_idx, weight=1)
-                    
-                #     return row_entries
-
-                # def add_three_rows():
-                #     current_row_count = len(self.entries)
-                #     for i in range(3):
-                #         bg_color = 'white' if (current_row_count + i) % 2 == 0 else '#f0f0f0'
-                #         row_entries = create_row(self.rows_frame, current_row_count + i, bg_color)
-                #         self.entries.append(row_entries)
-                # إعادة إنشاء الصفوف الأساسية
-                # إذا كنت تستخدم دالة لإضافة الصفوف
-                self.new_sales_invoice(self.user_role)
-            except Exception as e:
-                messagebox.showerror("خطأ", f"فشل في تنظيف الحقول: {str(e)}")
-                
     def generate_pdf(self, invoice_data):
         """توليد ملف PDF بحجم A4 بتنسيق عربي"""
         try:
