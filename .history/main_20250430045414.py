@@ -1114,11 +1114,11 @@ class SalesSystemApp:
                 "Customer_name": customer.get("Name", "غير معروف"),
                 "Customer_phone1": customer.get("Phone_number1", ""),
                 "Customer_phone2": customer.get("Phone_number2", ""),
-                "Customer_address": customer.get("Company_address", ""),
+                "Customer_address": customer.get("Address", ""),
                 "Items": items,
                 "Net_total": total_amount,
                 "Grand_total": total_amount,
-                # "Status": "معلقة",
+                "Status": "معلقة",
                 "PDF_Path": ""
             }
 

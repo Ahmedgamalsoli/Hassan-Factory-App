@@ -1112,13 +1112,12 @@ class SalesSystemApp:
                 "Date": datetime.now().strftime("%d/%m/%Y %H:%M"),
                 "Customer_code": customer.get("Customer_code", "CUST-001"),
                 "Customer_name": customer.get("Name", "غير معروف"),
-                "Customer_phone1": customer.get("Phone_number1", ""),
-                "Customer_phone2": customer.get("Phone_number2", ""),
-                "Customer_address": customer.get("Company_address", ""),
+                "Customer_phone": customer.get("Phone", ""),
+                "Customer_address": customer.get("Address", ""),
                 "Items": items,
                 "Net_total": total_amount,
                 "Grand_total": total_amount,
-                # "Status": "معلقة",
+                "Status": "معلقة",
                 "PDF_Path": ""
             }
 
@@ -1140,10 +1139,7 @@ class SalesSystemApp:
             sales_col.insert_one(invoice_data)
             customers_col.update_one(
                 {"_id": customer["_id"]},
-                {
-                    "$set": {"Last_purchase": datetime.now()},
-                    "$inc": {"Sales": 1}  # زيادة حقل المبيعات بمقدار 1
-                }
+                {"$set": {"Last_purchase": datetime.now()}}
             )
 
             messagebox.showinfo("نجاح", f"تم الحفظ بنجاح\nرقم الفاتورة: {invoice_number}")

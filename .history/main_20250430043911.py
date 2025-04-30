@@ -569,7 +569,7 @@ class SalesSystemApp:
         tk.Button(button_frame, text="➕ Add 3 More Rows", command=add_three_rows,
                 bg='#4CAF50', fg='white').grid(row=0, column=0, padx=5, sticky='w')
         tk.Button(button_frame, text="💾 Save Invoice", 
-                command=lambda: self.save_invoice(sales_col, customers_col,products_col),
+                command=lambda: self.save_invoice(sales_col, customers_col),
                 bg='#2196F3', fg='white').grid(row=0, column=1, padx=5, sticky='e')
         
         button_frame.columnconfigure(0, weight=1)
@@ -1069,7 +1069,7 @@ class SalesSystemApp:
                         return
                     
                     # التحقق من توفر الكمية
-                    stock = product.get("stock_quantity", 0)
+                    stock = product.get("stick_quantity", 0)
                     if total_qty > stock:
                         messagebox.showerror(
                             "نقص في المخزون", 
@@ -1112,13 +1112,12 @@ class SalesSystemApp:
                 "Date": datetime.now().strftime("%d/%m/%Y %H:%M"),
                 "Customer_code": customer.get("Customer_code", "CUST-001"),
                 "Customer_name": customer.get("Name", "غير معروف"),
-                "Customer_phone1": customer.get("Phone_number1", ""),
-                "Customer_phone2": customer.get("Phone_number2", ""),
-                "Customer_address": customer.get("Company_address", ""),
+                "Customer_phone": customer.get("Phone", ""),
+                "Customer_address": customer.get("Address", ""),
                 "Items": items,
                 "Net_total": total_amount,
                 "Grand_total": total_amount,
-                # "Status": "معلقة",
+                "Status": "معلقة",
                 "PDF_Path": ""
             }
 
@@ -1133,17 +1132,14 @@ class SalesSystemApp:
             for code, new_stock in stock_updates.items():
                 products_col.update_one(
                     {"product_code": code},
-                    {"$set": {"stock_quantity": new_stock}}
+                    {"$set": {"stick_quantity": new_stock}}
                 )
 
             # حفظ الفاتورة
             sales_col.insert_one(invoice_data)
             customers_col.update_one(
                 {"_id": customer["_id"]},
-                {
-                    "$set": {"Last_purchase": datetime.now()},
-                    "$inc": {"Sales": 1}  # زيادة حقل المبيعات بمقدار 1
-                }
+                {"$set": {"Last_purchase": datetime.now()}}
             )
 
             messagebox.showinfo("نجاح", f"تم الحفظ بنجاح\nرقم الفاتورة: {invoice_number}")

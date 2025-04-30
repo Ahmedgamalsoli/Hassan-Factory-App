@@ -1112,13 +1112,12 @@ class SalesSystemApp:
                 "Date": datetime.now().strftime("%d/%m/%Y %H:%M"),
                 "Customer_code": customer.get("Customer_code", "CUST-001"),
                 "Customer_name": customer.get("Name", "غير معروف"),
-                "Customer_phone1": customer.get("Phone_number1", ""),
-                "Customer_phone2": customer.get("Phone_number2", ""),
-                "Customer_address": customer.get("Company_address", ""),
+                "Customer_phone": customer.get("Phone", ""),
+                "Customer_address": customer.get("Address", ""),
                 "Items": items,
                 "Net_total": total_amount,
                 "Grand_total": total_amount,
-                # "Status": "معلقة",
+                "Status": "معلقة",
                 "PDF_Path": ""
             }
 

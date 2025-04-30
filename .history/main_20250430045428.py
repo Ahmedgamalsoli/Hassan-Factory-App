@@ -1118,7 +1118,7 @@ class SalesSystemApp:
                 "Items": items,
                 "Net_total": total_amount,
                 "Grand_total": total_amount,
-                # "Status": "معلقة",
+                "Status": "معلقة",
                 "PDF_Path": ""
             }
 

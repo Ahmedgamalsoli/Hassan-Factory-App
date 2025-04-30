@@ -569,7 +569,7 @@ class SalesSystemApp:
         tk.Button(button_frame, text="➕ Add 3 More Rows", command=add_three_rows,
                 bg='#4CAF50', fg='white').grid(row=0, column=0, padx=5, sticky='w')
         tk.Button(button_frame, text="💾 Save Invoice", 
-                command=lambda: self.save_invoice(sales_col, customers_col,products_col),
+                command=lambda: self.save_invoice(sales_col, customers_col),
                 bg='#2196F3', fg='white').grid(row=0, column=1, padx=5, sticky='e')
         
         button_frame.columnconfigure(0, weight=1)
@@ -1021,137 +1021,156 @@ class SalesSystemApp:
             messagebox.showerror("خطأ", f"فشل توليد الرقم التسلسلي: {str(e)}")
             return None
 
-    def save_invoice(self, sales_col, customers_col, products_col):
-        """حفظ الفاتورة مع التحقق من المخزون وتحديثه"""
-        try:
-            # جمع بيانات العميل
-            customer_name = self.customer_var.get().strip()
-            if not customer_name:
-                messagebox.showerror("خطأ", "يرجى اختيار عميل")
-                return
+def save_invoice(self, sales_col, customers_col, products_col):
+    """حفظ الفاتورة مع التحقق من المخزون وتحديثه"""
+    try:
+        # جمع بيانات العميل
+        customer_name = self.customer_var.get().strip()
+        if not customer_name:
+            messagebox.showerror("خطأ", "يرجى اختيار عميل")
+            return
 
-            # البحث عن العميل مع التحقق من وجوده
-            customer = customers_col.find_one({
-                "Name": {"$regex": f"^{customer_name.strip()}$", "$options": "i"}
-            })
-            if not customer:
-                messagebox.showerror("خطأ", "العميل غير مسجل!")
-                return
-            if "_id" not in customer:
-                messagebox.showerror("خطأ", "بيانات العميل تالفة!")
-                return
+        # البحث عن العميل مع التحقق من وجوده
+        customer = customers_col.find_one({
+            "Name": {"$regex": f"^{customer_name.strip()}$", "$options": "i"}
+        })
+        if not customer:
+            messagebox.showerror("خطأ", "العميل غير مسجل!")
+            return
+        if "_id" not in customer:
+            messagebox.showerror("خطأ", "بيانات العميل تالفة!")
+            return
 
-            # جمع بيانات العناصر والتحقق من المخزون
-            items = []
-            total_amount = 0.0
-            stock_updates = {}  # لتخزين تحديثات المخزون
+        # جمع بيانات العناصر والتحقق من المخزون
+        items = []
+        total_amount = 0.0
+        stock_updates = {}  # لتخزين تحديثات المخزون
+        
+        for row_idx, row in enumerate(self.entries):
+            product_code = row[0].get().strip()
+            product_name = row[1].get().strip()
+            unit = row[2].get().strip()
             
-            for row_idx, row in enumerate(self.entries):
-                product_code = row[0].get().strip()
-                product_name = row[1].get().strip()
-                unit = row[2].get().strip()
+            if not (product_code or product_name or unit):
+                continue
+
+            try:
+                # استخراج القيم الرقمية
+                qty = float(row[3].get() or 0)
+                numbering = float(row[4].get() or 0)
+                unit_price = float(row[6].get() or 0)
+                total_qty = qty * numbering
+                total_price = total_qty * unit_price
                 
-                if not (product_code or product_name or unit):
-                    continue
-
-                try:
-                    # استخراج القيم الرقمية
-                    qty = float(row[3].get() or 0)
-                    numbering = float(row[4].get() or 0)
-                    unit_price = float(row[6].get() or 0)
-                    total_qty = qty * numbering
-                    total_price = total_qty * unit_price
-                    
-                    # البحث عن المنتج في المخزون
-                    product = products_col.find_one({"product_code": product_code})
-                    if not product:
-                        messagebox.showerror("خطأ", f"المنتج {product_code} غير موجود!")
-                        return
-                    
-                    # التحقق من توفر الكمية
-                    stock = product.get("stock_quantity", 0)
-                    if total_qty > stock:
-                        messagebox.showerror(
-                            "نقص في المخزون", 
-                            f"الكمية المطلوبة ({total_qty}) تتجاوز المخزون ({stock}) للمنتج {product_code}"
-                        )
-                        return
-                    
-                    # تخزين تحديثات المخزون
-                    stock_updates[product_code] = stock - total_qty
-                    
-                    # إضافة العنصر للفاتورة
-                    items.append({
-                        "Product_code": product_code,
-                        "product_name": product_name,
-                        "Unit": unit,
-                        "QTY": qty,
-                        "numbering": numbering,
-                        "Total_QTY": total_qty,
-                        "Unit_price": unit_price,
-                        "Total_price": total_price
-                    })
-                    total_amount += total_price
-                    
-                except ValueError as e:
-                    messagebox.showerror("خطأ", f"قيم غير صالحة في الصف {row_idx+1}: {str(e)}")
+                # البحث عن المنتج في المخزون
+                product = products_col.find_one({"product_code": product_code})
+                if not product:
+                    messagebox.showerror("خطأ", f"المنتج {product_code} غير موجود!")
                     return
-
-            if not items:
-                messagebox.showerror("خطأ", "لا توجد عناصر في الفاتورة!")
+                
+                # التحقق من توفر الكمية
+                stock = product.get("stick_quantity", 0)
+                if total_qty > stock:
+                    messagebox.showerror(
+                        "نقص في المخزون", 
+                        f"الكمية المطلوبة ({total_qty}) تتجاوز المخزون ({stock}) للمنتج {product_code}"
+                    )
+                    return
+                
+                # تخزين تحديثات المخزون
+                stock_updates[product_code] = stock - total_qty
+                
+                # إضافة العنصر للفاتورة
+                items.append({
+                    "Product_code": product_code,
+                    "product_name": product_name,
+                    "Unit": unit,
+                    "QTY": qty,
+                    "numbering": numbering,
+                    "Total_QTY": total_qty,
+                    "Unit_price": unit_price,
+                    "Total_price": total_price
+                })
+                total_amount += total_price
+                
+            except ValueError as e:
+                messagebox.showerror("خطأ", f"قيم غير صالحة في الصف {row_idx+1}: {str(e)}")
                 return
 
-            # توليد رقم الفاتورة
-            invoice_number = self.generate_invoice_number()
-            if not invoice_number:
-                return
+        if not items:
+            messagebox.showerror("خطأ", "لا توجد عناصر في الفاتورة!")
+            return
 
-            # إنشاء وثيقة الفاتورة
-            invoice_data = {
-                "Reciept_Number": invoice_number,
-                "Date": datetime.now().strftime("%d/%m/%Y %H:%M"),
-                "Customer_code": customer.get("Customer_code", "CUST-001"),
-                "Customer_name": customer.get("Name", "غير معروف"),
-                "Customer_phone1": customer.get("Phone_number1", ""),
-                "Customer_phone2": customer.get("Phone_number2", ""),
-                "Customer_address": customer.get("Company_address", ""),
-                "Items": items,
-                "Net_total": total_amount,
-                "Grand_total": total_amount,
-                # "Status": "معلقة",
-                "PDF_Path": ""
-            }
+        # توليد رقم الفاتورة
+        invoice_number = self.generate_invoice_number()
+        if not invoice_number:
+            return
 
-            # توليد PDF
-            pdf_path = self.generate_pdf(invoice_data)
-            if not pdf_path:
-                return
-            
-            invoice_data["PDF_Path"] = pdf_path
+        # إنشاء وثيقة الفاتورة
+        invoice_data = {
+            "Reciept_Number": invoice_number,
+            "Date": datetime.now().strftime("%d/%m/%Y %H:%M"),
+            "Customer_code": customer.get("Customer_code", "CUST-001"),
+            "Customer_name": customer.get("Name", "غير معروف"),
+            "Customer_phone": customer.get("Phone", ""),
+            "Customer_address": customer.get("Address", ""),
+            "Items": items,
+            "Net_total": total_amount,
+            "Grand_total": total_amount,
+            "Status": "معلقة",
+            "PDF_Path": ""
+        }
 
-            # تحديث المخزون
-            for code, new_stock in stock_updates.items():
-                products_col.update_one(
-                    {"product_code": code},
-                    {"$set": {"stock_quantity": new_stock}}
-                )
+        # توليد PDF
+        pdf_path = self.generate_pdf(invoice_data)
+        if not pdf_path:
+            return
+        
+        invoice_data["PDF_Path"] = pdf_path
 
-            # حفظ الفاتورة
-            sales_col.insert_one(invoice_data)
-            customers_col.update_one(
-                {"_id": customer["_id"]},
-                {
-                    "$set": {"Last_purchase": datetime.now()},
-                    "$inc": {"Sales": 1}  # زيادة حقل المبيعات بمقدار 1
-                }
+        # تحديث المخزون
+        for code, new_stock in stock_updates.items():
+            products_col.update_one(
+                {"product_code": code},
+                {"$set": {"stick_quantity": new_stock}}
             )
 
-            messagebox.showinfo("نجاح", f"تم الحفظ بنجاح\nرقم الفاتورة: {invoice_number}")
-            self.clear_invoice_form()
+        # حفظ الفاتورة
+        sales_col.insert_one(invoice_data)
+        customers_col.update_one(
+            {"_id": customer["_id"]},
+            {"$set": {"Last_purchase": datetime.now()}}
+        )
 
-        except Exception as e:
-            messagebox.showerror("خطأ فادح", f"فشل في العملية: {str(e)}")
+        messagebox.showinfo("نجاح", f"تم الحفظ بنجاح\nرقم الفاتورة: {invoice_number}")
+        self.clear_invoice_form()
 
+    except Exception as e:
+        messagebox.showerror("خطأ فادح", f"فشل في العملية: {str(e)}")
+
+def generate_invoice_number(self):
+    """توليد رقم فاتورة تسلسلي"""
+    try:
+        sales_col = self.db["Sales"]
+        last_invoice = sales_col.find_one(sort=[("Reciept_Number", -1)])
+        
+        last_number = 0
+        if last_invoice:
+            reciept_number = last_invoice.get("Reciept_Number")
+            if (
+                reciept_number 
+                and reciept_number.startswith("INV-")
+            ):
+                try:
+                    last_number = int(reciept_number.split("-")[-1])
+                except:
+                    last_number = 0
+        
+        return f"INV-{(last_number + 1):04d}"
+    
+    except Exception as e:
+        messagebox.showerror("خطأ", f"فشل توليد الرقم: {str(e)}")
+        return None
 
     def clear_invoice_form(self):
             """تنظيف جميع حقول الفاتورة"""
