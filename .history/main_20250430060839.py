@@ -1131,9 +1131,8 @@ class SalesSystemApp:
                 "Customer_address": customer.get("Company_address", ""),
                 "Items": items,
                 "Net_total": total_amount,
-                "Balance":customer.get("Balance",""),
                 "Payed_cash": self.payed_cash_var.get() if self.payed_cash_var.get() else 0.0,
-                # "Grand_total": total_amount,
+                "Grand_total": total_amount,
                 # "Status": "معلقة",
                 "PDF_Path": ""
             }
@@ -1299,10 +1298,10 @@ class SalesSystemApp:
             totals_y = table_y - 2*cm
             totals = [
                 ("صافي الفاتورة:", invoice_data.get('Net_total', 0)),
-                ("حساب سابق:", invoice_data['Balance']),  # يجب إضافته في invoice_data
-                ("إجمالي الفاتورة:", invoice_data['Net_total'] + invoice_data['Balance']),
-                ("المبلغ المدفوع:" ,invoice_data.get('Payed_cash', 0)),
-                ("الباقي:",invoice_data['Net_total'] + invoice_data['Balance'] - invoice_data.get('Payed_cash', 0))
+                ("حساب سابق:", invoice_data.get('Balance', 0)),  # يجب إضافته في invoice_data
+                ("إجمالي الفاتورة:", invoice_data['Grand_total']),
+                ("المبلغ المدفوع:" ,invoice_data.get('Payed_cash', 0))
+                ("الباقي:",invoice_data['Grand_total']-invoice_data.get('Payed_cash', 0))
             ]
             c.setFont("Arabic", 12)
             for label, value in totals:

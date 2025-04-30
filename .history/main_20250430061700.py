@@ -1133,7 +1133,7 @@ class SalesSystemApp:
                 "Net_total": total_amount,
                 "Balance":customer.get("Balance",""),
                 "Payed_cash": self.payed_cash_var.get() if self.payed_cash_var.get() else 0.0,
-                # "Grand_total": total_amount,
+                "Grand_total": total_amount,
                 # "Status": "معلقة",
                 "PDF_Path": ""
             }
