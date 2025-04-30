@@ -1146,7 +1146,7 @@ class SalesSystemApp:
                         "Sales": 1,
                         "Debit": total_amount,    # إضافة الدين
                         "Balance": total_amount   # إضافة الرصيد
-                    }
+                }
                 }
             )
 
