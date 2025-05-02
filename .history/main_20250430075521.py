@@ -67,6 +67,16 @@ class SalesSystemApp:
         self.language = "Arabic"  # default language
         self.translations = {
             "Add New Product": {"Arabic": "امر انتاج", "English": "Production order"},
+            # "Place Orders": {"Arabic": "تنفيذ الطلبات", "English": "Place Orders"},
+            # "Expenses": {"Arabic": "المصاريف", "English": "Expenses"},
+            # "Returns": {"Arabic": "المرتجعات", "English": "Returns"},
+            # "Employees Appointments": {"Arabic": "مواعيد الموظفين", "English": "Employees Appointments"},
+            # "Daily Shifts": {"Arabic": "الورديات اليومية", "English": "Daily Shifts"},
+            # "View Product": {"Arabic": "عرض المنتجات", "English": "View Product"},
+            # "View Orders": {"Arabic": "عرض الطلبات", "English": "View Orders"},
+            # "View Customers": {"Arabic": "عرض العملاء", "English": "View Customers"},
+            # "Edit Product": {"Arabic": "تعديل المنتج", "English": "Edit Product"},
+            # "Accounting": {"Arabic": "الحسابات", "English": "Accounting"},
             "Reports": {"Arabic": "التقارير", "English": "Reports"},
             "Production Order": {"Arabic": "أمر انتاج", "English": "Production Order"},
             "Database": {"Arabic": "قاعدة البيانات", "English": "Database"},
@@ -79,10 +89,8 @@ class SalesSystemApp:
             "Suppliers": {"Arabic": "الموردين", "English": "Suppliers"},
             "Products": {"Arabic": "المنتجات", "English": "Products"},
             "Materials": {"Arabic": "الخامات", "English": "Materials"},
+            # "Reports": {"Arabic": "التقارير", "English": "Reports"},
             "Employees": {"Arabic": "الموظفين", "English": "Employees"},
-            "Customer":{"Arabic": "العميل:", "English": "Customer:"},
-            "Previous Balance":{"Arabic": "الحساب السابق:", "English": "Previous Balance:"},
-            "Paid Money":{"Arabic": "المبلغ المدفوع:", "English": "Paid Money:"},
         }
         self.db = None
         self.db_name = tk.StringVar()
@@ -371,7 +379,7 @@ class SalesSystemApp:
         self.display_table()
 
     def new_sales_invoice(self, user_role):
-            # Clear current window
+        # Clear current window
         for widget in self.root.winfo_children():
             widget.destroy()
 
@@ -395,49 +403,26 @@ class SalesSystemApp:
         customer_frame = tk.Frame(form_frame, bd=1, relief=tk.SOLID, padx=5, pady=5)
         customer_frame.grid(row=0, column=0, columnspan=2, sticky='w', pady=5)
 
-        # Previous Balance Field
-        tk.Label(customer_frame, text=self.t("Previous Balance"), font=("Arial", 12, "bold")).grid(row=0, column=2, sticky='e', padx=(20, 0))
-        self.previous_balance_var = tk.StringVar()
-        self.previous_balance_entry = tk.Entry(customer_frame, textvariable=self.previous_balance_var, width=15, state='readonly')
-        self.previous_balance_entry.grid(row=0, column=3, sticky='e')
-
-        # Paid Money Field
-        tk.Label(customer_frame, text=self.t("Paid Money"), font=("Arial", 12, "bold")).grid(row=0, column=4, sticky='e', padx=(20, 0))
+        # إضافة حقل المبلغ المدفوع
+        tk.Label(customer_frame, text="المبلغ المدفوع:", font=("Arial", 12, "bold")).grid(row=0, column=2, sticky='e', padx=(20, 0))
         self.payed_cash_var = tk.DoubleVar()
         self.payed_cash_entry = tk.Entry(customer_frame, textvariable=self.payed_cash_var, width=15)
-        self.payed_cash_entry.grid(row=0, column=5, sticky='e')  
+        self.payed_cash_entry.grid(row=0, column=3, sticky='e')
 
         # Customer Combobox with search
-        tk.Label(customer_frame, text=self.t("Customer"), font=("Arial", 12, "bold")).grid(row=0, column=0, sticky='w')
+        tk.Label(customer_frame, text="Customer:", font=("Arial", 12, "bold")).grid(row=0, column=0, sticky='w')
         self.customer_var = tk.StringVar()
         self.customer_cb = ttk.Combobox(customer_frame, textvariable=self.customer_var)
         self.customer_cb.grid(row=0, column=1, sticky='ew', padx=(5, 0))
-        
-        # Configure column weights
+        # تعديل توزيع الأعمدة
         customer_frame.columnconfigure(1, weight=1)
         customer_frame.columnconfigure(3, weight=0)
-        customer_frame.columnconfigure(5, weight=0)
         
-        # Populate customers and create mappings
-        self.customer_code_map = {}  
-        self.customer_balance_map = {}  
-        all_customers = []
-        for cust in customers_col.find():
-            self.customer_code_map[cust['Name']] = cust.get('Customer_code', '')
-            self.customer_balance_map[cust['Name']] = cust.get('Balance', 0)  # Store Balance
-            all_customers.append(cust['Name'])
-        
-        self.customer_cb['values'] = sorted(all_customers)
+        # Populate and configure customers
+        all_customers = [cust['Name'] for cust in customers_col.find()]
+        self.customer_cb['values'] = all_customers
         self.customer_cb.bind('<KeyRelease>', 
                             lambda e: self.filter_combobox(e, all_customers, self.customer_cb))
-        
-        # Update Previous Balance when customer is selected
-        def update_previous_balance(event):
-            customer_name = self.customer_var.get()
-            balance = self.customer_balance_map.get(customer_name, 0)
-            self.previous_balance_var.set(str(balance))
-        
-        self.customer_cb.bind('<<ComboboxSelected>>', update_previous_balance)
 
         # Load product data with improved unit handling
         try:
@@ -447,7 +432,7 @@ class SalesSystemApp:
             product_codes = []
 
             for p in products:
-                code = str(p.get('product_code', '')).strip()
+                code = str(p.get('product_code', '')).strip().lower()
                 name = p.get('product_name', '').strip()
                 units_list = p.get('Units', [])
 
@@ -655,7 +640,7 @@ class SalesSystemApp:
         """Update fields based on code or name selection"""
         try:
             if source == "code":
-                product_code = self.entries[row_idx][0].get().strip()
+                product_code = self.entries[row_idx][0].get().strip().lower()
                 product_info = self.product_map.get(product_code, {})
                 product_name = product_info.get('name', '')
             else:
@@ -691,8 +676,8 @@ class SalesSystemApp:
     def calculate_totals(self, row_idx):
         try:
             # Get quantity values with default to 0 if empty
-            qty = float(self.entries[row_idx][4].get() or 0)
-            numbering = float(self.entries[row_idx][3].get() or 0)
+            qty = float(self.entries[row_idx][3].get() or 0)
+            numbering = float(self.entries[row_idx][4].get() or 0)
             unit_price = float(self.entries[row_idx][6].get() or 0)
             
             total_qty = qty * numbering
@@ -927,7 +912,7 @@ class SalesSystemApp:
             return ["product_code", "Product_name", "unit", "QTY", "numbering","Total_QTY","Unit_Price","Total Price","Date","Reciept_Number","Customer_name","Customer_code"]
 
         elif collection_name == "Sales_Header":
-            return ["Product_code", "product_name", "unit","numbering","QTY","Total_QTY","Unit_Price","Total_Price"]
+            return ["Product_code", "product_name", "unit", "QTY", "numbering","Total_QTY","Unit_Price","Total_Price"]
        
         elif collection_name == "Customers":
             return ["Name", "Phone_number1", "Phone_number2", "Code", "Purchase_mgr_number", "Financial_mgr_number", "Purchase_mgr_name", 
@@ -1012,33 +997,44 @@ class SalesSystemApp:
                 self.customer_cb.event_generate('<Up>')  # Close dropdown
     
     def generate_invoice_number(self):
-        """توليد رقم فاتورة تسلسلي"""
+        """توليد رقم فاتورة تسلسلي (4 أرقام مع أصفار أمامية)"""
         try:
-            print(0)
+            # 1. الاتصال بمجموعة Sales
             sales_col = self.get_collection_by_name('Sales')
-            print(10)
-            last_invoice = sales_col.find_one(sort=[("Reciept_Number", -1)])
-            print(20)
-            # التحقق من وجود الفاتورة وتنسيقها
-            last_number = 1
-            if last_invoice:
-                print(1)
-                reciept_number = last_invoice.get("Reciept_Number")
-                if (
-                    reciept_number 
-                    and isinstance(reciept_number, str) 
-                    and reciept_number.startswith("INV-")
-                ):
-                    try:
-                        last_number = int(reciept_number.split("-")[-1])
-                        # print(2)
-                    except (ValueError, IndexError):
-                        last_number = 1
-                        # print(3)
             
+            # 2. البحث عن آخر فاتورة بترتيب تنازلي
+            last_invoice = sales_col.find_one(
+                {"Reciept_Number": {"$exists": True}},
+                sort=[("Reciept_Number", -1)]
+            )
+            
+            # 3. تهيئة الرقم البدائي
+            last_number = 0
+            
+            if last_invoice:
+                receipt_number = last_invoice.get("Reciept_Number", "0")
+                
+                # 4. معالجة التنسيقات المختلفة
+                if isinstance(receipt_number, str):
+                    # أ- إذا كان الرقم يحتوي على بادئة (مثال: INV-0005)
+                    if receipt_number.startswith("INV-"):
+                        try:
+                            last_number = int(receipt_number.split("-")[-1])
+                        except (ValueError, IndexError):
+                            last_number = 0
+                    # ب- إذا كان الرقم نصيًا بدون بادئة (مثال: "0005")
+                    else:
+                        try:
+                            last_number = int(receipt_number)
+                        except ValueError:
+                            last_number = 0
+                # 5. إذا كان الرقم عددًا صحيحًا (مثال: 5)
+                elif isinstance(receipt_number, int):
+                    last_number = receipt_number
+            
+            # 6. توليد الرقم الجديد مع أصفار أمامية
             new_number = last_number + 1
-            # print(4)
-            return f"INV-{new_number:04d}"
+            return f"{new_number:04d}"  # مثال: 5 → 0006
         
         except Exception as e:
             messagebox.showerror("خطأ", f"فشل توليد الرقم التسلسلي: {str(e)}")
@@ -1085,8 +1081,8 @@ class SalesSystemApp:
 
                 try:
                     # استخراج القيم الرقمية
-                    qty = float(row[4].get() or 0)
-                    numbering = float(row[3].get() or 0)
+                    qty = float(row[3].get() or 0)
+                    numbering = float(row[4].get() or 0)
                     unit_price = float(row[6].get() or 0)
                     total_qty = qty * numbering
                     total_price = total_qty * unit_price
@@ -1213,7 +1209,6 @@ class SalesSystemApp:
                 
     def generate_pdf(self, invoice_data):
         """توليد ملف PDF بحجم A5 بتنسيق عربي مطابق للنموذج"""
-        """توليد ملف PDF بحجم A5 بتنسيق عربي مطابق للنموذج"""
         try:
             from reportlab.lib.pagesizes import A5
             from reportlab.pdfgen import canvas
@@ -1223,7 +1218,6 @@ class SalesSystemApp:
             import os
             from bidi.algorithm import get_display
             import arabic_reshaper
-            from reportlab.lib.utils import ImageReader
 
             # تسجيل الخط العربي
             arabic_font_path = os.path.join("Static", "Fonts", "Amiri-Regular.ttf")
@@ -1244,86 +1238,65 @@ class SalesSystemApp:
             # إعداد مستند PDF
             c = canvas.Canvas(pdf_path, pagesize=A5)
             width, height = A5
-            c.setFont("Arabic", 12)
+            c.setFont("Arabic", 14)
 
-            # إضافة الشعار
-            logo_path = os.path.join("Static", "images", "Logo.jpg")
-            if os.path.exists(logo_path):
-                logo = ImageReader(logo_path)
-                c.drawImage(logo, 0.5*cm, height-3.5*cm, width=4*cm, height=2.5*cm, preserveAspectRatio=True)
-
-            # ========== العنوان المركزي ==========
-            invoice_number = str(invoice_data['Reciept_Number']).replace('INV', '')
-            invoice_title = f"فاتورة بيع رقم {invoice_number}"
-            
-            # رسم الإطار حول العنوان
-            frame_width = 4*cm
-            frame_height = 1*cm
-            frame_x = (width - frame_width) / 2  # مركز أفقي
-            frame_y = height - 2.5*cm
-            c.setLineWidth(1)
-            c.rect(frame_x, frame_y, frame_width, frame_height)
-            
-            # كتابة العنوان المركزي
-            c.setFont("Arabic", 12)  # تأكد من وجود خط عريض
-            title_x = width / 2
-            title_y = height - 2.2*cm
-            c.drawCentredString(title_x, title_y, format_arabic(invoice_title))
-
-            # ========== معلومات الشركة ==========
+            # معلومات الشركة (الجزء العلوي)
             company_info = [
-                "      حسن سليم",
-                "للمنتجات البلاستيكية"
+                f"فاتورة بيع رقم {invoice_data['Reciept_Number']}",
+                "مصنع حسن سليم للمنتجات البلاستيكية",
+                f"التاريخ: {invoice_data['Date']}",
+                "رقم السجل: 6300"
             ]
-            
             y_position = height - 2*cm
-            c.setFont("Arabic", 12)
             for line in company_info:
-                c.drawRightString(width - 1.75*cm, y_position, format_arabic(line))
-                y_position -= 0.8*cm
+                c.drawRightString(width - 2*cm, y_position, format_arabic(line))
+                y_position -= 0.7*cm
 
-            # ========== معلومات العميل ==========
-            customer_y = height - 3.8*cm
+            # معلومات العميل (الجزء الأوسط)
+            customer_y = y_position - 1.5*cm
             c.setFont("Arabic", 12)
             customer_fields = [
-                f"التاريخ:       {invoice_data['Date']}",            
-                f"اسم العميل:    {invoice_data['Customer_name']}",
-                f"الكود:         {invoice_data['Customer_code']}",
-                f"العنوان:       {invoice_data['Customer_address']}",
-                f"التليفون:      {invoice_data['Customer_phone1']}"
+                ("اسم العميل:", invoice_data['Customer_name']),
+                ("الكود:", invoice_data['Customer_code']),
+                ("العنوان:", invoice_data['Customer_address']),
+                ("الهاتف:", invoice_data['Customer_phone1'])
             ]
-            
-            for line in customer_fields:
-                # text = f"{format_arabic(field)} {format_arabic(value)}"
-                c.drawRightString(width - 0.2*cm, customer_y, format_arabic(line))
-                customer_y -= 0.8*cm
+            for field, value in customer_fields:
+                text = f"{format_arabic(field)} {format_arabic(value)}"
+                c.drawString(2*cm, customer_y, text)
+                customer_y -= 0.7*cm
 
-            # ========== جدول العناصر ==========
-            headers = ["كود الصنف","     الصنف", "العدد", "الوحدة", "سعر الوحدة", "الكمية", "الإجمالي"]
+            # جدول العناصر
+            headers = [
+                "كود الصنف",
+                "العدد",
+                "الوحدة",
+                "السعر",
+                "الكمية",
+                "الإجمالي"
+            ]
             col_positions = [
-                width - 0.2*cm,    # كود الصنف
-                width - 2*cm,    # الصنف
-                width - 5.5*cm,    # العدد
-                width - 7.5*cm,    # الوحدة
-                width - 9.5*cm,    # السعر
-                width - 11.5*cm,     # الكمية
-                width - 13*cm      # الإجمالي
+                width - 2*cm,
+                width - 4.5*cm,
+                width - 7*cm,
+                width - 9.5*cm,
+                width - 12*cm,
+                width - 15*cm
             ]
             
-            # رأس الجدول
-            table_y = customer_y - 1*cm
-            c.setFont("Arabic", 10)
+            # رسم رأس الجدول
+            table_y = customer_y - 1.5*cm
+            c.setFont("Arabic", 12)
             for i, header in enumerate(headers):
                 c.drawRightString(col_positions[i], table_y, format_arabic(header))
 
             # بيانات الجدول
-            c.setFont("Arabic", 8)
+            c.setFont("Arabic", 10)
             row_height = 0.7*cm
             for item in invoice_data["Items"]:
                 table_y -= row_height
                 columns = [
                     item.get("Product_code", ""),
-                    item.get("product_name",""),
                     str(item.get("numbering", "")),
                     item.get("Unit", ""),
                     f"{item.get('Unit_price', 0):.2f}",
@@ -1333,26 +1306,24 @@ class SalesSystemApp:
                 for i, value in enumerate(columns):
                     c.drawRightString(col_positions[i], table_y, format_arabic(value))
 
-            # ========== الإجماليات ==========
-            totals_y = table_y - 1.5*cm
+            # الإجماليات
+            totals_y = table_y - 2*cm
             totals = [
                 ("صافي الفاتورة:", invoice_data['Net_total']),
-                ("حساب سابق:", invoice_data.get('Balance', 0)),
-                ("إجمالي الفاتورة:", invoice_data['Net_total'] + invoice_data.get('Balance', 0)),
-                ("المدفوع:", invoice_data.get('Payed_cash', 0)),
-                ("الباقي:", (invoice_data['Net_total'] + invoice_data.get('Balance', 0)) - invoice_data.get('Payed_cash', 0))
+                ("المبلغ المدفوع:", invoice_data.get('Payed_cash', 0)),
+                ("الباقي:", invoice_data['Net_total'] - invoice_data.get('Payed_cash', 0))
             ]
             
             c.setFont("Arabic", 12)
             for label, value in totals:
-                text = f"{format_arabic(f'{value:,.2f}')} {format_arabic(label)}"
-                c.drawRightString(width - 0.2*cm, totals_y, text)
-                totals_y -= 0.8*cm
+                text = f"{format_arabic(label)} {format_arabic(f'{value:,.2f}')}"
+                c.drawRightString(width - 2*cm, totals_y, text)
+                totals_y -= 0.7*cm
 
-            # ========== التوقيعات ==========
+            # التوقيعات
             c.setFont("Arabic", 10)
-            c.drawRightString(width - 2.2*cm, 2.5*cm, format_arabic("____________________"))
-            c.drawString(1.5*cm, 2.5*cm, format_arabic("____________________"))
+            c.drawRightString(width - 2*cm, 2*cm, format_arabic("ختم وتوقيع المدير: __________"))
+            c.drawString(2*cm, 2*cm, format_arabic("الاستلام: __________"))
 
             c.save()
             return pdf_path

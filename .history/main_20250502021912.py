@@ -82,7 +82,7 @@ class SalesSystemApp:
             "Employees": {"Arabic": "الموظفين", "English": "Employees"},
             "Customer":{"Arabic": "العميل:", "English": "Customer:"},
             "Previous Balance":{"Arabic": "الحساب السابق:", "English": "Previous Balance:"},
-            "Paid Money":{"Arabic": "المبلغ المدفوع:", "English": "Paid Money:"},
+            "Payed Money":{"Arabic": "المبلغ المدفوع:", "English": "Payed Money:"},
         }
         self.db = None
         self.db_name = tk.StringVar()
@@ -371,7 +371,7 @@ class SalesSystemApp:
         self.display_table()
 
     def new_sales_invoice(self, user_role):
-            # Clear current window
+        # Clear current window
         for widget in self.root.winfo_children():
             widget.destroy()
 
@@ -395,17 +395,21 @@ class SalesSystemApp:
         customer_frame = tk.Frame(form_frame, bd=1, relief=tk.SOLID, padx=5, pady=5)
         customer_frame.grid(row=0, column=0, columnspan=2, sticky='w', pady=5)
 
-        # Previous Balance Field
-        tk.Label(customer_frame, text=self.t("Previous Balance"), font=("Arial", 12, "bold")).grid(row=0, column=2, sticky='e', padx=(20, 0))
+        # إضافة حقل المبلغ المدفوع
+        tk.Label(customer_frame, text="المبلغ المدفوع:", font=("Arial", 12, "bold")).grid(row=0, column=2, sticky='e', padx=(20, 0))
+        self.payed_cash_var = tk.DoubleVar()
+        self.payed_cash_entry = tk.Entry(customer_frame, textvariable=self.payed_cash_var, width=15)
+        self.payed_cash_entry.grid(row=0, column=3, sticky='e')
+        # داخل إطار customer_frame
+        # إضافة حقل الحساب السابق
+        tk.Label(customer_frame, text="الحساب السابق:", font=("Arial", 12, "bold")).grid(row=0, column=2, sticky='e', padx=(20, 0))
         self.previous_balance_var = tk.StringVar()
         self.previous_balance_entry = tk.Entry(customer_frame, textvariable=self.previous_balance_var, width=15, state='readonly')
         self.previous_balance_entry.grid(row=0, column=3, sticky='e')
 
-        # Paid Money Field
-        tk.Label(customer_frame, text=self.t("Paid Money"), font=("Arial", 12, "bold")).grid(row=0, column=4, sticky='e', padx=(20, 0))
-        self.payed_cash_var = tk.DoubleVar()
-        self.payed_cash_entry = tk.Entry(customer_frame, textvariable=self.payed_cash_var, width=15)
-        self.payed_cash_entry.grid(row=0, column=5, sticky='e')  
+        # نقل حقلي المبلغ المدفوع إلى أعمدة جديدة
+        tk.Label(customer_frame, text="المبلغ المدفوع:", font=("Arial", 12, "bold")).grid(row=0, column=4, sticky='e', padx=(20, 0))
+        self.payed_cash_entry.grid(row=0, column=5, sticky='e')       
 
         # Customer Combobox with search
         tk.Label(customer_frame, text=self.t("Customer"), font=("Arial", 12, "bold")).grid(row=0, column=0, sticky='w')
@@ -413,31 +417,16 @@ class SalesSystemApp:
         self.customer_cb = ttk.Combobox(customer_frame, textvariable=self.customer_var)
         self.customer_cb.grid(row=0, column=1, sticky='ew', padx=(5, 0))
         
-        # Configure column weights
+        # تعديل توزيع الأعمدة
         customer_frame.columnconfigure(1, weight=1)
         customer_frame.columnconfigure(3, weight=0)
         customer_frame.columnconfigure(5, weight=0)
         
-        # Populate customers and create mappings
-        self.customer_code_map = {}  
-        self.customer_balance_map = {}  
-        all_customers = []
-        for cust in customers_col.find():
-            self.customer_code_map[cust['Name']] = cust.get('Customer_code', '')
-            self.customer_balance_map[cust['Name']] = cust.get('Balance', 0)  # Store Balance
-            all_customers.append(cust['Name'])
-        
-        self.customer_cb['values'] = sorted(all_customers)
+        # Populate and configure customers
+        all_customers = [cust['Name'] for cust in customers_col.find()]
+        self.customer_cb['values'] = all_customers
         self.customer_cb.bind('<KeyRelease>', 
                             lambda e: self.filter_combobox(e, all_customers, self.customer_cb))
-        
-        # Update Previous Balance when customer is selected
-        def update_previous_balance(event):
-            customer_name = self.customer_var.get()
-            balance = self.customer_balance_map.get(customer_name, 0)
-            self.previous_balance_var.set(str(balance))
-        
-        self.customer_cb.bind('<<ComboboxSelected>>', update_previous_balance)
 
         # Load product data with improved unit handling
         try:

@@ -67,6 +67,16 @@ class SalesSystemApp:
         self.language = "Arabic"  # default language
         self.translations = {
             "Add New Product": {"Arabic": "امر انتاج", "English": "Production order"},
+            # "Place Orders": {"Arabic": "تنفيذ الطلبات", "English": "Place Orders"},
+            # "Expenses": {"Arabic": "المصاريف", "English": "Expenses"},
+            # "Returns": {"Arabic": "المرتجعات", "English": "Returns"},
+            # "Employees Appointments": {"Arabic": "مواعيد الموظفين", "English": "Employees Appointments"},
+            # "Daily Shifts": {"Arabic": "الورديات اليومية", "English": "Daily Shifts"},
+            # "View Product": {"Arabic": "عرض المنتجات", "English": "View Product"},
+            # "View Orders": {"Arabic": "عرض الطلبات", "English": "View Orders"},
+            # "View Customers": {"Arabic": "عرض العملاء", "English": "View Customers"},
+            # "Edit Product": {"Arabic": "تعديل المنتج", "English": "Edit Product"},
+            # "Accounting": {"Arabic": "الحسابات", "English": "Accounting"},
             "Reports": {"Arabic": "التقارير", "English": "Reports"},
             "Production Order": {"Arabic": "أمر انتاج", "English": "Production Order"},
             "Database": {"Arabic": "قاعدة البيانات", "English": "Database"},
@@ -79,10 +89,8 @@ class SalesSystemApp:
             "Suppliers": {"Arabic": "الموردين", "English": "Suppliers"},
             "Products": {"Arabic": "المنتجات", "English": "Products"},
             "Materials": {"Arabic": "الخامات", "English": "Materials"},
+            # "Reports": {"Arabic": "التقارير", "English": "Reports"},
             "Employees": {"Arabic": "الموظفين", "English": "Employees"},
-            "Customer":{"Arabic": "العميل:", "English": "Customer:"},
-            "Previous Balance":{"Arabic": "الحساب السابق:", "English": "Previous Balance:"},
-            "Paid Money":{"Arabic": "المبلغ المدفوع:", "English": "Paid Money:"},
         }
         self.db = None
         self.db_name = tk.StringVar()
@@ -371,7 +379,7 @@ class SalesSystemApp:
         self.display_table()
 
     def new_sales_invoice(self, user_role):
-            # Clear current window
+        # Clear current window
         for widget in self.root.winfo_children():
             widget.destroy()
 
@@ -393,53 +401,56 @@ class SalesSystemApp:
 
         # Customer Selection Frame
         customer_frame = tk.Frame(form_frame, bd=1, relief=tk.SOLID, padx=5, pady=5)
-        customer_frame.grid(row=0, column=0, columnspan=2, sticky='w', pady=5)
+        customer_frame.grid(row=0, column=0, columnspan=6, sticky='ew', pady=5)
+        
+        # Configure customer frame columns
+        customer_frame.columnconfigure(1, weight=1)
+        for col in [0,2,3,4,5]:
+            customer_frame.columnconfigure(col, weight=0)
 
-        # Previous Balance Field
-        tk.Label(customer_frame, text=self.t("Previous Balance"), font=("Arial", 12, "bold")).grid(row=0, column=2, sticky='e', padx=(20, 0))
-        self.previous_balance_var = tk.StringVar()
-        self.previous_balance_entry = tk.Entry(customer_frame, textvariable=self.previous_balance_var, width=15, state='readonly')
-        self.previous_balance_entry.grid(row=0, column=3, sticky='e')
-
-        # Paid Money Field
-        tk.Label(customer_frame, text=self.t("Paid Money"), font=("Arial", 12, "bold")).grid(row=0, column=4, sticky='e', padx=(20, 0))
-        self.payed_cash_var = tk.DoubleVar()
-        self.payed_cash_entry = tk.Entry(customer_frame, textvariable=self.payed_cash_var, width=15)
-        self.payed_cash_entry.grid(row=0, column=5, sticky='e')  
-
-        # Customer Combobox with search
-        tk.Label(customer_frame, text=self.t("Customer"), font=("Arial", 12, "bold")).grid(row=0, column=0, sticky='w')
+        # Customer Combobox
+        tk.Label(customer_frame, text="Customer:", font=("Arial", 12, "bold")).grid(
+            row=0, column=0, sticky='w')
         self.customer_var = tk.StringVar()
         self.customer_cb = ttk.Combobox(customer_frame, textvariable=self.customer_var)
-        self.customer_cb.grid(row=0, column=1, sticky='ew', padx=(5, 0))
-        
-        # Configure column weights
-        customer_frame.columnconfigure(1, weight=1)
-        customer_frame.columnconfigure(3, weight=0)
-        customer_frame.columnconfigure(5, weight=0)
-        
-        # Populate customers and create mappings
-        self.customer_code_map = {}  
-        self.customer_balance_map = {}  
-        all_customers = []
-        for cust in customers_col.find():
-            self.customer_code_map[cust['Name']] = cust.get('Customer_code', '')
-            self.customer_balance_map[cust['Name']] = cust.get('Balance', 0)  # Store Balance
-            all_customers.append(cust['Name'])
-        
-        self.customer_cb['values'] = sorted(all_customers)
-        self.customer_cb.bind('<KeyRelease>', 
-                            lambda e: self.filter_combobox(e, all_customers, self.customer_cb))
-        
-        # Update Previous Balance when customer is selected
-        def update_previous_balance(event):
-            customer_name = self.customer_var.get()
-            balance = self.customer_balance_map.get(customer_name, 0)
-            self.previous_balance_var.set(str(balance))
-        
-        self.customer_cb.bind('<<ComboboxSelected>>', update_previous_balance)
+        self.customer_cb.grid(row=0, column=1, sticky='ew', padx=(5, 10))
 
-        # Load product data with improved unit handling
+        # Previous Balance
+        tk.Label(customer_frame, text="الحساب السابق:", font=("Arial", 12, "bold")).grid(
+            row=0, column=2, sticky='e', padx=(10, 0))
+        self.previous_balance_var = tk.StringVar()
+        self.previous_balance_entry = tk.Entry(customer_frame, 
+                                            textvariable=self.previous_balance_var,
+                                            width=15,
+                                            state='readonly')
+        self.previous_balance_entry.grid(row=0, column=3, sticky='e')
+
+        # Paid Amount
+        tk.Label(customer_frame, text="المبلغ المدفوع:", font=("Arial", 12, "bold")).grid(
+            row=0, column=4, sticky='e', padx=(10, 0))
+        self.payed_cash_var = tk.DoubleVar()
+        self.payed_cash_entry = tk.Entry(customer_frame, 
+                                    textvariable=self.payed_cash_var, 
+                                    width=15)
+        self.payed_cash_entry.grid(row=0, column=5, sticky='e')
+
+        # Load customers with balances
+        try:
+            self.customer_balance_map = {}
+            all_customers = []
+            for cust in customers_col.find():
+                self.customer_balance_map[cust['Name'] = cust.get('Balance', 0)
+                all_customers.append(cust['Name'])
+
+            self.customer_cb['values'] = sorted(all_customers)
+            self.customer_cb.bind('<<ComboboxSelected>>', self.update_customer_balance)
+            self.customer_cb.bind('<KeyRelease>', 
+                                lambda e: self.filter_combobox(e, all_customers, self.customer_cb))
+        except Exception as e:
+            messagebox.showerror("Database Error", f"Failed to load customers: {str(e)}")
+            return
+
+        # Load product data
         try:
             products = list(products_col.find())
             all_units = set()
@@ -465,9 +476,8 @@ class SalesSystemApp:
                         unit_names.append(unit_name)
                         all_units.add(unit_name)
 
-                # Handle price conversion with error checking
+                # Handle price conversion
                 try:
-                    # Remove non-numeric characters from price
                     price_str = str(p.get('Unit_Price', '0')).strip('kgm ')
                     price = float(price_str) if price_str else 0.0
                 except ValueError:
@@ -483,18 +493,9 @@ class SalesSystemApp:
                 product_names.append(name)
                 product_codes.append(code)
 
-            # Create unique sorted lists
-            self.product_codes = sorted(list(set(product_codes)))  # Store as instance variable
-            self.product_names = sorted(list(set(product_names)))  # Store as instance variable
+            self.product_codes = sorted(list(set(product_codes)))
+            self.product_names = sorted(list(set(product_names)))
             all_units = sorted(list(all_units))
-                # Populate customers with code mapping
-            self.customer_code_map = {}  # Add this as a class member
-            all_customers = []
-            for cust in customers_col.find():
-                self.customer_code_map[cust['Name']] = cust.get('Customer_code', '')
-                all_customers.append(cust['Name'])
-            
-            self.customer_cb['values'] = sorted(all_customers)
 
         except Exception as e:
             messagebox.showerror("Database Error", f"Failed to load products: {str(e)}")
@@ -533,7 +534,7 @@ class SalesSystemApp:
 
         self.entries = []
 
-        # Modified create_row function with enhanced clearing
+        # Row creation function
         def create_row(parent, row_number, bg_color):
             row_frame = tk.Frame(parent, bg=bg_color)
             row_frame.grid(row=row_number, column=0, sticky='ew')
@@ -592,11 +593,16 @@ class SalesSystemApp:
         tk.Button(button_frame, text="➕ Add 3 More Rows", command=add_three_rows,
                 bg='#4CAF50', fg='white').grid(row=0, column=0, padx=5, sticky='w')
         tk.Button(button_frame, text="💾 Save Invoice", 
-                command=lambda: self.save_invoice(sales_col, customers_col,products_col),
+                command=lambda: self.save_invoice(sales_col, customers_col, products_col),
                 bg='#2196F3', fg='white').grid(row=0, column=1, padx=5, sticky='e')
         
         button_frame.columnconfigure(0, weight=1)
         button_frame.columnconfigure(1, weight=1)
+
+    def update_customer_balance(self, event=None):
+        customer_name = self.customer_var.get()
+        balance = self.customer_balance_map.get(customer_name, 0)
+        self.previous_balance_var.set(f"{balance:,.2f}")
 
     def handle_combobox_change(self, event, row_idx, field_type):
         """Handle changes in product code/name comboboxes"""
@@ -691,8 +697,8 @@ class SalesSystemApp:
     def calculate_totals(self, row_idx):
         try:
             # Get quantity values with default to 0 if empty
-            qty = float(self.entries[row_idx][4].get() or 0)
-            numbering = float(self.entries[row_idx][3].get() or 0)
+            qty = float(self.entries[row_idx][3].get() or 0)
+            numbering = float(self.entries[row_idx][4].get() or 0)
             unit_price = float(self.entries[row_idx][6].get() or 0)
             
             total_qty = qty * numbering
@@ -927,7 +933,7 @@ class SalesSystemApp:
             return ["product_code", "Product_name", "unit", "QTY", "numbering","Total_QTY","Unit_Price","Total Price","Date","Reciept_Number","Customer_name","Customer_code"]
 
         elif collection_name == "Sales_Header":
-            return ["Product_code", "product_name", "unit","numbering","QTY","Total_QTY","Unit_Price","Total_Price"]
+            return ["Product_code", "product_name", "unit", "QTY", "numbering","Total_QTY","Unit_Price","Total_Price"]
        
         elif collection_name == "Customers":
             return ["Name", "Phone_number1", "Phone_number2", "Code", "Purchase_mgr_number", "Financial_mgr_number", "Purchase_mgr_name", 
@@ -1085,8 +1091,8 @@ class SalesSystemApp:
 
                 try:
                     # استخراج القيم الرقمية
-                    qty = float(row[4].get() or 0)
-                    numbering = float(row[3].get() or 0)
+                    qty = float(row[3].get() or 0)
+                    numbering = float(row[4].get() or 0)
                     unit_price = float(row[6].get() or 0)
                     total_qty = qty * numbering
                     total_price = total_qty * unit_price
