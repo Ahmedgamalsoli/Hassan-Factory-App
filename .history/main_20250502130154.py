@@ -536,7 +536,7 @@ class SalesSystemApp:
 
         # Invoice Items Grid
         columns = self.get_fields_by_name("Sales_Header")
-        col_width = 24
+        col_width = 29
 
         header_row = tk.Frame(form_frame, bg='#f0f0f0')
         header_row.grid(row=2, column=0, columnspan=len(columns), sticky='nsew', pady=(20, 0))
@@ -564,7 +564,6 @@ class SalesSystemApp:
 
         self.entries = []
 
-        # Modified create_row function with discount fields
         def create_row(parent, row_number, bg_color):
             row_frame = tk.Frame(parent, bg=bg_color)
             row_frame.grid(row=row_number, column=0, sticky='ew')
@@ -591,21 +590,6 @@ class SalesSystemApp:
                     cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_unit_change(e, r))
                     cb.grid(row=0, column=col_idx, sticky='ew')
                     row_entries.append(cb)
-                elif col == "Discount Type":
-                    var = tk.StringVar()
-                    cb = ttk.Combobox(row_frame, textvariable=var, 
-                                    values=["Percentage", "Value"], 
-                                    state="readonly",
-                                    width=col_width-2)
-                    cb.current(0)  # Default to Percentage
-                    cb.grid(row=0, column=col_idx, sticky='ew')
-                    row_entries.append(cb)
-                elif col == "Discount Value":
-                    var = tk.StringVar()
-                    entry = tk.Entry(row_frame, textvariable=var, width=col_width+1)
-                    entry.bind('<KeyRelease>', lambda e, r=row_number: self.calculate_totals(r))
-                    entry.grid(row=0, column=col_idx, sticky='ew')
-                    row_entries.append(entry)
                 elif col in ["Unit_Price", "Total_QTY", "Total_Price"]:
                     entry = tk.Entry(row_frame, width=col_width+1, relief='flat', state='readonly')
                     entry.grid(row=0, column=col_idx, sticky='ew')
@@ -653,9 +637,9 @@ class SalesSystemApp:
             
         # Filter combobox values
         if field_type == "code":
-            full_list = self.product_codes
+            full_list = self.product_codes  # Access instance variable
         else:
-            full_list = self.product_names
+            full_list = self.product_names  # Access instance variable
             
         filtered = [item for item in full_list if value.lower() in str(item).lower()]
         event.widget['values'] = filtered
@@ -668,38 +652,33 @@ class SalesSystemApp:
         """Handle unit changes and clear price if unit changes"""
         unit = event.widget.get().strip()
         if not unit:
-            # Clear Unit Price (index 8) if unit is cleared
-            self.entries[row_idx][8].config(state='normal')
-            self.entries[row_idx][8].delete(0, tk.END)
-            self.entries[row_idx][8].config(state='readonly')
+            self.entries[row_idx][6].config(state='normal')
+            self.entries[row_idx][6].delete(0, tk.END)
+            self.entries[row_idx][6].config(state='readonly')
             self.calculate_totals(row_idx)
 
     def clear_row_fields(self, row_idx):
         """Clear all dependent fields in a row"""
-        # Clear product name (index 1)
+        # Clear product name
         self.entries[row_idx][1].set('')
-        # Clear unit combobox (index 2)
+        # Clear unit combobox
         self.entries[row_idx][2].set('')
         self.entries[row_idx][2]['values'] = []
-        # Clear Unit Price (index 8)
-        self.entries[row_idx][8].config(state='normal')
-        self.entries[row_idx][8].delete(0, tk.END)
-        self.entries[row_idx][8].config(state='readonly')
-        # Clear quantity fields (index 3: numbering, 4: QTY)
+        # Clear price fields
+        self.entries[row_idx][6].config(state='normal')
+        self.entries[row_idx][6].delete(0, tk.END)
+        self.entries[row_idx][6].config(state='readonly')
+        # Clear quantity fields
         self.entries[row_idx][3].delete(0, tk.END)
         self.entries[row_idx][4].delete(0, tk.END)
-        # Clear calculated fields (index 7: Total_QTY, 9: Total_Price)
+        # Clear calculated fields
+        self.entries[row_idx][5].config(state='normal')
+        self.entries[row_idx][5].delete(0, tk.END)
+        self.entries[row_idx][5].config(state='readonly')
         self.entries[row_idx][7].config(state='normal')
         self.entries[row_idx][7].delete(0, tk.END)
         self.entries[row_idx][7].config(state='readonly')
-        self.entries[row_idx][9].config(state='normal')
-        self.entries[row_idx][9].delete(0, tk.END)
-        self.entries[row_idx][9].config(state='readonly')
-        # Reset discount fields (index 5: Type, 6: Value)
-        self.entries[row_idx][5].set('Percentage')
-        self.entries[row_idx][6].delete(0, tk.END)
-        self.entries[row_idx][6].insert(0, '0')
-
+    # Modified update_product_info
     def update_product_info(self, row_idx, source):
         """Update fields based on code or name selection"""
         try:
@@ -721,72 +700,52 @@ class SalesSystemApp:
             self.entries[row_idx][0].set(product_code)
             self.entries[row_idx][1].set(product_name)
             
-            # Update unit combobox values (index 2)
+            # Update unit combobox values
             unit_combobox = self.entries[row_idx][2]
             unit_combobox['values'] = product_info.get('units', [])
             if product_info.get('units'):
                 unit_combobox.current(0)
             
-            # Update Unit Price (index 8)
-            self.entries[row_idx][8].config(state='normal')
-            self.entries[row_idx][8].delete(0, tk.END)
-            self.entries[row_idx][8].insert(0, f"{product_info.get('price', 0):.2f}")
-            self.entries[row_idx][8].config(state='readonly')
+            # Update Unit Price
+            self.entries[row_idx][6].config(state='normal')
+            self.entries[row_idx][6].delete(0, tk.END)
+            self.entries[row_idx][6].insert(0, f"{product_info.get('price', 0):.2f}")
+            self.entries[row_idx][6].config(state='readonly')
             
             self.calculate_totals(row_idx)
         except Exception as e:
-            messagebox.showerror("Update Error", f"Failed to update product info: {str(e)}")
-            self.clear_row_fields(row_idx)
+            print(f"Error updating product info: {str(e)}")
 
     def calculate_totals(self, row_idx):
         try:
-            # Get values using correct column indices
-            numbering = float(self.entries[row_idx][3].get() or 0)  # index 3
-            qty = float(self.entries[row_idx][4].get() or 0)        # index 4
-            unit_price = float(self.entries[row_idx][8].get() or 0)  # index 8
-            discount_type = self.entries[row_idx][5].get()           # index 5
-            discount_value = float(self.entries[row_idx][6].get() or 0)  # index 6
-
-            # Calculate initial totals
+            # Get quantity values with default to 0 if empty
+            qty = float(self.entries[row_idx][4].get() or 0)
+            numbering = float(self.entries[row_idx][3].get() or 0)
+            unit_price = float(self.entries[row_idx][6].get() or 0)
+            
             total_qty = qty * numbering
             total_price = unit_price * total_qty
-
-            # Apply discounts
-            if discount_type == "Percentage":
-                if discount_value < 0 or discount_value > 100:
-                    raise ValueError("Percentage must be between 0-100")
-                discount = total_price * (discount_value / 100)
-            else:  # Value discount
-                discount = min(discount_value, total_price)
-                
-            final_price = max(total_price - discount, 0)
-
-            # Update Total_QTY (index 7)
+            
+            # Update Total QTY
+            self.entries[row_idx][5].config(state='normal')
+            self.entries[row_idx][5].delete(0, tk.END)
+            self.entries[row_idx][5].insert(0, f"{total_qty:.2f}")
+            self.entries[row_idx][5].config(state='readonly')
+            
+            # Update Total Price
             self.entries[row_idx][7].config(state='normal')
             self.entries[row_idx][7].delete(0, tk.END)
-            self.entries[row_idx][7].insert(0, f"{total_qty:.2f}")
+            self.entries[row_idx][7].insert(0, f"{total_price:.2f}")
             self.entries[row_idx][7].config(state='readonly')
+        except ValueError:
+            # Clear fields if invalid input
+            self.entries[row_idx][5].config(state='normal')
+            self.entries[row_idx][5].delete(0, tk.END)
+            self.entries[row_idx][5].config(state='readonly')
             
-            # Update Total_Price (index 9)
-            self.entries[row_idx][9].config(state='normal')
-            self.entries[row_idx][9].delete(0, tk.END)
-            self.entries[row_idx][9].insert(0, f"{final_price:.2f}")
-            self.entries[row_idx][9].config(state='readonly')
-
-        except ValueError as e:
-            if "Percentage" in str(e):
-                messagebox.showerror("Discount Error", str(e))
-                self.entries[row_idx][6].delete(0, tk.END)
-                self.entries[row_idx][6].insert(0, "0")
-                
-            # Reset calculated fields
             self.entries[row_idx][7].config(state='normal')
             self.entries[row_idx][7].delete(0, tk.END)
             self.entries[row_idx][7].config(state='readonly')
-            
-            self.entries[row_idx][9].config(state='normal')
-            self.entries[row_idx][9].delete(0, tk.END)
-            self.entries[row_idx][9].config(state='readonly')
 
 ############################ Main Functions ########################################
     def display_table(self):
@@ -996,7 +955,7 @@ class SalesSystemApp:
             return ["product_code", "Product_name", "unit", "QTY", "numbering","Total_QTY","Unit_Price","Total Price","Date","Reciept_Number","Customer_name","Customer_code"]
 
         elif collection_name == "Sales_Header":
-            return ["Product_code", "product_name", "unit","numbering","QTY","Discount Type","Discount Value","Total_QTY","Unit_Price","Total_Price"]
+            return ["Product_code", "product_name", "unit","numbering","QTY","Total_QTY","Unit_Price","Total_Price"]
        
         elif collection_name == "Customers":
             return ["Name", "Phone_number1", "Phone_number2", "Code", "Purchase_mgr_number", "Financial_mgr_number", "Purchase_mgr_name", 
@@ -1086,13 +1045,13 @@ class SalesSystemApp:
             print(0)
             sales_col = self.get_collection_by_name('Sales')
             print(10)
-            last_invoice = sales_col.find_one(sort=[("Receipt_Number", -1)])
+            last_invoice = sales_col.find_one(sort=[("Reciept_Number", -1)])
             print(20)
             # التحقق من وجود الفاتورة وتنسيقها
             last_number = 1
             if last_invoice:
                 print(1)
-                reciept_number = last_invoice.get("Receipt_Number")
+                reciept_number = last_invoice.get("Reciept_Number")
                 if (
                     reciept_number 
                     and isinstance(reciept_number, str) 
@@ -1116,83 +1075,81 @@ class SalesSystemApp:
     def save_invoice(self, sales_col, customers_col, products_col):
         """حفظ الفاتورة مع التحقق من المخزون وتحديثه"""
         try:
-            # التحقق من وجود بيانات العميل
+            # جمع بيانات العميل
             customer_name = self.customer_name_var.get().strip()
             if not customer_name:
                 messagebox.showerror("خطأ", "يرجى اختيار عميل")
                 return
 
-            # البحث عن العميل في قاعدة البيانات
-            customer = customers_col.find_one({"Name": customer_name})
+            # البحث عن العميل مع التحقق من وجوده
+            customer = customers_col.find_one({
+                "Name": {"$regex": f"^{customer_name.strip()}$", "$options": "i"}
+            })
             if not customer:
                 messagebox.showerror("خطأ", "العميل غير مسجل!")
                 return
+            if "_id" not in customer:
+                messagebox.showerror("خطأ", "بيانات العميل تالفة!")
+                return
+             # استخراج المبلغ المدفوع
+            payed_cash = self.payed_cash_var.get() if self.payed_cash_var.get() else 0.0
+            payed_method = self.payment_method_var.get() if self.payment_method_var.get()
 
-            # التحقق من المبلغ المدفوع
-            payed_cash = float(self.payed_cash_var.get() or 0)
+            # التحقق من صحة القيمة
             if payed_cash < 0:
                 messagebox.showerror("خطأ", "المبلغ المدفوع لا يمكن أن يكون سالبًا!")
                 return
-
             # جمع بيانات العناصر والتحقق من المخزون
             items = []
             total_amount = 0.0
-            stock_updates = {}
+            stock_updates = {}  # لتخزين تحديثات المخزون
             
             for row_idx, row in enumerate(self.entries):
                 product_code = row[0].get().strip()
-                if not product_code:
+                product_name = row[1].get().strip()
+                unit = row[2].get().strip()
+                
+                if not (product_code or product_name or unit):
                     continue
 
-                product = products_col.find_one({"product_code": product_code})
-                if not product:
-                    messagebox.showerror("خطأ", f"المنتج {product_code} غير موجود!")
-                    return
-
                 try:
-                    
-                    # استخراج القيم من الحقول
+                    # استخراج القيم الرقمية
                     qty = float(row[4].get() or 0)
                     numbering = float(row[3].get() or 0)
-                    unit_price = float(row[8].get() or 0)
-                    discount_type = row[5].get()
-                    discount_value = float(row[6].get() or 0)
-                    
-                    # حساب القيم
+                    unit_price = float(row[6].get() or 0)
                     total_qty = qty * numbering
-                    total_price = unit_price * total_qty
+                    total_price = total_qty * unit_price
                     
-                    # تطبيق الخصم
-                    if discount_type == "Percentage":
-                        discount = total_price * (discount_value / 100)
-                    else:
-                        discount = min(discount_value, total_price)
+                    # البحث عن المنتج في المخزون
+                    product = products_col.find_one({"product_code": product_code})
+                    if not product:
+                        messagebox.showerror("خطأ", f"المنتج {product_code} غير موجود!")
+                        return
                     
-                    final_price = max(total_price - discount, 0)
-
-                    # التحقق من المخزون
+                    # التحقق من توفر الكمية
                     stock = product.get("stock_quantity", 0)
                     if total_qty > stock:
-                        messagebox.showerror("نقص في المخزون", 
-                            f"الكمية المطلوبة ({total_qty}) تتجاوز المخزون ({stock}) للمنتج {product_code}")
+                        messagebox.showerror(
+                            "نقص في المخزون", 
+                            f"الكمية المطلوبة ({total_qty}) تتجاوز المخزون ({stock}) للمنتج {product_code}"
+                        )
                         return
-
+                    
+                    # تخزين تحديثات المخزون
                     stock_updates[product_code] = stock - total_qty
-                    total_amount += final_price
-
-                    # إضافة العنصر
+                    
+                    # إضافة العنصر للفاتورة
                     items.append({
                         "Product_code": product_code,
-                        "product_name": row[1].get().strip(),
-                        "Unit": row[2].get().strip(),
+                        "product_name": product_name,
+                        "Unit": unit,
                         "QTY": qty,
                         "numbering": numbering,
                         "Total_QTY": total_qty,
                         "Unit_price": unit_price,
-                        "Discount_Type": discount_type,
-                        "Discount_Value": discount_value,
-                        "Final_Price": final_price
+                        "Total_price": total_price
                     })
+                    total_amount += total_price
                     
                 except ValueError as e:
                     messagebox.showerror("خطأ", f"قيم غير صالحة في الصف {row_idx+1}: {str(e)}")
@@ -1201,32 +1158,36 @@ class SalesSystemApp:
             if not items:
                 messagebox.showerror("خطأ", "لا توجد عناصر في الفاتورة!")
                 return
+
             # توليد رقم الفاتورة
             invoice_number = self.generate_invoice_number()
             if not invoice_number:
                 return
-            # إنشاء بيانات الفاتورة الكاملة
+
+            # إنشاء وثيقة الفاتورة
             invoice_data = {
-                "Receipt_Number": invoice_number,
+                "Reciept_Number": invoice_number,
                 "Date": datetime.now().strftime("%d/%m/%Y %H:%M"),
-                "Customer_info": {
-                    "code": customer.get("Code", "CUST-001"),
-                    "name": customer.get("Name", "غير معروف"),
-                    "phone1": customer.get("Phone_number1", ""),
-                    "phone2": customer.get("Phone_number2", ""),
-                    "address": customer.get("Company_address", "")
-                },
+                "Customer_code": customer.get("Code", "CUST-001"),
+                "Customer_name": customer.get("Name", "غير معروف"),
+                "Customer_phone1": customer.get("Phone_number1", ""),
+                "Customer_phone2": customer.get("Phone_number2", ""),
+                "Customer_address": customer.get("Company_address", ""),
                 "Items": items,
-                "Financials": {
-                    "Net_total": total_amount,
-                    "Previous_balance": customer.get("Balance", 0),
-                    "Total_balance": total_amount + customer.get("Balance", 0),
-                    "Payed_cash": payed_cash,
-                    "Remaining_balance": (total_amount + customer.get("Balance", 0)) - payed_cash,
-                    "Payment_method": self.payment_method_var.get()
-                },
+                "Net_total": total_amount,
+                "Balance":customer.get("Balance",""),
+                "Payed_cash": self.payed_cash_var.get() if self.payed_cash_var.get() else 0.0,
+                # "Grand_total": total_amount,
+                # "Status": "معلقة",
                 "PDF_Path": ""
             }
+
+            # توليد PDF
+            pdf_path = self.generate_pdf(invoice_data)
+            if not pdf_path:
+                return
+            
+            invoice_data["PDF_Path"] = pdf_path
 
             # تحديث المخزون
             for code, new_stock in stock_updates.items():
@@ -1235,40 +1196,27 @@ class SalesSystemApp:
                     {"$set": {"stock_quantity": new_stock}}
                 )
 
-            # تحديث بيانات العميل
-            new_balance = (customer.get("Balance", 0) + total_amount) - payed_cash
+            # حفظ الفاتورة
+            sales_col.insert_one(invoice_data)
             customers_col.update_one(
                 {"_id": customer["_id"]},
                 {
-                    "$set": {
-                        "Last_purchase": datetime.now(),
-                        "Balance": new_balance
-                    },
+                    "$set": {"Last_purchase": datetime.now()},
                     "$inc": {
                         "Sales": 1,
-                        "Debit": total_amount,
+                        "Debit": total_amount,    # إضافة الدين
+                        "Balance": (total_amount - payed_cash),   # إضافة الرصيد
                         "Credit": payed_cash
                     }
                 }
             )
 
-            # توليد ملف PDF
-            pdf_path = self.generate_pdf(invoice_data)
-            if not pdf_path:
-                return
-
-            # إضافة مسار PDF للبيانات
-            invoice_data["PDF_Path"] = pdf_path
-
-            # حفظ الفاتورة في قاعدة البيانات
-            sales_col.insert_one(invoice_data)
-
-            messagebox.showinfo("نجاح", f"تم حفظ الفاتورة رقم {invoice_data['Receipt_Number']}")
+            messagebox.showinfo("نجاح", f"تم الحفظ بنجاح\nرقم الفاتورة: {invoice_number}")
             self.clear_invoice_form()
 
         except Exception as e:
-            messagebox.showerror("خطأ", f"فشل في العملية: {str(e)}")
-            # logging.error(f"Invoice Error: {str(e)}")
+            messagebox.showerror("خطأ فادح", f"فشل في العملية: {str(e)}")
+
 
     def clear_invoice_form(self):
             """تنظيف جميع حقول الفاتورة"""
@@ -1319,7 +1267,7 @@ class SalesSystemApp:
 
             # إنشاء مسار الحفظ
             desktop = os.path.join(os.path.expanduser('~'), 'Desktop')
-            file_name = f"فاتورة_{invoice_data['Receipt_Number']}.pdf"
+            file_name = f"فاتورة_{invoice_data['Reciept_Number']}.pdf"
             pdf_path = os.path.join(desktop, file_name)
 
             # إعداد مستند PDF
@@ -1334,7 +1282,7 @@ class SalesSystemApp:
                 c.drawImage(logo, 0.5*cm, height-3.5*cm, width=4*cm, height=2.5*cm, preserveAspectRatio=True)
 
             # ========== العنوان المركزي ==========
-            invoice_number = str(invoice_data['Receipt_Number']).replace('INV', '')
+            invoice_number = str(invoice_data['Reciept_Number']).replace('INV', '')
             invoice_title = f"فاتورة بيع رقم {invoice_number}"
             
             # رسم الإطار حول العنوان
@@ -1368,10 +1316,10 @@ class SalesSystemApp:
             c.setFont("Arabic", 12)
             customer_fields = [
                 f"التاريخ:       {invoice_data['Date']}",            
-                f"اسم العميل:    {invoice_data['Customer_info']['name']}",
-                f"الكود:         {invoice_data['Customer_info']['code']}",
-                f"العنوان:       {invoice_data['Customer_info']['address']}",
-                f"التليفون:      {invoice_data['Customer_info']['phone1']}"
+                f"اسم العميل:    {invoice_data['Customer_name']}",
+                f"الكود:         {invoice_data['Customer_code']}",
+                f"العنوان:       {invoice_data['Customer_address']}",
+                f"التليفون:      {invoice_data['Customer_phone1']}"
             ]
             
             for line in customer_fields:
@@ -1417,11 +1365,11 @@ class SalesSystemApp:
             # ========== الإجماليات ==========
             totals_y = table_y - 1.5*cm
             totals = [
-                ("صافي الفاتورة:", invoice_data['Financials']['Net_total']),
+                ("صافي الفاتورة:", invoice_data['Net_total']),
                 ("حساب سابق:", invoice_data.get('Balance', 0)),
-                ("إجمالي الفاتورة:", invoice_data['Financials']['Net_total'] + invoice_data.get('Balance', 0)),
+                ("إجمالي الفاتورة:", invoice_data['Net_total'] + invoice_data.get('Balance', 0)),
                 ("المدفوع:", invoice_data.get('Payed_cash', 0)),
-                ("الباقي:", (invoice_data['Financials']['Net_total'] + invoice_data.get('Balance', 0)) - invoice_data.get('Payed_cash', 0))
+                ("الباقي:", (invoice_data['Net_total'] + invoice_data.get('Balance', 0)) - invoice_data.get('Payed_cash', 0))
             ]
             
             c.setFont("Arabic", 12)

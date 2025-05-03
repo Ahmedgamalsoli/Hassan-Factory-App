@@ -536,7 +536,7 @@ class SalesSystemApp:
 
         # Invoice Items Grid
         columns = self.get_fields_by_name("Sales_Header")
-        col_width = 24
+        col_width = 25
 
         header_row = tk.Frame(form_frame, bg='#f0f0f0')
         header_row.grid(row=2, column=0, columnspan=len(columns), sticky='nsew', pady=(20, 0))
@@ -1150,7 +1150,6 @@ class SalesSystemApp:
                     return
 
                 try:
-                    
                     # استخراج القيم من الحقول
                     qty = float(row[4].get() or 0)
                     numbering = float(row[3].get() or 0)
@@ -1201,13 +1200,10 @@ class SalesSystemApp:
             if not items:
                 messagebox.showerror("خطأ", "لا توجد عناصر في الفاتورة!")
                 return
-            # توليد رقم الفاتورة
-            invoice_number = self.generate_invoice_number()
-            if not invoice_number:
-                return
+
             # إنشاء بيانات الفاتورة الكاملة
             invoice_data = {
-                "Receipt_Number": invoice_number,
+                "Receipt_Number": f"INV-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
                 "Date": datetime.now().strftime("%d/%m/%Y %H:%M"),
                 "Customer_info": {
                     "code": customer.get("Code", "CUST-001"),
@@ -1271,26 +1267,23 @@ class SalesSystemApp:
             # logging.error(f"Invoice Error: {str(e)}")
 
     def clear_invoice_form(self):
-            """تنظيف جميع حقول الفاتورة"""
-            try:
-                # تنظيف Combobox العميل
-                self.customer_name_var.set('')
-                
-                # تنظيف حقول العناصر
-                for row in self.entries:
-                    for entry in row:
-                        if isinstance(entry, ttk.Combobox):
-                            entry.set('')
-                        elif isinstance(entry, tk.Entry):
-                            entry.delete(0, tk.END)
-                
-                # إعادة تعيين القائمة
-                self.entries = []
-                # إعادة إنشاء الصفوف الأساسية
-                # إذا كنت تستخدم دالة لإضافة الصفوف
-                self.new_sales_invoice(self.user_role)
-            except Exception as e:
-                messagebox.showerror("خطأ", f"فشل في تنظيف الحقول: {str(e)}")
+        """إعادة تعيين الحقول"""
+        try:
+            self.customer_name_var.set('')
+            self.payed_cash_var.set(0.0)
+            self.payment_method_var.set('Cash')
+            
+            for row in self.entries:
+                for widget in row:
+                    if isinstance(widget, (ttk.Combobox, tk.Entry)):
+                        widget.delete(0, tk.END)
+            
+            # إعادة تهيئة الصفوف
+            self.entries.clear()
+            self.add_three_rows()  # إذا كانت موجودة
+            
+        except Exception as e:
+            messagebox.showerror("خطأ", f"فشل في تنظيف الحقول: {str(e)}")
                 
     def generate_pdf(self, invoice_data):
         """توليد ملف PDF بحجم A5 بتنسيق عربي مطابق للنموذج"""
@@ -1368,10 +1361,10 @@ class SalesSystemApp:
             c.setFont("Arabic", 12)
             customer_fields = [
                 f"التاريخ:       {invoice_data['Date']}",            
-                f"اسم العميل:    {invoice_data['Customer_info']['name']}",
-                f"الكود:         {invoice_data['Customer_info']['code']}",
-                f"العنوان:       {invoice_data['Customer_info']['address']}",
-                f"التليفون:      {invoice_data['Customer_info']['phone1']}"
+                f"اسم العميل:    {invoice_data['Customer_name']}",
+                f"الكود:         {invoice_data['Customer_code']}",
+                f"العنوان:       {invoice_data['Customer_address']}",
+                f"التليفون:      {invoice_data['Customer_phone1']}"
             ]
             
             for line in customer_fields:
@@ -1417,11 +1410,11 @@ class SalesSystemApp:
             # ========== الإجماليات ==========
             totals_y = table_y - 1.5*cm
             totals = [
-                ("صافي الفاتورة:", invoice_data['Financials']['Net_total']),
+                ("صافي الفاتورة:", invoice_data['Net_total']),
                 ("حساب سابق:", invoice_data.get('Balance', 0)),
-                ("إجمالي الفاتورة:", invoice_data['Financials']['Net_total'] + invoice_data.get('Balance', 0)),
+                ("إجمالي الفاتورة:", invoice_data['Net_total'] + invoice_data.get('Balance', 0)),
                 ("المدفوع:", invoice_data.get('Payed_cash', 0)),
-                ("الباقي:", (invoice_data['Financials']['Net_total'] + invoice_data.get('Balance', 0)) - invoice_data.get('Payed_cash', 0))
+                ("الباقي:", (invoice_data['Net_total'] + invoice_data.get('Balance', 0)) - invoice_data.get('Payed_cash', 0))
             ]
             
             c.setFont("Arabic", 12)

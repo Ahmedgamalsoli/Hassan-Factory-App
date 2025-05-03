@@ -536,7 +536,7 @@ class SalesSystemApp:
 
         # Invoice Items Grid
         columns = self.get_fields_by_name("Sales_Header")
-        col_width = 24
+        col_width = 25
 
         header_row = tk.Frame(form_frame, bg='#f0f0f0')
         header_row.grid(row=2, column=0, columnspan=len(columns), sticky='nsew', pady=(20, 0))
@@ -1274,7 +1274,7 @@ class SalesSystemApp:
             """تنظيف جميع حقول الفاتورة"""
             try:
                 # تنظيف Combobox العميل
-                self.customer_name_var.set('')
+                self.customer_var.set('')
                 
                 # تنظيف حقول العناصر
                 for row in self.entries:

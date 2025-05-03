@@ -536,7 +536,7 @@ class SalesSystemApp:
 
         # Invoice Items Grid
         columns = self.get_fields_by_name("Sales_Header")
-        col_width = 24
+        col_width = 25
 
         header_row = tk.Frame(form_frame, bg='#f0f0f0')
         header_row.grid(row=2, column=0, columnspan=len(columns), sticky='nsew', pady=(20, 0))
@@ -1201,13 +1201,10 @@ class SalesSystemApp:
             if not items:
                 messagebox.showerror("خطأ", "لا توجد عناصر في الفاتورة!")
                 return
-            # توليد رقم الفاتورة
-            invoice_number = self.generate_invoice_number()
-            if not invoice_number:
-                return
+
             # إنشاء بيانات الفاتورة الكاملة
             invoice_data = {
-                "Receipt_Number": invoice_number,
+                "Receipt_Number": f"INV-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
                 "Date": datetime.now().strftime("%d/%m/%Y %H:%M"),
                 "Customer_info": {
                     "code": customer.get("Code", "CUST-001"),
@@ -1274,7 +1271,7 @@ class SalesSystemApp:
             """تنظيف جميع حقول الفاتورة"""
             try:
                 # تنظيف Combobox العميل
-                self.customer_name_var.set('')
+                self.customer_var.set('')
                 
                 # تنظيف حقول العناصر
                 for row in self.entries:

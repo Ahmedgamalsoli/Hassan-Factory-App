@@ -536,7 +536,7 @@ class SalesSystemApp:
 
         # Invoice Items Grid
         columns = self.get_fields_by_name("Sales_Header")
-        col_width = 24
+        col_width = 22
 
         header_row = tk.Frame(form_frame, bg='#f0f0f0')
         header_row.grid(row=2, column=0, columnspan=len(columns), sticky='nsew', pady=(20, 0))
@@ -1086,13 +1086,13 @@ class SalesSystemApp:
             print(0)
             sales_col = self.get_collection_by_name('Sales')
             print(10)
-            last_invoice = sales_col.find_one(sort=[("Receipt_Number", -1)])
+            last_invoice = sales_col.find_one(sort=[("Reciept_Number", -1)])
             print(20)
             # التحقق من وجود الفاتورة وتنسيقها
             last_number = 1
             if last_invoice:
                 print(1)
-                reciept_number = last_invoice.get("Receipt_Number")
+                reciept_number = last_invoice.get("Reciept_Number")
                 if (
                     reciept_number 
                     and isinstance(reciept_number, str) 
@@ -1113,184 +1113,177 @@ class SalesSystemApp:
             messagebox.showerror("خطأ", f"فشل توليد الرقم التسلسلي: {str(e)}")
             return None
 
-    def save_invoice(self, sales_col, customers_col, products_col):
-        """حفظ الفاتورة مع التحقق من المخزون وتحديثه"""
-        try:
-            # التحقق من وجود بيانات العميل
-            customer_name = self.customer_name_var.get().strip()
-            if not customer_name:
-                messagebox.showerror("خطأ", "يرجى اختيار عميل")
+def save_invoice(self, sales_col, customers_col, products_col):
+    """حفظ الفاتورة مع التحقق من المخزون وتحديثه"""
+    try:
+        # التحقق من وجود بيانات العميل
+        customer_name = self.customer_name_var.get().strip()
+        if not customer_name:
+            messagebox.showerror("خطأ", "يرجى اختيار عميل")
+            return
+
+        # البحث عن العميل في قاعدة البيانات
+        customer = customers_col.find_one({"Name": customer_name})
+        if not customer:
+            messagebox.showerror("خطأ", "العميل غير مسجل!")
+            return
+
+        # التحقق من المبلغ المدفوع
+        payed_cash = float(self.payed_cash_var.get() or 0)
+        if payed_cash < 0:
+            messagebox.showerror("خطأ", "المبلغ المدفوع لا يمكن أن يكون سالبًا!")
+            return
+
+        # جمع بيانات العناصر والتحقق من المخزون
+        items = []
+        total_amount = 0.0
+        stock_updates = {}
+        
+        for row_idx, row in enumerate(self.entries):
+            product_code = row[0].get().strip()
+            if not product_code:
+                continue
+
+            product = products_col.find_one({"product_code": product_code})
+            if not product:
+                messagebox.showerror("خطأ", f"المنتج {product_code} غير موجود!")
                 return
 
-            # البحث عن العميل في قاعدة البيانات
-            customer = customers_col.find_one({"Name": customer_name})
-            if not customer:
-                messagebox.showerror("خطأ", "العميل غير مسجل!")
-                return
+            try:
+                # استخراج القيم من الحقول
+                qty = float(row[4].get() or 0)
+                numbering = float(row[3].get() or 0)
+                unit_price = float(row[8].get() or 0)
+                discount_type = row[5].get()
+                discount_value = float(row[6].get() or 0)
+                
+                # حساب القيم
+                total_qty = qty * numbering
+                total_price = unit_price * total_qty
+                
+                # تطبيق الخصم
+                if discount_type == "Percentage":
+                    discount = total_price * (discount_value / 100)
+                else:
+                    discount = min(discount_value, total_price)
+                
+                final_price = max(total_price - discount, 0)
 
-            # التحقق من المبلغ المدفوع
-            payed_cash = float(self.payed_cash_var.get() or 0)
-            if payed_cash < 0:
-                messagebox.showerror("خطأ", "المبلغ المدفوع لا يمكن أن يكون سالبًا!")
-                return
-
-            # جمع بيانات العناصر والتحقق من المخزون
-            items = []
-            total_amount = 0.0
-            stock_updates = {}
-            
-            for row_idx, row in enumerate(self.entries):
-                product_code = row[0].get().strip()
-                if not product_code:
-                    continue
-
-                product = products_col.find_one({"product_code": product_code})
-                if not product:
-                    messagebox.showerror("خطأ", f"المنتج {product_code} غير موجود!")
+                # التحقق من المخزون
+                stock = product.get("stock_quantity", 0)
+                if total_qty > stock:
+                    messagebox.showerror("نقص في المخزون", 
+                        f"الكمية المطلوبة ({total_qty}) تتجاوز المخزون ({stock}) للمنتج {product_code}")
                     return
 
-                try:
-                    
-                    # استخراج القيم من الحقول
-                    qty = float(row[4].get() or 0)
-                    numbering = float(row[3].get() or 0)
-                    unit_price = float(row[8].get() or 0)
-                    discount_type = row[5].get()
-                    discount_value = float(row[6].get() or 0)
-                    
-                    # حساب القيم
-                    total_qty = qty * numbering
-                    total_price = unit_price * total_qty
-                    
-                    # تطبيق الخصم
-                    if discount_type == "Percentage":
-                        discount = total_price * (discount_value / 100)
-                    else:
-                        discount = min(discount_value, total_price)
-                    
-                    final_price = max(total_price - discount, 0)
+                stock_updates[product_code] = stock - total_qty
+                total_amount += final_price
 
-                    # التحقق من المخزون
-                    stock = product.get("stock_quantity", 0)
-                    if total_qty > stock:
-                        messagebox.showerror("نقص في المخزون", 
-                            f"الكمية المطلوبة ({total_qty}) تتجاوز المخزون ({stock}) للمنتج {product_code}")
-                        return
-
-                    stock_updates[product_code] = stock - total_qty
-                    total_amount += final_price
-
-                    # إضافة العنصر
-                    items.append({
-                        "Product_code": product_code,
-                        "product_name": row[1].get().strip(),
-                        "Unit": row[2].get().strip(),
-                        "QTY": qty,
-                        "numbering": numbering,
-                        "Total_QTY": total_qty,
-                        "Unit_price": unit_price,
-                        "Discount_Type": discount_type,
-                        "Discount_Value": discount_value,
-                        "Final_Price": final_price
-                    })
-                    
-                except ValueError as e:
-                    messagebox.showerror("خطأ", f"قيم غير صالحة في الصف {row_idx+1}: {str(e)}")
-                    return
-
-            if not items:
-                messagebox.showerror("خطأ", "لا توجد عناصر في الفاتورة!")
+                # إضافة العنصر
+                items.append({
+                    "Product_code": product_code,
+                    "product_name": row[1].get().strip(),
+                    "Unit": row[2].get().strip(),
+                    "QTY": qty,
+                    "numbering": numbering,
+                    "Total_QTY": total_qty,
+                    "Unit_price": unit_price,
+                    "Discount_Type": discount_type,
+                    "Discount_Value": discount_value,
+                    "Final_Price": final_price
+                })
+                
+            except ValueError as e:
+                messagebox.showerror("خطأ", f"قيم غير صالحة في الصف {row_idx+1}: {str(e)}")
                 return
-            # توليد رقم الفاتورة
-            invoice_number = self.generate_invoice_number()
-            if not invoice_number:
-                return
-            # إنشاء بيانات الفاتورة الكاملة
-            invoice_data = {
-                "Receipt_Number": invoice_number,
-                "Date": datetime.now().strftime("%d/%m/%Y %H:%M"),
-                "Customer_info": {
-                    "code": customer.get("Code", "CUST-001"),
-                    "name": customer.get("Name", "غير معروف"),
-                    "phone1": customer.get("Phone_number1", ""),
-                    "phone2": customer.get("Phone_number2", ""),
-                    "address": customer.get("Company_address", "")
-                },
-                "Items": items,
-                "Financials": {
-                    "Net_total": total_amount,
-                    "Previous_balance": customer.get("Balance", 0),
-                    "Total_balance": total_amount + customer.get("Balance", 0),
-                    "Payed_cash": payed_cash,
-                    "Remaining_balance": (total_amount + customer.get("Balance", 0)) - payed_cash,
-                    "Payment_method": self.payment_method_var.get()
-                },
-                "PDF_Path": ""
-            }
 
-            # تحديث المخزون
-            for code, new_stock in stock_updates.items():
-                products_col.update_one(
-                    {"product_code": code},
-                    {"$set": {"stock_quantity": new_stock}}
-                )
+        if not items:
+            messagebox.showerror("خطأ", "لا توجد عناصر في الفاتورة!")
+            return
 
-            # تحديث بيانات العميل
-            new_balance = (customer.get("Balance", 0) + total_amount) - payed_cash
-            customers_col.update_one(
-                {"_id": customer["_id"]},
-                {
-                    "$set": {
-                        "Last_purchase": datetime.now(),
-                        "Balance": new_balance
-                    },
-                    "$inc": {
-                        "Sales": 1,
-                        "Debit": total_amount,
-                        "Credit": payed_cash
-                    }
-                }
+        # إنشاء بيانات الفاتورة الكاملة
+        invoice_data = {
+            "Receipt_Number": f"INV-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
+            "Date": datetime.now().strftime("%d/%m/%Y %H:%M"),
+            "Customer_info": {
+                "code": customer.get("Code", "CUST-001"),
+                "name": customer.get("Name", "غير معروف"),
+                "phone1": customer.get("Phone_number1", ""),
+                "phone2": customer.get("Phone_number2", ""),
+                "address": customer.get("Company_address", "")
+            },
+            "Items": items,
+            "Financials": {
+                "Net_total": total_amount,
+                "Previous_balance": customer.get("Balance", 0),
+                "Total_balance": total_amount + customer.get("Balance", 0),
+                "Payed_cash": payed_cash,
+                "Remaining_balance": (total_amount + customer.get("Balance", 0)) - payed_cash,
+                "Payment_method": self.payment_method_var.get()
+            },
+            "PDF_Path": ""
+        }
+
+        # تحديث المخزون
+        for code, new_stock in stock_updates.items():
+            products_col.update_one(
+                {"product_code": code},
+                {"$set": {"stock_quantity": new_stock}}
             )
 
-            # توليد ملف PDF
-            pdf_path = self.generate_pdf(invoice_data)
-            if not pdf_path:
-                return
+        # تحديث بيانات العميل
+        new_balance = (customer.get("Balance", 0) + total_amount) - payed_cash
+        customers_col.update_one(
+            {"_id": customer["_id"]},
+            {
+                "$set": {
+                    "Last_purchase": datetime.now(),
+                    "Balance": new_balance
+                },
+                "$inc": {
+                    "Sales": 1,
+                    "Debit": total_amount,
+                    "Credit": payed_cash
+                }
+            }
+        )
 
-            # إضافة مسار PDF للبيانات
-            invoice_data["PDF_Path"] = pdf_path
+        # توليد ملف PDF
+        pdf_path = self.generate_pdf(invoice_data)
+        if not pdf_path:
+            return
 
-            # حفظ الفاتورة في قاعدة البيانات
-            sales_col.insert_one(invoice_data)
+        # إضافة مسار PDF للبيانات
+        invoice_data["PDF_Path"] = pdf_path
 
-            messagebox.showinfo("نجاح", f"تم حفظ الفاتورة رقم {invoice_data['Receipt_Number']}")
-            self.clear_invoice_form()
+        # حفظ الفاتورة في قاعدة البيانات
+        sales_col.insert_one(invoice_data)
 
-        except Exception as e:
-            messagebox.showerror("خطأ", f"فشل في العملية: {str(e)}")
-            # logging.error(f"Invoice Error: {str(e)}")
+        messagebox.showinfo("نجاح", f"تم حفظ الفاتورة رقم {invoice_data['Receipt_Number']}")
+        self.clear_invoice_form()
+
+    except Exception as e:
+        messagebox.showerror("خطأ", f"فشل في العملية: {str(e)}")
+        # logging.error(f"Invoice Error: {str(e)}")
 
     def clear_invoice_form(self):
-            """تنظيف جميع حقول الفاتورة"""
-            try:
-                # تنظيف Combobox العميل
-                self.customer_name_var.set('')
-                
-                # تنظيف حقول العناصر
-                for row in self.entries:
-                    for entry in row:
-                        if isinstance(entry, ttk.Combobox):
-                            entry.set('')
-                        elif isinstance(entry, tk.Entry):
-                            entry.delete(0, tk.END)
-                
-                # إعادة تعيين القائمة
-                self.entries = []
-                # إعادة إنشاء الصفوف الأساسية
-                # إذا كنت تستخدم دالة لإضافة الصفوف
-                self.new_sales_invoice(self.user_role)
-            except Exception as e:
-                messagebox.showerror("خطأ", f"فشل في تنظيف الحقول: {str(e)}")
+        """إعادة تعيين الحقول"""
+        try:
+            self.customer_name_var.set('')
+            self.payed_cash_var.set(0.0)
+            self.payment_method_var.set('Cash')
+            
+            for row in self.entries:
+                for widget in row:
+                    if isinstance(widget, (ttk.Combobox, tk.Entry)):
+                        widget.delete(0, tk.END)
+            
+            # إعادة تهيئة الصفوف
+            self.entries.clear()
+            self.add_three_rows()  # إذا كانت موجودة
+            
+        except Exception as e:
+            messagebox.showerror("خطأ", f"فشل في تنظيف الحقول: {str(e)}")
                 
     def generate_pdf(self, invoice_data):
         """توليد ملف PDF بحجم A5 بتنسيق عربي مطابق للنموذج"""
@@ -1319,7 +1312,7 @@ class SalesSystemApp:
 
             # إنشاء مسار الحفظ
             desktop = os.path.join(os.path.expanduser('~'), 'Desktop')
-            file_name = f"فاتورة_{invoice_data['Receipt_Number']}.pdf"
+            file_name = f"فاتورة_{invoice_data['Reciept_Number']}.pdf"
             pdf_path = os.path.join(desktop, file_name)
 
             # إعداد مستند PDF
@@ -1334,7 +1327,7 @@ class SalesSystemApp:
                 c.drawImage(logo, 0.5*cm, height-3.5*cm, width=4*cm, height=2.5*cm, preserveAspectRatio=True)
 
             # ========== العنوان المركزي ==========
-            invoice_number = str(invoice_data['Receipt_Number']).replace('INV', '')
+            invoice_number = str(invoice_data['Reciept_Number']).replace('INV', '')
             invoice_title = f"فاتورة بيع رقم {invoice_number}"
             
             # رسم الإطار حول العنوان
@@ -1368,10 +1361,10 @@ class SalesSystemApp:
             c.setFont("Arabic", 12)
             customer_fields = [
                 f"التاريخ:       {invoice_data['Date']}",            
-                f"اسم العميل:    {invoice_data['Customer_info']['name']}",
-                f"الكود:         {invoice_data['Customer_info']['code']}",
-                f"العنوان:       {invoice_data['Customer_info']['address']}",
-                f"التليفون:      {invoice_data['Customer_info']['phone1']}"
+                f"اسم العميل:    {invoice_data['Customer_name']}",
+                f"الكود:         {invoice_data['Customer_code']}",
+                f"العنوان:       {invoice_data['Customer_address']}",
+                f"التليفون:      {invoice_data['Customer_phone1']}"
             ]
             
             for line in customer_fields:
@@ -1417,11 +1410,11 @@ class SalesSystemApp:
             # ========== الإجماليات ==========
             totals_y = table_y - 1.5*cm
             totals = [
-                ("صافي الفاتورة:", invoice_data['Financials']['Net_total']),
+                ("صافي الفاتورة:", invoice_data['Net_total']),
                 ("حساب سابق:", invoice_data.get('Balance', 0)),
-                ("إجمالي الفاتورة:", invoice_data['Financials']['Net_total'] + invoice_data.get('Balance', 0)),
+                ("إجمالي الفاتورة:", invoice_data['Net_total'] + invoice_data.get('Balance', 0)),
                 ("المدفوع:", invoice_data.get('Payed_cash', 0)),
-                ("الباقي:", (invoice_data['Financials']['Net_total'] + invoice_data.get('Balance', 0)) - invoice_data.get('Payed_cash', 0))
+                ("الباقي:", (invoice_data['Net_total'] + invoice_data.get('Balance', 0)) - invoice_data.get('Payed_cash', 0))
             ]
             
             c.setFont("Arabic", 12)
