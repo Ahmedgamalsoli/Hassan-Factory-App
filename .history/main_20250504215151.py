@@ -1257,9 +1257,10 @@ class SalesSystemApp:
             pdf_path = self.generate_pdf(invoice_data)
             if not pdf_path:
                 return
+
             # إضافة مسار PDF للبيانات
             invoice_data["PDF_Path"] = pdf_path
-            
+
             # حفظ الفاتورة في قاعدة البيانات
             sales_col.insert_one(invoice_data)
 
@@ -1434,9 +1435,9 @@ class SalesSystemApp:
             c.setFont("Arabic", 10)
             c.drawRightString(width - 2.2*cm, totals_y - 0.25*cm, format_arabic("____________________"))
             c.drawString(1.5*cm, totals_y - 0.25*cm, format_arabic("____________________"))
-            
+            self.upload_pdf_to_cloudinary(pdf_path)
             c.save()
-            pdf_path = self.upload_pdf_to_cloudinary(pdf_path)
+            
             return pdf_path
 
         except Exception as e:

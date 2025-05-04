@@ -1436,7 +1436,7 @@ class SalesSystemApp:
             c.drawString(1.5*cm, totals_y - 0.25*cm, format_arabic("____________________"))
             
             c.save()
-            pdf_path = self.upload_pdf_to_cloudinary(pdf_path)
+            pdf_path = 
             return pdf_path
 
         except Exception as e:

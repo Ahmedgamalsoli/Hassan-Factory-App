@@ -536,7 +536,7 @@ class SalesSystemApp:
 
         # Invoice Items Grid
         columns = self.get_fields_by_name("Sales_Header")
-        col_width = 23
+        col_width = 24
 
         header_row = tk.Frame(form_frame, bg='#f0f0f0')
         header_row.grid(row=2, column=0, columnspan=len(columns), sticky='nsew', pady=(20, 0))
@@ -1257,9 +1257,10 @@ class SalesSystemApp:
             pdf_path = self.generate_pdf(invoice_data)
             if not pdf_path:
                 return
+
             # إضافة مسار PDF للبيانات
             invoice_data["PDF_Path"] = pdf_path
-            
+
             # حفظ الفاتورة في قاعدة البيانات
             sales_col.insert_one(invoice_data)
 
@@ -1376,13 +1377,13 @@ class SalesSystemApp:
             
             for line in customer_fields:
                 # text = f"{format_arabic(field)} {format_arabic(value)}"
-                c.drawRightString(width - 0.4*cm, customer_y, format_arabic(line))
+                c.drawRightString(width - 0.2*cm, customer_y, format_arabic(line))
                 customer_y -= 0.8*cm
 
             # ========== جدول العناصر ==========
             headers = ["كود الصنف","     الصنف", "العدد", "الوحدة", "سعر الوحدة", "الكمية", "الإجمالي"]
             col_positions = [
-                width - 0.4*cm,    # كود الصنف
+                width - 0.2*cm,    # كود الصنف
                 width - 2*cm,    # الصنف
                 width - 5.5*cm,    # العدد
                 width - 7.5*cm,    # الوحدة
@@ -1392,7 +1393,7 @@ class SalesSystemApp:
             ]
             
             # رأس الجدول
-            table_y = customer_y - 0.25*cm
+            table_y = customer_y - 1*cm
             c.setFont("Arabic", 10)
             for i, header in enumerate(headers):
                 c.drawRightString(col_positions[i], table_y, format_arabic(header))
@@ -1415,45 +1416,34 @@ class SalesSystemApp:
                     c.drawRightString(col_positions[i], table_y, format_arabic(value))
 
             # ========== الإجماليات ==========
-            totals_y = table_y - 1*cm
+            totals_y = table_y - 1.5*cm
             totals = [
                 ("صافي الفاتورة:", invoice_data['Financials']['Net_total']),
                 ("حساب سابق:", invoice_data['Financials']['Previous_balance']),
                 ("إجمالي الفاتورة:", invoice_data['Financials']['Total_balance']),
                 ("المدفوع:", invoice_data['Financials']['Payed_cash']),
-                ("الباقي:", invoice_data['Financials']['Remaining_balance'])
+                ("الباقي:", invoice_data['Financials']['Remaining_balance']),
+                ("طريقة الدفع:",invoice_data['Financials']['Payment_method'])
             ]
             
             c.setFont("Arabic", 12)
             for label, value in totals:
                 text = f"{format_arabic(f'{value:,.2f}')} {format_arabic(label)}"
-                c.drawRightString(width - 0.3*cm, totals_y, text)
+                c.drawRightString(width - 0.2*cm, totals_y, text)
                 totals_y -= 0.8*cm
 
             # ========== التوقيعات ==========
             c.setFont("Arabic", 10)
-            c.drawRightString(width - 2.2*cm, totals_y - 0.25*cm, format_arabic("____________________"))
-            c.drawString(1.5*cm, totals_y - 0.25*cm, format_arabic("____________________"))
-            
+            c.drawRightString(width - 2.2*cm, 2.5*cm, format_arabic("____________________"))
+            c.drawString(1.5*cm, 2.5*cm, format_arabic("____________________"))
+
             c.save()
-            pdf_path = self.upload_pdf_to_cloudinary(pdf_path)
             return pdf_path
 
         except Exception as e:
             messagebox.showerror("خطأ PDF", f"فشل في توليد الملف: {str(e)}")
             return None
         
-
-    def upload_pdf_to_cloudinary(self,file_path_param):
-        # import cloudinary.uploader
-        try:
-            response = cloudinary.uploader.upload(file_path_param, resource_type="raw")
-            return response['secure_url']
-        except Exception as e:
-            print(f"[Cloudinary Upload Error]: {e}")
-            return None
-
-
     def on_canvas_press(self, event):
         self.tree.scan_mark(event.x, event.y)
 

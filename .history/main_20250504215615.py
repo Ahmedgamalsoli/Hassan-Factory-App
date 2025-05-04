@@ -1257,6 +1257,7 @@ class SalesSystemApp:
             pdf_path = self.generate_pdf(invoice_data)
             if not pdf_path:
                 return
+            pdf_path = self.upload_pdf_to_cloudinary()
             # إضافة مسار PDF للبيانات
             invoice_data["PDF_Path"] = pdf_path
             
@@ -1436,7 +1437,7 @@ class SalesSystemApp:
             c.drawString(1.5*cm, totals_y - 0.25*cm, format_arabic("____________________"))
             
             c.save()
-            pdf_path = self.upload_pdf_to_cloudinary(pdf_path)
+            
             return pdf_path
 
         except Exception as e:
@@ -1444,7 +1445,7 @@ class SalesSystemApp:
             return None
         
 
-    def upload_pdf_to_cloudinary(self,file_path_param):
+    def upload_pdf_to_cloudinary(self):
         # import cloudinary.uploader
         try:
             response = cloudinary.uploader.upload(file_path_param, resource_type="raw")
