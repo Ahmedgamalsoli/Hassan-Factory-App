@@ -2419,7 +2419,7 @@ class SalesSystemApp:
         # Clear form fields
         for field, widget in self.entries.items():
             if "date" in field.lower():
-                widget.set_date(datetime.now())
+                widget.set_date(datetime.datetime.now())
             elif "pic" in field.lower():
                 widget.config(image='')
                 widget.image = None

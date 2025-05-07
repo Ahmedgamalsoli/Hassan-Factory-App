@@ -1155,7 +1155,7 @@ class SalesSystemApp:
                             if isinstance(val, str) and val.startswith("http"):
                                 print(val)  # Optional: print the URL
                             
-                        if 'date' in col.lower() and isinstance(val, datetime):
+                        if 'date' in col.lower() and isinstance(val, datetime.datetime):
                             val = val.strftime("%d-%m-%Y")
                         values.append(val)
                             
@@ -1348,7 +1348,7 @@ class SalesSystemApp:
 
         for field, entry in self.entries.items():
             value = first_document.get(field, "")
-            if isinstance(value, datetime):
+            if isinstance(value, datetime.datetime):
                 value = value.strftime('%d-%m-%Y')
                 entry.delete(0, tk.END)
                 entry.insert(0, value)
@@ -1401,7 +1401,7 @@ class SalesSystemApp:
                                 if col == 'Units':
                                     value = unit_value  # Set current unit value
                                 
-                                elif isinstance(value, datetime):
+                                elif isinstance(value, datetime.datetime):
                                     value = value.strftime('%d-%m-%Y')
                                 
                                 values.append(value)
@@ -1413,7 +1413,7 @@ class SalesSystemApp:
                         values = []
                         for col in columns:
                             value = row_data.get(col, '')
-                            if isinstance(value, datetime):
+                            if isinstance(value, datetime.datetime):
                                 value = value.strftime('%d-%m-%Y')
                             values.append(value)
                         
@@ -1440,8 +1440,8 @@ class SalesSystemApp:
                 value = widget.get()
                 if value:
                     try:
-                        value_date = datetime.strptime(value, '%d-%m-%Y').date()
-                        value = datetime.combine(value_date, datetime.time.min)
+                        value_date = datetime.datetime.strptime(value, '%d-%m-%Y').date()
+                        value = datetime.datetime.combine(value_date, datetime.time.min)
                     except Exception as e:
                         messagebox.showerror("Error", f"Invalid date format for {field}: {e}")
                         return
@@ -1492,7 +1492,7 @@ class SalesSystemApp:
             # Clear form fields after successful addition
             for field, widget in self.entries.items():
                 if "date" in field.lower():
-                    widget.set_date(datetime.now())
+                    widget.set_date(datetime.datetime.now())
                 elif "pic" in field.lower():
                     widget.config(image='')
                     widget.image = None
@@ -1547,8 +1547,8 @@ class SalesSystemApp:
                 value = widget.get()
                 if value:
                     try:
-                        value_date = datetime.strptime(value, '%d-%m-%Y').date()
-                        value = datetime.combine(value_date, datetime.time.min)
+                        value_date = datetime.datetime.strptime(value, '%d-%m-%Y').date()
+                        value = datetime.datetime.combine(value_date, datetime.time.min)
                     except Exception as e:
                         messagebox.showerror("Error", f"Invalid date format for {field}: {e}")
                         return
@@ -1592,7 +1592,7 @@ class SalesSystemApp:
             # Clear form fields after update
             for field, widget in self.entries.items():
                 if "date" in field.lower():
-                    widget.set_date(datetime.now())
+                    widget.set_date(datetime.datetime.now())
                 elif "pic" in field.lower():
                     widget.config(image='')
                     widget.image = None
@@ -1746,8 +1746,8 @@ class SalesSystemApp:
                 value = selected_date.get()
                 if value:
                     try:
-                        value = datetime.strptime(value, '%d-%m-%Y').date()
-                        value = datetime.combine(value, datetime.time.min) #Must do this to be comaptible with mongodb's Date type 
+                        value = datetime.datetime.strptime(value, '%d-%m-%Y').date()
+                        value = datetime.datetime.combine(value, datetime.time.min) #Must do this to be comaptible with mongodb's Date type 
                     except Exception as e:
                         print(f"ValueError: {e}")
                         messagebox.showerror("Error", f"Invalid date format for {field}")
@@ -1842,8 +1842,8 @@ class SalesSystemApp:
                 value = selected_date.get()
                 if value:
                     try:
-                        value = datetime.strptime(value, '%d-%m-%Y').date()
-                        value = datetime.combine(value, datetime.time.min) #Must do this to be comaptible with mongodb's Date type 
+                        value = datetime.datetime.strptime(value, '%d-%m-%Y').date()
+                        value = datetime.datetime.combine(value, datetime.time.min) #Must do this to be comaptible with mongodb's Date type 
 
                     except Exception as e:
                         print(f"ValueError: {e}")
@@ -1951,7 +1951,7 @@ class SalesSystemApp:
             return ["Name", "Password", "Id", "Role", "Join_Date", "National_id_pic", "Phone_number", "Address", "Salary"]
         
         elif collection_name == "Products":
-            return ["product_name", "category", "stock_quantity", "Specs", "Unit_Price", "product_code", "Units", "prod_pic"]
+            return ["product_name", "category", "price", "stock_quantity", "supplier"]
         
         elif collection_name == "Sales":
             return ["product_code", "Product_name", "unit", "QTY", "numbering","Total_QTY","Unit_Price","Total Price","Date","Reciept_Number","Customer_name","Customer_code"]
@@ -2414,17 +2414,6 @@ class SalesSystemApp:
             print(f"[Cloudinary Upload Error]: {e}")
             return None
 
-    def deselect_entry(self,tree):
-        tree.selection_remove(tree.selection())
-        # Clear form fields
-        for field, widget in self.entries.items():
-            if "date" in field.lower():
-                widget.set_date(datetime.now())
-            elif "pic" in field.lower():
-                widget.config(image='')
-                widget.image = None
-            else:
-                widget.delete(0, tk.END)
 
     def on_canvas_press(self, event):
         self.tree.scan_mark(event.x, event.y)
@@ -2567,7 +2556,7 @@ class SalesSystemApp:
 
         popup = tk.Toplevel()
         popup.title(title)
-        # popup.geometry("300x120")
+        popup.geometry("300x120")
         popup.resizable(False, False)
         popup.grab_set()  # Makes it modal
 
@@ -2590,91 +2579,61 @@ class SalesSystemApp:
         popup.wait_window()  # Blocks further execution until the popup is closed
         self.stop_sound()
 
-def upload_file_to_cloudinary(file_path_param):
-    # import cloudinary.uploader
-    try:
-        response = cloudinary.uploader.upload(file_path_param, resource_type="image")
-        return response['secure_url']
-    except Exception as e:
-        print(f"[Cloudinary Upload Error]: {e}")
-        return None
-def load_image_preview(filepath, img_label):
-    try:
-        img = Image.open(filepath)
-        img.thumbnail((300, 300))  # Make it bigger (adjust size as you wish)
-        img_tk = ImageTk.PhotoImage(img)
-        
-        img_label.config(image=img_tk)
-        img_label.image = img_tk
-        img_label.image_path = filepath   # <== DID YOU ADD THIS LINE? 👈👈👈
-    except Exception as e:
-        print(f"Error loading image preview: {e}")
-
-def load_image_preview_from_url(image_url, label, max_size=(300, 300)):
-    """Load image from a URL and display it in a Tkinter Label.
-    Args:image_url (str): The image URL to load.
-         label (tk.Label): The Tkinter Label to display the image in.
-         image_refs (list): A list to store image references (to avoid garbage collection).
-         max_size (tuple): Max size of the image (width, height)"""
-    try:
-        with urllib.request.urlopen(image_url) as response:
-            image_data = Image.open(io.BytesIO(response.read()))
-            image_data.thumbnail(max_size)  # Resize image
-            image_obj = ImageTk.PhotoImage(image_data)
-
-            label.config(image=image_obj)
-            label.image = image_obj  # Also attach to label itself (extra safety)
-    except Exception as e:
-        print(f"Error loading image from URL: {e}")
-        label.config(image="")
-        label.image = None
 
 ######################### Auxiliary classes #########################################################
 class AlwaysOnTopInputDialog(tk.Toplevel):
     def __init__(self, parent, prompt):
         super().__init__(parent)
-        self.transient(parent)
-        self.grab_set()
+        self.transient(parent)  # Make sure this dialog is always on top of the parent window
+        self.grab_set()  # Lock interaction to this dialog until it is closed
 
         self.title("Input")
-
+        
+        # Create the widgets for the dialog
         self.prompt_label = tk.Label(self, text=prompt)
         self.prompt_label.pack(padx=10, pady=10)
-
-        self.input_widget = tk.Entry(self)
-        self.input_widget.pack(padx=10, pady=10)
-        self.input_widget.focus_set()
+        
+        self.entry = tk.Entry(self)
+        self.entry.pack(padx=10, pady=10)
+        self.entry.focus_set()  # Set focus on the entry field
 
         self.result = None
-
+        
         self.ok_button = tk.Button(self, text="OK", command=self.on_ok)
         self.ok_button.pack(pady=5)
         self.ok_button.bind("<Return>", lambda event: self.ok_button.invoke())
 
-        self.after(1, self.adjust_geometry)
+        self.after(1, self.adjust_geometry) 
+
+        # Center the dialog on the screen
         self.center_dialog(parent)
 
     def adjust_geometry(self):
-        self.geometry("300x150")
+        # Set the fixed size of the dialog window after widget creation
+        self.geometry("300x150")  # Width=400, Height=150 (Fixed Size)
 
     def center_dialog(self, parent):
+        # Get the screen width and height
         screen_width = parent.winfo_screenwidth()
         screen_height = parent.winfo_screenheight()
+
+        # Get the size of the dialog window
         dialog_width = self.winfo_reqwidth()
         dialog_height = self.winfo_reqheight()
+
+        # Calculate the position to center the dialog
         x_position = (screen_width // 2) - (dialog_width // 2)
         y_position = (screen_height // 2) - (dialog_height // 2)
+
+        # Set the geometry of the dialog window
         self.geometry(f"{dialog_width}x{dialog_height}+{x_position}+{y_position}")
 
     def on_ok(self):
-        if isinstance(self.input_widget, DateEntry):
-            self.result = self.input_widget.get_date()
-        else:
-            self.result = self.input_widget.get()
-        self.destroy()
+        self.result = self.entry.get()
+        self.destroy()  # Close the dialog when the user clicks OK
 
     def get_result(self):
-        self.wait_window(self)
+        self.wait_window(self)  # Wait for this window to close and get the result
         return self.result
 
 ######################### Main #########################################################

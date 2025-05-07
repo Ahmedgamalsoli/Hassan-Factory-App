@@ -1746,8 +1746,8 @@ class SalesSystemApp:
                 value = selected_date.get()
                 if value:
                     try:
-                        value = datetime.strptime(value, '%d-%m-%Y').date()
-                        value = datetime.combine(value, datetime.time.min) #Must do this to be comaptible with mongodb's Date type 
+                        value = datetime.datetime.strptime(value, '%d-%m-%Y').date()
+                        value = datetime.datetime.combine(value, datetime.time.min) #Must do this to be comaptible with mongodb's Date type 
                     except Exception as e:
                         print(f"ValueError: {e}")
                         messagebox.showerror("Error", f"Invalid date format for {field}")
@@ -1842,8 +1842,8 @@ class SalesSystemApp:
                 value = selected_date.get()
                 if value:
                     try:
-                        value = datetime.strptime(value, '%d-%m-%Y').date()
-                        value = datetime.combine(value, datetime.time.min) #Must do this to be comaptible with mongodb's Date type 
+                        value = datetime.datetime.strptime(value, '%d-%m-%Y').date()
+                        value = datetime.datetime.combine(value, datetime.time.min) #Must do this to be comaptible with mongodb's Date type 
 
                     except Exception as e:
                         print(f"ValueError: {e}")
@@ -2419,7 +2419,7 @@ class SalesSystemApp:
         # Clear form fields
         for field, widget in self.entries.items():
             if "date" in field.lower():
-                widget.set_date(datetime.now())
+                widget.set_date(datetime.datetime.now())
             elif "pic" in field.lower():
                 widget.config(image='')
                 widget.image = None

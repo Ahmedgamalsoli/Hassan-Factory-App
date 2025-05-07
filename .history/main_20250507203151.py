@@ -74,13 +74,11 @@ class SalesSystemApp:
                         fieldbackground="#f0f0f0",
                         font=("Arial", 10))
         style.map('Treeview', background=[('selected', '#2196F3')], foreground=[('selected', 'white')])
-
+                
         self.Connect_DB()
                     
         self.stop_event = threading.Event()
-        
-        self.image_refs = []
-        
+
         self.language = "Arabic"  # default language
         self.translations = {
             "Add New Product": {"Arabic": "امر انتاج", "English": "Production order"},
@@ -272,13 +270,13 @@ class SalesSystemApp:
             {"text": self.t("Production Order"), "image": "Production Order.png", 
             "command": lambda: self.trash(self.user_role)},
             {"text": self.t("Customers"), "image": "customers.png", 
-            "command": lambda: self.new_customer(self.user_role)},
+            "command": lambda: self.trash(self.user_role)},
             {"text": self.t("Suppliers"), "image": "suppliers.png", 
-            "command": lambda: self.new_supplier(self.user_role)},
+            "command": lambda: self.trash(self.user_role)},
             {"text": self.t("Employees"), "image": "Employees.png", 
-            "command": lambda: self.new_employee(self.user_role)},
+            "command": lambda: self.trash(self.user_role)},
             {"text": self.t("Products"), "image": "Products.png", 
-            "command": lambda: self.new_products(self.user_role)},
+            "command": lambda: self.trash(self.user_role)},
             {"text": self.t("Materials"), "image": "Materials.png", 
             "command": lambda: self.trash(self.user_role)},
             {"text": self.t("Reports"), "image": "Reports.png", 
@@ -372,7 +370,7 @@ class SalesSystemApp:
         tk.Button(self.root, text="Search", command=self.display_table).place(x=410, y=145)
 
         self.tree = ttk.Treeview(self.root, show="headings")
-        self.tree.place(x=50, y=190)
+        self.tree.place(x=0, y=190)
 
         # # Create scrollbars inside frame
         # self.tree_xscroll = ttk.Scrollbar(self.tree_frame, orient="horizontal", command=self.tree.xview)
@@ -387,9 +385,9 @@ class SalesSystemApp:
         # self.tree_yscroll.place(x=780, y=0, width=20, height=230)
 
 
-        tk.Button(self.root, text="Add Record", command=self.add_entry).place(width=120, height=40, x=100, y=550)
-        tk.Button(self.root, text="Edit Record", command=self.edit_entry).place(width=120, height=40, x=250, y=550)
-        tk.Button(self.root, text="Delete Record", command=self.delete_entry).place(width=120, height=40, x=400, y=550)
+        tk.Button(self.root, text="Add Record", command=self.add_entry).place(width=120, height=40, x=100, y=450)
+        tk.Button(self.root, text="Edit Record", command=self.edit_entry).place(width=120, height=40, x=250, y=450)
+        tk.Button(self.root, text="Delete Record", command=self.delete_entry).place(width=120, height=40, x=400, y=450)
 
         self.display_table()
 
@@ -1080,44 +1078,15 @@ class SalesSystemApp:
             self.entries[row_idx][9].config(state='readonly')
 
 ############################ Main Functions ########################################
-    def new_employee(self, user_role):
-        self.table_name.set("Employees")
-        for widget in self.root.winfo_children():
-            widget.destroy()
-        # تحميل صورة الخلفية
-        self.topbar(show_back_button=True)
-        self.display_general_table(self.employees_collection, "Employees")
-    
-    def new_supplier(self, user_role):
-        self.table_name.set("Suppliers")
-        for widget in self.root.winfo_children():
-            widget.destroy()
-        self.topbar(show_back_button=True)
-        self.display_general_table(self.suppliers_collection, "Suppliers")
-    
-    def new_customer(self, user_role):
-        self.table_name.set("Customers")
-        for widget in self.root.winfo_children():
-            widget.destroy()
-
-        self.topbar(show_back_button=True)
-        self.display_general_table(self.customers_collection, "Customers")
-
-    def new_products(self, user_role):
-        self.table_name.set("Products")
-        for widget in self.root.winfo_children():
-            widget.destroy()
-    
-        self.topbar(show_back_button=True)
-        self.display_general_table(self.products_collection, "Products")
-        
-############################ Main Functions ########################################
     def display_table(self):
-        self.image_refs.clear()
         collection_name = self.table_name.get()
         search_query = self.search_query.get()
         
         current_collection = self.get_collection_by_name(collection_name)
+        
+        # self.tree = ttk.Treeview(root)
+        # scrollbar = ttk.Scrollbar(root, orient="horizontal", command=self.tree.xview)
+        # self.tree.configure(yscrollcommand=scrollbar.set)
 
         for row in self.tree.get_children():
             self.tree.delete(row)
@@ -1128,37 +1097,34 @@ class SalesSystemApp:
                 # Create a dynamic query based on the search term
                 first_document = current_collection.find_one()
                 if first_document:
-                    search_fields = self.get_fields_by_name(collection_name)
+                    search_fields = list(first_document.keys())
+                    # Remove '_id' as we usually don't search by it directly
+                    if '_id' in search_fields:
+                        search_fields.remove('_id')
                     or_conditions = [{"$expr": {"$regexMatch": {"input": {"$toString": f"${field}"}, "regex": search_query, "options": "i"}}} for field in search_fields]
-                    data = list(current_collection.find({"$or": or_conditions}).sort("Id", 1))
+                    data = list(current_collection.find({"$or": or_conditions}))
                 else:
                     data = [] # No documents to search in
             else:
-                data = list(current_collection.find().sort("Id", 1))
+                data = list(current_collection.find())
 
             if data:
                 columns = self.get_fields_by_name(collection_name)
-                self.tree["columns"] = columns
+                if '_id' in columns:
+                    columns.remove('_id')
+                    columns.insert(0, self.t("ID")) # ROW ID
 
+                self.tree["columns"] = columns
                 for col in columns:
                     self.tree.heading(col, text=col)
                     self.tree.column(col, width=152, anchor="center", stretch=False)
 
-                self.tree.column("#0", width=152, anchor="center")
-                self.tree.heading("#0", text="Image")
-
                 for row_data in data:
                     values = []
-                    for col in columns:
-                        val = row_data.get(col, '')
-                        if 'pic' in col.lower():
-                            if isinstance(val, str) and val.startswith("http"):
-                                print(val)  # Optional: print the URL
-                            
-                        if 'date' in col.lower() and isinstance(val, datetime):
-                            val = val.strftime("%d-%m-%Y")
-                        values.append(val)
-                            
+                    record_id = row_data.get('_id', '')
+                    values.append(str(record_id)) # Display ObjectId as string
+                    for col in columns[1:]: # Start from the second column as the first is 'ID'
+                        values.append(row_data.get(col, ''))
                     self.tree.insert("", "end", values=values)
             else:
                 # Show placeholder column and row
@@ -1169,608 +1135,23 @@ class SalesSystemApp:
                 return
 
         except Exception as e:
-            messagebox.showerror("Error", f"Error displaying data:\n{e}")
-
-    #TODO fix search feature ... start fixing add,edit and delete
-    def display_general_table(self, current_collection, collection_name):
-        img_label= None
-        columns = self.get_fields_by_name(collection_name)
-        
-        normal_fields = [label for label in columns if label != "Id" and "pic" not in label.lower()]
-        pic_fields = [label for label in columns if "pic" in label.lower()]
-        ordered_fields = normal_fields + pic_fields
-
-        main_frame = tk.Frame(root)
-        main_frame.pack(fill="both", expand=True, padx=20, pady=50)
-
-
-        # ==== 1. Create scrollable form frame ====
-        form_container = tk.Frame(main_frame)
-        form_container.pack(side="left", fill="y", padx=10, pady=10)
-
-        canvas = tk.Canvas(form_container, width=300)   # Set width for form
-        scrollbar = tk.Scrollbar(form_container, orient="vertical", command=canvas.yview)
-        scrollbar.pack(side="right", fill="y")
-
-        canvas.pack(side="left", fill="y", expand=False)
-        canvas.configure(yscrollcommand=scrollbar.set)
-
-        # Frame inside canvas (holds labels + entries)
-        form_frame = tk.Frame(canvas)
-        canvas.create_window((0, 0), window=form_frame, anchor='nw')
-
-        # Ensure scrollregion resizes automatically
-        def on_frame_config(event):
-            canvas.configure(scrollregion=canvas.bbox("all"))
-
-        form_frame.bind("<Configure>", on_frame_config)
-
-        # Optional — enable mousewheel scrolling
-        def _on_mousewheel(event):
-            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
-
-        # Enable scrolling when mouse hovers inside form_frame
-        def enable_scrolling(event):
-            canvas.bind_all("<MouseWheel>", _on_mousewheel)
-                
-        def disable_scrolling(event):
-            canvas.unbind_all("<MouseWheel>")
-
-        # Bind mouse hovering for scroll enable/disable
-        form_container.bind("<Enter>", enable_scrolling)
-        form_container.bind("<Leave>", disable_scrolling)
-
-        self.entries = {}
-        for i, label in enumerate(ordered_fields):
-            if label == "Id":
-                continue
-            
-            tk.Label(form_frame, text=label, font=("Arial", 12), anchor="w").grid(row=i, column=0, sticky="w", pady=5)
-
-            if "date" in label.lower():
-                entry = DateEntry(form_frame, font=("Arial", 12), date_pattern='dd-MM-yyyy', width=18)
-                entry.grid(row=i, column=1, pady=5)
-                self.entries[label] = entry
-            elif "pic" in label.lower():
-                frame = tk.Frame(form_frame)
-                frame.grid(row=i, column=1, pady=5)
-                
-                # Image Label in a *new row* below the current field
-                img_label = tk.Label(form_frame)
-                img_label.grid(row=i + 1, column=0, columnspan=3, pady=5)
-
-                def browse_file(e=entry, img_lbl=img_label):  # Pass the current entry as argument
-                    filepath = filedialog.askopenfilename(
-                        title="Select a file",
-                        filetypes=[("Image files", "*.jpg *.jpeg *.png *.bmp *.gif"), ("All files", "*.*")]
-                    )
-                    if filepath:
-                        load_image_preview(filepath, img_lbl)
-
-                browse_btn = tk.Button(frame, text="Browse",width=10, command=lambda e=entry: browse_file(e))
-                browse_btn.pack(side="left", padx=5)
-                self.entries[label] = img_label
-            else:
-                entry = tk.Entry(form_frame, font=("Arial", 12), width=20)
-                entry.grid(row=i, column=1, pady=5)
-                self.entries[label] = entry
-
-
-        right_frame = tk.Frame(main_frame)
-        right_frame.pack(side="right", fill="both", expand=True)
-
-        search_frame = tk.Frame(right_frame)
-        search_frame.pack(fill="x", pady=(0, 10))
-
-        self.selected_field = tk.StringVar()
-        self.selected_field.set(ordered_fields[0])
-        field_dropdown = ttk.Combobox(search_frame, textvariable=self.selected_field, values=columns, width=14)
-        field_dropdown.pack(side="left", padx=(0, 5))
-
-        local_search_query = tk.StringVar()
-        search_entry = tk.Entry(search_frame, textvariable=local_search_query)
-        search_entry.pack(side="left", padx=(0, 5))
-
-        table_frame = tk.Frame(right_frame)
-        table_frame.pack(fill="both", expand=True)
-
-        tree = ttk.Treeview(table_frame, columns=ordered_fields, show="headings")
-        for col in ordered_fields:
-            tree.heading(col, text=col)
-            tree.column(col, anchor="center", stretch=True)
-        tree.pack(fill="both", expand=True)
-        tree.bind("<<TreeviewSelect>>", lambda event: self.on_tree_selection(event, tree, columns, collection_name, img_label)) #Bind tree selection to an event handler
-
-        horizontal_scrollbar = ttk.Scrollbar(tree, orient="horizontal", command=tree.xview)
-        horizontal_scrollbar.pack(side="bottom", fill="x")
-        tree.configure(xscrollcommand=horizontal_scrollbar.set)
-
-        vertical_scrollbar = ttk.Scrollbar(tree, orient="vertical", command=tree.yview)
-        vertical_scrollbar.pack(side="right", fill="y")
-        tree.configure(yscrollcommand=vertical_scrollbar.set)
-
-        # Search button now refreshes table, doesn't rebuild everything!
-        tk.Button(
-            search_frame,
-            text="Search",
-            command=lambda: self.refresh_generic_table(tree, current_collection, collection_name, local_search_query.get())
-        ).pack(side="left")
-        
-        # Bottom buttons
-        button_frame = tk.LabelFrame(root, text="Actions", padx=10, pady=10, font=("Arial", 12, 'bold'))
-        button_frame.pack(pady=10)
-
-        btn_add = tk.Button(button_frame, text="Add Entry", font=("Arial", 12), width=15, command=lambda: self.add_generic_entry(tree, current_collection,collection_name))
-        btn_edit = tk.Button(button_frame, text="Update Entry", font=("Arial", 12), width=15, command=lambda: self.edit_generic_entry(tree, current_collection,collection_name))
-        btn_delete = tk.Button(button_frame, text="Delete Entry", font=("Arial", 12), width=15, command=lambda: self.delete_generic_entry(tree, current_collection))
-        btn_deselect = tk.Button(button_frame, text="Deselect Entry", font=("Arial", 12), width=15, command=lambda:self.deselect_entry(tree))
-
-        btn_add.grid(row=0, column=0, padx=10)
-        btn_edit.grid(row=0, column=1, padx=10)
-        btn_delete.grid(row=0, column=2, padx=10)
-        btn_deselect.grid(row=0, column=3, padx=10)
-
-        # Load initial table content
-        self.refresh_generic_table(tree, current_collection, collection_name, search_text="")
-
-    def on_tree_selection(self, event, tree, columns, collection_name, img_label):
-        first_document = None
-        current_collection = None
-        id_index = 0
-        selected_item = tree.selection()
-        if not selected_item:
-            for entry in self.entries.values():
-                entry.delete(0, tk.END)
-            # Also clear image preview(s)
-            if(img_label):
-                img_label.config(image="")
-                img_label.image = None
-            return
-        try:
-            lower_columns = [col.lower() for col in columns]
-            if "id" in lower_columns:
-                id_index = columns.index("Id")  # Dynamically get the index of "Id" #TODO need something different to loop on
-            elif any('code' in col for col in lower_columns):
-                for idx, col in enumerate(lower_columns):
-                    if 'code' in col:
-                        id_index = idx
-                        break
-            unique_id = tree.item(selected_item)['values'][id_index]
-            current_collection = self.get_collection_by_name(collection_name)
-            first_document = current_collection.find_one({columns[id_index]: unique_id})
-
-        except IndexError:
-            return
-
-        if not first_document:
-            print(1)
-            return
-
-        for field, entry in self.entries.items():
-            value = first_document.get(field, "")
-            if isinstance(value, datetime):
-                value = value.strftime('%d-%m-%Y')
-                entry.delete(0, tk.END)
-                entry.insert(0, value)
-            # If it's a pic field, load preview
-            elif "pic" in field.lower():
-                if img_label and value:
-                    load_image_preview_from_url(value, img_label)
-            else:
-                entry.delete(0, tk.END)
-                entry.insert(0, value)
-
-    def refresh_generic_table(self, tree, current_collection, collection_name, search_text):
-        try:
-            # Clear existing rows
-            for row in tree.get_children():
-                tree.delete(row)
-
-            if search_text:
-                selected_field = self.selected_field.get()
-                first_document = current_collection.find_one()
-                if first_document:
-                    search_fields = self.get_fields_by_name(collection_name)
-                    or_conditions = [{"$expr": {"$regexMatch": {"input": {"$toString": f"${selected_field}"}, "regex": search_text, "options": "i"}}} for field in search_fields]
-                    data = list(current_collection.find({"$or": or_conditions}).sort("Id", 1))
-                else:
-                    data = []
-            else:
-                data = list(current_collection.find().sort("Id", 1))
-
-            if data:
-                columns = self.get_fields_by_name(collection_name)
-                if '_id' in columns:
-                    columns.remove('_id')
-
-                tree["columns"] = columns
-                for col in columns:
-                    tree.heading(col, text=col)
-                    tree.column(col, width=152, anchor="center", stretch=False)
-
-                for row_data in data:
-                    units = row_data.get('Units', [])
-                    
-                    # If Units is a non-empty list
-                    if isinstance(units, list) and len(units) > 0:
-                        for unit_value in units:
-                            values = []
-                            for col in columns:
-                                value = row_data.get(col, '')
-                                
-                                if col == 'Units':
-                                    value = unit_value  # Set current unit value
-                                
-                                elif isinstance(value, datetime):
-                                    value = value.strftime('%d-%m-%Y')
-                                
-                                values.append(value)
-                            
-                            tree.insert("", "end", values=values)
-                    
-                    else:
-                        # Fallback to insert normally if Units is not a list or is empty
-                        values = []
-                        for col in columns:
-                            value = row_data.get(col, '')
-                            if isinstance(value, datetime):
-                                value = value.strftime('%d-%m-%Y')
-                            values.append(value)
-                        
-                        tree.insert("", "end", values=values)
-            else:
-                tree["columns"] = ("No Data",)
-                tree.heading("No Data", text="No Data Available")
-                tree.column("No Data", width=300, anchor="center", stretch=True)
-                tree.insert("", "end", values=("This collection has no documents.",))
-
-        except Exception as e:
             messagebox.showerror("Error", f"Error displaying data: {e}")
-
-    def add_generic_entry(self, tree, current_collection, collection_name):
-        # collection_name = self.table_name.get()
-        fields = self.get_fields_by_name(collection_name)
-
-        new_entry = {}
-        for field, widget in self.entries.items():
-            if field == "Id":
-                continue  # Skip Id
-
-            if "date" in field.lower():
-                value = widget.get()
-                if value:
-                    try:
-                        value_date = datetime.strptime(value, '%d-%m-%Y').date()
-                        value = datetime.combine(value_date, datetime.time.min)
-                    except Exception as e:
-                        messagebox.showerror("Error", f"Invalid date format for {field}: {e}")
-                        return
-                else:
-                    messagebox.showwarning("Warning", f"Please enter a value for {field}")
-                    return
-            elif "pic" in field.lower():
-                local_image_path = getattr(widget, 'image_path', None)
-                if not local_image_path:
-                    return  # User cancelled
-                try:
-                    value = upload_file_to_cloudinary(local_image_path)
-                except Exception as e:
-                    messagebox.showerror("Upload Error", f"Failed to upload image: {e}")
-                    return
-            elif any(word in field.lower() for word in ["number, stock_quantity"]):
-                value = widget.get()
-                value = int(value)
-                if not value:
-                    messagebox.showwarning("Warning", f"Please enter a value for {field}")
-                    return
-            elif any(word in field.lower() for word in ["salary", "credit", "debit"]):
-                value = widget.get()
-                value = float(value)
-                if not value:
-                    messagebox.showwarning("Warning", f"Please enter a value for {field}")
-                    return
-            else:
-                value = widget.get()
-                if not value:
-                    messagebox.showwarning("Warning", f"Please enter a value for {field}")
-                    return
-
-            new_entry[field] = value
-
-        try:
-            # Generate unique Id
-            if "Id" in fields:
-                existing_ids = [doc["Id"] for doc in current_collection.find({}, {"Id": 1})]
-                print(f"existing_ids{existing_ids}")
-                new_id = max(existing_ids, default=0) + 1
-                new_entry["Id"] = new_id
-
-            current_collection.insert_one(new_entry)
-            self.refresh_generic_table(tree, current_collection, collection_name, search_text="")
-            messagebox.showinfo("Success", "Record added successfully")
-
-            # Clear form fields after successful addition
-            for field, widget in self.entries.items():
-                if "date" in field.lower():
-                    widget.set_date(datetime.now())
-                elif "pic" in field.lower():
-                    widget.config(image='')
-                    widget.image = None
-                else:
-                    widget.delete(0, tk.END)
-
-        except Exception as e:
-            messagebox.showerror("Error", f"Error adding record: {e}")
-  
-    def edit_generic_entry(self, tree, current_collection, collection_name):
-        selected_item = tree.selection()
-        unique_id = 0
-        first_document = None
-        if not selected_item:
-            messagebox.showwarning("Warning", "Please select a record to edit")
-            return
-
-        selected_data = tree.item(selected_item)["values"]
-        if not selected_data:
-            messagebox.showwarning("Warning", "No data found for selected record")
-            return
-
-        columns = tree["columns"]  # This returns a tuple/list of column names
-        try:
-            lower_columns = [col.lower() for col in columns]
-            if "id" in lower_columns:
-                id_index = columns.index("Id")  # Dynamically get the index of "Id" #TODO need something different to loop on
-            elif any('code' in col for col in lower_columns):
-                for idx, col in enumerate(lower_columns):
-                    if 'code' in col:
-                        id_index = idx
-                        break
-        except ValueError:
-            messagebox.showerror("Error", "'Id' field not found in table columns")
-            return
-
-        record_id = selected_data[id_index]
-        existing_record = current_collection.find_one({columns[id_index]: record_id})
-
-        if not existing_record:
-            messagebox.showerror("Error", "Could not find record in database")
-            return
-
-        updated_entry = {}
-        for field, widget in self.entries.items():
-            if field == "Id":
-                continue  # Skip Id
-
-            existing_value = existing_record.get(field, None)
-
-            if "date" in field.lower():
-                value = widget.get()
-                if value:
-                    try:
-                        value_date = datetime.strptime(value, '%d-%m-%Y').date()
-                        value = datetime.combine(value_date, datetime.time.min)
-                    except Exception as e:
-                        messagebox.showerror("Error", f"Invalid date format for {field}: {e}")
-                        return
-                else:
-                    value = existing_value  # Keep old date if no new input
-
-            elif "pic" in field.lower():
-                local_image_path = getattr(widget, 'image_path', None)
-
-                if local_image_path:
-                    try:
-                        value = upload_file_to_cloudinary(local_image_path)
-                    except Exception as e:
-                        messagebox.showerror("Upload Error", f"Failed to upload image: {e}")
-                        return
-                else:
-                    value = existing_value  # Keep old image URL if no new selection
-
-            else:
-                try:
-                    value = widget.get()
-                except Exception:
-                    value = None  # For non-entry widgets (just in case)
-
-                if not value:
-                    value = existing_value  # Keep old text if no new input
-
-            updated_entry[field] = value
-
-        try:
-            result = current_collection.update_one({"Id": record_id}, {"$set": updated_entry})
-            if result.modified_count > 0:
-                messagebox.showinfo("Success", "Record updated successfully")
-            else:
-                messagebox.showinfo("Info", "No changes were made (record was identical)")
-
-            # Refresh table
-            # collection_name = self.table_name.get()
-            self.refresh_generic_table(tree, current_collection, collection_name, search_text="")
-
-            # Clear form fields after update
-            for field, widget in self.entries.items():
-                if "date" in field.lower():
-                    widget.set_date(datetime.now())
-                elif "pic" in field.lower():
-                    widget.config(image='')
-                    widget.image = None
-                    widget.image_path = None
-                else:
-                    widget.delete(0, tk.END)
-
-        except Exception as e:
-            messagebox.showerror("Error", f"Error updating record: {e}")
-
-    def delete_generic_entry(self, tree, current_collection):
-        selected_item = tree.selection()
-        if not selected_item:
-            messagebox.showwarning("Warning", "Please select a record to delete")
-            return
-
-        try:
-            columns = tree["columns"]  # Tuple/list of column names
-            lower_columns = [col.lower() for col in columns]
-
-            # Find which column is used as identifier (id / code)
-            id_index = None
-            if "id" in lower_columns:
-                id_index = columns.index("Id")
-            elif any('code' in col for col in lower_columns):
-                for idx, col in enumerate(lower_columns):
-                    if 'code' in col:
-                        id_index = idx
-                        break
-
-            if id_index is None:
-                messagebox.showerror("Error", "Unable to determine identifier column.")
-                return
-
-            field_name = columns[id_index]
-            unique_id = tree.item(selected_item)["values"][id_index]
-
-        except (IndexError, ValueError):
-            messagebox.showerror("Error", "Unable to read selected row data.")
-            return
-
-        if not messagebox.askyesno("Confirm", "Are you sure you want to delete this record?"):
-            return
-
-        try:
-            # ARRAY_FIELDS = ['units']  # Fields you want to treat as arrays (custom handling)
-
-            # Step 1: Find the document based on the selected field (id/code)
-            query = {field_name: unique_id}
-            document = current_collection.find_one(query)
-
-            if not document:
-                messagebox.showwarning("Not Found", "No matching record found to delete.")
-                return
-
-            # Step 2: Check if document contains any ARRAY_FIELDS (like 'units')
-            handled = False
-            values = tree.item(selected_item)["values"]
-            index = columns.index('Units')
-            unit_value = values[index]
-            for array_field in ARRAY_FIELDS:
-                units_list = document.get(array_field, None)
-                print(f"units_list: {isinstance(units_list, list)} , unique_id {unique_id}")
-                if isinstance(units_list, list):
-                    # Found Units array and unique_id is inside → handle it
-                    handled = True
-                    if len(units_list) > 1:
-                        update_result = current_collection.update_one(
-                            {"_id": document["_id"]},
-                            {"$pull": {array_field: unit_value}}
-                        )
-                        if update_result.modified_count > 0:
-                            self.deselect_entry(tree)
-                            self.refresh_generic_table(tree, current_collection, self.table_name.get(), search_text="")
-                            messagebox.showinfo("Success", f"Unit '{unique_id}' removed from record.")
-                        else:
-                            messagebox.showwarning("Warning", "No changes were made to the document.")
-                    else:
-                        delete_result = current_collection.delete_one({"_id": document["_id"]})
-                        if delete_result.deleted_count > 0:
-                            self.deselect_entry(tree)
-                            self.refresh_generic_table(tree, current_collection, self.table_name.get(), search_text="")
-                            messagebox.showinfo("Success", "Record deleted successfully.")
-                        else:
-                            messagebox.showwarning("Warning", "No matching record found to delete.")
-                    return  # After handling Units logic, exit
-
-            # Step 3: If no ARRAY_FIELDS handling triggered → do standard delete
-            if not handled:
-                delete_result = current_collection.delete_one(query)
-                if delete_result.deleted_count > 0:
-                    self.deselect_entry(tree)
-                    self.refresh_generic_table(tree, current_collection, self.table_name.get(), search_text="")
-                    messagebox.showinfo("Success", "Record deleted successfully.")
-                else:
-                    messagebox.showwarning("Warning", "No matching record found to delete.")
-
-        except Exception as e:
-            messagebox.showerror("Error", f"Error deleting record: {e}")         
 
     def add_entry(self):
         collection_name = self.table_name.get()
+
         current_collection = self.get_collection_by_name(collection_name)
 
         new_entry = {}
         fields = self.get_fields_by_name(collection_name)
-    
-        try:
-            latest_entry = current_collection.find_one(sort=[("Id", -1)])  # Sort by Id descending
-            new_id = (latest_entry["Id"] + 1) if latest_entry else 1
-        except Exception:
-            new_id = 1
-
-        new_entry["Id"] = new_id
 
         for field in fields:
-            if field == "Id":
-                continue
-            if "date" in field.lower():
-                dialog = tk.Toplevel(self.root)  # Create a Toplevel for date input
-                dialog.transient(self.root)
-                dialog.grab_set()
-                dialog.title(f"Enter value for {field}")
-
-                date_label = tk.Label(dialog, text=f"Enter {field}:")
-                date_label.pack(padx=10, pady=5)
-
-                date_entry = DateEntry(dialog, font=("Arial", 12), date_pattern='dd-MM-yyyy')
-                date_entry.pack(padx=10, pady=5)
-
-                selected_date = tk.StringVar()
-
-                def on_ok():
-                    selected_date_obj = date_entry.get_date()
-                    selected_date_str = selected_date_obj.strftime('%d-%m-%Y')
-                    selected_date.set(selected_date_str)
-                    dialog.destroy()
-
-                ok_button = tk.Button(dialog, text="OK", command=on_ok)
-                ok_button.pack(pady=5)
-                ok_button.bind("<Return>", lambda event: ok_button.invoke())
-
-                # Center the date selection dialog
-                screen_width = self.root.winfo_screenwidth()
-                screen_height = self.root.winfo_screenheight()
-                x_position = (screen_width // 2) - (dialog_width // 2)
-                y_position = (screen_height // 2) - (dialog_height // 2)
-                dialog.geometry(f"{dialog_width}x{dialog_height}+{x_position}+{y_position}")
-                self.root.wait_window(dialog)
-
-                value = selected_date.get()
-                if value:
-                    try:
-                        value = datetime.strptime(value, '%d-%m-%Y').date()
-                        value = datetime.combine(value, datetime.time.min) #Must do this to be comaptible with mongodb's Date type 
-                    except Exception as e:
-                        print(f"ValueError: {e}")
-                        messagebox.showerror("Error", f"Invalid date format for {field}")
-                        return
-                else:
-                    return  # User cancelled
-            elif "pic" in field.lower():
-                file_path = filedialog.askopenfilename(title=f"Select image for {field}",
-                                                    filetypes=[("Image files", "*.jpg *.jpeg *.png")])
-                if not file_path:
-                    return  # User cancelled
-                try:
-                    value = upload_file_to_cloudinary(file_path)
-                except Exception as e:
-                    messagebox.showerror("Upload Error", f"Failed to upload image: {e}")
-                    return
-            else:
-                dialog = AlwaysOnTopInputDialog(self.root, f"Enter value for {field}:")
-                value = dialog.get_result()
-                if value is None:
-                    return
-
+            dialog = AlwaysOnTopInputDialog(root, f"Enter value for {field}:")
+            value = dialog.get_result()
+            if value is None:
+                return            
             new_entry[field] = value
+
 
         try:
             current_collection.insert_one(new_entry)
@@ -1781,22 +1162,23 @@ class SalesSystemApp:
 
     def edit_entry(self):
         collection_name = self.table_name.get()
+
         current_collection = self.get_collection_by_name(collection_name)
-        
+
         selected_item = self.tree.selection()
         if not selected_item:
             messagebox.showwarning("Warning", "Please select a record to edit")
             return
 
-        #TODO fix this ID no longer available in tree
+        record_id_str  = self.tree.item(selected_item)['values'][0]
         try:
-            unique_id = self.tree.item(selected_item)['values'][2]  # Assuming this holds the custom unique ID
-        except IndexError:
-            messagebox.showerror("Error", "Unable to read selected row data.")
+            record_id = ObjectId(record_id_str)
+        except Exception:
+            messagebox.showerror("Error", "Invalid ID format.")
             return
         
         # Get the fields to edit (excluding _id)
-        first_document = current_collection.find_one({"Id": unique_id})
+        first_document = current_collection.find_one({"_id": record_id})
         if not first_document:
             messagebox.showerror("Error", "Could not retrieve record for editing.")
             return
@@ -1805,63 +1187,14 @@ class SalesSystemApp:
         updated_values = {}
 
         for field in fields:
-            if field == "Id":
-                continue
-            if "date" in field.lower():
-                dialog = tk.Toplevel(self.root)  # Create a Toplevel for date input
-                dialog.transient(self.root)
-                dialog.grab_set()
-                dialog.title(f"Enter value for {field}")
-
-                date_label = tk.Label(dialog, text=f"Enter {field}:")
-                date_label.pack(padx=10, pady=5)
-
-                date_entry = DateEntry(dialog, font=("Arial", 12), date_pattern='dd-MM-yyyy')
-                date_entry.pack(padx=10, pady=5)
-
-                selected_date = tk.StringVar()
-
-                def on_ok():
-                    selected_date_obj = date_entry.get_date()
-                    selected_date_str = selected_date_obj.strftime('%d-%m-%Y')
-                    selected_date.set(selected_date_str)
-                    dialog.destroy()
-
-                ok_button = tk.Button(dialog, text="OK", command=on_ok)
-                ok_button.pack(pady=5)
-                ok_button.bind("<Return>", lambda event: ok_button.invoke())
-
-                # Center the date selection dialog
-                screen_width = self.root.winfo_screenwidth()
-                screen_height = self.root.winfo_screenheight()
-                x_position = (screen_width // 2) - (dialog_width // 2)
-                y_position = (screen_height // 2) - (dialog_height // 2)
-                dialog.geometry(f"{dialog_width}x{dialog_height}+{x_position}+{y_position}")
-                self.root.wait_window(dialog)
-
-                value = selected_date.get()
-                if value:
-                    try:
-                        value = datetime.strptime(value, '%d-%m-%Y').date()
-                        value = datetime.combine(value, datetime.time.min) #Must do this to be comaptible with mongodb's Date type 
-
-                    except Exception as e:
-                        print(f"ValueError: {e}")
-                        messagebox.showerror("Error", f"Invalid date format for {field}")
-                        return
-                else:
-                    return  # User cancelled
-
-            else:
-                dialog = AlwaysOnTopInputDialog(self.root, f"Enter value for {field}:")
-                value = dialog.get_result()
-                if value is None:
-                    return
-
+            dialog = AlwaysOnTopInputDialog(root, f"Enter value for {field}:")
+            value = dialog.get_result()
+            if value is None:
+                return            
             updated_values[field] = value
 
         try:
-            current_collection.update_one({"Id": unique_id}, {"$set": updated_values})
+            current_collection.update_one({"_id": record_id}, {"$set": updated_values})
             self.display_table()
             messagebox.showinfo("Success", "Record updated successfully")
         except Exception as e:
@@ -1869,6 +1202,7 @@ class SalesSystemApp:
 
     def delete_entry(self):
         collection_name = self.table_name.get()
+
         current_collection = self.get_collection_by_name(collection_name)
 
         selected_item = self.tree.selection()
@@ -1876,20 +1210,18 @@ class SalesSystemApp:
             messagebox.showwarning("Warning", "Please select a record to delete")
             return
 
+        record_id_str = self.tree.item(selected_item)['values'][0]
         try:
-            unique_id = self.tree.item(selected_item)['values'][2]  # Assuming this holds the custom unique ID
-        except IndexError:
-            messagebox.showerror("Error", "Unable to read selected row data.")
+            record_id = ObjectId(record_id_str)
+        except Exception:
+            messagebox.showerror("Error", "Invalid ID format.")
             return
 
         if messagebox.askyesno("Confirm", "Are you sure you want to delete this record?"):
             try:
-                delete_result = current_collection.delete_one({"Id": unique_id})
-                if delete_result.deleted_count == 0:
-                    messagebox.showwarning("Not Found", "No matching record found to delete.")
-                else:
-                    self.display_table()
-                    messagebox.showinfo("Success", "Record deleted successfully")
+                current_collection.delete_one({"_id": record_id})
+                self.display_table()
+                messagebox.showinfo("Success", "Record deleted successfully")
             except Exception as e:
                 messagebox.showerror("Error", f"Error deleting record: {e}")
 
@@ -1951,7 +1283,7 @@ class SalesSystemApp:
             return ["Name", "Password", "Id", "Role", "Join_Date", "National_id_pic", "Phone_number", "Address", "Salary"]
         
         elif collection_name == "Products":
-            return ["product_name", "category", "stock_quantity", "Specs", "Unit_Price", "product_code", "Units", "prod_pic"]
+            return ["product_name", "category", "price", "stock_quantity", "supplier"]
         
         elif collection_name == "Sales":
             return ["product_code", "Product_name", "unit", "QTY", "numbering","Total_QTY","Unit_Price","Total Price","Date","Reciept_Number","Customer_name","Customer_code"]
@@ -2414,17 +1746,6 @@ class SalesSystemApp:
             print(f"[Cloudinary Upload Error]: {e}")
             return None
 
-    def deselect_entry(self,tree):
-        tree.selection_remove(tree.selection())
-        # Clear form fields
-        for field, widget in self.entries.items():
-            if "date" in field.lower():
-                widget.set_date(datetime.now())
-            elif "pic" in field.lower():
-                widget.config(image='')
-                widget.image = None
-            else:
-                widget.delete(0, tk.END)
 
     def on_canvas_press(self, event):
         self.tree.scan_mark(event.x, event.y)
@@ -2567,7 +1888,7 @@ class SalesSystemApp:
 
         popup = tk.Toplevel()
         popup.title(title)
-        # popup.geometry("300x120")
+        popup.geometry("300x120")
         popup.resizable(False, False)
         popup.grab_set()  # Makes it modal
 
@@ -2590,91 +1911,61 @@ class SalesSystemApp:
         popup.wait_window()  # Blocks further execution until the popup is closed
         self.stop_sound()
 
-def upload_file_to_cloudinary(file_path_param):
-    # import cloudinary.uploader
-    try:
-        response = cloudinary.uploader.upload(file_path_param, resource_type="image")
-        return response['secure_url']
-    except Exception as e:
-        print(f"[Cloudinary Upload Error]: {e}")
-        return None
-def load_image_preview(filepath, img_label):
-    try:
-        img = Image.open(filepath)
-        img.thumbnail((300, 300))  # Make it bigger (adjust size as you wish)
-        img_tk = ImageTk.PhotoImage(img)
-        
-        img_label.config(image=img_tk)
-        img_label.image = img_tk
-        img_label.image_path = filepath   # <== DID YOU ADD THIS LINE? 👈👈👈
-    except Exception as e:
-        print(f"Error loading image preview: {e}")
-
-def load_image_preview_from_url(image_url, label, max_size=(300, 300)):
-    """Load image from a URL and display it in a Tkinter Label.
-    Args:image_url (str): The image URL to load.
-         label (tk.Label): The Tkinter Label to display the image in.
-         image_refs (list): A list to store image references (to avoid garbage collection).
-         max_size (tuple): Max size of the image (width, height)"""
-    try:
-        with urllib.request.urlopen(image_url) as response:
-            image_data = Image.open(io.BytesIO(response.read()))
-            image_data.thumbnail(max_size)  # Resize image
-            image_obj = ImageTk.PhotoImage(image_data)
-
-            label.config(image=image_obj)
-            label.image = image_obj  # Also attach to label itself (extra safety)
-    except Exception as e:
-        print(f"Error loading image from URL: {e}")
-        label.config(image="")
-        label.image = None
 
 ######################### Auxiliary classes #########################################################
 class AlwaysOnTopInputDialog(tk.Toplevel):
     def __init__(self, parent, prompt):
         super().__init__(parent)
-        self.transient(parent)
-        self.grab_set()
+        self.transient(parent)  # Make sure this dialog is always on top of the parent window
+        self.grab_set()  # Lock interaction to this dialog until it is closed
 
         self.title("Input")
-
+        
+        # Create the widgets for the dialog
         self.prompt_label = tk.Label(self, text=prompt)
         self.prompt_label.pack(padx=10, pady=10)
-
-        self.input_widget = tk.Entry(self)
-        self.input_widget.pack(padx=10, pady=10)
-        self.input_widget.focus_set()
+        
+        self.entry = tk.Entry(self)
+        self.entry.pack(padx=10, pady=10)
+        self.entry.focus_set()  # Set focus on the entry field
 
         self.result = None
-
+        
         self.ok_button = tk.Button(self, text="OK", command=self.on_ok)
         self.ok_button.pack(pady=5)
         self.ok_button.bind("<Return>", lambda event: self.ok_button.invoke())
 
-        self.after(1, self.adjust_geometry)
+        self.after(1, self.adjust_geometry) 
+
+        # Center the dialog on the screen
         self.center_dialog(parent)
 
     def adjust_geometry(self):
-        self.geometry("300x150")
+        # Set the fixed size of the dialog window after widget creation
+        self.geometry("300x150")  # Width=400, Height=150 (Fixed Size)
 
     def center_dialog(self, parent):
+        # Get the screen width and height
         screen_width = parent.winfo_screenwidth()
         screen_height = parent.winfo_screenheight()
+
+        # Get the size of the dialog window
         dialog_width = self.winfo_reqwidth()
         dialog_height = self.winfo_reqheight()
+
+        # Calculate the position to center the dialog
         x_position = (screen_width // 2) - (dialog_width // 2)
         y_position = (screen_height // 2) - (dialog_height // 2)
+
+        # Set the geometry of the dialog window
         self.geometry(f"{dialog_width}x{dialog_height}+{x_position}+{y_position}")
 
     def on_ok(self):
-        if isinstance(self.input_widget, DateEntry):
-            self.result = self.input_widget.get_date()
-        else:
-            self.result = self.input_widget.get()
-        self.destroy()
+        self.result = self.entry.get()
+        self.destroy()  # Close the dialog when the user clicks OK
 
     def get_result(self):
-        self.wait_window(self)
+        self.wait_window(self)  # Wait for this window to close and get the result
         return self.result
 
 ######################### Main #########################################################
