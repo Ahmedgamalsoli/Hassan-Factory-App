@@ -4,10 +4,11 @@ from PIL import Image, ImageTk, ImageDraw  # Import Pillow classes
 import pandas as pd
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
-from datetime import datetime
+import datetime
 from fpdf import FPDF
 import sqlite3
 import csv
+import io
 import os
 from tkcalendar import DateEntry  # Import DateEntry
 import sys
@@ -21,8 +22,13 @@ import cloudinary.uploader
 from cloudinary.uploader import upload
 from urllib.parse import quote_plus
 from bson.objectid import ObjectId
+import urllib.request
 
 ######################################################### Access Data Base ##############################################################################
+dialog_width = 300  # Same width as AlwaysOnTopInputDialog
+dialog_height = 150 # Same height as AlwaysOnTopInputDialog
+
+ARRAY_FIELDS = ['Units'] #Must be lower case
 
 # Determine the base directory
 if getattr(sys, "frozen", False):
@@ -55,18 +61,39 @@ class SalesSystemApp:
 
     def __init__(self, root):
         self.root = root
-        self.old = None
         self.root.title("مصنع حسن سليم للمنتجات البلاستيكية")
         self.root.attributes('-fullscreen', True)
         self.root.configure(bg="white")
         
+        style = ttk.Style()
+        style.theme_use("clam")  # Looks cleaner than default
+        style.configure("Treeview", 
+                        background="#f0f0f0",
+                        foreground="black",
+                        rowheight=25,
+                        fieldbackground="#f0f0f0",
+                        font=("Arial", 10))
+        style.map('Treeview', background=[('selected', '#2196F3')], foreground=[('selected', 'white')])
+
         self.Connect_DB()
                     
         self.stop_event = threading.Event()
-
+        
+        self.image_refs = []
+        
         self.language = "Arabic"  # default language
         self.translations = {
             "Add New Product": {"Arabic": "امر انتاج", "English": "Production order"},
+            # "Place Orders": {"Arabic": "تنفيذ الطلبات", "English": "Place Orders"},
+            # "Expenses": {"Arabic": "المصاريف", "English": "Expenses"},
+            # "Returns": {"Arabic": "المرتجعات", "English": "Returns"},
+            # "Employees Appointments": {"Arabic": "مواعيد الموظفين", "English": "Employees Appointments"},
+            # "Daily Shifts": {"Arabic": "الورديات اليومية", "English": "Daily Shifts"},
+            # "View Product": {"Arabic": "عرض المنتجات", "English": "View Product"},
+            # "View Orders": {"Arabic": "عرض الطلبات", "English": "View Orders"},
+            # "View Customers": {"Arabic": "عرض العملاء", "English": "View Customers"},
+            # "Edit Product": {"Arabic": "تعديل المنتج", "English": "Edit Product"},
+            # "Accounting": {"Arabic": "الحسابات", "English": "Accounting"},
             "Reports": {"Arabic": "التقارير", "English": "Reports"},
             "Production Order": {"Arabic": "أمر انتاج", "English": "Production Order"},
             "Database": {"Arabic": "قاعدة البيانات", "English": "Database"},
@@ -79,16 +106,9 @@ class SalesSystemApp:
             "Suppliers": {"Arabic": "الموردين", "English": "Suppliers"},
             "Products": {"Arabic": "المنتجات", "English": "Products"},
             "Materials": {"Arabic": "الخامات", "English": "Materials"},
+            # "Reports": {"Arabic": "التقارير", "English": "Reports"},
             "Employees": {"Arabic": "الموظفين", "English": "Employees"},
-            "Customer Name":{"Arabic": "العميل:", "English": "Customer:"},
-            "Supplier Name":{"Arabic": "المورد:", "English": "Supplier:"},
-            "Previous Balance":{"Arabic": "الحساب السابق:", "English": "Previous Balance:"},
-            "Paid Money":{"Arabic": "المبلغ المدفوع:", "English": "Paid Money:"},
-            "Customer Code":{"Arabic": "كود العميل:", "English": "Customer Code:"},
-            "Supplier Code":{"Arabic": "كود المورد:", "English": "Supplier Code:"},
-            "Payment Method":{"Arabic": "طريقة الدفع:", "English": "Payment Method:"},
         }
-        self.db = None
         self.db_name = tk.StringVar()
         self.table_name = tk.StringVar()
         self.search_query = tk.StringVar()
@@ -101,7 +121,7 @@ class SalesSystemApp:
         self.logout_icon_path = os.path.join(BASE_DIR, "Static", "images", "Logout.png")  # Path to logout icon
         self.exit_icon_path   = os.path.join(BASE_DIR, "Static", "images", "Exit.png")  # Path to exit icon
         self.back_icon_path   = os.path.join(BASE_DIR, "Static", "images", "Back.png")  # Path to back icon
-        # self.customer_name_var = None
+        
         # Get the correct path for the icon
         # if hasattr(sys, "_MEIPASS"):
         #     icon_path = os.path.abspath(os.path.join(sys._MEIPASS, "app_icon.ico"))
@@ -138,8 +158,6 @@ class SalesSystemApp:
         self.products_collection              = db['Products']
         self.sales_collection                 = db['Sales']
         self.suppliers_collection             = db['Suppliers']
-        self.materials_collection             = db['Materials']
-        self.purchases_collection             = db['Purchases']
         self.shipping_collection              = db['Shipping']
         self.orders_collection                = db['Orders']
         self.expenses_collection              = db['Expenses']
@@ -190,8 +208,8 @@ class SalesSystemApp:
         password_entry = tk.Entry(login_frame, font=("Arial", 12), bg="#f0f0f0", show="*")
         password_entry.place(x=150, y=190, width=200)
 
-        username_entry.bind("<Return>", lambda event: validate_login()) # Bind Enter key to trigger add_todo from name_entry
-        password_entry.bind("<Return>", lambda event: validate_login()) # Bind Enter key to trigger add_todo from name_entry
+        username_entry.bind("<Return>", lambda event: validate_login()) 
+        password_entry.bind("<Return>", lambda event: validate_login()) 
         
         # Login Button
         def validate_login():
@@ -205,8 +223,10 @@ class SalesSystemApp:
 
             try:
                 user = self.employees_collection.find_one({"Name": username, "Password": password})
+                user = self.employees_collection.find_one({"Name": username, "Password": password})
                 # print(user)
                 if user:
+                    self.user_role = user.get("Role", "Unknown")
                     self.user_role = user.get("Role", "Unknown")
                     # messagebox.showinfo("Success", f"Login successful! Role: {self.user_role}")
                     self.silent_popup("Success", f"Login successful! Role: {self.user_role}",self.play_success)
@@ -247,7 +267,7 @@ class SalesSystemApp:
             {"text": self.t("New Sales Invoice"), "image": "Sales.png", 
             "command": lambda: self.new_sales_invoice(self.user_role)},
             {"text": self.t("New Purchase Invoice"), "image": "Purchase.png", 
-            "command": lambda: self.new_Purchase_invoice(self.user_role)},
+            "command": lambda: self.trash(self.user_role)},
             {"text": self.t("Receive Payment"), "image": "Recieve.png", 
             "command": lambda: self.trash(self.user_role)},
             {"text": self.t("Make Payment"), "image": "payment.png", 
@@ -255,13 +275,13 @@ class SalesSystemApp:
             {"text": self.t("Production Order"), "image": "Production Order.png", 
             "command": lambda: self.trash(self.user_role)},
             {"text": self.t("Customers"), "image": "customers.png", 
-            "command": lambda: self.trash(self.user_role)},
+            "command": lambda: self.new_customer(self.user_role)},
             {"text": self.t("Suppliers"), "image": "suppliers.png", 
-            "command": lambda: self.trash(self.user_role)},
+            "command": lambda: self.new_supplier(self.user_role)},
             {"text": self.t("Employees"), "image": "Employees.png", 
-            "command": lambda: self.trash(self.user_role)},
+            "command": lambda: self.new_employee(self.user_role)},
             {"text": self.t("Products"), "image": "Products.png", 
-            "command": lambda: self.trash(self.user_role)},
+            "command": lambda: self.new_products(self.user_role)},
             {"text": self.t("Materials"), "image": "Materials.png", 
             "command": lambda: self.trash(self.user_role)},
             {"text": self.t("Reports"), "image": "Reports.png", 
@@ -355,24 +375,11 @@ class SalesSystemApp:
         tk.Button(self.root, text="Search", command=self.display_table).place(x=410, y=145)
 
         self.tree = ttk.Treeview(self.root, show="headings")
-        self.tree.place(x=0, y=190)
+        self.tree.place(x=50, y=190)
 
-        # # Create scrollbars inside frame
-        # self.tree_xscroll = ttk.Scrollbar(self.tree_frame, orient="horizontal", command=self.tree.xview)
-        # self.tree_yscroll = ttk.Scrollbar(self.tree_frame, orient="vertical", command=self.tree.yview)
-
-        # # Attach scrollbars to tree
-        # self.tree.configure(xscrollcommand=self.tree_xscroll.set, yscrollcommand=self.tree_yscroll.set)
-
-        # # Place them manually
-        # self.tree.place(x=0, y=0, width=780, height=230)  # little smaller so scrollbars fit
-        # self.tree_xscroll.place(x=0, y=230, width=780, height=20)
-        # self.tree_yscroll.place(x=780, y=0, width=20, height=230)
-
-
-        tk.Button(self.root, text="Add Record", command=self.add_entry).place(width=120, height=40, x=100, y=450)
-        tk.Button(self.root, text="Edit Record", command=self.edit_entry).place(width=120, height=40, x=250, y=450)
-        tk.Button(self.root, text="Delete Record", command=self.delete_entry).place(width=120, height=40, x=400, y=450)
+        tk.Button(self.root, text="Add Record", command=self.add_entry).place(width=120, height=40, x=100, y=550)
+        tk.Button(self.root, text="Edit Record", command=self.edit_entry).place(width=120, height=40, x=250, y=550)
+        tk.Button(self.root, text="Delete Record", command=self.delete_entry).place(width=120, height=40, x=400, y=550)
 
         self.display_table()
 
@@ -381,697 +388,81 @@ class SalesSystemApp:
         for widget in self.root.winfo_children():
             widget.destroy()
 
-        # Initialize product mappings
-        self.product_map = {}
-        self.name_to_code = {}
-        
         # Create top bar
         self.topbar(show_back_button=True)
 
         # MongoDB collections
-        customers_col = self.get_collection_by_name("Customers")
+        customers_col = self.get_collection_by_name("Customers")#done
         sales_col = self.get_collection_by_name("Sales")
         products_col = self.get_collection_by_name("Products")
 
-        # Main form frame
+        # Frame for invoice form
         form_frame = tk.Frame(self.root, padx=20, pady=20)
         form_frame.pack(fill=tk.BOTH, expand=True)
 
-        # Customer Selection Frame
-        customer_frame = tk.Frame(form_frame, bd=1, relief=tk.SOLID, padx=5, pady=5)
-        customer_frame.grid(row=0, column=0, columnspan=2, sticky='w', pady=5)
-
-        # Create bidirectional customer mappings
-        self.customer_code_map = {}  # name -> code
-        self.code_name_map = {}      # code -> name
-        self.customer_balance_map = {}  # name -> balance
-
-        # Populate customer data
-        all_customers = []
-        all_codes = []
-        for cust in customers_col.find():
-            name = cust.get('Name', '')
-            code = str(cust.get('Code', ''))
-            balance = cust.get('Balance', 0)
-            
-            self.customer_code_map[name] = code
-            self.code_name_map[code] = name
-            self.customer_balance_map[name] = balance
-            all_customers.append(name)
-            all_codes.append(code)
-
-        # Customer Name Combobox
-        tk.Label(customer_frame, text=self.t("Customer Name"), font=("Arial", 12, "bold")).grid(row=0, column=0, sticky='w')
-        self.customer_name_var = tk.StringVar()
-        self.customer_name_cb = ttk.Combobox(customer_frame, textvariable=self.customer_name_var, values=sorted(all_customers))
-        self.customer_name_cb.grid(row=0, column=1, padx=5, sticky='ew')
-
-        # Customer Code Combobox
-        tk.Label(customer_frame, text=self.t("Customer Code"), font=("Arial", 12, "bold")).grid(row=0, column=2, sticky='w')
-        self.customer_code_var = tk.StringVar()
-        self.customer_code_cb = ttk.Combobox(customer_frame, textvariable=self.customer_code_var, values=sorted(all_codes))
-        self.customer_code_cb.grid(row=0, column=3, padx=5, sticky='ew')
-
-        # Balance and Payment Fields
-        tk.Label(customer_frame, text=self.t("Previous Balance"), font=("Arial", 12, "bold")).grid(row=0, column=4, sticky='e', padx=(20, 0))
-        self.previous_balance_var = tk.StringVar()
-        self.previous_balance_entry = tk.Entry(customer_frame, textvariable=self.previous_balance_var, 
-                                            width=15, state='readonly')
-        self.previous_balance_entry.grid(row=0, column=5, sticky='e')
-
-        tk.Label(customer_frame, text=self.t("Paid Money"), font=("Arial", 12, "bold")).grid(row=0, column=6, sticky='e', padx=(20, 0))
-        self.payed_cash_var = tk.DoubleVar()
-        self.payed_cash_entry = tk.Entry(customer_frame, textvariable=self.payed_cash_var, width=15)
-        self.payed_cash_entry.grid(row=0, column=7, sticky='e')
-
-        # Payment Method Dropdown
-        tk.Label(customer_frame, text=self.t("Payment Method"), font=("Arial", 12, "bold")).grid(row=0, column=8, sticky='e', padx=(20, 0))
-        self.payment_method_var = tk.StringVar()
-        payment_methods = ['Cash', 'E_Wallet', 'Bank_account', 'Instapay']
-        payment_cb = ttk.Combobox(customer_frame, textvariable=self.payment_method_var, 
-                                values=payment_methods, state='readonly', width=12)
-        payment_cb.grid(row=0, column=9, sticky='ew', padx=(5, 10))
-        payment_cb.current(0)  # Set default to Cash
-
-        # Configure column weights
-        customer_frame.columnconfigure(1, weight=1)
-        customer_frame.columnconfigure(3, weight=1)
-        customer_frame.columnconfigure(5, weight=0)
-        customer_frame.columnconfigure(7, weight=0)
-        customer_frame.columnconfigure(9, weight=0)
-
-        # Synchronization functions
-        def sync_from_name(event=None):
-            name = self.customer_name_var.get()
-            code = self.customer_code_map.get(name, '')
-            self.customer_code_var.set(code)
-            self.previous_balance_var.set(str(self.customer_balance_map.get(name, 0)))
-
-        def sync_from_code(event=None):
-            code = self.customer_code_var.get()
-            name = self.code_name_map.get(code, '')
-            self.customer_name_var.set(name)
-            self.previous_balance_var.set(str(self.customer_balance_map.get(name, 0)))
-
-        # Event bindings
-        self.customer_name_cb.bind('<<ComboboxSelected>>', sync_from_name)
-        self.customer_code_cb.bind('<<ComboboxSelected>>', sync_from_code)
+        # Customer Dropdown with Search
+        tk.Label(form_frame, text="Customer:",font=("Arial", 15, "bold")).grid(row=0, column=1, sticky='w')
+        self.customer_var = tk.StringVar()
+        self.customer_cb = ttk.Combobox(form_frame, textvariable=self.customer_var)
+        self.customer_cb.grid(row=0, column=1, padx=5, pady=5)
         
-        self.customer_name_cb.bind('<KeyRelease>', lambda e: [
-            self.filter_combobox(e, all_customers, self.customer_name_cb),
-            sync_from_name()
-        ])
-        
-        self.customer_code_cb.bind('<KeyRelease>', lambda e: [
-            self.filter_combobox(e, all_codes, self.customer_code_cb),
-            sync_from_code()
-        ])
+        # Fetch customers and set autocomplete
+        all_customers = [cust['Name'] for cust in customers_col.find()]
+        self.customer_cb['values'] = all_customers
+        self.customer_cb.bind('<KeyRelease>', lambda event: self.update_search(event, customers_col))
 
-        # Load product data
-        try:
-            products = list(products_col.find())
-            all_units = set()
-            product_names = []
-            product_codes = []
+        # Invoice Items Table
+        columns = self.get_fields_by_name("Sales")
+        self.tree = ttk.Treeview(form_frame, columns=columns, show='headings')
+        for col in columns:
+            self.tree.heading(col, text=col)
+        self.tree.grid(row=2, column=0, columnspan=3, pady=10)
 
-            for p in products:
-                code = str(p.get('product_code', '')).strip()
-                name = p.get('product_name', '').strip()
-                units_list = p.get('Units', [])
+        # Add Product Button
+        tk.Button(form_frame, text="Add Product", command=lambda: self.add_product(products_col)).grid(row=3, column=0)
 
-                # Process units
-                unit_names = []
-                for unit in units_list:
-                    if isinstance(unit, dict):
-                        unit_name = str(unit.get('unit_name', '')).strip()
-                    elif isinstance(unit, str):
-                        unit_name = unit.strip()
-                    else:
-                        continue
-                    
-                    if unit_name:
-                        unit_names.append(unit_name)
-                        all_units.add(unit_name)
-
-                # Handle price conversion
-                try:
-                    price_str = str(p.get('Unit_Price', '0')).strip('kgm ')
-                    price = float(price_str) if price_str else 0.0
-                except ValueError:
-                    price = 0.0
-
-                # Update mappings
-                self.product_map[code] = {
-                    'name': name,
-                    'units': unit_names,
-                    'price': price
-                }
-                self.name_to_code[name] = code
-                product_names.append(name)
-                product_codes.append(code)
-
-            self.product_codes = sorted(list(set(product_codes)))
-            self.product_names = sorted(list(set(product_names)))
-            all_units = sorted(list(all_units))
-
-        except Exception as e:
-            messagebox.showerror("Database Error", f"Failed to load products: {str(e)}")
-            return
-
-        # Invoice Items Grid
-        columns = self.get_fields_by_name("Sales_Header")
-        col_width = 23
-
-        header_row = tk.Frame(form_frame, bg='#f0f0f0')
-        header_row.grid(row=2, column=0, columnspan=len(columns), sticky='nsew', pady=(20, 0))
-        for col_idx, col in enumerate(columns):
-            tk.Label(header_row, text=col, width=col_width, relief='ridge',
-                    bg='#f0f0f0', anchor='w').grid(row=0, column=col_idx, sticky='ew')
-            header_row.columnconfigure(col_idx, weight=1)
-
-        # Scrollable Canvas
-        canvas = tk.Canvas(form_frame, highlightthickness=0)
-        scrollbar = tk.Scrollbar(form_frame, orient="vertical", command=canvas.yview)
-        self.rows_frame = tk.Frame(canvas)
-        
-        self.rows_frame.bind("<Configure>", lambda e: canvas.configure(
-            scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=self.rows_frame, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-
-        canvas.grid(row=3, column=0, columnspan=len(columns), sticky="nsew")
-        scrollbar.grid(row=3, column=len(columns), sticky="ns")
-        
-        form_frame.grid_rowconfigure(3, weight=1)
-        for i in range(len(columns)):
-            form_frame.columnconfigure(i, weight=1)
-
-        self.entries = []
-
-        # Modified create_row function with discount fields
-        def create_row(parent, row_number, bg_color):
-            row_frame = tk.Frame(parent, bg=bg_color)
-            row_frame.grid(row=row_number, column=0, sticky='ew')
-            
-            row_entries = []
-            for col_idx, col in enumerate(columns):
-                if col == "Product_code":
-                    var = tk.StringVar()
-                    cb = ttk.Combobox(row_frame, textvariable=var, values=product_codes, width=col_width-2)
-                    cb.bind('<<ComboboxSelected>>', lambda e, r=row_number: self.update_product_info(r, "code"))
-                    cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_combobox_change(e, r, "code"))
-                    cb.grid(row=0, column=col_idx, sticky='ew')
-                    row_entries.append(cb)
-                elif col == "product_name":
-                    var = tk.StringVar()
-                    cb = ttk.Combobox(row_frame, textvariable=var, values=product_names, width=col_width-2)
-                    cb.bind('<<ComboboxSelected>>', lambda e, r=row_number: self.update_product_info(r, "name"))
-                    cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_combobox_change(e, r, "name"))
-                    cb.grid(row=0, column=col_idx, sticky='ew')
-                    row_entries.append(cb)
-                elif col == "unit":
-                    var = tk.StringVar()
-                    cb = ttk.Combobox(row_frame, textvariable=var, values=[], width=col_width-2)
-                    cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_unit_change(e, r))
-                    cb.grid(row=0, column=col_idx, sticky='ew')
-                    row_entries.append(cb)
-                elif col == "Discount Type":
-                    var = tk.StringVar()
-                    cb = ttk.Combobox(row_frame, textvariable=var, 
-                                    values=["Percentage", "Value"], 
-                                    state="readonly",
-                                    width=col_width-2)
-                    cb.current(0)  # Default to Percentage
-                    cb.grid(row=0, column=col_idx, sticky='ew')
-                    row_entries.append(cb)
-                elif col == "Discount Value":
-                    var = tk.StringVar()
-                    entry = tk.Entry(row_frame, textvariable=var, width=col_width+1)
-                    entry.bind('<KeyRelease>', lambda e, r=row_number: self.calculate_totals(r))
-                    entry.grid(row=0, column=col_idx, sticky='ew')
-                    row_entries.append(entry)
-                elif col in ["Unit_Price", "Total_QTY", "Total_Price"]:
-                    entry = tk.Entry(row_frame, width=col_width+1, relief='flat', state='readonly')
-                    entry.grid(row=0, column=col_idx, sticky='ew')
-                    row_entries.append(entry)
-                else:
-                    entry = tk.Entry(row_frame, width=col_width+1, relief='sunken')
-                    entry.bind('<KeyRelease>', lambda e, r=row_number: self.calculate_totals(r))
-                    entry.grid(row=0, column=col_idx, sticky='ew')
-                    row_entries.append(entry)
-                
-                row_frame.columnconfigure(col_idx, weight=1)
-            
-            return row_entries
-
-        def add_three_rows():
-            current_row_count = len(self.entries)
-            for i in range(3):
-                bg_color = 'white' if (current_row_count + i) % 2 == 0 else '#f0f0f0'
-                row_entries = create_row(self.rows_frame, current_row_count + i, bg_color)
-                self.entries.append(row_entries)
-
-        add_three_rows()
-
-        # Buttons Frame
-        button_frame = tk.Frame(form_frame)
-        button_frame.grid(row=4, column=0, columnspan=len(columns), pady=10, sticky='ew')
-        
-        tk.Button(button_frame, text="➕ Add 3 More Rows", command=add_three_rows,
-                bg='#4CAF50', fg='white').grid(row=0, column=0, padx=5, sticky='w')
-        tk.Button(button_frame, text="💾 Save Invoice", 
-                command=lambda: self.save_invoice(sales_col, customers_col,products_col),
-                bg='#2196F3', fg='white').grid(row=0, column=1, padx=5, sticky='e')
-        
-        button_frame.columnconfigure(0, weight=1)
-        button_frame.columnconfigure(1, weight=1)
-
-    def new_Purchase_invoice(self, user_role):
-        # Clear current window
+        # Save Invoice Button
+        tk.Button(form_frame, text="Save Invoice", 
+                command=lambda: self.save_invoice(sales_col, customers_col)).grid(row=3, column=1)
+    
+    def new_employee(self, user_role):
+        self.table_name.set("Employees")
+        for widget in self.root.winfo_children():
+            widget.destroy()
+        # تحميل صورة الخلفية
+        self.topbar(show_back_button=True)
+        self.display_general_table(self.employees_collection, "Employees")
+    
+    def new_supplier(self, user_role):
+        self.table_name.set("Suppliers")
+        for widget in self.root.winfo_children():
+            widget.destroy()
+        self.topbar(show_back_button=True)
+        self.display_general_table(self.suppliers_collection, "Suppliers")
+    
+    def new_customer(self, user_role):
+        self.table_name.set("Customers")
         for widget in self.root.winfo_children():
             widget.destroy()
 
-        # Initialize product mappings
-        self.product_map = {}
-        self.name_to_code = {}
-        
-        # Create top bar
         self.topbar(show_back_button=True)
+        self.display_general_table(self.customers_collection, "Customers")
 
-        # MongoDB collections
-        customers_col = self.get_collection_by_name("Suppliers")
-        sales_col = self.get_collection_by_name("Purchases")
-        products_col = self.get_collection_by_name("Materials")
-
-        # Main form frame
-        form_frame = tk.Frame(self.root, padx=20, pady=20)
-        form_frame.pack(fill=tk.BOTH, expand=True)
-
-        # Customer Selection Frame
-        customer_frame = tk.Frame(form_frame, bd=1, relief=tk.SOLID, padx=5, pady=5)
-        customer_frame.grid(row=0, column=0, columnspan=2, sticky='w', pady=5)
-
-        # Create bidirectional customer mappings
-        self.customer_code_map = {}  # name -> code
-        self.code_name_map = {}      # code -> name
-        self.customer_balance_map = {}  # name -> balance
-
-        # Populate customer data
-        all_customers = []
-        all_codes = []
-        for cust in customers_col.find():
-            name = cust.get('Name', '')
-            code = str(cust.get('Code', ''))
-            balance = cust.get('Balance', 0)
-            
-            self.customer_code_map[name] = code
-            self.code_name_map[code] = name
-            self.customer_balance_map[name] = balance
-            all_customers.append(name)
-            all_codes.append(code)
-
-        # Customer Name Combobox
-        tk.Label(customer_frame, text=self.t("Supplier Name"), font=("Arial", 12, "bold")).grid(row=0, column=0, sticky='w')
-        self.customer_name_var = tk.StringVar()
-        self.customer_name_cb = ttk.Combobox(customer_frame, textvariable=self.customer_name_var, values=sorted(all_customers))
-        self.customer_name_cb.grid(row=0, column=1, padx=5, sticky='ew')
-
-        # Customer Code Combobox
-        tk.Label(customer_frame, text=self.t("Supplier Code"), font=("Arial", 12, "bold")).grid(row=0, column=2, sticky='w')
-        self.customer_code_var = tk.StringVar()
-        self.customer_code_cb = ttk.Combobox(customer_frame, textvariable=self.customer_code_var, values=sorted(all_codes))
-        self.customer_code_cb.grid(row=0, column=3, padx=5, sticky='ew')
-
-        # Balance and Payment Fields
-        tk.Label(customer_frame, text=self.t("Previous Balance"), font=("Arial", 12, "bold")).grid(row=0, column=4, sticky='e', padx=(20, 0))
-        self.previous_balance_var = tk.StringVar()
-        self.previous_balance_entry = tk.Entry(customer_frame, textvariable=self.previous_balance_var, 
-                                            width=15, state='readonly')
-        self.previous_balance_entry.grid(row=0, column=5, sticky='e')
-
-        tk.Label(customer_frame, text=self.t("Paid Money"), font=("Arial", 12, "bold")).grid(row=0, column=6, sticky='e', padx=(20, 0))
-        self.payed_cash_var = tk.DoubleVar()
-        self.payed_cash_entry = tk.Entry(customer_frame, textvariable=self.payed_cash_var, width=15)
-        self.payed_cash_entry.grid(row=0, column=7, sticky='e')
-
-        # Payment Method Dropdown
-        tk.Label(customer_frame, text=self.t("Payment Method"), font=("Arial", 12, "bold")).grid(row=0, column=8, sticky='e', padx=(20, 0))
-        self.payment_method_var = tk.StringVar()
-        payment_methods = ['Cash', 'E_Wallet', 'Bank_account', 'Instapay']
-        payment_cb = ttk.Combobox(customer_frame, textvariable=self.payment_method_var, 
-                                values=payment_methods, state='readonly', width=12)
-        payment_cb.grid(row=0, column=9, sticky='ew', padx=(5, 10))
-        payment_cb.current(0)  # Set default to Cash
-
-        # Configure column weights
-        customer_frame.columnconfigure(1, weight=1)
-        customer_frame.columnconfigure(3, weight=1)
-        customer_frame.columnconfigure(5, weight=0)
-        customer_frame.columnconfigure(7, weight=0)
-        customer_frame.columnconfigure(9, weight=0)
-
-        # Synchronization functions
-        def sync_from_name(event=None):
-            name = self.customer_name_var.get()
-            code = self.customer_code_map.get(name, '')
-            self.customer_code_var.set(code)
-            self.previous_balance_var.set(str(self.customer_balance_map.get(name, 0)))
-
-        def sync_from_code(event=None):
-            code = self.customer_code_var.get()
-            name = self.code_name_map.get(code, '')
-            self.customer_name_var.set(name)
-            self.previous_balance_var.set(str(self.customer_balance_map.get(name, 0)))
-
-        # Event bindings
-        self.customer_name_cb.bind('<<ComboboxSelected>>', sync_from_name)
-        self.customer_code_cb.bind('<<ComboboxSelected>>', sync_from_code)
+    def new_products(self, user_role):
+        self.table_name.set("Products")
+        for widget in self.root.winfo_children():
+            widget.destroy()
+    
+        self.topbar(show_back_button=True)
+        self.display_general_table(self.products_collection, "Products")
         
-        self.customer_name_cb.bind('<KeyRelease>', lambda e: [
-            self.filter_combobox(e, all_customers, self.customer_name_cb),
-            sync_from_name()
-        ])
-        
-        self.customer_code_cb.bind('<KeyRelease>', lambda e: [
-            self.filter_combobox(e, all_codes, self.customer_code_cb),
-            sync_from_code()
-        ])
-
-        # Load product data
-        try:
-            products = list(products_col.find())
-            all_units = set()
-            product_names = []
-            product_codes = []
-
-            for p in products:
-                code = str(p.get('product_code', '')).strip()
-                name = p.get('product_name', '').strip()
-                units_list = p.get('Units', [])
-
-                # Process units
-                unit_names = []
-                for unit in units_list:
-                    if isinstance(unit, dict):
-                        unit_name = str(unit.get('unit_name', '')).strip()
-                    elif isinstance(unit, str):
-                        unit_name = unit.strip()
-                    else:
-                        continue
-                    
-                    if unit_name:
-                        unit_names.append(unit_name)
-                        all_units.add(unit_name)
-
-                # Handle price conversion
-                try:
-                    price_str = str(p.get('Unit_Price', '0')).strip('kgm ')
-                    price = float(price_str) if price_str else 0.0
-                except ValueError:
-                    price = 0.0
-
-                # Update mappings
-                self.product_map[code] = {
-                    'name': name,
-                    'units': unit_names,
-                    'price': price
-                }
-                self.name_to_code[name] = code
-                product_names.append(name)
-                product_codes.append(code)
-
-            self.product_codes = sorted(list(set(product_codes)))
-            self.product_names = sorted(list(set(product_names)))
-            all_units = sorted(list(all_units))
-
-        except Exception as e:
-            messagebox.showerror("Database Error", f"Failed to load products: {str(e)}")
-            return
-
-        # Invoice Items Grid
-        columns = self.get_fields_by_name("Sales_Header")
-        col_width = 23
-
-        header_row = tk.Frame(form_frame, bg='#f0f0f0')
-        header_row.grid(row=2, column=0, columnspan=len(columns), sticky='nsew', pady=(20, 0))
-        for col_idx, col in enumerate(columns):
-            tk.Label(header_row, text=col, width=col_width, relief='ridge',
-                    bg='#f0f0f0', anchor='w').grid(row=0, column=col_idx, sticky='ew')
-            header_row.columnconfigure(col_idx, weight=1)
-
-        # Scrollable Canvas
-        canvas = tk.Canvas(form_frame, highlightthickness=0)
-        scrollbar = tk.Scrollbar(form_frame, orient="vertical", command=canvas.yview)
-        self.rows_frame = tk.Frame(canvas)
-        
-        self.rows_frame.bind("<Configure>", lambda e: canvas.configure(
-            scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=self.rows_frame, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-
-        canvas.grid(row=3, column=0, columnspan=len(columns), sticky="nsew")
-        scrollbar.grid(row=3, column=len(columns), sticky="ns")
-        
-        form_frame.grid_rowconfigure(3, weight=1)
-        for i in range(len(columns)):
-            form_frame.columnconfigure(i, weight=1)
-
-        self.entries = []
-
-        # Modified create_row function with discount fields
-        def create_row(parent, row_number, bg_color):
-            row_frame = tk.Frame(parent, bg=bg_color)
-            row_frame.grid(row=row_number, column=0, sticky='ew')
-            
-            row_entries = []
-            for col_idx, col in enumerate(columns):
-                if col == "Product_code":
-                    var = tk.StringVar()
-                    cb = ttk.Combobox(row_frame, textvariable=var, values=product_codes, width=col_width-2)
-                    cb.bind('<<ComboboxSelected>>', lambda e, r=row_number: self.update_product_info(r, "code"))
-                    cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_combobox_change(e, r, "code"))
-                    cb.grid(row=0, column=col_idx, sticky='ew')
-                    row_entries.append(cb)
-                elif col == "product_name":
-                    var = tk.StringVar()
-                    cb = ttk.Combobox(row_frame, textvariable=var, values=product_names, width=col_width-2)
-                    cb.bind('<<ComboboxSelected>>', lambda e, r=row_number: self.update_product_info(r, "name"))
-                    cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_combobox_change(e, r, "name"))
-                    cb.grid(row=0, column=col_idx, sticky='ew')
-                    row_entries.append(cb)
-                elif col == "unit":
-                    var = tk.StringVar()
-                    cb = ttk.Combobox(row_frame, textvariable=var, values=[], width=col_width-2)
-                    cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_unit_change(e, r))
-                    cb.grid(row=0, column=col_idx, sticky='ew')
-                    row_entries.append(cb)
-                elif col == "Discount Type":
-                    var = tk.StringVar()
-                    cb = ttk.Combobox(row_frame, textvariable=var, 
-                                    values=["Percentage", "Value"], 
-                                    state="readonly",
-                                    width=col_width-2)
-                    cb.current(0)  # Default to Percentage
-                    cb.grid(row=0, column=col_idx, sticky='ew')
-                    row_entries.append(cb)
-                elif col == "Discount Value":
-                    var = tk.StringVar()
-                    entry = tk.Entry(row_frame, textvariable=var, width=col_width+1)
-                    entry.bind('<KeyRelease>', lambda e, r=row_number: self.calculate_totals(r))
-                    entry.grid(row=0, column=col_idx, sticky='ew')
-                    row_entries.append(entry)
-                elif col in ["Unit_Price", "Total_QTY", "Total_Price"]:
-                    entry = tk.Entry(row_frame, width=col_width+1, relief='flat', state='readonly')
-                    entry.grid(row=0, column=col_idx, sticky='ew')
-                    row_entries.append(entry)
-                else:
-                    entry = tk.Entry(row_frame, width=col_width+1, relief='sunken')
-                    entry.bind('<KeyRelease>', lambda e, r=row_number: self.calculate_totals(r))
-                    entry.grid(row=0, column=col_idx, sticky='ew')
-                    row_entries.append(entry)
-                
-                row_frame.columnconfigure(col_idx, weight=1)
-            
-            return row_entries
-
-        def add_three_rows():
-            current_row_count = len(self.entries)
-            for i in range(3):
-                bg_color = 'white' if (current_row_count + i) % 2 == 0 else '#f0f0f0'
-                row_entries = create_row(self.rows_frame, current_row_count + i, bg_color)
-                self.entries.append(row_entries)
-
-        add_three_rows()
-
-        # Buttons Frame
-        button_frame = tk.Frame(form_frame)
-        button_frame.grid(row=4, column=0, columnspan=len(columns), pady=10, sticky='ew')
-        
-        tk.Button(button_frame, text="➕ Add 3 More Rows", command=add_three_rows,
-                bg='#4CAF50', fg='white').grid(row=0, column=0, padx=5, sticky='w')
-        tk.Button(button_frame, text="💾 Save Invoice", 
-                command=lambda: self.save_invoice(sales_col, customers_col,products_col),
-                bg='#2196F3', fg='white').grid(row=0, column=1, padx=5, sticky='e')
-        
-        button_frame.columnconfigure(0, weight=1)
-        button_frame.columnconfigure(1, weight=1)
-
-    def handle_combobox_change(self, event, row_idx, field_type):
-        """Handle changes in product code/name comboboxes"""
-        value = event.widget.get().strip()
-        
-        # Clear dependent fields if value is empty
-        if not value:
-            self.clear_row_fields(row_idx)
-            return
-            
-        # Filter combobox values
-        if field_type == "code":
-            full_list = self.product_codes
-        else:
-            full_list = self.product_names
-            
-        filtered = [item for item in full_list if value.lower() in str(item).lower()]
-        event.widget['values'] = filtered
-        
-        # Auto-update if exact match found
-        if value in full_list:
-            self.update_product_info(row_idx, field_type)
-
-    def handle_unit_change(self, event, row_idx):
-        """Handle unit changes and clear price if unit changes"""
-        unit = event.widget.get().strip()
-        if not unit:
-            # Clear Unit Price (index 8) if unit is cleared
-            self.entries[row_idx][8].config(state='normal')
-            self.entries[row_idx][8].delete(0, tk.END)
-            self.entries[row_idx][8].config(state='readonly')
-            self.calculate_totals(row_idx)
-
-    def clear_row_fields(self, row_idx):
-        """Clear all dependent fields in a row"""
-        # Clear product name (index 1)
-        self.entries[row_idx][1].set('')
-        # Clear unit combobox (index 2)
-        self.entries[row_idx][2].set('')
-        self.entries[row_idx][2]['values'] = []
-        # Clear Unit Price (index 8)
-        self.entries[row_idx][8].config(state='normal')
-        self.entries[row_idx][8].delete(0, tk.END)
-        self.entries[row_idx][8].config(state='readonly')
-        # Clear quantity fields (index 3: numbering, 4: QTY)
-        self.entries[row_idx][3].delete(0, tk.END)
-        self.entries[row_idx][4].delete(0, tk.END)
-        # Clear calculated fields (index 7: Total_QTY, 9: Total_Price)
-        self.entries[row_idx][7].config(state='normal')
-        self.entries[row_idx][7].delete(0, tk.END)
-        self.entries[row_idx][7].config(state='readonly')
-        self.entries[row_idx][9].config(state='normal')
-        self.entries[row_idx][9].delete(0, tk.END)
-        self.entries[row_idx][9].config(state='readonly')
-        # Reset discount fields (index 5: Type, 6: Value)
-        self.entries[row_idx][5].set('Percentage')
-        self.entries[row_idx][6].delete(0, tk.END)
-        self.entries[row_idx][6].insert(0, '0')
-
-    def update_product_info(self, row_idx, source):
-        """Update fields based on code or name selection"""
-        try:
-            if source == "code":
-                product_code = self.entries[row_idx][0].get().strip()
-                product_info = self.product_map.get(product_code, {})
-                product_name = product_info.get('name', '')
-            else:
-                product_name = self.entries[row_idx][1].get().strip()
-                product_code = self.name_to_code.get(product_name, '')
-                product_info = self.product_map.get(product_code, {})
-
-            # Clear fields if no product found
-            if not product_code:
-                self.clear_row_fields(row_idx)
-                return
-
-            # Update both dropdowns
-            self.entries[row_idx][0].set(product_code)
-            self.entries[row_idx][1].set(product_name)
-            
-            # Update unit combobox values (index 2)
-            unit_combobox = self.entries[row_idx][2]
-            unit_combobox['values'] = product_info.get('units', [])
-            if product_info.get('units'):
-                unit_combobox.current(0)
-            
-            # Update Unit Price (index 8)
-            self.entries[row_idx][8].config(state='normal')
-            self.entries[row_idx][8].delete(0, tk.END)
-            self.entries[row_idx][8].insert(0, f"{product_info.get('price', 0):.2f}")
-            self.entries[row_idx][8].config(state='readonly')
-            
-            self.calculate_totals(row_idx)
-        except Exception as e:
-            messagebox.showerror("Update Error", f"Failed to update product info: {str(e)}")
-            self.clear_row_fields(row_idx)
-
-    def calculate_totals(self, row_idx):
-        try:
-            # Get values using correct column indices
-            numbering = float(self.entries[row_idx][3].get() or 0)  # index 3
-            qty = float(self.entries[row_idx][4].get() or 0)        # index 4
-            unit_price = float(self.entries[row_idx][8].get() or 0)  # index 8
-            discount_type = self.entries[row_idx][5].get()           # index 5
-            discount_value = float(self.entries[row_idx][6].get() or 0)  # index 6
-
-            # Calculate initial totals
-            total_qty = qty * numbering
-            total_price = unit_price * total_qty
-
-            # Apply discounts
-            if discount_type == "Percentage":
-                if discount_value < 0 or discount_value > 100:
-                    raise ValueError("Percentage must be between 0-100")
-                discount = total_price * (discount_value / 100)
-            else:  # Value discount
-                discount = min(discount_value, total_price)
-                
-            final_price = max(total_price - discount, 0)
-
-            # Update Total_QTY (index 7)
-            self.entries[row_idx][7].config(state='normal')
-            self.entries[row_idx][7].delete(0, tk.END)
-            self.entries[row_idx][7].insert(0, f"{total_qty:.2f}")
-            self.entries[row_idx][7].config(state='readonly')
-            
-            # Update Total_Price (index 9)
-            self.entries[row_idx][9].config(state='normal')
-            self.entries[row_idx][9].delete(0, tk.END)
-            self.entries[row_idx][9].insert(0, f"{final_price:.2f}")
-            self.entries[row_idx][9].config(state='readonly')
-
-        except ValueError as e:
-            if "Percentage" in str(e):
-                messagebox.showerror("Discount Error", str(e))
-                self.entries[row_idx][6].delete(0, tk.END)
-                self.entries[row_idx][6].insert(0, "0")
-                
-            # Reset calculated fields
-            self.entries[row_idx][7].config(state='normal')
-            self.entries[row_idx][7].delete(0, tk.END)
-            self.entries[row_idx][7].config(state='readonly')
-            
-            self.entries[row_idx][9].config(state='normal')
-            self.entries[row_idx][9].delete(0, tk.END)
-            self.entries[row_idx][9].config(state='readonly')
-
 ############################ Main Functions ########################################
     def display_table(self):
+        self.image_refs.clear()
         collection_name = self.table_name.get()
         search_query = self.search_query.get()
         
         current_collection = self.get_collection_by_name(collection_name)
-        
-        # self.tree = ttk.Treeview(root)
-        # scrollbar = ttk.Scrollbar(root, orient="horizontal", command=self.tree.xview)
-        # self.tree.configure(yscrollcommand=scrollbar.set)
 
         for row in self.tree.get_children():
             self.tree.delete(row)
@@ -1082,34 +473,37 @@ class SalesSystemApp:
                 # Create a dynamic query based on the search term
                 first_document = current_collection.find_one()
                 if first_document:
-                    search_fields = list(first_document.keys())
-                    # Remove '_id' as we usually don't search by it directly
-                    if '_id' in search_fields:
-                        search_fields.remove('_id')
+                    search_fields = self.get_fields_by_name(collection_name)
                     or_conditions = [{"$expr": {"$regexMatch": {"input": {"$toString": f"${field}"}, "regex": search_query, "options": "i"}}} for field in search_fields]
-                    data = list(current_collection.find({"$or": or_conditions}))
+                    data = list(current_collection.find({"$or": or_conditions}).sort("Id", 1))
                 else:
                     data = [] # No documents to search in
             else:
-                data = list(current_collection.find())
+                data = list(current_collection.find().sort("Id", 1))
 
             if data:
                 columns = self.get_fields_by_name(collection_name)
-                if '_id' in columns:
-                    columns.remove('_id')
-                    columns.insert(0, self.t("ID")) # ROW ID
-
                 self.tree["columns"] = columns
+
                 for col in columns:
                     self.tree.heading(col, text=col)
                     self.tree.column(col, width=152, anchor="center", stretch=False)
 
+                self.tree.column("#0", width=152, anchor="center")
+                self.tree.heading("#0", text="Image")
+
                 for row_data in data:
                     values = []
-                    record_id = row_data.get('_id', '')
-                    values.append(str(record_id)) # Display ObjectId as string
-                    for col in columns[1:]: # Start from the second column as the first is 'ID'
-                        values.append(row_data.get(col, ''))
+                    for col in columns:
+                        val = row_data.get(col, '')
+                        if 'pic' in col.lower():
+                            if isinstance(val, str) and val.startswith("http"):
+                                print(val)  # Optional: print the URL
+                            
+                        if 'date' in col.lower() and isinstance(val, datetime.datetime):
+                            val = val.strftime("%d-%m-%Y")
+                        values.append(val)
+                            
                     self.tree.insert("", "end", values=values)
             else:
                 # Show placeholder column and row
@@ -1120,23 +514,608 @@ class SalesSystemApp:
                 return
 
         except Exception as e:
+            messagebox.showerror("Error", f"Error displaying data:\n{e}")
+
+    #TODO fix search feature ... start fixing add,edit and delete
+    def display_general_table(self, current_collection, collection_name):
+        img_label= None
+        columns = self.get_fields_by_name(collection_name)
+        
+        normal_fields = [label for label in columns if label != "Id" and "pic" not in label.lower()]
+        pic_fields = [label for label in columns if "pic" in label.lower()]
+        ordered_fields = normal_fields + pic_fields
+
+        main_frame = tk.Frame(root)
+        main_frame.pack(fill="both", expand=True, padx=20, pady=50)
+
+
+        # ==== 1. Create scrollable form frame ====
+        form_container = tk.Frame(main_frame)
+        form_container.pack(side="left", fill="y", padx=10, pady=10)
+
+        canvas = tk.Canvas(form_container, width=300)   # Set width for form
+        scrollbar = tk.Scrollbar(form_container, orient="vertical", command=canvas.yview)
+        scrollbar.pack(side="right", fill="y")
+
+        canvas.pack(side="left", fill="y", expand=False)
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        # Frame inside canvas (holds labels + entries)
+        form_frame = tk.Frame(canvas)
+        canvas.create_window((0, 0), window=form_frame, anchor='nw')
+
+        # Ensure scrollregion resizes automatically
+        def on_frame_config(event):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+
+        form_frame.bind("<Configure>", on_frame_config)
+
+        # Optional — enable mousewheel scrolling
+        def _on_mousewheel(event):
+            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+        # Enable scrolling when mouse hovers inside form_frame
+        def enable_scrolling(event):
+            canvas.bind_all("<MouseWheel>", _on_mousewheel)
+                
+        def disable_scrolling(event):
+            canvas.unbind_all("<MouseWheel>")
+
+        # Bind mouse hovering for scroll enable/disable
+        form_container.bind("<Enter>", enable_scrolling)
+        form_container.bind("<Leave>", disable_scrolling)
+
+        self.entries = {}
+        for i, label in enumerate(ordered_fields):
+            if label == "Id":
+                continue
+            
+            tk.Label(form_frame, text=label, font=("Arial", 12), anchor="w").grid(row=i, column=0, sticky="w", pady=5)
+
+            if "date" in label.lower():
+                entry = DateEntry(form_frame, font=("Arial", 12), date_pattern='dd-MM-yyyy', width=18)
+                entry.grid(row=i, column=1, pady=5)
+                self.entries[label] = entry
+            elif "pic" in label.lower():
+                frame = tk.Frame(form_frame)
+                frame.grid(row=i, column=1, pady=5)
+                
+                # Image Label in a *new row* below the current field
+                img_label = tk.Label(form_frame)
+                img_label.grid(row=i + 1, column=0, columnspan=3, pady=5)
+
+                def browse_file(e=entry, img_lbl=img_label):  # Pass the current entry as argument
+                    filepath = filedialog.askopenfilename(
+                        title="Select a file",
+                        filetypes=[("Image files", "*.jpg *.jpeg *.png *.bmp *.gif"), ("All files", "*.*")]
+                    )
+                    if filepath:
+                        load_image_preview(filepath, img_lbl)
+
+                browse_btn = tk.Button(frame, text="Browse",width=10, command=lambda e=entry: browse_file(e))
+                browse_btn.pack(side="left", padx=5)
+                self.entries[label] = img_label
+            else:
+                entry = tk.Entry(form_frame, font=("Arial", 12), width=20)
+                entry.grid(row=i, column=1, pady=5)
+                self.entries[label] = entry
+
+
+        right_frame = tk.Frame(main_frame)
+        right_frame.pack(side="right", fill="both", expand=True)
+
+        search_frame = tk.Frame(right_frame)
+        search_frame.pack(fill="x", pady=(0, 10))
+
+        self.selected_field = tk.StringVar()
+        self.selected_field.set(ordered_fields[0])
+        field_dropdown = ttk.Combobox(search_frame, textvariable=self.selected_field, values=columns, width=14)
+        field_dropdown.pack(side="left", padx=(0, 5))
+
+        local_search_query = tk.StringVar()
+        search_entry = tk.Entry(search_frame, textvariable=local_search_query)
+        search_entry.pack(side="left", padx=(0, 5))
+
+        table_frame = tk.Frame(right_frame)
+        table_frame.pack(fill="both", expand=True)
+
+        tree = ttk.Treeview(table_frame, columns=ordered_fields, show="headings")
+        for col in ordered_fields:
+            tree.heading(col, text=col)
+            tree.column(col, anchor="center", stretch=True)
+        tree.pack(fill="both", expand=True)
+        tree.bind("<<TreeviewSelect>>", lambda event: self.on_tree_selection(event, tree, columns, collection_name, img_label)) #Bind tree selection to an event handler
+
+        horizontal_scrollbar = ttk.Scrollbar(tree, orient="horizontal", command=tree.xview)
+        horizontal_scrollbar.pack(side="bottom", fill="x")
+        tree.configure(xscrollcommand=horizontal_scrollbar.set)
+
+        vertical_scrollbar = ttk.Scrollbar(tree, orient="vertical", command=tree.yview)
+        vertical_scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=vertical_scrollbar.set)
+
+        # Search button now refreshes table, doesn't rebuild everything!
+        tk.Button(
+            search_frame,
+            text="Search",
+            command=lambda: self.refresh_generic_table(tree, current_collection, collection_name, local_search_query.get())
+        ).pack(side="left")
+        
+        # Bottom buttons
+        button_frame = tk.LabelFrame(root, text="Actions", padx=10, pady=10, font=("Arial", 12, 'bold'))
+        button_frame.pack(pady=10)
+
+        btn_add = tk.Button(button_frame, text="Add Entry", font=("Arial", 12), width=15, command=lambda: self.add_generic_entry(tree, current_collection,collection_name))
+        btn_edit = tk.Button(button_frame, text="Update Entry", font=("Arial", 12), width=15, command=lambda: self.edit_generic_entry(tree, current_collection,collection_name))
+        btn_delete = tk.Button(button_frame, text="Delete Entry", font=("Arial", 12), width=15, command=lambda: self.delete_generic_entry(tree, current_collection))
+        btn_deselect = tk.Button(button_frame, text="Deselect Entry", font=("Arial", 12), width=15, command=lambda:self.deselect_entry(tree))
+
+        btn_add.grid(row=0, column=0, padx=10)
+        btn_edit.grid(row=0, column=1, padx=10)
+        btn_delete.grid(row=0, column=2, padx=10)
+        btn_deselect.grid(row=0, column=3, padx=10)
+
+        # Load initial table content
+        self.refresh_generic_table(tree, current_collection, collection_name, search_text="")
+
+    def on_tree_selection(self, event, tree, columns, collection_name, img_label):
+        first_document = None
+        current_collection = None
+        id_index = 0
+        selected_item = tree.selection()
+        if not selected_item:
+            for entry in self.entries.values():
+                entry.delete(0, tk.END)
+            # Also clear image preview(s)
+            if(img_label):
+                img_label.config(image="")
+                img_label.image = None
+            return
+        try:
+            lower_columns = [col.lower() for col in columns]
+            if "id" in lower_columns:
+                id_index = columns.index("Id")  # Dynamically get the index of "Id" #TODO need something different to loop on
+            elif any('code' in col for col in lower_columns):
+                for idx, col in enumerate(lower_columns):
+                    if 'code' in col:
+                        id_index = idx
+                        break
+            unique_id = tree.item(selected_item)['values'][id_index]
+            current_collection = self.get_collection_by_name(collection_name)
+            first_document = current_collection.find_one({columns[id_index]: unique_id})
+
+        except IndexError:
+            return
+
+        if not first_document:
+            print(1)
+            return
+
+        for field, entry in self.entries.items():
+            value = first_document.get(field, "")
+            if isinstance(value, datetime.datetime):
+                value = value.strftime('%d-%m-%Y')
+                entry.delete(0, tk.END)
+                entry.insert(0, value)
+            # If it's a pic field, load preview
+            elif "pic" in field.lower():
+                if img_label and value:
+                    load_image_preview_from_url(value, img_label)
+            else:
+                entry.delete(0, tk.END)
+                entry.insert(0, value)
+
+    def refresh_generic_table(self, tree, current_collection, collection_name, search_text):
+        try:
+            # Clear existing rows
+            for row in tree.get_children():
+                tree.delete(row)
+
+            if search_text:
+                selected_field = self.selected_field.get()
+                first_document = current_collection.find_one()
+                if first_document:
+                    search_fields = self.get_fields_by_name(collection_name)
+                    or_conditions = [{"$expr": {"$regexMatch": {"input": {"$toString": f"${selected_field}"}, "regex": search_text, "options": "i"}}} for field in search_fields]
+                    data = list(current_collection.find({"$or": or_conditions}).sort("Id", 1))
+                else:
+                    data = []
+            else:
+                data = list(current_collection.find().sort("Id", 1))
+
+            if data:
+                columns = self.get_fields_by_name(collection_name)
+                if '_id' in columns:
+                    columns.remove('_id')
+
+                tree["columns"] = columns
+                for col in columns:
+                    tree.heading(col, text=col)
+                    tree.column(col, width=152, anchor="center", stretch=False)
+
+                for row_data in data:
+                    units = row_data.get('Units', [])
+                    
+                    # If Units is a non-empty list
+                    if isinstance(units, list) and len(units) > 0:
+                        for unit_value in units:
+                            values = []
+                            for col in columns:
+                                value = row_data.get(col, '')
+                                
+                                if col == 'Units':
+                                    value = unit_value  # Set current unit value
+                                
+                                elif isinstance(value, datetime.datetime):
+                                    value = value.strftime('%d-%m-%Y')
+                                
+                                values.append(value)
+                            
+                            tree.insert("", "end", values=values)
+                    
+                    else:
+                        # Fallback to insert normally if Units is not a list or is empty
+                        values = []
+                        for col in columns:
+                            value = row_data.get(col, '')
+                            if isinstance(value, datetime.datetime):
+                                value = value.strftime('%d-%m-%Y')
+                            values.append(value)
+                        
+                        tree.insert("", "end", values=values)
+            else:
+                tree["columns"] = ("No Data",)
+                tree.heading("No Data", text="No Data Available")
+                tree.column("No Data", width=300, anchor="center", stretch=True)
+                tree.insert("", "end", values=("This collection has no documents.",))
+
+        except Exception as e:
             messagebox.showerror("Error", f"Error displaying data: {e}")
+
+    def add_generic_entry(self, tree, current_collection, collection_name):
+        # collection_name = self.table_name.get()
+        fields = self.get_fields_by_name(collection_name)
+
+        new_entry = {}
+        for field, widget in self.entries.items():
+            if field == "Id":
+                continue  # Skip Id
+
+            if "date" in field.lower():
+                value = widget.get()
+                if value:
+                    try:
+                        value_date = datetime.datetime.strptime(value, '%d-%m-%Y').date()
+                        value = datetime.datetime.combine(value_date, datetime.time.min)
+                    except Exception as e:
+                        messagebox.showerror("Error", f"Invalid date format for {field}: {e}")
+                        return
+                else:
+                    messagebox.showwarning("Warning", f"Please enter a value for {field}")
+                    return
+            elif "pic" in field.lower():
+                local_image_path = getattr(widget, 'image_path', None)
+                if not local_image_path:
+                    return  # User cancelled
+                try:
+                    value = upload_file_to_cloudinary(local_image_path)
+                except Exception as e:
+                    messagebox.showerror("Upload Error", f"Failed to upload image: {e}")
+                    return
+            elif any(word in field.lower() for word in ["number, stock_quantity"]):
+                value = widget.get()
+                value = int(value)
+                if not value:
+                    messagebox.showwarning("Warning", f"Please enter a value for {field}")
+                    return
+            elif any(word in field.lower() for word in ["salary", "credit", "debit"]):
+                value = widget.get()
+                value = float(value)
+                if not value:
+                    messagebox.showwarning("Warning", f"Please enter a value for {field}")
+                    return
+            else:
+                value = widget.get()
+                if not value:
+                    messagebox.showwarning("Warning", f"Please enter a value for {field}")
+                    return
+
+            new_entry[field] = value
+
+        try:
+            # Generate unique Id
+            if "Id" in fields:
+                existing_ids = [doc["Id"] for doc in current_collection.find({}, {"Id": 1})]
+                print(f"existing_ids{existing_ids}")
+                new_id = max(existing_ids, default=0) + 1
+                new_entry["Id"] = new_id
+
+            current_collection.insert_one(new_entry)
+            self.refresh_generic_table(tree, current_collection, collection_name, search_text="")
+            messagebox.showinfo("Success", "Record added successfully")
+
+            # Clear form fields after successful addition
+            for field, widget in self.entries.items():
+                if "date" in field.lower():
+                    widget.set_date(datetime.datetime.now())
+                elif "pic" in field.lower():
+                    widget.config(image='')
+                    widget.image = None
+                else:
+                    widget.delete(0, tk.END)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Error adding record: {e}")
+  
+    def edit_generic_entry(self, tree, current_collection, collection_name):
+        selected_item = tree.selection()
+        unique_id = 0
+        first_document = None
+        if not selected_item:
+            messagebox.showwarning("Warning", "Please select a record to edit")
+            return
+
+        selected_data = tree.item(selected_item)["values"]
+        if not selected_data:
+            messagebox.showwarning("Warning", "No data found for selected record")
+            return
+
+        columns = tree["columns"]  # This returns a tuple/list of column names
+        try:
+            lower_columns = [col.lower() for col in columns]
+            if "id" in lower_columns:
+                id_index = columns.index("Id")  # Dynamically get the index of "Id" #TODO need something different to loop on
+            elif any('code' in col for col in lower_columns):
+                for idx, col in enumerate(lower_columns):
+                    if 'code' in col:
+                        id_index = idx
+                        break
+        except ValueError:
+            messagebox.showerror("Error", "'Id' field not found in table columns")
+            return
+
+        record_id = selected_data[id_index]
+        existing_record = current_collection.find_one({columns[id_index]: record_id})
+
+        if not existing_record:
+            messagebox.showerror("Error", "Could not find record in database")
+            return
+
+        updated_entry = {}
+        for field, widget in self.entries.items():
+            if field == "Id":
+                continue  # Skip Id
+
+            existing_value = existing_record.get(field, None)
+
+            if "date" in field.lower():
+                value = widget.get()
+                if value:
+                    try:
+                        value_date = datetime.datetime.strptime(value, '%d-%m-%Y').date()
+                        value = datetime.datetime.combine(value_date, datetime.time.min)
+                    except Exception as e:
+                        messagebox.showerror("Error", f"Invalid date format for {field}: {e}")
+                        return
+                else:
+                    value = existing_value  # Keep old date if no new input
+
+            elif "pic" in field.lower():
+                local_image_path = getattr(widget, 'image_path', None)
+
+                if local_image_path:
+                    try:
+                        value = upload_file_to_cloudinary(local_image_path)
+                    except Exception as e:
+                        messagebox.showerror("Upload Error", f"Failed to upload image: {e}")
+                        return
+                else:
+                    value = existing_value  # Keep old image URL if no new selection
+
+            else:
+                try:
+                    value = widget.get()
+                except Exception:
+                    value = None  # For non-entry widgets (just in case)
+
+                if not value:
+                    value = existing_value  # Keep old text if no new input
+
+            updated_entry[field] = value
+
+        try:
+            result = current_collection.update_one({"Id": record_id}, {"$set": updated_entry})
+            if result.modified_count > 0:
+                messagebox.showinfo("Success", "Record updated successfully")
+            else:
+                messagebox.showinfo("Info", "No changes were made (record was identical)")
+
+            # Refresh table
+            # collection_name = self.table_name.get()
+            self.refresh_generic_table(tree, current_collection, collection_name, search_text="")
+
+            # Clear form fields after update
+            for field, widget in self.entries.items():
+                if "date" in field.lower():
+                    widget.set_date(datetime.datetime.now())
+                elif "pic" in field.lower():
+                    widget.config(image='')
+                    widget.image = None
+                    widget.image_path = None
+                else:
+                    widget.delete(0, tk.END)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Error updating record: {e}")
+
+    def delete_generic_entry(self, tree, current_collection):
+        selected_item = tree.selection()
+        if not selected_item:
+            messagebox.showwarning("Warning", "Please select a record to delete")
+            return
+
+        try:
+            columns = tree["columns"]  # Tuple/list of column names
+            lower_columns = [col.lower() for col in columns]
+
+            # Find which column is used as identifier (id / code)
+            id_index = None
+            if "id" in lower_columns:
+                id_index = columns.index("Id")
+            elif any('code' in col for col in lower_columns):
+                for idx, col in enumerate(lower_columns):
+                    if 'code' in col:
+                        id_index = idx
+                        break
+
+            if id_index is None:
+                messagebox.showerror("Error", "Unable to determine identifier column.")
+                return
+
+            field_name = columns[id_index]
+            unique_id = tree.item(selected_item)["values"][id_index]
+
+        except (IndexError, ValueError):
+            messagebox.showerror("Error", "Unable to read selected row data.")
+            return
+
+        if not messagebox.askyesno("Confirm", "Are you sure you want to delete this record?"):
+            return
+
+        try:
+            # ARRAY_FIELDS = ['units']  # Fields you want to treat as arrays (custom handling)
+
+            # Step 1: Find the document based on the selected field (id/code)
+            query = {field_name: unique_id}
+            document = current_collection.find_one(query)
+
+            if not document:
+                messagebox.showwarning("Not Found", "No matching record found to delete.")
+                return
+
+            # Step 2: Check if document contains any ARRAY_FIELDS (like 'units')
+            handled = False
+            values = tree.item(selected_item)["values"]
+            index = columns.index('Units')
+            unit_value = values[index]
+            for array_field in ARRAY_FIELDS:
+                units_list = document.get(array_field, None)
+                print(f"units_list: {isinstance(units_list, list)} , unique_id {unique_id}")
+                if isinstance(units_list, list):
+                    # Found Units array and unique_id is inside → handle it
+                    handled = True
+                    if len(units_list) > 1:
+                        update_result = current_collection.update_one(
+                            {"_id": document["_id"]},
+                            {"$pull": {array_field: unit_value}}
+                        )
+                        if update_result.modified_count > 0:
+                            self.deselect_entry(tree)
+                            self.refresh_generic_table(tree, current_collection, self.table_name.get(), search_text="")
+                            messagebox.showinfo("Success", f"Unit '{unique_id}' removed from record.")
+                        else:
+                            messagebox.showwarning("Warning", "No changes were made to the document.")
+                    else:
+                        delete_result = current_collection.delete_one({"_id": document["_id"]})
+                        if delete_result.deleted_count > 0:
+                            self.deselect_entry(tree)
+                            self.refresh_generic_table(tree, current_collection, self.table_name.get(), search_text="")
+                            messagebox.showinfo("Success", "Record deleted successfully.")
+                        else:
+                            messagebox.showwarning("Warning", "No matching record found to delete.")
+                    return  # After handling Units logic, exit
+
+            # Step 3: If no ARRAY_FIELDS handling triggered → do standard delete
+            if not handled:
+                delete_result = current_collection.delete_one(query)
+                if delete_result.deleted_count > 0:
+                    self.deselect_entry(tree)
+                    self.refresh_generic_table(tree, current_collection, self.table_name.get(), search_text="")
+                    messagebox.showinfo("Success", "Record deleted successfully.")
+                else:
+                    messagebox.showwarning("Warning", "No matching record found to delete.")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Error deleting record: {e}")         
 
     def add_entry(self):
         collection_name = self.table_name.get()
-
         current_collection = self.get_collection_by_name(collection_name)
 
         new_entry = {}
         fields = self.get_fields_by_name(collection_name)
+    
+        try:
+            latest_entry = current_collection.find_one(sort=[("Id", -1)])  # Sort by Id descending
+            new_id = (latest_entry["Id"] + 1) if latest_entry else 1
+        except Exception:
+            new_id = 1
+
+        new_entry["Id"] = new_id
 
         for field in fields:
-            dialog = AlwaysOnTopInputDialog(root, f"Enter value for {field}:")
-            value = dialog.get_result()
-            if value is None:
-                return            
-            new_entry[field] = value
+            if field == "Id":
+                continue
+            if "date" in field.lower():
+                dialog = tk.Toplevel(self.root)  # Create a Toplevel for date input
+                dialog.transient(self.root)
+                dialog.grab_set()
+                dialog.title(f"Enter value for {field}")
 
+                date_label = tk.Label(dialog, text=f"Enter {field}:")
+                date_label.pack(padx=10, pady=5)
+
+                date_entry = DateEntry(dialog, font=("Arial", 12), date_pattern='dd-MM-yyyy')
+                date_entry.pack(padx=10, pady=5)
+
+                selected_date = tk.StringVar()
+
+                def on_ok():
+                    selected_date_obj = date_entry.get_date()
+                    selected_date_str = selected_date_obj.strftime('%d-%m-%Y')
+                    selected_date.set(selected_date_str)
+                    dialog.destroy()
+
+                ok_button = tk.Button(dialog, text="OK", command=on_ok)
+                ok_button.pack(pady=5)
+                ok_button.bind("<Return>", lambda event: ok_button.invoke())
+
+                # Center the date selection dialog
+                screen_width = self.root.winfo_screenwidth()
+                screen_height = self.root.winfo_screenheight()
+                x_position = (screen_width // 2) - (dialog_width // 2)
+                y_position = (screen_height // 2) - (dialog_height // 2)
+                dialog.geometry(f"{dialog_width}x{dialog_height}+{x_position}+{y_position}")
+                self.root.wait_window(dialog)
+
+                value = selected_date.get()
+                if value:
+                    try:
+                        value = datetime.datetime.strptime(value, '%d-%m-%Y').date()
+                        value = datetime.datetime.combine(value, datetime.time.min) #Must do this to be comaptible with mongodb's Date type 
+                    except Exception as e:
+                        print(f"ValueError: {e}")
+                        messagebox.showerror("Error", f"Invalid date format for {field}")
+                        return
+                else:
+                    return  # User cancelled
+            elif "pic" in field.lower():
+                file_path = filedialog.askopenfilename(title=f"Select image for {field}",
+                                                    filetypes=[("Image files", "*.jpg *.jpeg *.png")])
+                if not file_path:
+                    return  # User cancelled
+                try:
+                    value = upload_file_to_cloudinary(file_path)
+                except Exception as e:
+                    messagebox.showerror("Upload Error", f"Failed to upload image: {e}")
+                    return
+            else:
+                dialog = AlwaysOnTopInputDialog(self.root, f"Enter value for {field}:")
+                value = dialog.get_result()
+                if value is None:
+                    return
+
+            new_entry[field] = value
 
         try:
             current_collection.insert_one(new_entry)
@@ -1147,23 +1126,22 @@ class SalesSystemApp:
 
     def edit_entry(self):
         collection_name = self.table_name.get()
-
         current_collection = self.get_collection_by_name(collection_name)
-
+        
         selected_item = self.tree.selection()
         if not selected_item:
             messagebox.showwarning("Warning", "Please select a record to edit")
             return
 
-        record_id_str  = self.tree.item(selected_item)['values'][0]
+        #TODO fix this ID no longer available in tree
         try:
-            record_id = ObjectId(record_id_str)
-        except Exception:
-            messagebox.showerror("Error", "Invalid ID format.")
+            unique_id = self.tree.item(selected_item)['values'][2]  # Assuming this holds the custom unique ID
+        except IndexError:
+            messagebox.showerror("Error", "Unable to read selected row data.")
             return
         
         # Get the fields to edit (excluding _id)
-        first_document = current_collection.find_one({"_id": record_id})
+        first_document = current_collection.find_one({"Id": unique_id})
         if not first_document:
             messagebox.showerror("Error", "Could not retrieve record for editing.")
             return
@@ -1172,14 +1150,63 @@ class SalesSystemApp:
         updated_values = {}
 
         for field in fields:
-            dialog = AlwaysOnTopInputDialog(root, f"Enter value for {field}:")
-            value = dialog.get_result()
-            if value is None:
-                return            
+            if field == "Id":
+                continue
+            if "date" in field.lower():
+                dialog = tk.Toplevel(self.root)  # Create a Toplevel for date input
+                dialog.transient(self.root)
+                dialog.grab_set()
+                dialog.title(f"Enter value for {field}")
+
+                date_label = tk.Label(dialog, text=f"Enter {field}:")
+                date_label.pack(padx=10, pady=5)
+
+                date_entry = DateEntry(dialog, font=("Arial", 12), date_pattern='dd-MM-yyyy')
+                date_entry.pack(padx=10, pady=5)
+
+                selected_date = tk.StringVar()
+
+                def on_ok():
+                    selected_date_obj = date_entry.get_date()
+                    selected_date_str = selected_date_obj.strftime('%d-%m-%Y')
+                    selected_date.set(selected_date_str)
+                    dialog.destroy()
+
+                ok_button = tk.Button(dialog, text="OK", command=on_ok)
+                ok_button.pack(pady=5)
+                ok_button.bind("<Return>", lambda event: ok_button.invoke())
+
+                # Center the date selection dialog
+                screen_width = self.root.winfo_screenwidth()
+                screen_height = self.root.winfo_screenheight()
+                x_position = (screen_width // 2) - (dialog_width // 2)
+                y_position = (screen_height // 2) - (dialog_height // 2)
+                dialog.geometry(f"{dialog_width}x{dialog_height}+{x_position}+{y_position}")
+                self.root.wait_window(dialog)
+
+                value = selected_date.get()
+                if value:
+                    try:
+                        value = datetime.datetime.strptime(value, '%d-%m-%Y').date()
+                        value = datetime.datetime.combine(value, datetime.time.min) #Must do this to be comaptible with mongodb's Date type 
+
+                    except Exception as e:
+                        print(f"ValueError: {e}")
+                        messagebox.showerror("Error", f"Invalid date format for {field}")
+                        return
+                else:
+                    return  # User cancelled
+
+            else:
+                dialog = AlwaysOnTopInputDialog(self.root, f"Enter value for {field}:")
+                value = dialog.get_result()
+                if value is None:
+                    return
+
             updated_values[field] = value
 
         try:
-            current_collection.update_one({"_id": record_id}, {"$set": updated_values})
+            current_collection.update_one({"Id": unique_id}, {"$set": updated_values})
             self.display_table()
             messagebox.showinfo("Success", "Record updated successfully")
         except Exception as e:
@@ -1187,7 +1214,6 @@ class SalesSystemApp:
 
     def delete_entry(self):
         collection_name = self.table_name.get()
-
         current_collection = self.get_collection_by_name(collection_name)
 
         selected_item = self.tree.selection()
@@ -1195,18 +1221,20 @@ class SalesSystemApp:
             messagebox.showwarning("Warning", "Please select a record to delete")
             return
 
-        record_id_str = self.tree.item(selected_item)['values'][0]
         try:
-            record_id = ObjectId(record_id_str)
-        except Exception:
-            messagebox.showerror("Error", "Invalid ID format.")
+            unique_id = self.tree.item(selected_item)['values'][2]  # Assuming this holds the custom unique ID
+        except IndexError:
+            messagebox.showerror("Error", "Unable to read selected row data.")
             return
 
         if messagebox.askyesno("Confirm", "Are you sure you want to delete this record?"):
             try:
-                current_collection.delete_one({"_id": record_id})
-                self.display_table()
-                messagebox.showinfo("Success", "Record deleted successfully")
+                delete_result = current_collection.delete_one({"Id": unique_id})
+                if delete_result.deleted_count == 0:
+                    messagebox.showwarning("Not Found", "No matching record found to delete.")
+                else:
+                    self.display_table()
+                    messagebox.showinfo("Success", "Record deleted successfully")
             except Exception as e:
                 messagebox.showerror("Error", f"Error deleting record: {e}")
 
@@ -1233,10 +1261,6 @@ class SalesSystemApp:
             return self.customers_collection
         elif collection_name == "Suppliers":
             return self.suppliers_collection
-        elif collection_name =="Materials":
-            return self.materials_collection
-        elif collection_name =="Purchases":
-            return self.purchases_collection
         elif collection_name == "Shipping":
             return self.shipping_collection
         elif collection_name == "Orders":
@@ -1264,20 +1288,17 @@ class SalesSystemApp:
         Args: collection_name (str): The name of the collection (e.g., "Employees", "Products").
         Returns: list: A list of field names for the corresponding collection, or an empty list if the name is not recognized.
         """
-        if collection_name == "Employees":#DONE
+        if collection_name == "Employees":
             return ["Name", "Password", "Id", "Role", "Join_Date", "National_id_pic", "Phone_number", "Address", "Salary"]
         
         elif collection_name == "Products":
-            return ["product_name", "category", "price", "stock_quantity", "supplier"]
+            return ["product_name", "category", "stock_quantity", "Specs", "Unit_Price", "product_code", "Units", "prod_pic"]
         
         elif collection_name == "Sales":
-            return ["product_code", "Product_name", "unit", "QTY", "numbering","Total_QTY","Unit_Price","Total Price","Date","Reciept_Number","Customer_name","Customer_code"]
-
-        elif collection_name == "Sales_Header":
-            return ["Product_code", "product_name", "unit","numbering","QTY","Discount Type","Discount Value","Total_QTY","Unit_Price","Total_Price"]
-       
+            return ["sale_date", "product_id", "quantity", "total_price", "customer_id"]
+        #TODO Id
         elif collection_name == "Customers":
-            return ["Name", "Phone_number1", "Phone_number2", "Code", "Purchase_mgr_number", "Financial_mgr_number", "Purchase_mgr_name", 
+            return ["Name", "Phone_number1", "Phone_number2", "Code" , "Purchase_mgr_number", "Financial_mgr_number", "Purchase_mgr_name", 
                     "Financial_mgr_name", "Email", "Company_address", "Extra_address", "Maps_link", "Bank_account",
                     "Instapay", "E_wallet", "Accountant_name", "Accountant_number", "Sales_grade", "Growth_grade", "Frequency_grade", "Credit",
                     "Debit"]
@@ -1337,7 +1358,7 @@ class SalesSystemApp:
         # Mark that user is not typing anymore
         self.is_typing = False
 
-        search_term = self.customer_name_var.get()
+        search_term = self.customer_var.get()
 
         # If search term is empty, you can clear the combobox
         if search_term == "":
@@ -1357,381 +1378,147 @@ class SalesSystemApp:
                 self.customer_cb.event_generate('<Down>')
             else:
                 self.customer_cb.event_generate('<Up>')  # Close dropdown
-    
+
+    def add_product(self, products_col):
+        # New window for product selection
+        product_win = tk.Toplevel()
+        product_win.title("Select Product")
+        
+        # Product Search and Selection
+        tk.Label(product_win, text="Search Product:").pack()
+        product_var = tk.StringVar()
+        product_cb = ttk.Combobox(product_win, textvariable=product_var)
+        product_cb.pack()
+        product_cb['values'] = [prod['product_name'] for prod in products_col.find()]
+        
+        # Add selected product to invoice
+        tk.Button(product_win, text="Add", command=lambda: self.add_to_invoice(product_var.get(), products_col)).pack()
+
+    def add_to_invoice(self, product_name, products_col):
+        product = products_col.find_one({"product_name": product_name})
+        if product:
+            self.tree.insert('', 'end', values=(
+                product['Code'],
+                product['product_name'],
+                1,  # Default quantity
+                product['price'],
+                product['price']  # Initial total
+            ))
     def generate_invoice_number(self):
-        """توليد رقم فاتورة تسلسلي"""
-        try:
-            print(0)
-            sales_col = self.get_collection_by_name('Sales')
-            print(10)
-            last_invoice = sales_col.find_one(sort=[("Receipt_Number", -1)])
-            print(20)
-            # التحقق من وجود الفاتورة وتنسيقها
-            last_number = 0
-            if last_invoice:
-                print(1)
-                reciept_number = last_invoice.get("Receipt_Number")
-                if (
-                    reciept_number 
-                    and isinstance(reciept_number, str) 
-                    and reciept_number.startswith("INV-")
-                ):
-                    try:
-                        last_number = int(reciept_number.split("-")[-1])
-                        print(2)
-                    except (ValueError, IndexError):
-                        last_number = 0
-                        print(3)
-            
-            new_number = last_number + 1
-            # print(4)
-            return f"INV-{new_number:04d}"
+        # Use a counter collection for sequential numbering
+        counter_col = self.db['counters']
+        counter = counter_col.find_one_and_update(
+            {'_id': 'invoice_number'},
+            {'$inc': {'sequence_value': 1}},
+            upsert=True,
+            return_document=True
+        )
+        return f"INV-{counter['sequence_value']:04d}"
+
+    def generate_sales_report(self, invoice_id):
+        # Fetch invoice data
+        sales_col = self.db['sales']
+        invoice = sales_col.find_one({'_id': invoice_id})
         
-        except Exception as e:
-            messagebox.showerror("خطأ", f"فشل توليد الرقم التسلسلي: {str(e)}")
-            return None
-
-    def save_invoice(self, sales_col, customers_col, products_col):
-        """حفظ الفاتورة مع التحقق من المخزون وتحديثه"""
-        try:
-            # التحقق من وجود بيانات العميل
-            customer_name = self.customer_name_var.get().strip()
-            if not customer_name:
-                messagebox.showerror("خطأ", "يرجى اختيار عميل")
-                return
-
-            # البحث عن العميل في قاعدة البيانات
-            customer = customers_col.find_one({"Name": customer_name})
-            if not customer:
-                messagebox.showerror("خطأ", "العميل غير مسجل!")
-                return
-
-            # التحقق من المبلغ المدفوع
-            payed_cash = float(self.payed_cash_var.get() or 0)
-            if payed_cash < 0:
-                messagebox.showerror("خطأ", "المبلغ المدفوع لا يمكن أن يكون سالبًا!")
-                return
-
-            # جمع بيانات العناصر والتحقق من المخزون
-            items = []
-            total_amount = 0.0
-            stock_updates = {}
-            
-            for row_idx, row in enumerate(self.entries):
-                product_code = row[0].get().strip()
-                if not product_code:
-                    continue
-
-                product = products_col.find_one({"product_code": product_code})
-                if not product:
-                    messagebox.showerror("خطأ", f"المنتج {product_code} غير موجود!")
-                    return
-
-                try:
-                    
-                    # استخراج القيم من الحقول
-                    qty = float(row[4].get() or 0)
-                    numbering = float(row[3].get() or 0)
-                    unit_price = float(row[8].get() or 0)
-                    discount_type = row[5].get()
-                    discount_value = float(row[6].get() or 0)
-                    
-                    # حساب القيم
-                    total_qty = qty * numbering
-                    total_price = unit_price * total_qty
-                    
-                    # تطبيق الخصم
-                    if discount_type == "Percentage":
-                        discount = total_price * (discount_value / 100)
-                    else:
-                        discount = min(discount_value, total_price)
-                    
-                    final_price = max(total_price - discount, 0)
-
-                    # التحقق من المخزون
-                    stock = product.get("stock_quantity", 0)
-                    if total_qty > stock:
-                        messagebox.showerror("نقص في المخزون", 
-                            f"الكمية المطلوبة ({total_qty}) تتجاوز المخزون ({stock}) للمنتج {product_code}")
-                        return
-
-                    stock_updates[product_code] = stock - total_qty
-                    total_amount += final_price
-
-                    # إضافة العنصر
-                    items.append({
-                        "Product_code": product_code,
-                        "product_name": row[1].get().strip(),
-                        "Unit": row[2].get().strip(),
-                        "QTY": qty,
-                        "numbering": numbering,
-                        "Total_QTY": total_qty,
-                        "Unit_price": unit_price,
-                        "Discount_Type": discount_type,
-                        "Discount_Value": discount_value,
-                        "Final_Price": final_price
-                    })
-                    
-                except ValueError as e:
-                    messagebox.showerror("خطأ", f"قيم غير صالحة في الصف {row_idx+1}: {str(e)}")
-                    return
-
-            if not items:
-                messagebox.showerror("خطأ", "لا توجد عناصر في الفاتورة!")
-                return
-            # توليد رقم الفاتورة
-            invoice_number = self.generate_invoice_number()
-            if not invoice_number:
-                return
-            # إنشاء بيانات الفاتورة الكاملة
-            invoice_data = {
-                "Receipt_Number": invoice_number,
-                "Date": datetime.now().strftime("%d/%m/%Y %H:%M"),
-                "Customer_info": {
-                    "code": customer.get("Code", "CUST-001"),
-                    "name": customer.get("Name", "غير معروف"),
-                    "phone1": customer.get("Phone_number1", ""),
-                    "phone2": customer.get("Phone_number2", ""),
-                    "address": customer.get("Company_address", "")
-                },
-                "Items": items,
-                "Financials": {
-                    "Net_total": total_amount,
-                    "Previous_balance": customer.get("Balance", 0),
-                    "Total_balance": total_amount + customer.get("Balance", 0),
-                    "Payed_cash": payed_cash,
-                    "Remaining_balance": (total_amount + customer.get("Balance", 0)) - payed_cash,
-                    "Payment_method": self.payment_method_var.get()
-                },
-                "PDF_Path": "",
-                
-            }
-
-            # تحديث المخزون
-            for code, new_stock in stock_updates.items():
-                products_col.update_one(
-                    {"product_code": code},
-                    {"$set": {"stock_quantity": new_stock}}
-                )
-
-            # تحديث بيانات العميل
-            new_balance = (customer.get("Balance", 0) + total_amount) - payed_cash
-            customers_col.update_one(
-                {"_id": customer["_id"]},
-                {
-                    "$set": {
-                        "Last_purchase": datetime.now(),
-                        "Balance": new_balance
-                    },
-                    "$inc": {
-                        "Sales": 1,
-                        "Debit": total_amount,
-                        "Credit": payed_cash
-                    }
-                }
-            )
-
-            # توليد ملف PDF
-            pdf_path = self.generate_pdf(invoice_data)
-            if not pdf_path:
-                return
-            # إضافة مسار PDF للبيانات
-            invoice_data["PDF_Path"] = pdf_path
-            
-            # حفظ الفاتورة في قاعدة البيانات
-            sales_col.insert_one(invoice_data)
-
-            messagebox.showinfo("نجاح", f"تم حفظ الفاتورة رقم {invoice_data['Receipt_Number']}")
-            self.clear_invoice_form()
-
-        except Exception as e:
-            messagebox.showerror("خطأ", f"فشل في العملية: {str(e)}")
-            # logging.error(f"Invoice Error: {str(e)}")
-
-    def clear_invoice_form(self):
-            """تنظيف جميع حقول الفاتورة"""
-            try:
-                # تنظيف Combobox العميل
-                self.customer_name_var.set('')
-                
-                # تنظيف حقول العناصر
-                for row in self.entries:
-                    for entry in row:
-                        if isinstance(entry, ttk.Combobox):
-                            entry.set('')
-                        elif isinstance(entry, tk.Entry):
-                            entry.delete(0, tk.END)
-                
-                # إعادة تعيين القائمة
-                self.entries = []
-                # إعادة إنشاء الصفوف الأساسية
-                # إذا كنت تستخدم دالة لإضافة الصفوف
-                self.new_sales_invoice(self.user_role)
-            except Exception as e:
-                messagebox.showerror("خطأ", f"فشل في تنظيف الحقول: {str(e)}")
-                
-    def generate_pdf(self, invoice_data):
-        """توليد ملف PDF بحجم A5 بتنسيق عربي مطابق للنموذج"""
-        """توليد ملف PDF بحجم A5 بتنسيق عربي مطابق للنموذج"""
-        try:
-            from reportlab.lib.pagesizes import A5
-            from reportlab.pdfgen import canvas
-            from reportlab.lib.units import cm
-            from reportlab.pdfbase import pdfmetrics
-            from reportlab.pdfbase.ttfonts import TTFont
-            import os
-            from bidi.algorithm import get_display
-            import arabic_reshaper
-            from reportlab.lib.utils import ImageReader
-
-            # تسجيل الخط العربي
-            arabic_font_path = os.path.join("Static", "Fonts", "Amiri-Regular.ttf")
-            if not os.path.exists(arabic_font_path):
-                raise FileNotFoundError(f"ملف الخط غير موجود: {arabic_font_path}")
-            pdfmetrics.registerFont(TTFont('Arabic', arabic_font_path))
-
-            # دالة معالجة النصوص العربية
-            def format_arabic(text):
-                reshaped_text = arabic_reshaper.reshape(str(text))
-                return get_display(reshaped_text)
-
-            # إنشاء مسار الحفظ
-            desktop = os.path.join(os.path.expanduser('~'), 'Desktop')
-            file_name = f"فاتورة_{invoice_data['Receipt_Number']}.pdf"
-            pdf_path = os.path.join(desktop, file_name)
-
-            # إعداد مستند PDF
-            c = canvas.Canvas(pdf_path, pagesize=A5)
-            width, height = A5
-            c.setFont("Arabic", 12)
-
-            # إضافة الشعار
-            logo_path = os.path.join("Static", "images", "Logo.jpg")
-            if os.path.exists(logo_path):
-                logo = ImageReader(logo_path)
-                c.drawImage(logo, 0.5*cm, height-3.5*cm, width=4*cm, height=2.5*cm, preserveAspectRatio=True)
-
-            # ========== العنوان المركزي ==========
-            invoice_number = str(invoice_data['Receipt_Number']).replace("INV-", "").strip()
-            invoice_title = f"فاتورة بيع رقم {invoice_number}"
-            
-            # رسم الإطار حول العنوان
-            frame_width = 4*cm
-            frame_height = 1*cm
-            frame_x = (width - frame_width) / 2  # مركز أفقي
-            frame_y = height - 2.5*cm
-            c.setLineWidth(1)
-            c.rect(frame_x, frame_y, frame_width, frame_height)
-            
-            # كتابة العنوان المركزي
-            c.setFont("Arabic", 12)  # تأكد من وجود خط عريض
-            title_x = width / 2
-            title_y = height - 2.2*cm
-            c.drawCentredString(title_x, title_y, format_arabic(invoice_title))
-
-            # ========== معلومات الشركة ==========
-            company_info = [
-                "      حسن سليم",
-                "للمنتجات البلاستيكية"
-            ]
-            
-            y_position = height - 2*cm
-            c.setFont("Arabic", 12)
-            for line in company_info:
-                c.drawRightString(width - 1.75*cm, y_position, format_arabic(line))
-                y_position -= 0.8*cm
-
-            # ========== معلومات العميل ==========
-            customer_y = height - 3.8*cm
-            c.setFont("Arabic", 12)
-            customer_fields = [
-                f"التاريخ:       {invoice_data['Date']}",            
-                f"اسم العميل:    {invoice_data['Customer_info']['name']}",
-                f"الكود:         {invoice_data['Customer_info']['code']}",
-                f"العنوان:       {invoice_data['Customer_info']['address']}",
-                f"التليفون:      {invoice_data['Customer_info']['phone1']}"
-            ]
-            
-            for line in customer_fields:
-                # text = f"{format_arabic(field)} {format_arabic(value)}"
-                c.drawRightString(width - 0.4*cm, customer_y, format_arabic(line))
-                customer_y -= 0.8*cm
-
-            # ========== جدول العناصر ==========
-            headers = ["كود الصنف","     الصنف", "العدد", "الوحدة", "سعر الوحدة", "الكمية", "الإجمالي"]
-            col_positions = [
-                width - 0.4*cm,    # كود الصنف
-                width - 2*cm,    # الصنف
-                width - 5.5*cm,    # العدد
-                width - 7.5*cm,    # الوحدة
-                width - 9.5*cm,    # السعر
-                width - 11.5*cm,     # الكمية
-                width - 13*cm      # الإجمالي
-            ]
-            
-            # رأس الجدول
-            table_y = customer_y - 0.25*cm
-            c.setFont("Arabic", 10)
-            for i, header in enumerate(headers):
-                c.drawRightString(col_positions[i], table_y, format_arabic(header))
-
-            # بيانات الجدول
-            c.setFont("Arabic", 8)
-            row_height = 0.7*cm
-            for item in invoice_data["Items"]:
-                table_y -= row_height
-                columns = [
-                    item.get("Product_code", ""),
-                    item.get("product_name",""),
-                    str(item.get("numbering", "")),
-                    item.get("Unit", ""),
-                    f"{item.get('Unit_price', 0):.2f}",
-                    str(item.get('QTY', 0)),
-                    f"{item.get('Final_Price', 0):.2f}"
-                ]
-                for i, value in enumerate(columns):
-                    c.drawRightString(col_positions[i], table_y, format_arabic(value))
-
-            # ========== الإجماليات ==========
-            totals_y = table_y - 1*cm
-            totals = [
-                ("صافي الفاتورة:", invoice_data['Financials']['Net_total']),
-                ("حساب سابق:", invoice_data['Financials']['Previous_balance']),
-                ("إجمالي الفاتورة:", invoice_data['Financials']['Total_balance']),
-                ("المدفوع:", invoice_data['Financials']['Payed_cash']),
-                ("الباقي:", invoice_data['Financials']['Remaining_balance'])
-            ]
-            
-            c.setFont("Arabic", 12)
-            for label, value in totals:
-                text = f"{format_arabic(f'{value:,.2f}')} {format_arabic(label)}"
-                c.drawRightString(width - 0.3*cm, totals_y, text)
-                totals_y -= 0.8*cm
-
-            # ========== التوقيعات ==========
-            c.setFont("Arabic", 10)
-            c.drawRightString(width - 2.2*cm, totals_y - 0.25*cm, format_arabic("____________________"))
-            c.drawString(1.5*cm, totals_y - 0.25*cm, format_arabic("____________________"))
-            
-            c.save()
-            pdf_path = self.upload_pdf_to_cloudinary(pdf_path)
-            return pdf_path
-
-        except Exception as e:
-            messagebox.showerror("خطأ PDF", f"فشل في توليد الملف: {str(e)}")
-            return None
+        # Fetch customer data
+        customers_col = self.db['customers']
+        customer = customers_col.find_one({'_id': invoice['customer_id']})
         
+        # Create report window
+        report_win = tk.Toplevel()
+        report_win.title(f"Sales Report - {invoice['invoice_number']}")
+        
+        # Arabic labels with right-to-left layout
+        main_frame = tk.Frame(report_win)
+        main_frame.pack(padx=20, pady=20)
+        
+        # Header Section
+        tk.Label(main_frame, text="فاتورة بيع رقم", font=('Arial', 14, 'bold')).grid(row=0, column=4, sticky='e')
+        tk.Label(main_frame, text=invoice['invoice_number'], font=('Arial', 14)).grid(row=0, column=5, sticky='w')
+        
+        # Customer Information
+        tk.Label(main_frame, text="الاسم:", anchor='e').grid(row=1, column=4, sticky='e')
+        tk.Label(main_frame, text=customer['Name']).grid(row=1, column=5, sticky='w')
+        
+        # Date Information
+        tk.Label(main_frame, text="التاريخ:").grid(row=2, column=4, sticky='e')
+        tk.Label(main_frame, text=invoice['date'].strftime('%d/%m/%Y')).grid(row=2, column=5, sticky='w')
+        
+        # Items Table
+        columns = ('كود الصنف', 'الصنف', 'الكمية', 'سعر الوحدة', 'الإجمالي')
+        tree = ttk.Treeview(main_frame, columns=columns, show='headings', height=4)
+        
+        # Right-to-left column alignment
+        for col in columns:
+            tree.heading(col, text=col, anchor='e')
+            tree.column(col, anchor='e')
+        
+        tree.grid(row=3, column=0, columnspan=6, pady=10)
+        
+        # Add invoice items
+        products_col = self.db['products']
+        for item in invoice['items']:
+            product = products_col.find_one({'Code': item['product_code']})
+            tree.insert('', 'end', values=(
+                item['product_code'],
+                product['product_name'] if product else 'N/A',
+                item['quantity'],
+                f"{float(item['unit_price']):,.2f}",
+                f"{float(item['total']):,.2f}"
+            ))
+        
+        # Totals Section
+        totals_frame = tk.Frame(main_frame)
+        totals_frame.grid(row=4, column=0, columnspan=6, pady=10)
+        
+        totals_data = [
+            ("صافي الفاتورة", invoice['total']),
+            ("حساب سابق", invoice.get('previous_balance', 0)),
+            ("إجمالي الفاتورة", invoice['total'] + invoice.get('previous_balance', 0)),
+            ("المدفوع", invoice.get('amount_paid', 0)),
+            ("الباقي", invoice['balance'])
+        ]
+        
+        for i, (label, value) in enumerate(totals_data):
+            tk.Label(totals_frame, text=label, font=('Arial', 10, 'bold')).grid(row=i, column=0, sticky='e', padx=10)
+            tk.Label(totals_frame, text=f"{value:,.2f}", font=('Arial', 10)).grid(row=i, column=1, sticky='w')
 
-    def upload_pdf_to_cloudinary(self,file_path_param):
-        # import cloudinary.uploader
-        try:
-            response = cloudinary.uploader.upload(file_path_param, resource_type="raw")
-            return response['secure_url']
-        except Exception as e:
-            print(f"[Cloudinary Upload Error]: {e}")
-            return None
+    def save_invoice(self, sales_col, customers_col):
+        # Get customer ID
+        customer = customers_col.find_one({"Name": self.customer_var.get()})
+        
+        # Prepare sales document
+        invoice = {
+            "invoice_number": self.generate_invoice_number(),
+            "date": datetime.datetime.now(),
+            "customer_id": customer['_id'],
+            "employee_id": self.user_role['_id'],  # Assuming user_role contains logged-in user
+            "items": [{
+                "product_code": item['values'][0],
+                "quantity": item['values'][2],
+                "unit_price": item['values'][3],
+                "total": item['values'][4]
+            } for item in self.tree.get_children()],
+            "total": sum(float(self.tree.item(item)['values'][4]) for item in self.tree.get_children()),
+            "balance": 0  # Add your balance calculation logic
+        }
+        
+        # Insert into MongoDB
+        sales_col.insert_one(invoice)
+        print("Invoice saved successfully!")
 
-
+    def deselect_entry(self,tree):
+        tree.selection_remove(tree.selection())
+        # Clear form fields
+        for field, widget in self.entries.items():
+            if "date" in field.lower():
+                widget.set_date(datetime.datetime.now())
+            elif "pic" in field.lower():
+                widget.config(image='')
+                widget.image = None
+            else:
+                widget.delete(0, tk.END)
+        
     def on_canvas_press(self, event):
         self.tree.scan_mark(event.x, event.y)
 
@@ -1767,9 +1554,9 @@ class SalesSystemApp:
         self.main_menu()
 
     #Function to update the time 
-    def update_time(self, time_label):
-        time_label.config(text=datetime.now().strftime('%B %d, %Y %I:%M %p'))
-        self.root.after(1000, self.update_time, time_label)
+    # def update_time(self, time_label):
+    #     time_label.config(text=datetime.datetime.now().strftime('%B %d, %Y %I:%M %p'))
+    #     self.root.after(1000, self.update_time, time_label)
 
 
     # Function to make the top bar part
@@ -1814,11 +1601,11 @@ class SalesSystemApp:
             lang_btn.pack(side="left", padx=10)
 
         # Time label
-        time_label = tk.Label(top_bar, text=datetime.now().strftime('%B %d, %Y %I:%M %p'),
+        time_label = tk.Label(top_bar, text=datetime.datetime.now().strftime('%B %d, %Y %I:%M %p'),
                             font=("Arial", 20, "bold"), fg="black", bg="#dbb40f")
 
         time_label.place(relx=0.5, rely=0.5, anchor="center")
-        self.update_time(time_label)
+        # self.update_time(time_label)
         #TODO
         # User info frame
         user_frame = tk.Frame(top_bar, bg="#dbb40f")
@@ -1840,7 +1627,6 @@ class SalesSystemApp:
         sound_path = os.path.join(BASE_DIR, 'Static', 'sounds', 'Error.mp3')
         if os.path.exists(sound_path):
             threading.Thread(target=playsound, args=(sound_path,), daemon=True).start()
-            print("done")
         else:
             print("Sound file not found:", sound_path)
 
@@ -1856,7 +1642,6 @@ class SalesSystemApp:
                 while not self.stop_event.is_set():  # Check if stop_event is set
                     playsound(sound_path)
                     break  # In this case, we'll play the sound only once.
-                print("done")
             else:
                 print("Sound file not found:", sound_path)
 
@@ -1873,7 +1658,6 @@ class SalesSystemApp:
 
         popup = tk.Toplevel()
         popup.title(title)
-        popup.geometry("300x120")
         popup.resizable(False, False)
         popup.grab_set()  # Makes it modal
 
@@ -1896,61 +1680,101 @@ class SalesSystemApp:
         popup.wait_window()  # Blocks further execution until the popup is closed
         self.stop_sound()
 
+def upload_file_to_cloudinary(file_path_param):
+    # import cloudinary.uploader
+    try:
+        response = cloudinary.uploader.upload(file_path_param, resource_type="image")
+        return response['secure_url']
+    except Exception as e:
+        print(f"[Cloudinary Upload Error]: {e}")
+        return None
 
+def upload_pdf_to_cloudinary(file_path_param):
+    # import cloudinary.uploader
+    try:
+        response = cloudinary.uploader.upload(file_path_param, resource_type="raw")
+        return response['secure_url']
+    except Exception as e:
+        print(f"[Cloudinary Upload Error]: {e}")
+        return None 
+
+def load_image_preview(filepath, img_label):
+    try:
+        img = Image.open(filepath)
+        img.thumbnail((300, 300))  # Make it bigger (adjust size as you wish)
+        img_tk = ImageTk.PhotoImage(img)
+        
+        img_label.config(image=img_tk)
+        img_label.image = img_tk
+        img_label.image_path = filepath   # <== DID YOU ADD THIS LINE? 👈👈👈
+    except Exception as e:
+        print(f"Error loading image preview: {e}")
+
+def load_image_preview_from_url(image_url, label, max_size=(300, 300)):
+    """Load image from a URL and display it in a Tkinter Label.
+    Args:image_url (str): The image URL to load.
+         label (tk.Label): The Tkinter Label to display the image in.
+         image_refs (list): A list to store image references (to avoid garbage collection).
+         max_size (tuple): Max size of the image (width, height)"""
+    try:
+        with urllib.request.urlopen(image_url) as response:
+            image_data = Image.open(io.BytesIO(response.read()))
+            image_data.thumbnail(max_size)  # Resize image
+            image_obj = ImageTk.PhotoImage(image_data)
+
+            label.config(image=image_obj)
+            label.image = image_obj  # Also attach to label itself (extra safety)
+    except Exception as e:
+        print(f"Error loading image from URL: {e}")
+        label.config(image="")
+        label.image = None
 ######################### Auxiliary classes #########################################################
+
 class AlwaysOnTopInputDialog(tk.Toplevel):
     def __init__(self, parent, prompt):
         super().__init__(parent)
-        self.transient(parent)  # Make sure this dialog is always on top of the parent window
-        self.grab_set()  # Lock interaction to this dialog until it is closed
+        self.transient(parent)
+        self.grab_set()
 
         self.title("Input")
-        
-        # Create the widgets for the dialog
+
         self.prompt_label = tk.Label(self, text=prompt)
         self.prompt_label.pack(padx=10, pady=10)
-        
-        self.entry = tk.Entry(self)
-        self.entry.pack(padx=10, pady=10)
-        self.entry.focus_set()  # Set focus on the entry field
+
+        self.input_widget = tk.Entry(self)
+        self.input_widget.pack(padx=10, pady=10)
+        self.input_widget.focus_set()
 
         self.result = None
-        
+
         self.ok_button = tk.Button(self, text="OK", command=self.on_ok)
         self.ok_button.pack(pady=5)
         self.ok_button.bind("<Return>", lambda event: self.ok_button.invoke())
 
-        self.after(1, self.adjust_geometry) 
-
-        # Center the dialog on the screen
+        self.after(1, self.adjust_geometry)
         self.center_dialog(parent)
 
     def adjust_geometry(self):
-        # Set the fixed size of the dialog window after widget creation
-        self.geometry("300x150")  # Width=400, Height=150 (Fixed Size)
+        self.geometry("300x150")
 
     def center_dialog(self, parent):
-        # Get the screen width and height
         screen_width = parent.winfo_screenwidth()
         screen_height = parent.winfo_screenheight()
-
-        # Get the size of the dialog window
         dialog_width = self.winfo_reqwidth()
         dialog_height = self.winfo_reqheight()
-
-        # Calculate the position to center the dialog
         x_position = (screen_width // 2) - (dialog_width // 2)
         y_position = (screen_height // 2) - (dialog_height // 2)
-
-        # Set the geometry of the dialog window
         self.geometry(f"{dialog_width}x{dialog_height}+{x_position}+{y_position}")
 
     def on_ok(self):
-        self.result = self.entry.get()
-        self.destroy()  # Close the dialog when the user clicks OK
+        if isinstance(self.input_widget, DateEntry):
+            self.result = self.input_widget.get_date()
+        else:
+            self.result = self.input_widget.get()
+        self.destroy()
 
     def get_result(self):
-        self.wait_window(self)  # Wait for this window to close and get the result
+        self.wait_window(self)
         return self.result
 
 ######################### Main #########################################################
@@ -1963,3 +1787,4 @@ if __name__ == "__main__":
         root.mainloop()
     except Exception as e:
         print("Error during mainloop:", e)
+
