@@ -81,11 +81,9 @@ class SalesSystemApp:
             "Materials": {"Arabic": "الخامات", "English": "Materials"},
             "Employees": {"Arabic": "الموظفين", "English": "Employees"},
             "Customer Name":{"Arabic": "العميل:", "English": "Customer:"},
-            "Supplier Name":{"Arabic": "المورد:", "English": "Supplier:"},
             "Previous Balance":{"Arabic": "الحساب السابق:", "English": "Previous Balance:"},
             "Paid Money":{"Arabic": "المبلغ المدفوع:", "English": "Paid Money:"},
             "Customer Code":{"Arabic": "كود العميل:", "English": "Customer Code:"},
-            "Supplier Code":{"Arabic": "كود المورد:", "English": "Supplier Code:"},
             "Payment Method":{"Arabic": "طريقة الدفع:", "English": "Payment Method:"},
         }
         self.db = None
@@ -138,8 +136,6 @@ class SalesSystemApp:
         self.products_collection              = db['Products']
         self.sales_collection                 = db['Sales']
         self.suppliers_collection             = db['Suppliers']
-        self.materials_collection             = db['Materials']
-        self.purchases_collection             = db['Purchases']
         self.shipping_collection              = db['Shipping']
         self.orders_collection                = db['Orders']
         self.expenses_collection              = db['Expenses']
@@ -247,7 +243,7 @@ class SalesSystemApp:
             {"text": self.t("New Sales Invoice"), "image": "Sales.png", 
             "command": lambda: self.new_sales_invoice(self.user_role)},
             {"text": self.t("New Purchase Invoice"), "image": "Purchase.png", 
-            "command": lambda: self.new_Purchase_invoice(self.user_role)},
+            "command": lambda: self.trash(self.user_role)},
             {"text": self.t("Receive Payment"), "image": "Recieve.png", 
             "command": lambda: self.trash(self.user_role)},
             {"text": self.t("Make Payment"), "image": "payment.png", 
@@ -428,276 +424,6 @@ class SalesSystemApp:
 
         # Customer Code Combobox
         tk.Label(customer_frame, text=self.t("Customer Code"), font=("Arial", 12, "bold")).grid(row=0, column=2, sticky='w')
-        self.customer_code_var = tk.StringVar()
-        self.customer_code_cb = ttk.Combobox(customer_frame, textvariable=self.customer_code_var, values=sorted(all_codes))
-        self.customer_code_cb.grid(row=0, column=3, padx=5, sticky='ew')
-
-        # Balance and Payment Fields
-        tk.Label(customer_frame, text=self.t("Previous Balance"), font=("Arial", 12, "bold")).grid(row=0, column=4, sticky='e', padx=(20, 0))
-        self.previous_balance_var = tk.StringVar()
-        self.previous_balance_entry = tk.Entry(customer_frame, textvariable=self.previous_balance_var, 
-                                            width=15, state='readonly')
-        self.previous_balance_entry.grid(row=0, column=5, sticky='e')
-
-        tk.Label(customer_frame, text=self.t("Paid Money"), font=("Arial", 12, "bold")).grid(row=0, column=6, sticky='e', padx=(20, 0))
-        self.payed_cash_var = tk.DoubleVar()
-        self.payed_cash_entry = tk.Entry(customer_frame, textvariable=self.payed_cash_var, width=15)
-        self.payed_cash_entry.grid(row=0, column=7, sticky='e')
-
-        # Payment Method Dropdown
-        tk.Label(customer_frame, text=self.t("Payment Method"), font=("Arial", 12, "bold")).grid(row=0, column=8, sticky='e', padx=(20, 0))
-        self.payment_method_var = tk.StringVar()
-        payment_methods = ['Cash', 'E_Wallet', 'Bank_account', 'Instapay']
-        payment_cb = ttk.Combobox(customer_frame, textvariable=self.payment_method_var, 
-                                values=payment_methods, state='readonly', width=12)
-        payment_cb.grid(row=0, column=9, sticky='ew', padx=(5, 10))
-        payment_cb.current(0)  # Set default to Cash
-
-        # Configure column weights
-        customer_frame.columnconfigure(1, weight=1)
-        customer_frame.columnconfigure(3, weight=1)
-        customer_frame.columnconfigure(5, weight=0)
-        customer_frame.columnconfigure(7, weight=0)
-        customer_frame.columnconfigure(9, weight=0)
-
-        # Synchronization functions
-        def sync_from_name(event=None):
-            name = self.customer_name_var.get()
-            code = self.customer_code_map.get(name, '')
-            self.customer_code_var.set(code)
-            self.previous_balance_var.set(str(self.customer_balance_map.get(name, 0)))
-
-        def sync_from_code(event=None):
-            code = self.customer_code_var.get()
-            name = self.code_name_map.get(code, '')
-            self.customer_name_var.set(name)
-            self.previous_balance_var.set(str(self.customer_balance_map.get(name, 0)))
-
-        # Event bindings
-        self.customer_name_cb.bind('<<ComboboxSelected>>', sync_from_name)
-        self.customer_code_cb.bind('<<ComboboxSelected>>', sync_from_code)
-        
-        self.customer_name_cb.bind('<KeyRelease>', lambda e: [
-            self.filter_combobox(e, all_customers, self.customer_name_cb),
-            sync_from_name()
-        ])
-        
-        self.customer_code_cb.bind('<KeyRelease>', lambda e: [
-            self.filter_combobox(e, all_codes, self.customer_code_cb),
-            sync_from_code()
-        ])
-
-        # Load product data
-        try:
-            products = list(products_col.find())
-            all_units = set()
-            product_names = []
-            product_codes = []
-
-            for p in products:
-                code = str(p.get('product_code', '')).strip()
-                name = p.get('product_name', '').strip()
-                units_list = p.get('Units', [])
-
-                # Process units
-                unit_names = []
-                for unit in units_list:
-                    if isinstance(unit, dict):
-                        unit_name = str(unit.get('unit_name', '')).strip()
-                    elif isinstance(unit, str):
-                        unit_name = unit.strip()
-                    else:
-                        continue
-                    
-                    if unit_name:
-                        unit_names.append(unit_name)
-                        all_units.add(unit_name)
-
-                # Handle price conversion
-                try:
-                    price_str = str(p.get('Unit_Price', '0')).strip('kgm ')
-                    price = float(price_str) if price_str else 0.0
-                except ValueError:
-                    price = 0.0
-
-                # Update mappings
-                self.product_map[code] = {
-                    'name': name,
-                    'units': unit_names,
-                    'price': price
-                }
-                self.name_to_code[name] = code
-                product_names.append(name)
-                product_codes.append(code)
-
-            self.product_codes = sorted(list(set(product_codes)))
-            self.product_names = sorted(list(set(product_names)))
-            all_units = sorted(list(all_units))
-
-        except Exception as e:
-            messagebox.showerror("Database Error", f"Failed to load products: {str(e)}")
-            return
-
-        # Invoice Items Grid
-        columns = self.get_fields_by_name("Sales_Header")
-        col_width = 23
-
-        header_row = tk.Frame(form_frame, bg='#f0f0f0')
-        header_row.grid(row=2, column=0, columnspan=len(columns), sticky='nsew', pady=(20, 0))
-        for col_idx, col in enumerate(columns):
-            tk.Label(header_row, text=col, width=col_width, relief='ridge',
-                    bg='#f0f0f0', anchor='w').grid(row=0, column=col_idx, sticky='ew')
-            header_row.columnconfigure(col_idx, weight=1)
-
-        # Scrollable Canvas
-        canvas = tk.Canvas(form_frame, highlightthickness=0)
-        scrollbar = tk.Scrollbar(form_frame, orient="vertical", command=canvas.yview)
-        self.rows_frame = tk.Frame(canvas)
-        
-        self.rows_frame.bind("<Configure>", lambda e: canvas.configure(
-            scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=self.rows_frame, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-
-        canvas.grid(row=3, column=0, columnspan=len(columns), sticky="nsew")
-        scrollbar.grid(row=3, column=len(columns), sticky="ns")
-        
-        form_frame.grid_rowconfigure(3, weight=1)
-        for i in range(len(columns)):
-            form_frame.columnconfigure(i, weight=1)
-
-        self.entries = []
-
-        # Modified create_row function with discount fields
-        def create_row(parent, row_number, bg_color):
-            row_frame = tk.Frame(parent, bg=bg_color)
-            row_frame.grid(row=row_number, column=0, sticky='ew')
-            
-            row_entries = []
-            for col_idx, col in enumerate(columns):
-                if col == "Product_code":
-                    var = tk.StringVar()
-                    cb = ttk.Combobox(row_frame, textvariable=var, values=product_codes, width=col_width-2)
-                    cb.bind('<<ComboboxSelected>>', lambda e, r=row_number: self.update_product_info(r, "code"))
-                    cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_combobox_change(e, r, "code"))
-                    cb.grid(row=0, column=col_idx, sticky='ew')
-                    row_entries.append(cb)
-                elif col == "product_name":
-                    var = tk.StringVar()
-                    cb = ttk.Combobox(row_frame, textvariable=var, values=product_names, width=col_width-2)
-                    cb.bind('<<ComboboxSelected>>', lambda e, r=row_number: self.update_product_info(r, "name"))
-                    cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_combobox_change(e, r, "name"))
-                    cb.grid(row=0, column=col_idx, sticky='ew')
-                    row_entries.append(cb)
-                elif col == "unit":
-                    var = tk.StringVar()
-                    cb = ttk.Combobox(row_frame, textvariable=var, values=[], width=col_width-2)
-                    cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_unit_change(e, r))
-                    cb.grid(row=0, column=col_idx, sticky='ew')
-                    row_entries.append(cb)
-                elif col == "Discount Type":
-                    var = tk.StringVar()
-                    cb = ttk.Combobox(row_frame, textvariable=var, 
-                                    values=["Percentage", "Value"], 
-                                    state="readonly",
-                                    width=col_width-2)
-                    cb.current(0)  # Default to Percentage
-                    cb.grid(row=0, column=col_idx, sticky='ew')
-                    row_entries.append(cb)
-                elif col == "Discount Value":
-                    var = tk.StringVar()
-                    entry = tk.Entry(row_frame, textvariable=var, width=col_width+1)
-                    entry.bind('<KeyRelease>', lambda e, r=row_number: self.calculate_totals(r))
-                    entry.grid(row=0, column=col_idx, sticky='ew')
-                    row_entries.append(entry)
-                elif col in ["Unit_Price", "Total_QTY", "Total_Price"]:
-                    entry = tk.Entry(row_frame, width=col_width+1, relief='flat', state='readonly')
-                    entry.grid(row=0, column=col_idx, sticky='ew')
-                    row_entries.append(entry)
-                else:
-                    entry = tk.Entry(row_frame, width=col_width+1, relief='sunken')
-                    entry.bind('<KeyRelease>', lambda e, r=row_number: self.calculate_totals(r))
-                    entry.grid(row=0, column=col_idx, sticky='ew')
-                    row_entries.append(entry)
-                
-                row_frame.columnconfigure(col_idx, weight=1)
-            
-            return row_entries
-
-        def add_three_rows():
-            current_row_count = len(self.entries)
-            for i in range(3):
-                bg_color = 'white' if (current_row_count + i) % 2 == 0 else '#f0f0f0'
-                row_entries = create_row(self.rows_frame, current_row_count + i, bg_color)
-                self.entries.append(row_entries)
-
-        add_three_rows()
-
-        # Buttons Frame
-        button_frame = tk.Frame(form_frame)
-        button_frame.grid(row=4, column=0, columnspan=len(columns), pady=10, sticky='ew')
-        
-        tk.Button(button_frame, text="➕ Add 3 More Rows", command=add_three_rows,
-                bg='#4CAF50', fg='white').grid(row=0, column=0, padx=5, sticky='w')
-        tk.Button(button_frame, text="💾 Save Invoice", 
-                command=lambda: self.save_invoice(sales_col, customers_col,products_col),
-                bg='#2196F3', fg='white').grid(row=0, column=1, padx=5, sticky='e')
-        
-        button_frame.columnconfigure(0, weight=1)
-        button_frame.columnconfigure(1, weight=1)
-
-    def new_Purchase_invoice(self, user_role):
-        # Clear current window
-        for widget in self.root.winfo_children():
-            widget.destroy()
-
-        # Initialize product mappings
-        self.product_map = {}
-        self.name_to_code = {}
-        
-        # Create top bar
-        self.topbar(show_back_button=True)
-
-        # MongoDB collections
-        customers_col = self.get_collection_by_name("Suppliers")
-        sales_col = self.get_collection_by_name("Purchases")
-        products_col = self.get_collection_by_name("Materials")
-
-        # Main form frame
-        form_frame = tk.Frame(self.root, padx=20, pady=20)
-        form_frame.pack(fill=tk.BOTH, expand=True)
-
-        # Customer Selection Frame
-        customer_frame = tk.Frame(form_frame, bd=1, relief=tk.SOLID, padx=5, pady=5)
-        customer_frame.grid(row=0, column=0, columnspan=2, sticky='w', pady=5)
-
-        # Create bidirectional customer mappings
-        self.customer_code_map = {}  # name -> code
-        self.code_name_map = {}      # code -> name
-        self.customer_balance_map = {}  # name -> balance
-
-        # Populate customer data
-        all_customers = []
-        all_codes = []
-        for cust in customers_col.find():
-            name = cust.get('Name', '')
-            code = str(cust.get('Code', ''))
-            balance = cust.get('Balance', 0)
-            
-            self.customer_code_map[name] = code
-            self.code_name_map[code] = name
-            self.customer_balance_map[name] = balance
-            all_customers.append(name)
-            all_codes.append(code)
-
-        # Customer Name Combobox
-        tk.Label(customer_frame, text=self.t("Supplier Name"), font=("Arial", 12, "bold")).grid(row=0, column=0, sticky='w')
-        self.customer_name_var = tk.StringVar()
-        self.customer_name_cb = ttk.Combobox(customer_frame, textvariable=self.customer_name_var, values=sorted(all_customers))
-        self.customer_name_cb.grid(row=0, column=1, padx=5, sticky='ew')
-
-        # Customer Code Combobox
-        tk.Label(customer_frame, text=self.t("Supplier Code"), font=("Arial", 12, "bold")).grid(row=0, column=2, sticky='w')
         self.customer_code_var = tk.StringVar()
         self.customer_code_cb = ttk.Combobox(customer_frame, textvariable=self.customer_code_var, values=sorted(all_codes))
         self.customer_code_cb.grid(row=0, column=3, padx=5, sticky='ew')
@@ -1233,10 +959,6 @@ class SalesSystemApp:
             return self.customers_collection
         elif collection_name == "Suppliers":
             return self.suppliers_collection
-        elif collection_name =="Materials":
-            return self.materials_collection
-        elif collection_name =="Purchases":
-            return self.purchases_collection
         elif collection_name == "Shipping":
             return self.shipping_collection
         elif collection_name == "Orders":
@@ -1725,7 +1447,7 @@ class SalesSystemApp:
     def upload_pdf_to_cloudinary(self,file_path_param):
         # import cloudinary.uploader
         try:
-            response = cloudinary.uploader.upload(file_path_param, resource_type="raw")
+            response = cloudinary.uploader.upload(file_path_param, resource_type="raw",flags="inline")
             return response['secure_url']
         except Exception as e:
             print(f"[Cloudinary Upload Error]: {e}")

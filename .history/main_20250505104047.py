@@ -81,11 +81,9 @@ class SalesSystemApp:
             "Materials": {"Arabic": "الخامات", "English": "Materials"},
             "Employees": {"Arabic": "الموظفين", "English": "Employees"},
             "Customer Name":{"Arabic": "العميل:", "English": "Customer:"},
-            "Supplier Name":{"Arabic": "المورد:", "English": "Supplier:"},
             "Previous Balance":{"Arabic": "الحساب السابق:", "English": "Previous Balance:"},
             "Paid Money":{"Arabic": "المبلغ المدفوع:", "English": "Paid Money:"},
             "Customer Code":{"Arabic": "كود العميل:", "English": "Customer Code:"},
-            "Supplier Code":{"Arabic": "كود المورد:", "English": "Supplier Code:"},
             "Payment Method":{"Arabic": "طريقة الدفع:", "English": "Payment Method:"},
         }
         self.db = None
@@ -691,13 +689,13 @@ class SalesSystemApp:
             all_codes.append(code)
 
         # Customer Name Combobox
-        tk.Label(customer_frame, text=self.t("Supplier Name"), font=("Arial", 12, "bold")).grid(row=0, column=0, sticky='w')
+        tk.Label(customer_frame, text=self.t("Customer Name"), font=("Arial", 12, "bold")).grid(row=0, column=0, sticky='w')
         self.customer_name_var = tk.StringVar()
         self.customer_name_cb = ttk.Combobox(customer_frame, textvariable=self.customer_name_var, values=sorted(all_customers))
         self.customer_name_cb.grid(row=0, column=1, padx=5, sticky='ew')
 
         # Customer Code Combobox
-        tk.Label(customer_frame, text=self.t("Supplier Code"), font=("Arial", 12, "bold")).grid(row=0, column=2, sticky='w')
+        tk.Label(customer_frame, text=self.t("Customer Code"), font=("Arial", 12, "bold")).grid(row=0, column=2, sticky='w')
         self.customer_code_var = tk.StringVar()
         self.customer_code_cb = ttk.Combobox(customer_frame, textvariable=self.customer_code_var, values=sorted(all_codes))
         self.customer_code_cb.grid(row=0, column=3, padx=5, sticky='ew')
