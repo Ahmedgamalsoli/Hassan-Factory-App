@@ -1682,6 +1682,13 @@ class SalesSystemApp:
         existing_record = current_collection.find_one({columns[id_index]: record_id})
 
         if not existing_record:
+            try:
+                record_id = str(record_id)
+                existing_record = current_collection.find_one({columns[id_index]: record_id})
+            except ValueError:
+                pass
+
+        if not existing_record:
             messagebox.showerror("Error", "Could not find record in database")
             return
 
