@@ -4,7 +4,7 @@ from PIL import Image, ImageTk, ImageDraw  # Import Pillow classes
 import pandas as pd
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
-from datetime import datetime , time
+from datetime import datetime
 from fpdf import FPDF
 import sqlite3
 import csv
@@ -1573,7 +1573,7 @@ class SalesSystemApp:
                 if value:
                     try:
                         value_date = datetime.strptime(value, '%d-%m-%Y').date()
-                        value = datetime.combine(value_date, time.min)
+                        value = datetime.combine(value_date, datetime.time.min)
                     except Exception as e:
                         messagebox.showerror("Error", f"Invalid date format for {field}: {e}")
                         return
@@ -1688,12 +1688,13 @@ class SalesSystemApp:
                 if value:
                     try:
                         value_date = datetime.strptime(value, '%d-%m-%Y').date()
-                        value = datetime.combine(value_date, time.min)
+                        value = datetime.combine(value_date, time.min)  # Use 'time.min' here
                     except Exception as e:
                         messagebox.showerror("Error", f"Invalid date format for {field}: {e}")
                         return
                 else:
-                    value = existing_value  # Keep old date if no new input
+                    messagebox.showwarning("Warning", f"Please enter a value for {field}")
+                    return
 
             elif "pic" in field.lower():
                 local_image_path = getattr(widget, 'image_path', None)
@@ -1892,7 +1893,7 @@ class SalesSystemApp:
                 if value:
                     try:
                         value = datetime.strptime(value, '%d-%m-%Y').date()
-                        value = datetime.combine(value, time.min) #Must do this to be comaptible with mongodb's Date type 
+                        value = datetime.combine(value, datetime.time.min) #Must do this to be comaptible with mongodb's Date type 
                     except Exception as e:
                         print(f"ValueError: {e}")
                         messagebox.showerror("Error", f"Invalid date format for {field}")
@@ -1988,7 +1989,7 @@ class SalesSystemApp:
                 if value:
                     try:
                         value = datetime.strptime(value, '%d-%m-%Y').date()
-                        value = datetime.combine(value, time.min) #Must do this to be comaptible with mongodb's Date type 
+                        value = datetime.combine(value, datetime.time.min) #Must do this to be comaptible with mongodb's Date type 
 
                     except Exception as e:
                         print(f"ValueError: {e}")

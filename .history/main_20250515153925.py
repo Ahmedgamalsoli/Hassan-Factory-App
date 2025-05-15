@@ -1988,7 +1988,7 @@ class SalesSystemApp:
                 if value:
                     try:
                         value = datetime.strptime(value, '%d-%m-%Y').date()
-                        value = datetime.combine(value, time.min) #Must do this to be comaptible with mongodb's Date type 
+                        value = datetime.combine(value, datetime.time.min) #Must do this to be comaptible with mongodb's Date type 
 
                     except Exception as e:
                         print(f"ValueError: {e}")

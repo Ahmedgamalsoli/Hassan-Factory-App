@@ -4,7 +4,7 @@ from PIL import Image, ImageTk, ImageDraw  # Import Pillow classes
 import pandas as pd
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
-from datetime import datetime , time
+from datetime import datetime
 from fpdf import FPDF
 import sqlite3
 import csv
@@ -158,9 +158,9 @@ class SalesSystemApp:
             "category":{"Arabic": "التصنيف", "English": "category"},
             "stock_quantity":{"Arabic": "كمية المخزون", "English": "stock Quantity"},
             "Specs":{"Arabic": "المواصفات", "English": "Specs"},
-            "product_code":{"Arabic": "كود المنتج", "English": "product Code"},
-            "Units":{"Arabic": "الوحدات", "English": "Units"},
-            "prod_pic":{"Arabic": "صورة المنتج", "English": "product Picture"},
+            "product_code":{"Arabic": "كوود المنتج", "English": "product Code"},
+            "":{"Arabic": "", "English": ""},
+            "":{"Arabic": "", "English": ""},
             "":{"Arabic": "", "English": ""},
         }
         
@@ -1573,7 +1573,7 @@ class SalesSystemApp:
                 if value:
                     try:
                         value_date = datetime.strptime(value, '%d-%m-%Y').date()
-                        value = datetime.combine(value_date, time.min)
+                        value = datetime.combine(value_date, datetime.time.min)
                     except Exception as e:
                         messagebox.showerror("Error", f"Invalid date format for {field}: {e}")
                         return
@@ -1688,7 +1688,7 @@ class SalesSystemApp:
                 if value:
                     try:
                         value_date = datetime.strptime(value, '%d-%m-%Y').date()
-                        value = datetime.combine(value_date, time.min)
+                        value = datetime.combine(value_date, datetime.time.min)
                     except Exception as e:
                         messagebox.showerror("Error", f"Invalid date format for {field}: {e}")
                         return
@@ -1892,7 +1892,7 @@ class SalesSystemApp:
                 if value:
                     try:
                         value = datetime.strptime(value, '%d-%m-%Y').date()
-                        value = datetime.combine(value, time.min) #Must do this to be comaptible with mongodb's Date type 
+                        value = datetime.combine(value, datetime.time.min) #Must do this to be comaptible with mongodb's Date type 
                     except Exception as e:
                         print(f"ValueError: {e}")
                         messagebox.showerror("Error", f"Invalid date format for {field}")
@@ -1988,7 +1988,7 @@ class SalesSystemApp:
                 if value:
                     try:
                         value = datetime.strptime(value, '%d-%m-%Y').date()
-                        value = datetime.combine(value, time.min) #Must do this to be comaptible with mongodb's Date type 
+                        value = datetime.combine(value, datetime.time.min) #Must do this to be comaptible with mongodb's Date type 
 
                     except Exception as e:
                         print(f"ValueError: {e}")
@@ -2427,7 +2427,7 @@ class SalesSystemApp:
                 {"_id": customer["_id"]},
                 {
                     "$set": {
-                        "Last_purchase_date": datetime.now(),
+                        "Last_purchase": datetime.now(),
                         "Balance": new_balance
                     },
                     "$inc": {
