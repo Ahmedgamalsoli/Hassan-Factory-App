@@ -2540,7 +2540,7 @@ class SalesSystemApp:
             # حفظ الفاتورة في قاعدة البيانات
             purchase_col.insert_one(invoice_data)
 
-            messagebox.showinfo("نجاح", f"تم حفظ فاتورة الشراء رقم {invoice_data['Receipt_Number']}")
+            messagebox.showinfo("نجاح", f"تم حفظ الفاتورة رقم {invoice_data['Receipt_Number']}")
             print(3)
             self.clear_invoice_form_purchase()
             print(4)

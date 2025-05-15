@@ -80,11 +80,7 @@ class SalesSystemApp:
         self.stop_event = threading.Event()
         
         self.image_refs = []
-        #         elif collection_name == "Sales_Header":
-        #     return [self.t("Product_code"), self.t("product_name"), self.t("unit"),self.t("numbering"),self.t("QTY"),self.t("Discount Type"),self.t("Discount Value"),self.t("Total_QTY"),self.t("Unit_Price"),self.t("Total_Price")]
-       
-        # elif collection_name == "Materials_Header":
-        #     return [self.t("Material_code"), self.t("Material_name"), self.t("unit"),self.t("numbering"),self.t("QTY"),self.t("Discount Type"),self.t("Discount Value"),self.t("Total_QTY"),self.t("Unit_Price"),self.t("Total_Price")]
+        
         self.language = "Arabic"  # default language
         self.translations = {
             "Add New Product": {"Arabic": "امر انتاج", "English": "Production order"},
@@ -108,22 +104,7 @@ class SalesSystemApp:
             "Customer Code":{"Arabic": "كود العميل:", "English": "Customer Code:"},
             "Supplier Code":{"Arabic": "كود المورد:", "English": "Supplier Code:"},
             "Payment Method":{"Arabic": "طريقة الدفع:", "English": "Payment Method:"},
-            "Product_code":{"Arabic": "كود المنتج", "English": "Product Code"},
-            "product_name":{"Arabic": "اسم المنتج", "English": "Product Name"},
-            "unit":{"Arabic": "الوحدة", "English": "Unit:"},
-            "numbering":{"Arabic": "العدد", "English": "Numbering"},
-            "QTY":{"Arabic": "الكمية", "English": "Quantity"},
-            "Discount Type":{"Arabic": "نوع الخصم", "English": "Discount Type"},
-            "Discount Value":{"Arabic": "قيمة الخصم", "English": "Discount Value"},
-            "Total_QTY":{"Arabic": "إجمالي الكمية", "English": "Total Quantity"},
-            "Unit_Price":{"Arabic": "سعر الوحدة", "English": "Unit Price"},
-            "Total_Price":{"Arabic": "إجمالي السعر", "English": "Total Price"},
-            "Material_code":{"Arabic": "كود الخام", "English": "Material Code"},
-            "Material_name":{"Arabic": "اسم الخام", "English": "Material Name"},
-            "➕ Add 3 More Rows":{"Arabic": "➕ أضف 3 صفوف أخرى", "English": "➕ Add 3 More Rows"},
-            "💾 Save Invoice":{"Arabic": "💾 حفظ الفاتورة", "English": "💾 Save Invoice"},
         }
-        
         self.db = None
         self.db_name = tk.StringVar()
         self.table_name = tk.StringVar()
@@ -581,7 +562,7 @@ class SalesSystemApp:
         header_row = tk.Frame(form_frame, bg='#f0f0f0')
         header_row.grid(row=2, column=0, columnspan=len(columns), sticky='nsew', pady=(20, 0))
         for col_idx, col in enumerate(columns):
-            tk.Label(header_row, text=self.t(col), width=col_width, relief='ridge',
+            tk.Label(header_row, text=col, width=col_width, relief='ridge',
                     bg='#f0f0f0', anchor='w').grid(row=0, column=col_idx, sticky='ew')
             header_row.columnconfigure(col_idx, weight=1)
 
@@ -673,9 +654,9 @@ class SalesSystemApp:
         button_frame = tk.Frame(form_frame)
         button_frame.grid(row=4, column=0, columnspan=len(columns), pady=10, sticky='ew')
         
-        tk.Button(button_frame, text=self.t("➕ Add 3 More Rows"), command=add_three_rows,
+        tk.Button(button_frame, text="➕ Add 3 More Rows", command=add_three_rows,
                 bg='#4CAF50', fg='white').grid(row=0, column=0, padx=5, sticky='w')
-        tk.Button(button_frame, text=self.t("💾 Save Invoice"), 
+        tk.Button(button_frame, text="💾 Save Invoice", 
                 command=lambda: self.save_invoice(sales_col, customers_col,products_col),
                 bg='#2196F3', fg='white').grid(row=0, column=1, padx=5, sticky='e')
         
@@ -851,7 +832,7 @@ class SalesSystemApp:
         header_row = tk.Frame(form_frame, bg='#f0f0f0')
         header_row.grid(row=2, column=0, columnspan=len(columns), sticky='nsew', pady=(20, 0))
         for col_idx, col in enumerate(columns):
-            tk.Label(header_row, text=self.t(col), width=col_width, relief='ridge',
+            tk.Label(header_row, text=col, width=col_width, relief='ridge',
                     bg='#f0f0f0', anchor='w').grid(row=0, column=col_idx, sticky='ew')
             header_row.columnconfigure(col_idx, weight=1)
 
@@ -943,9 +924,9 @@ class SalesSystemApp:
         button_frame = tk.Frame(form_frame)
         button_frame.grid(row=4, column=0, columnspan=len(columns), pady=10, sticky='ew')
         
-        tk.Button(button_frame, text=self.t("➕ Add 3 More Rows"), command=add_three_rows,
+        tk.Button(button_frame, text="➕ Add 3 More Rows", command=add_three_rows,
                 bg='#4CAF50', fg='white').grid(row=0, column=0, padx=5, sticky='w')
-        tk.Button(button_frame, text=self.t("💾 Save Invoice"), 
+        tk.Button(button_frame, text="💾 Save Invoice", 
                 command=lambda: self.save_invoice_purchase(purchases_col, suppliers_col,materials_col),
                 bg='#2196F3', fg='white').grid(row=0, column=1, padx=5, sticky='e')
         
@@ -2037,12 +2018,6 @@ class SalesSystemApp:
         elif collection_name == "Sales":
             return ["product_code", "Product_name", "unit", "QTY", "numbering","Total_QTY","Unit_Price","Total Price","Date","Reciept_Number","Customer_name","Customer_code"]
 
-        # elif collection_name == "Sales_Header":
-        #     return [self.t("Product_code"), self.t("product_name"), self.t("unit"),self.t("numbering"),self.t("QTY"),self.t("Discount Type"),self.t("Discount Value"),self.t("Total_QTY"),self.t("Unit_Price"),self.t("Total_Price")]
-       
-        # elif collection_name == "Materials_Header":
-        #     return [self.t("Material_code"), self.t("Material_name"), self.t("unit"),self.t("numbering"),self.t("QTY"),self.t("Discount Type"),self.t("Discount Value"),self.t("Total_QTY"),self.t("Unit_Price"),self.t("Total_Price")]
-      
         elif collection_name == "Sales_Header":
             return ["Product_code", "product_name", "unit","numbering","QTY","Discount Type","Discount Value","Total_QTY","Unit_Price","Total_Price"]
        
@@ -2176,38 +2151,6 @@ class SalesSystemApp:
             sales_col = self.get_collection_by_name('Sales')
             print(10)
             last_invoice = sales_col.find_one(sort=[("Receipt_Number", -1)])
-            print(20)
-            # التحقق من وجود الفاتورة وتنسيقها
-            last_number = 0
-            if last_invoice:
-                print(1)
-                reciept_number = last_invoice.get("Receipt_Number")
-                if (
-                    reciept_number 
-                    and isinstance(reciept_number, str) 
-                    and reciept_number.startswith("INV-")
-                ):
-                    try:
-                        last_number = int(reciept_number.split("-")[-1])
-                        print(2)
-                    except (ValueError, IndexError):
-                        last_number = 0
-                        print(3)
-            
-            new_number = last_number + 1
-            # print(4)
-            return f"INV-{new_number:04d}"
-        
-        except Exception as e:
-            messagebox.showerror("خطأ", f"فشل توليد الرقم التسلسلي: {str(e)}")
-            return None
-    def generate_invoice_number_purchase(self):
-        """توليد رقم فاتورة تسلسلي"""
-        try:
-            print(0)
-            purchaes_col = self.get_collection_by_name('Purchases')
-            print(10)
-            last_invoice = purchaes_col.find_one(sort=[("Receipt_Number", -1)])
             print(20)
             # التحقق من وجود الفاتورة وتنسيقها
             last_number = 0
@@ -2384,7 +2327,7 @@ class SalesSystemApp:
             # حفظ الفاتورة في قاعدة البيانات
             sales_col.insert_one(invoice_data)
 
-            messagebox.showinfo("نجاح", f"تم حفظ فاتورة البيع رقم {invoice_data['Receipt_Number']}")
+            messagebox.showinfo("نجاح", f"تم حفظ الفاتورة رقم {invoice_data['Receipt_Number']}")
             self.clear_invoice_form()
 
         except Exception as e:
@@ -2479,7 +2422,7 @@ class SalesSystemApp:
                 messagebox.showerror("خطأ", "لا توجد عناصر في الفاتورة!")
                 return
             # توليد رقم الفاتورة
-            invoice_number = self.generate_invoice_number_purchase()
+            invoice_number = self.generate_invoice_number()
             if not invoice_number:
                 return
             # إنشاء بيانات الفاتورة الكاملة
@@ -2540,9 +2483,9 @@ class SalesSystemApp:
             # حفظ الفاتورة في قاعدة البيانات
             purchase_col.insert_one(invoice_data)
 
-            messagebox.showinfo("نجاح", f"تم حفظ فاتورة الشراء رقم {invoice_data['Receipt_Number']}")
+            messagebox.showinfo("نجاح", f"تم حفظ الفاتورة رقم {invoice_data['Receipt_Number']}")
             print(3)
-            self.clear_invoice_form_purchase()
+            self.clear_invoice_form()
             print(4)
         except Exception as e:
             messagebox.showerror("خطأ", f"فشل في العملية: {str(e)}")
@@ -2567,27 +2510,6 @@ class SalesSystemApp:
                 # إعادة إنشاء الصفوف الأساسية
                 # إذا كنت تستخدم دالة لإضافة الصفوف
                 self.new_sales_invoice(self.user_role)
-            except Exception as e:
-                messagebox.showerror("خطأ", f"فشل في تنظيف الحقول: {str(e)}")
-    def clear_invoice_form_purchase(self):
-            """تنظيف جميع حقول الفاتورة"""
-            try:
-                # تنظيف Combobox العميل
-                self.supplier_name_var.set('')
-                
-                # تنظيف حقول العناصر
-                for row in self.entries:
-                    for entry in row:
-                        if isinstance(entry, ttk.Combobox):
-                            entry.set('')
-                        elif isinstance(entry, tk.Entry):
-                            entry.delete(0, tk.END)
-                
-                # إعادة تعيين القائمة
-                self.entries = []
-                # إعادة إنشاء الصفوف الأساسية
-                # إذا كنت تستخدم دالة لإضافة الصفوف
-                self.new_Purchase_invoice(self.user_role)
             except Exception as e:
                 messagebox.showerror("خطأ", f"فشل في تنظيف الحقول: {str(e)}")
                 
@@ -2618,7 +2540,7 @@ class SalesSystemApp:
 
             # إنشاء مسار الحفظ
             desktop = os.path.join(os.path.expanduser('~'), 'Desktop')
-            file_name = f"فاتورة بيع_{str(invoice_data['Receipt_Number']).replace("INV-", "").strip()}.pdf"
+            file_name = f"فاتورة_{invoice_data['Receipt_Number']}.pdf"
             pdf_path = os.path.join(desktop, file_name)
 
             # إعداد مستند PDF
@@ -2768,7 +2690,7 @@ class SalesSystemApp:
 
             # إنشاء مسار الحفظ
             desktop = os.path.join(os.path.expanduser('~'), 'Desktop')
-            file_name = f"فاتورة شراء_{invoice_data['Receipt_Number']}.pdf"
+            file_name = f"فاتورة_{invoice_data['Receipt_Number']}.pdf"
             pdf_path = os.path.join(desktop, file_name)
 
             # إعداد مستند PDF
@@ -2784,7 +2706,7 @@ class SalesSystemApp:
 
             # ========== العنوان المركزي ==========
             invoice_number = str(invoice_data['Receipt_Number']).replace("INV-", "").strip()
-            invoice_title = f"فاتورة شراء رقم {invoice_number}"
+            invoice_title = f"فاتورة بيع رقم {invoice_number}"
             
             # رسم الإطار حول العنوان
             frame_width = 4*cm
@@ -2817,10 +2739,10 @@ class SalesSystemApp:
             c.setFont("Arabic", 12)
             customer_fields = [
                 f"التاريخ:       {invoice_data['Date']}",            
-                f"اسم المورد:    {invoice_data['supplier_info']['name']}",
-                f"الكود:         {invoice_data['supplier_info']['code']}",
-                f"العنوان:       {invoice_data['supplier_info']['address']}",
-                f"التليفون:      {invoice_data['supplier_info']['phone1']}"
+                f"اسم المورد:    {invoice_data['Supplier_info']['name']}",
+                f"الكود:         {invoice_data['Supplier_info']['code']}",
+                f"العنوان:       {invoice_data['Supplier_info']['address']}",
+                f"التليفون:      {invoice_data['Supplier_info']['phone1']}"
             ]
             
             for line in customer_fields:

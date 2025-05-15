@@ -121,9 +121,13 @@ class SalesSystemApp:
             "Material_code":{"Arabic": "كود الخام", "English": "Material Code"},
             "Material_name":{"Arabic": "اسم الخام", "English": "Material Name"},
             "➕ Add 3 More Rows":{"Arabic": "➕ أضف 3 صفوف أخرى", "English": "➕ Add 3 More Rows"},
-            "💾 Save Invoice":{"Arabic": "💾 حفظ الفاتورة", "English": "💾 Save Invoice"},
+            "💾 Save Invoice":{"Arabic": "💾 حفظ الفاتورة, "English": "💾 Save Invoice"},
         }
-        
+                tk.Button(button_frame, text=self.t("➕ Add 3 More Rows"), command=add_three_rows,
+                bg='#4CAF50', fg='white').grid(row=0, column=0, padx=5, sticky='w')
+        tk.Button(button_frame, text=self.t("💾 Save Invoice"), 
+                command=lambda: self.save_invoice(sales_col, customers_col,products_col),
+                bg='#2196F3', fg='white').grid(row=0, column=1, padx=5, sticky='e')
         self.db = None
         self.db_name = tk.StringVar()
         self.table_name = tk.StringVar()
@@ -2384,7 +2388,7 @@ class SalesSystemApp:
             # حفظ الفاتورة في قاعدة البيانات
             sales_col.insert_one(invoice_data)
 
-            messagebox.showinfo("نجاح", f"تم حفظ فاتورة البيع رقم {invoice_data['Receipt_Number']}")
+            messagebox.showinfo("نجاح", f"تم حفظ الفاتورة رقم {invoice_data['Receipt_Number']}")
             self.clear_invoice_form()
 
         except Exception as e:
@@ -2540,7 +2544,7 @@ class SalesSystemApp:
             # حفظ الفاتورة في قاعدة البيانات
             purchase_col.insert_one(invoice_data)
 
-            messagebox.showinfo("نجاح", f"تم حفظ فاتورة الشراء رقم {invoice_data['Receipt_Number']}")
+            messagebox.showinfo("نجاح", f"تم حفظ الفاتورة رقم {invoice_data['Receipt_Number']}")
             print(3)
             self.clear_invoice_form_purchase()
             print(4)
@@ -2618,7 +2622,7 @@ class SalesSystemApp:
 
             # إنشاء مسار الحفظ
             desktop = os.path.join(os.path.expanduser('~'), 'Desktop')
-            file_name = f"فاتورة بيع_{str(invoice_data['Receipt_Number']).replace("INV-", "").strip()}.pdf"
+            file_name = f"فاتورة_{invoice_data['Receipt_Number']}.pdf"
             pdf_path = os.path.join(desktop, file_name)
 
             # إعداد مستند PDF
@@ -2768,7 +2772,7 @@ class SalesSystemApp:
 
             # إنشاء مسار الحفظ
             desktop = os.path.join(os.path.expanduser('~'), 'Desktop')
-            file_name = f"فاتورة شراء_{invoice_data['Receipt_Number']}.pdf"
+            file_name = f"فاتورة_{invoice_data['Receipt_Number']}.pdf"
             pdf_path = os.path.join(desktop, file_name)
 
             # إعداد مستند PDF
