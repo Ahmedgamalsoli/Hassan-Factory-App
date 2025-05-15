@@ -148,10 +148,10 @@ class SalesSystemApp:
             "Balance":{"Arabic": "صافي الحساب", "English": "Balance"},
             "Last_purchase":{"Arabic": "", "English": "Last Purchase"},
             "Sales":{"Arabic": "عدد المبيعات", "English": "Sales"},
-            # "":{"Arabic": "", "English": ""},
-            # "":{"Arabic": "", "English": ""},
-            # "":{"Arabic": "", "English": ""},
-            # "":{"Arabic": "", "English": ""},
+            "":{"Arabic": "", "English": ""},
+            "":{"Arabic": "", "English": ""},
+            "":{"Arabic": "", "English": ""},
+            "":{"Arabic": "", "English": ""},
         }
         
         self.db = None

@@ -122,36 +122,6 @@ class SalesSystemApp:
             "Material_name":{"Arabic": "اسم الخام", "English": "Material Name"},
             "➕ Add 3 More Rows":{"Arabic": "➕ أضف 3 صفوف أخرى", "English": "➕ Add 3 More Rows"},
             "💾 Save Invoice":{"Arabic": "💾 حفظ الفاتورة", "English": "💾 Save Invoice"},
-            "Search":{"Arabic": "ابحث", "English": "Search"},
-            "Name":{"Arabic": "الاسم", "English": "Name"},
-            "Phone_number1":{"Arabic": "رقم التليفون 1", "English": "Phone Number 1"},
-            "Phone_number2":{"Arabic": "رقم التليفون 2", "English": "Phone Number 2"},
-            "Code":{"Arabic": "كوود", "English": "Code"},
-            "Purchase_mgr_number":{"Arabic": "رقم مدير المشتريات", "English": "Purchase Manager Number"},
-            "Financial_mgr_number":{"Arabic": "رقم مدير المالية", "English": "Financial Manager Number"},
-            "Purchase_mgr_name":{"Arabic": "اسم مديرالمشتريات", "English": "Purchase Manager Name"},
-            "Financial_mgr_name":{"Arabic": "اسم مدير المالية", "English": "Financial Manager Name"},
-            "Email":{"Arabic": "الايميل", "English": "Email"},
-            "Company_address":{"Arabic": "عنوان الشركة", "English": "Company Address"},
-            "Extra_address":{"Arabic": "عنوان اضافي", "English": "Extra Address"},
-            "Maps_link":{"Arabic": "رابط العنوان", "English": "Maps Link"},
-            "Bank_account":{"Arabic": "حساب بنكي", "English": "Bank Account"},
-            "Instapay":{"Arabic": "انستاباي", "English": "Instapay"},
-            "E_wallet":{"Arabic": "محفظه الكترونية", "English": ""},
-            "Accountant_name":{"Arabic": "اسم المحاسب", "English": "Accountant Name"},
-            "Accountant_number":{"Arabic": "رقم المحاسب", "English": "Accountant Number"},
-            "Sales_grade":{"Arabic": "تصنيف قيمة المبيعات", "English": "Sales Grade"},
-            "Growth_grade":{"Arabic": "تصنيف معدل الزيادة", "English": "Growth Grade"},
-            "Frequency_grade":{"Arabic": "تصنيف معدل الشراء", "English": "Frequency Grade"},
-            "Credit":{"Arabic": "دائن", "English": "Credit"},
-            "Debit":{"Arabic": "مدين", "English": "Debit"},
-            "Balance":{"Arabic": "صافي الحساب", "English": "Balance"},
-            "Last_purchase":{"Arabic": "", "English": "Last Purchase"},
-            "Sales":{"Arabic": "عدد المبيعات", "English": "Sales"},
-            # "":{"Arabic": "", "English": ""},
-            # "":{"Arabic": "", "English": ""},
-            # "":{"Arabic": "", "English": ""},
-            # "":{"Arabic": "", "English": ""},
         }
         
         self.db = None
@@ -1336,7 +1306,7 @@ class SalesSystemApp:
             if label == "Id":
                 continue
             
-            tk.Label(form_frame, text=self.t(label), font=("Arial", 12), anchor="w").grid(row=i, column=0, sticky="w", pady=5)
+            tk.Label(form_frame, text=label, font=("Arial", 12), anchor="w").grid(row=i, column=0, sticky="w", pady=5)
 
             if "date" in label.lower():
                 entry = DateEntry(form_frame, font=("Arial", 12), date_pattern='dd-MM-yyyy', width=18)
@@ -1403,7 +1373,7 @@ class SalesSystemApp:
         # Search button now refreshes table, doesn't rebuild everything!
         tk.Button(
             search_frame,
-            text=self.t("Search"),
+            text="Search",
             command=lambda: self.refresh_generic_table(tree, current_collection, collection_name, local_search_query.get())
         ).pack(side="left")
         
@@ -3179,7 +3149,7 @@ class AlwaysOnTopInputDialog(tk.Toplevel):
         self.input_widget = tk.Entry(self)
         self.input_widget.pack(padx=10, pady=10)
         self.input_widget.focus_set()
-
+    
         self.result = None
 
         self.ok_button = tk.Button(self, text="OK", command=self.on_ok)

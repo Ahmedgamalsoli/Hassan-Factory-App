@@ -146,12 +146,12 @@ class SalesSystemApp:
             "Credit":{"Arabic": "دائن", "English": "Credit"},
             "Debit":{"Arabic": "مدين", "English": "Debit"},
             "Balance":{"Arabic": "صافي الحساب", "English": "Balance"},
-            "Last_purchase":{"Arabic": "", "English": "Last Purchase"},
-            "Sales":{"Arabic": "عدد المبيعات", "English": "Sales"},
-            # "":{"Arabic": "", "English": ""},
-            # "":{"Arabic": "", "English": ""},
-            # "":{"Arabic": "", "English": ""},
-            # "":{"Arabic": "", "English": ""},
+            "Last_purchase":{"Arabic": "", "English": "LastPurchase"},
+            "Sales":{"Arabic": "عدد المبيعات", "English": ""},
+            "":{"Arabic": "", "English": ""},
+            "":{"Arabic": "", "English": ""},
+            "":{"Arabic": "", "English": ""},
+            "":{"Arabic": "", "English": ""},
         }
         
         self.db = None
