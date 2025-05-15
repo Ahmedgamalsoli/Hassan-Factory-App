@@ -142,16 +142,16 @@ class SalesSystemApp:
             "Accountant_number":{"Arabic": "رقم المحاسب", "English": "Accountant Number"},
             "Sales_grade":{"Arabic": "تصنيف قيمة المبيعات", "English": "Sales Grade"},
             "Growth_grade":{"Arabic": "تصنيف معدل الزيادة", "English": "Growth Grade"},
-            "Frequency_grade":{"Arabic": "تصنيف معدل الشراء", "English": "Frequency Grade"},
-            "Credit":{"Arabic": "دائن", "English": "Credit"},
-            "Debit":{"Arabic": "مدين", "English": "Debit"},
-            "Balance":{"Arabic": "صافي الحساب", "English": "Balance"},
-            "Last_purchase":{"Arabic": "", "English": "Last Purchase"},
-            "Sales":{"Arabic": "عدد المبيعات", "English": "Sales"},
-            # "":{"Arabic": "", "English": ""},
-            # "":{"Arabic": "", "English": ""},
-            # "":{"Arabic": "", "English": ""},
-            # "":{"Arabic": "", "English": ""},
+            "Frequency_grade":{"Arabic": "تصنيف معدل الشراء", "English": ""},
+            "Credit":{"Arabic": "دائن", "English": ""},
+            "Debit":{"Arabic": "مدين", "English": ""},
+            "Balance":{"Arabic": "صافي الحساب", "English": ""},
+            "Last_purchase":{"Arabic": "", "English": ""},
+            "Sales":{"Arabic": "عدد المبيعات", "English": ""},
+            "":{"Arabic": "", "English": ""},
+            "":{"Arabic": "", "English": ""},
+            "":{"Arabic": "", "English": ""},
+            "":{"Arabic": "", "English": ""},
         }
         
         self.db = None
@@ -1450,19 +1450,12 @@ class SalesSystemApp:
             current_collection = self.get_collection_by_name(collection_name)
             first_document = current_collection.find_one({columns[id_index]: unique_id})
 
-            if not first_document and isinstance(unique_id, str):
-                try:
-                    first_document = current_collection.find_one({columns[id_index]: int(unique_id)})
-                except ValueError:
-                    pass
-
-            # If not found, and type is int, try converting to str
-            elif not first_document and isinstance(unique_id, int):
-                first_document = current_collection.find_one({columns[id_index]: str(unique_id)})
-
         except IndexError:
             return
 
+        if not first_document:
+            print(1)
+            return
 
         for field, entry in self.entries.items():
             value = first_document.get(field, "")
@@ -1579,7 +1572,7 @@ class SalesSystemApp:
                 except Exception as e:
                     messagebox.showerror("Upload Error", f"Failed to upload image: {e}")
                     return
-            elif any(word in field.lower() for word in ["stock_quantity","instapay","bank_account","e-wallet"]):
+            elif any(word in field.lower() for word in ["stock_quantity","instapay","bank_account","e-wallet"]) or field == "Code":
                 value = widget.get()
                 try: 
                     value = int(value)

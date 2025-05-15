@@ -122,36 +122,7 @@ class SalesSystemApp:
             "Material_name":{"Arabic": "اسم الخام", "English": "Material Name"},
             "➕ Add 3 More Rows":{"Arabic": "➕ أضف 3 صفوف أخرى", "English": "➕ Add 3 More Rows"},
             "💾 Save Invoice":{"Arabic": "💾 حفظ الفاتورة", "English": "💾 Save Invoice"},
-            "Search":{"Arabic": "ابحث", "English": "Search"},
-            "Name":{"Arabic": "الاسم", "English": "Name"},
-            "Phone_number1":{"Arabic": "رقم التليفون 1", "English": "Phone Number 1"},
-            "Phone_number2":{"Arabic": "رقم التليفون 2", "English": "Phone Number 2"},
-            "Code":{"Arabic": "كوود", "English": "Code"},
-            "Purchase_mgr_number":{"Arabic": "رقم مدير المشتريات", "English": "Purchase Manager Number"},
-            "Financial_mgr_number":{"Arabic": "رقم مدير المالية", "English": "Financial Manager Number"},
-            "Purchase_mgr_name":{"Arabic": "اسم مديرالمشتريات", "English": "Purchase Manager Name"},
-            "Financial_mgr_name":{"Arabic": "اسم مدير المالية", "English": "Financial Manager Name"},
-            "Email":{"Arabic": "الايميل", "English": "Email"},
-            "Company_address":{"Arabic": "عنوان الشركة", "English": "Company Address"},
-            "Extra_address":{"Arabic": "عنوان اضافي", "English": "Extra Address"},
-            "Maps_link":{"Arabic": "رابط العنوان", "English": "Maps Link"},
-            "Bank_account":{"Arabic": "حساب بنكي", "English": "Bank Account"},
-            "Instapay":{"Arabic": "انستاباي", "English": "Instapay"},
-            "E_wallet":{"Arabic": "محفظه الكترونية", "English": ""},
-            "Accountant_name":{"Arabic": "اسم المحاسب", "English": "Accountant Name"},
-            "Accountant_number":{"Arabic": "رقم المحاسب", "English": "Accountant Number"},
-            "Sales_grade":{"Arabic": "تصنيف قيمة المبيعات", "English": "Sales Grade"},
-            "Growth_grade":{"Arabic": "تصنيف معدل الزيادة", "English": "Growth Grade"},
-            "Frequency_grade":{"Arabic": "تصنيف معدل الشراء", "English": "Frequency Grade"},
-            "Credit":{"Arabic": "دائن", "English": "Credit"},
-            "Debit":{"Arabic": "مدين", "English": "Debit"},
-            "Balance":{"Arabic": "صافي الحساب", "English": "Balance"},
-            "Last_purchase":{"Arabic": "", "English": "Last Purchase"},
-            "Sales":{"Arabic": "عدد المبيعات", "English": "Sales"},
-            # "":{"Arabic": "", "English": ""},
-            # "":{"Arabic": "", "English": ""},
-            # "":{"Arabic": "", "English": ""},
-            # "":{"Arabic": "", "English": ""},
+            "Search":{"Arabic": "بحث", "English": "Search"},
         }
         
         self.db = None
@@ -1336,7 +1307,7 @@ class SalesSystemApp:
             if label == "Id":
                 continue
             
-            tk.Label(form_frame, text=self.t(label), font=("Arial", 12), anchor="w").grid(row=i, column=0, sticky="w", pady=5)
+            tk.Label(form_frame, text=label, font=("Arial", 12), anchor="w").grid(row=i, column=0, sticky="w", pady=5)
 
             if "date" in label.lower():
                 entry = DateEntry(form_frame, font=("Arial", 12), date_pattern='dd-MM-yyyy', width=18)
@@ -1450,19 +1421,12 @@ class SalesSystemApp:
             current_collection = self.get_collection_by_name(collection_name)
             first_document = current_collection.find_one({columns[id_index]: unique_id})
 
-            if not first_document and isinstance(unique_id, str):
-                try:
-                    first_document = current_collection.find_one({columns[id_index]: int(unique_id)})
-                except ValueError:
-                    pass
-
-            # If not found, and type is int, try converting to str
-            elif not first_document and isinstance(unique_id, int):
-                first_document = current_collection.find_one({columns[id_index]: str(unique_id)})
-
         except IndexError:
             return
 
+        if not first_document:
+            print(1)
+            return
 
         for field, entry in self.entries.items():
             value = first_document.get(field, "")
@@ -1579,7 +1543,7 @@ class SalesSystemApp:
                 except Exception as e:
                     messagebox.showerror("Upload Error", f"Failed to upload image: {e}")
                     return
-            elif any(word in field.lower() for word in ["stock_quantity","instapay","bank_account","e-wallet"]):
+            elif any(word in field.lower() for word in ["stock_quantity","instapay","bank_account","e-wallet"]) or field == "Code":
                 value = widget.get()
                 try: 
                     value = int(value)

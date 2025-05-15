@@ -126,32 +126,33 @@ class SalesSystemApp:
             "Name":{"Arabic": "الاسم", "English": "Name"},
             "Phone_number1":{"Arabic": "رقم التليفون 1", "English": "Phone Number 1"},
             "Phone_number2":{"Arabic": "رقم التليفون 2", "English": "Phone Number 2"},
-            "Code":{"Arabic": "كوود", "English": "Code"},
-            "Purchase_mgr_number":{"Arabic": "رقم مدير المشتريات", "English": "Purchase Manager Number"},
-            "Financial_mgr_number":{"Arabic": "رقم مدير المالية", "English": "Financial Manager Number"},
-            "Purchase_mgr_name":{"Arabic": "اسم مديرالمشتريات", "English": "Purchase Manager Name"},
-            "Financial_mgr_name":{"Arabic": "اسم مدير المالية", "English": "Financial Manager Name"},
-            "Email":{"Arabic": "الايميل", "English": "Email"},
-            "Company_address":{"Arabic": "عنوان الشركة", "English": "Company Address"},
-            "Extra_address":{"Arabic": "عنوان اضافي", "English": "Extra Address"},
-            "Maps_link":{"Arabic": "رابط العنوان", "English": "Maps Link"},
-            "Bank_account":{"Arabic": "حساب بنكي", "English": "Bank Account"},
-            "Instapay":{"Arabic": "انستاباي", "English": "Instapay"},
-            "E_wallet":{"Arabic": "محفظه الكترونية", "English": ""},
-            "Accountant_name":{"Arabic": "اسم المحاسب", "English": "Accountant Name"},
-            "Accountant_number":{"Arabic": "رقم المحاسب", "English": "Accountant Number"},
-            "Sales_grade":{"Arabic": "تصنيف قيمة المبيعات", "English": "Sales Grade"},
-            "Growth_grade":{"Arabic": "تصنيف معدل الزيادة", "English": "Growth Grade"},
-            "Frequency_grade":{"Arabic": "تصنيف معدل الشراء", "English": "Frequency Grade"},
-            "Credit":{"Arabic": "دائن", "English": "Credit"},
-            "Debit":{"Arabic": "مدين", "English": "Debit"},
-            "Balance":{"Arabic": "صافي الحساب", "English": "Balance"},
-            "Last_purchase":{"Arabic": "", "English": "Last Purchase"},
-            "Sales":{"Arabic": "عدد المبيعات", "English": "Sales"},
-            # "":{"Arabic": "", "English": ""},
-            # "":{"Arabic": "", "English": ""},
-            # "":{"Arabic": "", "English": ""},
-            # "":{"Arabic": "", "English": ""},
+            "Phone_number2":{"Arabic": "", "English": ""},
+            "Code":{"Arabic": "", "English": ""},
+            "Purchase_mgr_number":{"Arabic": "", "English": ""},
+            "Financial_mgr_number":{"Arabic": "", "English": ""},
+            "Purchase_mgr_name":{"Arabic": "", "English": ""},
+            "Financial_mgr_name":{"Arabic": "", "English": ""},
+            "Email":{"Arabic": "", "English": ""},
+            "Company_address":{"Arabic": "", "English": ""},
+            "Extra_address":{"Arabic": "", "English": ""},
+            "Maps_link":{"Arabic": "", "English": ""},
+            "Bank_account":{"Arabic": "", "English": ""},
+            "Instapay":{"Arabic": "", "English": ""},
+            "E_wallet":{"Arabic": "", "English": ""},
+            "Accountant_name":{"Arabic": "", "English": ""},
+            "Accountant_number":{"Arabic": "", "English": ""},
+            "Sales_grade":{"Arabic": "", "English": ""},
+            "Growth_grade":{"Arabic": "", "English": ""},
+            "Frequency_grade":{"Arabic": "", "English": ""},
+            "Credit":{"Arabic": "", "English": ""},
+            "Debit":{"Arabic": "", "English": ""},
+            "Balance":{"Arabic": "", "English": ""},
+            "Last_purchase":{"Arabic": "", "English": ""},
+            "Sales":{"Arabic": "", "English": ""},
+            "":{"Arabic": "", "English": ""},
+            "":{"Arabic": "", "English": ""},
+            "":{"Arabic": "", "English": ""},
+            "":{"Arabic": "", "English": ""},
         }
         
         self.db = None
@@ -1450,19 +1451,12 @@ class SalesSystemApp:
             current_collection = self.get_collection_by_name(collection_name)
             first_document = current_collection.find_one({columns[id_index]: unique_id})
 
-            if not first_document and isinstance(unique_id, str):
-                try:
-                    first_document = current_collection.find_one({columns[id_index]: int(unique_id)})
-                except ValueError:
-                    pass
-
-            # If not found, and type is int, try converting to str
-            elif not first_document and isinstance(unique_id, int):
-                first_document = current_collection.find_one({columns[id_index]: str(unique_id)})
-
         except IndexError:
             return
 
+        if not first_document:
+            print(1)
+            return
 
         for field, entry in self.entries.items():
             value = first_document.get(field, "")
@@ -1579,7 +1573,7 @@ class SalesSystemApp:
                 except Exception as e:
                     messagebox.showerror("Upload Error", f"Failed to upload image: {e}")
                     return
-            elif any(word in field.lower() for word in ["stock_quantity","instapay","bank_account","e-wallet"]):
+            elif any(word in field.lower() for word in ["stock_quantity","instapay","bank_account","e-wallet"]) or field == "Code":
                 value = widget.get()
                 try: 
                     value = int(value)

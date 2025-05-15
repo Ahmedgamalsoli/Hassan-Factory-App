@@ -122,36 +122,6 @@ class SalesSystemApp:
             "Material_name":{"Arabic": "اسم الخام", "English": "Material Name"},
             "➕ Add 3 More Rows":{"Arabic": "➕ أضف 3 صفوف أخرى", "English": "➕ Add 3 More Rows"},
             "💾 Save Invoice":{"Arabic": "💾 حفظ الفاتورة", "English": "💾 Save Invoice"},
-            "Search":{"Arabic": "ابحث", "English": "Search"},
-            "Name":{"Arabic": "الاسم", "English": "Name"},
-            "Phone_number1":{"Arabic": "رقم التليفون 1", "English": "Phone Number 1"},
-            "Phone_number2":{"Arabic": "رقم التليفون 2", "English": "Phone Number 2"},
-            "Code":{"Arabic": "كوود", "English": "Code"},
-            "Purchase_mgr_number":{"Arabic": "رقم مدير المشتريات", "English": "Purchase Manager Number"},
-            "Financial_mgr_number":{"Arabic": "رقم مدير المالية", "English": "Financial Manager Number"},
-            "Purchase_mgr_name":{"Arabic": "اسم مديرالمشتريات", "English": "Purchase Manager Name"},
-            "Financial_mgr_name":{"Arabic": "اسم مدير المالية", "English": "Financial Manager Name"},
-            "Email":{"Arabic": "الايميل", "English": "Email"},
-            "Company_address":{"Arabic": "عنوان الشركة", "English": "Company Address"},
-            "Extra_address":{"Arabic": "عنوان اضافي", "English": "Extra Address"},
-            "Maps_link":{"Arabic": "رابط العنوان", "English": "Maps Link"},
-            "Bank_account":{"Arabic": "حساب بنكي", "English": "Bank Account"},
-            "Instapay":{"Arabic": "انستاباي", "English": "Instapay"},
-            "E_wallet":{"Arabic": "محفظه الكترونية", "English": ""},
-            "Accountant_name":{"Arabic": "اسم المحاسب", "English": "Accountant Name"},
-            "Accountant_number":{"Arabic": "رقم المحاسب", "English": "Accountant Number"},
-            "Sales_grade":{"Arabic": "تصنيف قيمة المبيعات", "English": "Sales Grade"},
-            "Growth_grade":{"Arabic": "تصنيف معدل الزيادة", "English": "Growth Grade"},
-            "Frequency_grade":{"Arabic": "تصنيف معدل الشراء", "English": "Frequency Grade"},
-            "Credit":{"Arabic": "دائن", "English": "Credit"},
-            "Debit":{"Arabic": "مدين", "English": "Debit"},
-            "Balance":{"Arabic": "صافي الحساب", "English": "Balance"},
-            "Last_purchase":{"Arabic": "", "English": "Last Purchase"},
-            "Sales":{"Arabic": "عدد المبيعات", "English": "Sales"},
-            # "":{"Arabic": "", "English": ""},
-            # "":{"Arabic": "", "English": ""},
-            # "":{"Arabic": "", "English": ""},
-            # "":{"Arabic": "", "English": ""},
         }
         
         self.db = None
@@ -1336,7 +1306,7 @@ class SalesSystemApp:
             if label == "Id":
                 continue
             
-            tk.Label(form_frame, text=self.t(label), font=("Arial", 12), anchor="w").grid(row=i, column=0, sticky="w", pady=5)
+            tk.Label(form_frame, text=label, font=("Arial", 12), anchor="w").grid(row=i, column=0, sticky="w", pady=5)
 
             if "date" in label.lower():
                 entry = DateEntry(form_frame, font=("Arial", 12), date_pattern='dd-MM-yyyy', width=18)
@@ -1403,7 +1373,7 @@ class SalesSystemApp:
         # Search button now refreshes table, doesn't rebuild everything!
         tk.Button(
             search_frame,
-            text=self.t("Search"),
+            text="Search",
             command=lambda: self.refresh_generic_table(tree, current_collection, collection_name, local_search_query.get())
         ).pack(side="left")
         
@@ -1450,19 +1420,12 @@ class SalesSystemApp:
             current_collection = self.get_collection_by_name(collection_name)
             first_document = current_collection.find_one({columns[id_index]: unique_id})
 
-            if not first_document and isinstance(unique_id, str):
-                try:
-                    first_document = current_collection.find_one({columns[id_index]: int(unique_id)})
-                except ValueError:
-                    pass
-
-            # If not found, and type is int, try converting to str
-            elif not first_document and isinstance(unique_id, int):
-                first_document = current_collection.find_one({columns[id_index]: str(unique_id)})
-
         except IndexError:
             return
 
+        if not first_document:
+            print(1)
+            return
 
         for field, entry in self.entries.items():
             value = first_document.get(field, "")
@@ -1470,10 +1433,6 @@ class SalesSystemApp:
                 value = value.strftime('%d-%m-%Y')
                 entry.delete(0, tk.END)
                 entry.insert(0, value)
-            elif field == "Units" and isinstance(value, list):
-                value_str = ','.join(map(str, value))
-                entry.delete(0, tk.END)
-                entry.insert(0, value_str)
             # If it's a pic field, load preview
             elif "pic" in field.lower():
                 if img_label and value:
@@ -1579,31 +1538,23 @@ class SalesSystemApp:
                 except Exception as e:
                     messagebox.showerror("Upload Error", f"Failed to upload image: {e}")
                     return
-            elif any(word in field.lower() for word in ["stock_quantity","instapay","bank_account","e-wallet"]):
+            elif any(word in field.lower() for word in ["number, stock_quantity"]):
                 value = widget.get()
-                try: 
-                    value = int(value)
-                except Exception as e:
-                    messagebox.showerror("Error", f"{field} should be a number")
-                    return
-            elif any(word in field.lower() for word in ["salary", "credit", "debit", "balance"]):
-                value = widget.get()
+                value = int(value)
                 if not value:
                     messagebox.showwarning("Warning", f"Please enter a value for {field}")
                     return
-                try: 
-                    value = float(value)
-                except Exception as e:
-                    messagebox.showerror("Error", f"{field} should be a floating number")
+            elif any(word in field.lower() for word in ["salary", "credit", "debit"]):
+                value = widget.get()
+                value = float(value)
+                if not value:
+                    messagebox.showwarning("Warning", f"Please enter a value for {field}")
                     return
             else:
                 value = widget.get()
                 if not value:
                     messagebox.showwarning("Warning", f"Please enter a value for {field}")
                     return
-                if any(word in field.lower() for word in ["units"]):
-                    # Parse comma-separated input to list
-                    value = [item.strip() for item in value.split(',') if item.strip()]
 
             new_entry[field] = value
 
@@ -1705,16 +1656,11 @@ class SalesSystemApp:
 
                 if not value:
                     value = existing_value  # Keep old text if no new input
-                else:
-                    if "units" in field.lower():
-                        value = [item.strip() for item in value.split(',') if item.strip()]
 
             updated_entry[field] = value
 
         try:
-            identifier_field = columns[id_index]
-            result = current_collection.update_one({identifier_field: record_id}, {"$set": updated_entry})
-            
+            result = current_collection.update_one({"Id": record_id}, {"$set": updated_entry})
             if result.modified_count > 0:
                 messagebox.showinfo("Success", "Record updated successfully")
             else:
