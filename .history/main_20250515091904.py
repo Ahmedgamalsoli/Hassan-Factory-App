@@ -110,20 +110,18 @@ class SalesSystemApp:
             "Payment Method":{"Arabic": "طريقة الدفع:", "English": "Payment Method:"},
             "Product_code":{"Arabic": "كود المنتج", "English": "Product Code"},
             "product_name":{"Arabic": "اسم المنتج", "English": "Product Name"},
-            "unit":{"Arabic": "الوحدة", "English": "Unit:"},
+            "unit":{"Arabic": "الوحدة:", "English": "Unit:"},
             "numbering":{"Arabic": "العدد", "English": "Numbering"},
             "QTY":{"Arabic": "الكمية", "English": "Quantity"},
-            "Discount Type":{"Arabic": "نوع الخصم", "English": "Discount Type"},
-            "Discount Value":{"Arabic": "قيمة الخصم", "English": "Discount Value"},
-            "Total_QTY":{"Arabic": "إجمالي الكمية", "English": "Total Quantity"},
-            "Unit_Price":{"Arabic": "سعر الوحدة", "English": "Unit Price"},
-            "Total_Price":{"Arabic": "إجمالي السعر", "English": "Total Price"},
-            "Material_code":{"Arabic": "كود الخام", "English": "Material Code"},
-            "Material_name":{"Arabic": "اسم الخام", "English": "Material Name"},
-            "➕ Add 3 More Rows":{"Arabic": "➕ أضف 3 صفوف أخرى", "English": "➕ Add 3 More Rows"},
-            "💾 Save Invoice":{"Arabic": "💾 حفظ الفاتورة", "English": "💾 Save Invoice"},
+            "":{"Arabic": "", "English": ""},
+            "":{"Arabic": "", "English": ""},
+            "":{"Arabic": "", "English": ""},
+            "":{"Arabic": "", "English": ""},
+            "":{"Arabic": "", "English": ""},
+            "":{"Arabic": "", "English": ""},
+            "":{"Arabic": "", "English": ""},
+            "":{"Arabic": "", "English": ""},
         }
-        
         self.db = None
         self.db_name = tk.StringVar()
         self.table_name = tk.StringVar()
@@ -581,7 +579,7 @@ class SalesSystemApp:
         header_row = tk.Frame(form_frame, bg='#f0f0f0')
         header_row.grid(row=2, column=0, columnspan=len(columns), sticky='nsew', pady=(20, 0))
         for col_idx, col in enumerate(columns):
-            tk.Label(header_row, text=self.t(col), width=col_width, relief='ridge',
+            tk.Label(header_row, text=col, width=col_width, relief='ridge',
                     bg='#f0f0f0', anchor='w').grid(row=0, column=col_idx, sticky='ew')
             header_row.columnconfigure(col_idx, weight=1)
 
@@ -673,9 +671,9 @@ class SalesSystemApp:
         button_frame = tk.Frame(form_frame)
         button_frame.grid(row=4, column=0, columnspan=len(columns), pady=10, sticky='ew')
         
-        tk.Button(button_frame, text=self.t("➕ Add 3 More Rows"), command=add_three_rows,
+        tk.Button(button_frame, text="➕ Add 3 More Rows", command=add_three_rows,
                 bg='#4CAF50', fg='white').grid(row=0, column=0, padx=5, sticky='w')
-        tk.Button(button_frame, text=self.t("💾 Save Invoice"), 
+        tk.Button(button_frame, text="💾 Save Invoice", 
                 command=lambda: self.save_invoice(sales_col, customers_col,products_col),
                 bg='#2196F3', fg='white').grid(row=0, column=1, padx=5, sticky='e')
         
@@ -851,7 +849,7 @@ class SalesSystemApp:
         header_row = tk.Frame(form_frame, bg='#f0f0f0')
         header_row.grid(row=2, column=0, columnspan=len(columns), sticky='nsew', pady=(20, 0))
         for col_idx, col in enumerate(columns):
-            tk.Label(header_row, text=self.t(col), width=col_width, relief='ridge',
+            tk.Label(header_row, text=col, width=col_width, relief='ridge',
                     bg='#f0f0f0', anchor='w').grid(row=0, column=col_idx, sticky='ew')
             header_row.columnconfigure(col_idx, weight=1)
 
@@ -943,9 +941,9 @@ class SalesSystemApp:
         button_frame = tk.Frame(form_frame)
         button_frame.grid(row=4, column=0, columnspan=len(columns), pady=10, sticky='ew')
         
-        tk.Button(button_frame, text=self.t("➕ Add 3 More Rows"), command=add_three_rows,
+        tk.Button(button_frame, text="➕ Add 3 More Rows", command=add_three_rows,
                 bg='#4CAF50', fg='white').grid(row=0, column=0, padx=5, sticky='w')
-        tk.Button(button_frame, text=self.t("💾 Save Invoice"), 
+        tk.Button(button_frame, text="💾 Save Invoice", 
                 command=lambda: self.save_invoice_purchase(purchases_col, suppliers_col,materials_col),
                 bg='#2196F3', fg='white').grid(row=0, column=1, padx=5, sticky='e')
         
@@ -1433,10 +1431,6 @@ class SalesSystemApp:
                 value = value.strftime('%d-%m-%Y')
                 entry.delete(0, tk.END)
                 entry.insert(0, value)
-            elif field == "Units" and isinstance(value, list):
-                value_str = ','.join(map(str, value))
-                entry.delete(0, tk.END)
-                entry.insert(0, value_str)
             # If it's a pic field, load preview
             elif "pic" in field.lower():
                 if img_label and value:
@@ -1542,31 +1536,23 @@ class SalesSystemApp:
                 except Exception as e:
                     messagebox.showerror("Upload Error", f"Failed to upload image: {e}")
                     return
-            elif any(word in field.lower() for word in ["stock_quantity","instapay","bank_account","e-wallet"]) or field == "Code":
+            elif any(word in field.lower() for word in ["number, stock_quantity"]):
                 value = widget.get()
-                try: 
-                    value = int(value)
-                except Exception as e:
-                    messagebox.showerror("Error", f"{field} should be a number")
-                    return
-            elif any(word in field.lower() for word in ["salary", "credit", "debit", "balance"]):
-                value = widget.get()
+                value = int(value)
                 if not value:
                     messagebox.showwarning("Warning", f"Please enter a value for {field}")
                     return
-                try: 
-                    value = float(value)
-                except Exception as e:
-                    messagebox.showerror("Error", f"{field} should be a floating number")
+            elif any(word in field.lower() for word in ["salary", "credit", "debit"]):
+                value = widget.get()
+                value = float(value)
+                if not value:
+                    messagebox.showwarning("Warning", f"Please enter a value for {field}")
                     return
             else:
                 value = widget.get()
                 if not value:
                     messagebox.showwarning("Warning", f"Please enter a value for {field}")
                     return
-                if any(word in field.lower() for word in ["units"]):
-                    # Parse comma-separated input to list
-                    value = [item.strip() for item in value.split(',') if item.strip()]
 
             new_entry[field] = value
 
@@ -1668,16 +1654,11 @@ class SalesSystemApp:
 
                 if not value:
                     value = existing_value  # Keep old text if no new input
-                else:
-                    if "units" in field.lower():
-                        value = [item.strip() for item in value.split(',') if item.strip()]
 
             updated_entry[field] = value
 
         try:
-            identifier_field = columns[id_index]
-            result = current_collection.update_one({identifier_field: record_id}, {"$set": updated_entry})
-            
+            result = current_collection.update_one({"Id": record_id}, {"$set": updated_entry})
             if result.modified_count > 0:
                 messagebox.showinfo("Success", "Record updated successfully")
             else:
@@ -2054,17 +2035,11 @@ class SalesSystemApp:
         elif collection_name == "Sales":
             return ["product_code", "Product_name", "unit", "QTY", "numbering","Total_QTY","Unit_Price","Total Price","Date","Reciept_Number","Customer_name","Customer_code"]
 
-        # elif collection_name == "Sales_Header":
-        #     return [self.t("Product_code"), self.t("product_name"), self.t("unit"),self.t("numbering"),self.t("QTY"),self.t("Discount Type"),self.t("Discount Value"),self.t("Total_QTY"),self.t("Unit_Price"),self.t("Total_Price")]
-       
-        # elif collection_name == "Materials_Header":
-        #     return [self.t("Material_code"), self.t("Material_name"), self.t("unit"),self.t("numbering"),self.t("QTY"),self.t("Discount Type"),self.t("Discount Value"),self.t("Total_QTY"),self.t("Unit_Price"),self.t("Total_Price")]
-      
         elif collection_name == "Sales_Header":
-            return ["Product_code", "product_name", "unit","numbering","QTY","Discount Type","Discount Value","Total_QTY","Unit_Price","Total_Price"]
+            return [self.t("Product_code"), self.t("product_name"), self.t("unit"),self.t("numbering"),self.t("QTY"),self.t("Discount Type"),self.t("Discount Value"),self.t("Total_QTY"),self.t("Unit_Price"),self.t("Total_Price")]
        
         elif collection_name == "Materials_Header":
-            return ["Material_code", "Material_name", "unit","numbering","QTY","Discount Type","Discount Value","Total_QTY","Unit_Price","Total_Price"]
+            return [self.t("Material_code"), self.t("Material_name"), self.t("unit"),self.t("numbering"),self.t("QTY"),self.t("Discount Type"),self.t("Discount Value"),self.t("Total_QTY"),self.t("Unit_Price"),self.t("Total_Price")]
        
         elif collection_name == "Customers":
             return ["Name", "Phone_number1", "Phone_number2", "Code", "Purchase_mgr_number", "Financial_mgr_number", "Purchase_mgr_name", 
@@ -2401,7 +2376,7 @@ class SalesSystemApp:
             # حفظ الفاتورة في قاعدة البيانات
             sales_col.insert_one(invoice_data)
 
-            messagebox.showinfo("نجاح", f"تم حفظ فاتورة البيع رقم {invoice_data['Receipt_Number']}")
+            messagebox.showinfo("نجاح", f"تم حفظ الفاتورة رقم {invoice_data['Receipt_Number']}")
             self.clear_invoice_form()
 
         except Exception as e:
@@ -2557,7 +2532,7 @@ class SalesSystemApp:
             # حفظ الفاتورة في قاعدة البيانات
             purchase_col.insert_one(invoice_data)
 
-            messagebox.showinfo("نجاح", f"تم حفظ فاتورة الشراء رقم {invoice_data['Receipt_Number']}")
+            messagebox.showinfo("نجاح", f"تم حفظ الفاتورة رقم {invoice_data['Receipt_Number']}")
             print(3)
             self.clear_invoice_form_purchase()
             print(4)
@@ -2635,7 +2610,7 @@ class SalesSystemApp:
 
             # إنشاء مسار الحفظ
             desktop = os.path.join(os.path.expanduser('~'), 'Desktop')
-            file_name = f"فاتورة بيع_{str(invoice_data['Receipt_Number']).replace("INV-", "").strip()}.pdf"
+            file_name = f"فاتورة_{invoice_data['Receipt_Number']}.pdf"
             pdf_path = os.path.join(desktop, file_name)
 
             # إعداد مستند PDF
@@ -2785,7 +2760,7 @@ class SalesSystemApp:
 
             # إنشاء مسار الحفظ
             desktop = os.path.join(os.path.expanduser('~'), 'Desktop')
-            file_name = f"فاتورة شراء_{invoice_data['Receipt_Number']}.pdf"
+            file_name = f"فاتورة_{invoice_data['Receipt_Number']}.pdf"
             pdf_path = os.path.join(desktop, file_name)
 
             # إعداد مستند PDF
