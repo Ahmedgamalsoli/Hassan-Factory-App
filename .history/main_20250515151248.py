@@ -4,7 +4,7 @@ from PIL import Image, ImageTk, ImageDraw  # Import Pillow classes
 import pandas as pd
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
-from datetime import datetime,time , time
+from datetime import datetime
 from fpdf import FPDF
 import sqlite3
 import csv
@@ -339,7 +339,7 @@ class SalesSystemApp:
             {"text": self.t("Products"), "image": "Products.png", 
             "command": lambda: self.new_products(self.user_role)},
             {"text": self.t("Materials"), "image": "Materials.png", 
-            "command": lambda: self.new_material(self.user_role)},
+            "command": lambda: self.trash(self.user_role)},
             {"text": self.t("Reports"), "image": "Reports.png", 
             "command": lambda: self.trash(self.user_role)},
         ]
@@ -1231,15 +1231,7 @@ class SalesSystemApp:
     
         self.topbar(show_back_button=True)
         self.display_general_table(self.products_collection, "Products")
-    
-    def new_material(self, user_role):
-        self.table_name.set("Materials")
-        for widget in self.root.winfo_children():
-            widget.destroy()
-    
-        self.topbar(show_back_button=True)
-        self.display_general_table(self.materials_collection, "Materials")
-
+        
 ############################ Main Functions ########################################
     def display_table(self):
         self.image_refs.clear()
@@ -1317,7 +1309,7 @@ class SalesSystemApp:
         form_container = tk.Frame(main_frame)
         form_container.pack(side="left", fill="y", padx=10, pady=10)
 
-        canvas = tk.Canvas(form_container, width=350)   # Set width for form
+        canvas = tk.Canvas(form_container, width=300)   # Set width for form
         scrollbar = tk.Scrollbar(form_container, orient="vertical", command=canvas.yview)
         scrollbar.pack(side="right", fill="y")
 
@@ -1465,7 +1457,6 @@ class SalesSystemApp:
                         id_index = idx
                         break
             unique_id = tree.item(selected_item)['values'][id_index]
-            print(f"unique_id type: {get_type(unique_id)}")
             current_collection = self.get_collection_by_name(collection_name)
             first_document = current_collection.find_one({columns[id_index]: unique_id})
 
@@ -1582,7 +1573,7 @@ class SalesSystemApp:
                 if value:
                     try:
                         value_date = datetime.strptime(value, '%d-%m-%Y').date()
-                        value = datetime.combine(value_date, time.min)
+                        value = datetime.combine(value_date, datetime.time.min)
                     except Exception as e:
                         messagebox.showerror("Error", f"Invalid date format for {field}: {e}")
                         return
@@ -1605,7 +1596,7 @@ class SalesSystemApp:
                 except Exception as e:
                     messagebox.showerror("Error", f"{field} should be a number")
                     return
-            elif any(word in field.lower() for word in ["salary", "credit", "debit", "balance", "stock_quantity"]):
+            elif any(word in field.lower() for word in ["salary", "credit", "debit", "balance"]):
                 value = widget.get()
                 if not value:
                     messagebox.showwarning("Warning", f"Please enter a value for {field}")
@@ -1697,7 +1688,7 @@ class SalesSystemApp:
                 if value:
                     try:
                         value_date = datetime.strptime(value, '%d-%m-%Y').date()
-                        value = datetime.combine(value_date, time.min)
+                        value = datetime.combine(value_date, datetime.time.min)
                     except Exception as e:
                         messagebox.showerror("Error", f"Invalid date format for {field}: {e}")
                         return
@@ -1759,17 +1750,16 @@ class SalesSystemApp:
 
     def delete_generic_entry(self, tree, current_collection):
         selected_item = tree.selection()
-        id_index = None
         if not selected_item:
             messagebox.showwarning("Warning", "Please select a record to delete")
             return
 
-        columns = tree["columns"]  # Tuple/list of column names
         try:
+            columns = tree["columns"]  # Tuple/list of column names
             lower_columns = [col.lower() for col in columns]
 
             # Find which column is used as identifier (id / code)
-
+            id_index = None
             if "id" in lower_columns:
                 id_index = columns.index("Id")
             elif any('code' in col for col in lower_columns):
@@ -1798,13 +1788,6 @@ class SalesSystemApp:
             # Step 1: Find the document based on the selected field (id/code)
             query = {field_name: unique_id}
             document = current_collection.find_one(query)
-            
-            if not document:
-                try:
-                    query = {field_name: str(unique_id)}
-                    document = current_collection.find_one(query)
-                except ValueError:
-                    pass
 
             if not document:
                 messagebox.showwarning("Not Found", "No matching record found to delete.")
@@ -1813,11 +1796,8 @@ class SalesSystemApp:
             # Step 2: Check if document contains any ARRAY_FIELDS (like 'units')
             handled = False
             values = tree.item(selected_item)["values"]
-            
-            if("Units" in columns):
-                index = columns.index('Units')
-                unit_value = values[index]
-
+            index = columns.index('Units')
+            unit_value = values[index]
             for array_field in ARRAY_FIELDS:
                 units_list = document.get(array_field, None)
                 print(f"units_list: {isinstance(units_list, list)} , unique_id {unique_id}")
@@ -1912,7 +1892,7 @@ class SalesSystemApp:
                 if value:
                     try:
                         value = datetime.strptime(value, '%d-%m-%Y').date()
-                        value = datetime.combine(value, time.min) #Must do this to be comaptible with mongodb's Date type 
+                        value = datetime.combine(value, datetime.time.min) #Must do this to be comaptible with mongodb's Date type 
                     except Exception as e:
                         print(f"ValueError: {e}")
                         messagebox.showerror("Error", f"Invalid date format for {field}")
@@ -2008,7 +1988,7 @@ class SalesSystemApp:
                 if value:
                     try:
                         value = datetime.strptime(value, '%d-%m-%Y').date()
-                        value = datetime.combine(value, time.min) #Must do this to be comaptible with mongodb's Date type 
+                        value = datetime.combine(value, datetime.time.min) #Must do this to be comaptible with mongodb's Date type 
 
                     except Exception as e:
                         print(f"ValueError: {e}")
@@ -2130,23 +2110,20 @@ class SalesSystemApp:
         elif collection_name == "Sales_Header":
             return ["Product_code", "product_name", "unit","numbering","QTY","Discount Type","Discount Value","Total_QTY","Unit_Price","Total_Price"]
        
-        elif collection_name == "Materials":
-            return ["material_name", "category","stock_quantity","specs","material_code","Units","material_pic","Unit_Price"]
-
         elif collection_name == "Materials_Header":
             return ["Material_code", "Material_name", "unit","numbering","QTY","Discount Type","Discount Value","Total_QTY","Unit_Price","Total_Price"]
        
         elif collection_name == "Customers":
-            return ["Name", "Phone_number1", "Phone_number2", "Code", "Last_purchase_date" , "Purchase_mgr_number", "Financial_mgr_number", "Purchase_mgr_name", 
+            return ["Name", "Phone_number1", "Phone_number2", "Code", "Purchase_mgr_number", "Financial_mgr_number", "Purchase_mgr_name", 
                     "Financial_mgr_name", "Email", "Company_address", "Extra_address", "Maps_link", "Bank_account",
                     "Instapay", "E_wallet", "Accountant_name", "Accountant_number", "Sales_grade", "Growth_grade", "Frequency_grade", "Credit",
-                    "Debit", "Balance", "Sales"]
+                    "Debit"]
         
         elif collection_name == "Suppliers":
-            return ["Name", "Phone_number1", "Phone_number2", "Code", "Last_purchase_date" , "Purchase_mgr_number", "Financial_mgr_number", "Purchase_mgr_name", 
+            return ["Name", "Phone_number1", "Phone_number2", "Code", "Purchase_mgr_number", "Financial_mgr_number", "Purchase_mgr_name", 
                     "Financial_mgr_name", "Email", "Company_address", "Extra_address", "Maps_link", "Bank_account",
                     "Instapay", "E_wallet", "Accountant_name", "Accountant_number", "Sales_grade", "Growth_grade", "Frequency_grade", "Credit",
-                    "Debit", "Balance", "Sales"]
+                    "Debit" ]
         
         elif collection_name == "Shipping":
             return ["order_id", "shipping_date", "tracking_number", "shipping_address"]
@@ -2606,7 +2583,7 @@ class SalesSystemApp:
                 {"_id": supplier["_id"]},
                 {
                     "$set": {
-                        "Last_purchase": datetime.now(),
+                        "Last_purchase_date": datetime.now(),
                         "Balance": new_balance
                     },
                     "$inc": {
@@ -3203,9 +3180,6 @@ def load_image_preview_from_url(image_url, label, max_size=(300, 300)):
         print(f"Error loading image from URL: {e}")
         label.config(image="")
         label.image = None
-
-def get_type(var):
-    return type(var).__name__
 
 ######################### Auxiliary classes #########################################################
 class AlwaysOnTopInputDialog(tk.Toplevel):
