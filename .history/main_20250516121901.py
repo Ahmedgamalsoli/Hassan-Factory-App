@@ -137,7 +137,7 @@ class SalesSystemApp:
             "Maps_link":{"Arabic": "رابط العنوان", "English": "Maps Link"},
             "Bank_account":{"Arabic": "حساب بنكي", "English": "Bank Account"},
             "Instapay":{"Arabic": "انستاباي", "English": "Instapay"},
-            "E_wallet":{"Arabic": "محفظه الكترونية", "English": "E_wallet"},
+            "E_wallet":{"Arabic": "محفظه الكترونية", "English": ""},
             "Accountant_name":{"Arabic": "اسم المحاسب", "English": "Accountant Name"},
             "Accountant_number":{"Arabic": "رقم المحاسب", "English": "Accountant Number"},
             "Sales_grade":{"Arabic": "تصنيف قيمة المبيعات", "English": "Sales Grade"},
@@ -1538,14 +1538,14 @@ class SalesSystemApp:
         for widget in self.root.winfo_children():
             widget.destroy()
         # تحميل صورة الخلفية
-        self.topbar(show_back_button=True,Back_to_Database_Window=True)
+        self.topbar(show_back_button=True)
         self.display_general_table(self.employees_collection, "Employees")
     
     def new_supplier(self, user_role):
         self.table_name.set("Suppliers")
         for widget in self.root.winfo_children():
             widget.destroy()
-        self.topbar(show_back_button=True,Back_to_Database_Window=True)
+        self.topbar(show_back_button=True)
         self.display_general_table(self.suppliers_collection, "Suppliers")
     
     def new_customer(self, user_role):
@@ -1561,7 +1561,7 @@ class SalesSystemApp:
         for widget in self.root.winfo_children():
             widget.destroy()
     
-        self.topbar(show_back_button=True,Back_to_Database_Window=True)
+        self.topbar(show_back_button=True)
         self.display_general_table(self.products_collection, "Products")
     
     def new_material(self, user_role):
@@ -1569,7 +1569,7 @@ class SalesSystemApp:
         for widget in self.root.winfo_children():
             widget.destroy()
     
-        self.topbar(show_back_button=True,Back_to_Database_Window=True)
+        self.topbar(show_back_button=True)
         self.display_general_table(self.materials_collection, "Materials")
 
 ############################ Main Functions ########################################

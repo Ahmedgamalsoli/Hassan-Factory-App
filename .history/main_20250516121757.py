@@ -137,7 +137,7 @@ class SalesSystemApp:
             "Maps_link":{"Arabic": "رابط العنوان", "English": "Maps Link"},
             "Bank_account":{"Arabic": "حساب بنكي", "English": "Bank Account"},
             "Instapay":{"Arabic": "انستاباي", "English": "Instapay"},
-            "E_wallet":{"Arabic": "محفظه الكترونية", "English": "E_wallet"},
+            "E_wallet":{"Arabic": "محفظه الكترونية", "English": ""},
             "Accountant_name":{"Arabic": "اسم المحاسب", "English": "Accountant Name"},
             "Accountant_number":{"Arabic": "رقم المحاسب", "English": "Accountant Number"},
             "Sales_grade":{"Arabic": "تصنيف قيمة المبيعات", "English": "Sales Grade"},
@@ -1538,14 +1538,14 @@ class SalesSystemApp:
         for widget in self.root.winfo_children():
             widget.destroy()
         # تحميل صورة الخلفية
-        self.topbar(show_back_button=True,Back_to_Database_Window=True)
+        self.topbar(show_back_button=True)
         self.display_general_table(self.employees_collection, "Employees")
     
     def new_supplier(self, user_role):
         self.table_name.set("Suppliers")
         for widget in self.root.winfo_children():
             widget.destroy()
-        self.topbar(show_back_button=True,Back_to_Database_Window=True)
+        self.topbar(show_back_button=True)
         self.display_general_table(self.suppliers_collection, "Suppliers")
     
     def new_customer(self, user_role):
@@ -1553,7 +1553,7 @@ class SalesSystemApp:
         for widget in self.root.winfo_children():
             widget.destroy()
 
-        self.topbar(show_back_button=True,Back_to_Database_Window=True)
+        self.topbar(show_back_button=True)
         self.display_general_table(self.customers_collection, "Customers")
 
     def new_products(self, user_role):
@@ -1561,7 +1561,7 @@ class SalesSystemApp:
         for widget in self.root.winfo_children():
             widget.destroy()
     
-        self.topbar(show_back_button=True,Back_to_Database_Window=True)
+        self.topbar(show_back_button=True)
         self.display_general_table(self.products_collection, "Products")
     
     def new_material(self, user_role):
@@ -1569,7 +1569,7 @@ class SalesSystemApp:
         for widget in self.root.winfo_children():
             widget.destroy()
     
-        self.topbar(show_back_button=True,Back_to_Database_Window=True)
+        self.topbar(show_back_button=True)
         self.display_general_table(self.materials_collection, "Materials")
 
 ############################ Main Functions ########################################
@@ -3413,10 +3413,7 @@ class SalesSystemApp:
                 back_image = Image.open(self.back_icon_path)
                 back_image = back_image.resize((40, 40), Image.LANCZOS)
                 self.back_photo = ImageTk.PhotoImage(back_image)
-                if Back_to_Database_Window:
-                    back_icon = tk.Button(top_bar, image=self.back_photo, bg="#dbb40f", bd=0, command=self.manage_database_window)
-                else:
-                    back_icon = tk.Button(top_bar, image=self.back_photo, bg="#dbb40f", bd=0, command=self.main_menu)
+                back_icon = tk.Button(top_bar, image=self.back_photo, bg="#dbb40f", bd=0, command=self.main_menu)
                 back_icon.pack(side="left", padx=10)
             except Exception as e:
                 self.silent_popup("Error", "Error loading back icon: {e}", self.play_Error)

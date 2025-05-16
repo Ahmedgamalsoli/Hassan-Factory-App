@@ -137,7 +137,7 @@ class SalesSystemApp:
             "Maps_link":{"Arabic": "رابط العنوان", "English": "Maps Link"},
             "Bank_account":{"Arabic": "حساب بنكي", "English": "Bank Account"},
             "Instapay":{"Arabic": "انستاباي", "English": "Instapay"},
-            "E_wallet":{"Arabic": "محفظه الكترونية", "English": "E_wallet"},
+            "E_wallet":{"Arabic": "محفظه الكترونية", "English": ""},
             "Accountant_name":{"Arabic": "اسم المحاسب", "English": "Accountant Name"},
             "Accountant_number":{"Arabic": "رقم المحاسب", "English": "Accountant Number"},
             "Sales_grade":{"Arabic": "تصنيف قيمة المبيعات", "English": "Sales Grade"},
@@ -365,7 +365,9 @@ class SalesSystemApp:
             #     {"text": self.t("Big Deals"), "image": "Exit.png", 
             #     "command": lambda: self.trash(self.user_role)},
                 {"text": self.t("Database"), "image": "database.png", 
-                "command": lambda: self.check_access_and_open(self.user_role)}
+                "command": lambda: self.check_access_and_open(self.user_role, 
+                                                            db_name="clothes_sales.db", 
+                                                            table_name="Employees")}
             ])
 
         # Load images and create buttons
@@ -407,14 +409,13 @@ class SalesSystemApp:
             for btn_info in buttons:
                 tk.Button(fallback_frame, text=btn_info["text"], 
                         command=btn_info["command"]).pack(side="left", padx=10)
-                
     def manage_database_window(self):
                 # Clear current window
         for widget in self.root.winfo_children():
             widget.destroy()
 
         # Create the top bar
-        self.topbar(show_back_button=True)
+        self.topbar(show_back_button=False)
 
         # Main button frame
         button_frame = tk.Frame(self.root, bg="white")
@@ -433,45 +434,6 @@ class SalesSystemApp:
             {"text": self.t("Materials"), "image": "Materials.png", 
             "command": lambda: self.new_material(self.user_role)},
         ]
-        images = []  # Keep references to prevent garbage collection
-        columns_per_row = 3  # Number of buttons per row
-
-        try:
-            for index, btn_info in enumerate(buttons):
-                # Load and resize image
-                img_path = os.path.join(BASE_DIR, "Static", "images", btn_info["image"])
-                img = Image.open(img_path).resize((70, 70), Image.LANCZOS)
-                photo_img = ImageTk.PhotoImage(img)
-                images.append(photo_img)
-
-                # Calculate grid position
-                row = index // columns_per_row
-                column = index % columns_per_row
-
-                # Create sub-frame for each button
-                sub_frame = tk.Frame(button_frame, bg="white")
-                sub_frame.grid(row=row, column=column, padx=20, pady=20)
-
-                # Image button
-                btn = tk.Button(sub_frame, image=photo_img, bd=0, 
-                            command=btn_info["command"])
-                btn.image = photo_img  # Keep reference
-                btn.pack()
-
-                # Text label
-                lbl = tk.Label(sub_frame, text=btn_info["text"], 
-                            font=("Arial", 15, "bold"), bg="white", fg="#003366")
-                lbl.pack(pady=5)
-
-        except Exception as e:
-            print(f"Error loading images: {e}")
-            # Fallback to text buttons if images fail
-            fallback_frame = tk.Frame(self.root, bg="white")
-            fallback_frame.pack(pady=20)
-            for btn_info in buttons:
-                tk.Button(fallback_frame, text=btn_info["text"], 
-                        command=btn_info["command"]).pack(side="left", padx=10)
-                
     def manage_old_database_window(self, db_name=None, table_name=None):
         # self.db_name.set(db_name if db_name else "")
         self.table_name.set(table_name if table_name else "")
@@ -1538,14 +1500,14 @@ class SalesSystemApp:
         for widget in self.root.winfo_children():
             widget.destroy()
         # تحميل صورة الخلفية
-        self.topbar(show_back_button=True,Back_to_Database_Window=True)
+        self.topbar(show_back_button=True)
         self.display_general_table(self.employees_collection, "Employees")
     
     def new_supplier(self, user_role):
         self.table_name.set("Suppliers")
         for widget in self.root.winfo_children():
             widget.destroy()
-        self.topbar(show_back_button=True,Back_to_Database_Window=True)
+        self.topbar(show_back_button=True)
         self.display_general_table(self.suppliers_collection, "Suppliers")
     
     def new_customer(self, user_role):
@@ -1553,7 +1515,7 @@ class SalesSystemApp:
         for widget in self.root.winfo_children():
             widget.destroy()
 
-        self.topbar(show_back_button=True,Back_to_Database_Window=True)
+        self.topbar(show_back_button=True)
         self.display_general_table(self.customers_collection, "Customers")
 
     def new_products(self, user_role):
@@ -1561,7 +1523,7 @@ class SalesSystemApp:
         for widget in self.root.winfo_children():
             widget.destroy()
     
-        self.topbar(show_back_button=True,Back_to_Database_Window=True)
+        self.topbar(show_back_button=True)
         self.display_general_table(self.products_collection, "Products")
     
     def new_material(self, user_role):
@@ -1569,7 +1531,7 @@ class SalesSystemApp:
         for widget in self.root.winfo_children():
             widget.destroy()
     
-        self.topbar(show_back_button=True,Back_to_Database_Window=True)
+        self.topbar(show_back_button=True)
         self.display_general_table(self.materials_collection, "Materials")
 
 ############################ Main Functions ########################################
@@ -2398,7 +2360,7 @@ class SalesSystemApp:
                 messagebox.showerror("Error", f"Error deleting record: {e}")
 
 ############################ Utility Functions ########################################
-    def check_access_and_open(self, role):
+    def check_access_and_open(self, role, db_name, table_name):
         allowed_roles = ["admin"]  # Define roles that can access this
         if role in allowed_roles:
             # self.manage_old_database_window(db_name, table_name)
@@ -3382,7 +3344,7 @@ class SalesSystemApp:
 
 
     # Function to make the top bar part
-    def topbar(self, show_back_button=False, Back_to_Database_Window = False):
+    def topbar(self, show_back_button=False):
         # Top Bar
         top_bar = tk.Frame(self.root, bg="#dbb40f", height=60)
         top_bar.pack(fill="x")
@@ -3413,10 +3375,7 @@ class SalesSystemApp:
                 back_image = Image.open(self.back_icon_path)
                 back_image = back_image.resize((40, 40), Image.LANCZOS)
                 self.back_photo = ImageTk.PhotoImage(back_image)
-                if Back_to_Database_Window:
-                    back_icon = tk.Button(top_bar, image=self.back_photo, bg="#dbb40f", bd=0, command=self.manage_database_window)
-                else:
-                    back_icon = tk.Button(top_bar, image=self.back_photo, bg="#dbb40f", bd=0, command=self.main_menu)
+                back_icon = tk.Button(top_bar, image=self.back_photo, bg="#dbb40f", bd=0, command=self.main_menu)
                 back_icon.pack(side="left", padx=10)
             except Exception as e:
                 self.silent_popup("Error", "Error loading back icon: {e}", self.play_Error)
