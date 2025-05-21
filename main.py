@@ -85,7 +85,15 @@ class SalesSystemApp:
         self.old = None
         self.root.title("مصنع حسن سليم للمنتجات البلاستيكية")
         self.root.attributes('-fullscreen', True)
-        self.root.configure(bg="white")
+        
+        
+        self.root.state("zoomed")
+        self.root.configure(bg=COLORS["background"])
+        self.current_window = None
+        self.custom_font = ("Segoe UI", 12)
+        self.title_font = ("Segoe UI", 16, "bold")
+
+
         style = ttk.Style()
         style.theme_use("clam")  # Looks cleaner than default
         style.configure("Treeview", 
@@ -94,7 +102,35 @@ class SalesSystemApp:
                         rowheight=25,
                         fieldbackground="#f0f0f0",
                         font=("Arial", 10))
+        style.theme_create("modern", parent="alt", settings={
+            "TFrame": {"configure": {"background": COLORS["background"]}},
+            "TLabel": {
+                "configure": {
+                    "background": COLORS["background"],
+                    "foreground": COLORS["text"],
+                    "font": self.custom_font
+                }
+            },
+            "TButton": {
+                "configure": {
+                    "anchor": "center",
+                    "relief": "flat",
+                    "background": COLORS["primary"],
+                    "foreground": COLORS["text"],
+                    "font": self.custom_font,
+                    "padding": 10
+                },
+                "map": {
+                    "background": [
+                        ("active", COLORS["highlight"]),
+                        ("disabled", "#95a5a6")
+                    ]
+                }
+            }
+        })
         style.map('Treeview', background=[('selected', '#2196F3')], foreground=[('selected', 'white')])
+        
+        style.theme_use("modern")
 
         self.Connect_DB()
                     
@@ -3977,6 +4013,7 @@ class AlwaysOnTopInputDialog(tk.Toplevel):
 if __name__ == "__main__":
     root = tk.Tk()
     app = SalesSystemApp(root)
+    
     app.open_login_window()  # Start with the login window
     try:
         root.mainloop()
