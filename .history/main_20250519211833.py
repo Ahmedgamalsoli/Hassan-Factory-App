@@ -517,7 +517,7 @@ class SalesSystemApp:
                     cellText=table_data,
                     loc='center',
                     cellLoc='center',
-                    colWidths=[0.6, 0.6]
+                    colWidths=[0.5, 0.5]
                 )
                 table.set_fontsize(10)
             except Exception as table_error:

@@ -508,8 +508,8 @@ class SalesSystemApp:
                     ['Metric', 'Value'],
                     ['Customers', f"{int(data['customers'])}"],
                     ['Suppliers', f"{int(data['suppliers'])}"],
-                    ['Number of Sales', f"{data['sales']:.2f}"],
-                    ['Number of Purchases', f"{data['purchases']:.2f}"]
+                    ['Sales', f"{data['sales']:.2f}"],
+                    ['Purchases', f"{data['purchases']:.2f}"]
                 ]
                 
                 # Simple table without advanced styling
@@ -517,7 +517,7 @@ class SalesSystemApp:
                     cellText=table_data,
                     loc='center',
                     cellLoc='center',
-                    colWidths=[0.6, 0.6]
+                    colWidths=[0.4, 0.4]
                 )
                 table.set_fontsize(10)
             except Exception as table_error:

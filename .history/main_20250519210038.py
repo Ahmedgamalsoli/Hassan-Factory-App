@@ -27,8 +27,6 @@ import matplotlib
 matplotlib.use('TkAgg')  # Set the backend before importing pyplot
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from pymongo import MongoClient
-from pymongo.errors import PyMongoError
 
 ######################################################### Access Data Base ##############################################################################
 dialog_width = 300  # Same width as AlwaysOnTopInputDialog
@@ -508,8 +506,8 @@ class SalesSystemApp:
                     ['Metric', 'Value'],
                     ['Customers', f"{int(data['customers'])}"],
                     ['Suppliers', f"{int(data['suppliers'])}"],
-                    ['Number of Sales', f"{data['sales']:.2f}"],
-                    ['Number of Purchases', f"{data['purchases']:.2f}"]
+                    ['Sales', f"${data['sales']:.2f}"],
+                    ['Purchases', f"${data['purchases']:.2f}"]
                 ]
                 
                 # Simple table without advanced styling
@@ -517,7 +515,7 @@ class SalesSystemApp:
                     cellText=table_data,
                     loc='center',
                     cellLoc='center',
-                    colWidths=[0.6, 0.6]
+                    colWidths=[0.4, 0.4]
                 )
                 table.set_fontsize(10)
             except Exception as table_error:
@@ -587,51 +585,22 @@ class SalesSystemApp:
             tk.Label(parent, text="Right visualization unavailable", fg="red").pack()
 
 
-    # Database query methods
+    # Add database query methods (implement with your actual DB connection)
     def get_customer_count(self):
-        try:
-            return self.customers_collection.count_documents({})
-        except PyMongoError as e:
-            print(f"Database error: {e}")
-            return 0
+        # Example: return self.db.execute("SELECT COUNT(*) FROM Customers").fetchone()[0]
+        return 42
 
     def get_supplier_count(self):
-        try:
-            return self.suppliers_collection.count_documents({})
-        except PyMongoError as e:
-            print(f"Database error: {e}")
-            return 0
+        return 15
 
     def get_sales_count(self):
-        try:
-            return self.sales_collection.count_documents({})
-        except PyMongoError as e:
-            print(f"Database error: {e}")
-            return 0
+        return 175
 
     def get_purchase_count(self):
-        try:
-            return self.purchases_collection.count_documents({})
-        except PyMongoError as e:
-            print(f"Database error: {e}")
-            return 0
+        return 89
 
     def get_top_client(self):
-        try:
-            pipeline = [
-                {"$group": {"_id": "$client", "total_sales": {"$sum": "$amount"}}},
-                {"$sort": {"total_sales": -1}},
-                {"$limit": 1}
-            ]
-            result = list(self.sales_collection.aggregate(pipeline))
-            
-            if result:
-                return (result[0]["_id"], result[0]["total_sales"])
-            return ("No clients", 0)
-            
-        except PyMongoError as e:
-            print(f"Database error: {e}")
-            return ("Error", 0)
+        return ("Maggie Corp", 175000)  
         # Modify your show_visualizations method:
     def show_visualizations(self,user_role):
         # Clear current window

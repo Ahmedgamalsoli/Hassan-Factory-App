@@ -27,8 +27,6 @@ import matplotlib
 matplotlib.use('TkAgg')  # Set the backend before importing pyplot
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from pymongo import MongoClient
-from pymongo.errors import PyMongoError
 
 ######################################################### Access Data Base ##############################################################################
 dialog_width = 300  # Same width as AlwaysOnTopInputDialog
@@ -36,20 +34,6 @@ dialog_height = 150 # Same height as AlwaysOnTopInputDialog
 
 ARRAY_FIELDS = ['Units'] #Must be lower case
 ######################################################### Access Data Base ##############################################################################
-COLORS = {
-    "background": "#F5F7FA",       # Light grey background
-    "primary": "#2A3F5F",           # Dark blue for headers
-    "secondary": "#00C0A3",         # Teal for primary actions
-    "accent": "#FF6F61",            # Coral for highlights
-    "text": "#2A3F5F",              # Dark blue text
-    "card": "#FFFFFF",              # White card backgrounds
-    "chart1": "#00C0A3",            # Teal for Sales
-    "chart2": "#FF6F61",            # Coral for Purchases
-    "highlight": "#6C5CE7",         # Purple for interactive elements
-    "table_header": "#2A3F5F",      # Dark blue table headers
-    "positive": "#00C0A3",          # Teal for positive metrics
-    "neutral": "#A0AEC0"            # Grey for secondary elements
-}
 
 # Determine the base directory
 if getattr(sys, "frozen", False):
@@ -215,7 +199,6 @@ class SalesSystemApp:
         # self.root.iconbitmap(icon_path)
         # List to track selected products
         self.selected_products = []   
-    
 
 ########################################## Tables on Data Base ########################################
     def Connect_DB(self):
@@ -342,18 +325,14 @@ class SalesSystemApp:
         # Create the top bar
         self.topbar(show_back_button=False)
 
-        # # Main button frame
-        # button_frame = tk.Frame(self.root, bg="white")
-        # button_frame.pack(pady=30)
+        # Main button frame
+        button_frame = tk.Frame(self.root, bg="white")
+        button_frame.pack(pady=30)
 
         # Main container
         main_container = tk.Frame(self.root, bg="white")
         main_container.pack(fill=tk.BOTH, expand=True)
-        
-        # Button frame
-        button_frame = tk.Frame(main_container, bg="white")
-        button_frame.grid(row=0, column=1, sticky="nsew", padx=20, pady=30)
-        
+
         # Visualization frames
         left_viz_frame = tk.Frame(main_container, bg="white", width=400)
         left_viz_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
@@ -398,8 +377,30 @@ class SalesSystemApp:
             {"text": self.t("Treasury"), "image": "Treasury.png", 
             "command": lambda: self.trash(self.user_role)},
             {"text": self.t("Reports"), "image": "Reports.png", 
-            "command": lambda: self.trash(self.user_role)},
+            "command": lambda: self.show_visualizations(self.user_role)},
         ]
+        # data = {
+        #     'customers': self.get_customer_count(),
+        #     'suppliers': self.get_supplier_count(),
+        #     'sales': self.get_sales_count(),
+        #     'purchases': self.get_purchase_count(),
+        #     'top_client': self.get_top_client()
+        # }
+        # fig = plt.Figure(figsize=(8, 6), dpi=80)
+        # fig.suptitle("Business Performance Dashboard", fontsize=16, y=0.95)
+       
+        # Create subplots
+        # ax1 = fig.add_subplot(221)
+        # ax2 = fig.add_subplot(222)
+        # ax3 = fig.add_subplot(223)
+        # ax4 = fig.add_subplot(224)
+
+        # Chart 1: Customers vs Suppliers
+        # ax1.bar(['Customers', 'Suppliers'], 
+        #         [data['customers'], data['suppliers']], 
+        #         color=['#1f77b4', '#ff7f0e'])
+        # ax1.set_title("Customer & Supplier Count", pad=15)
+        # ax1.set_ylabel("Count")
 
         # if self.user_role == "employee":
         #     buttons.extend([
@@ -456,6 +457,10 @@ class SalesSystemApp:
                             font=("Arial", 15, "bold"), bg="white", fg="#003366")
                 lbl.pack(pady=5)
 
+            # Embed in Tkinter
+            # canvas = FigureCanvasTkAgg(fig, master=main_frame)
+            # canvas.draw()
+            # canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
         except Exception as e:
             print(f"Error loading images: {e}")
@@ -469,170 +474,47 @@ class SalesSystemApp:
 
     def create_left_visualization(self, parent):
         try:
-            # Get data with fallback values
             data = {
-                'customers': self.get_customer_count() if hasattr(self, 'get_customer_count') else 0,
-                'suppliers': self.get_supplier_count() if hasattr(self, 'get_supplier_count') else 0,
-                'sales': float(self.get_sales_count()) if hasattr(self, 'get_sales_count') else 0.0,
-                'purchases': float(self.get_purchase_count()) if hasattr(self, 'get_purchase_count') else 0.0
+                'customers': self.get_customer_count(),
+                'suppliers': self.get_supplier_count()
             }
 
-            # Create figure with basic styling
-            fig = plt.Figure(figsize=(6, 8), dpi=60)
-            fig.subplots_adjust(hspace=0.4)
-            fig.patch.set_facecolor('#FFFFFF')  # White background
-
-            # Bar Chart
-            ax1 = fig.add_subplot(211)
-            try:
-                bars = ax1.bar(['Customers', 'Suppliers'], 
-                            [data['customers'], data['suppliers']], 
-                            color=['#2E86C1', '#17A589'])
-                ax1.set_title("Customer & Supplier Overview", fontsize=12)
-                ax1.set_ylabel("Count")
-                
-                # Add simple data labels
-                for bar in bars:
-                    height = bar.get_height()
-                    ax1.text(bar.get_x() + bar.get_width()/2., height,
-                            f'{int(height)}',
-                            ha='center', va='bottom')
-            except Exception as bar_error:
-                print(f"Bar chart error: {bar_error}")
-
-            # Summary Table
-            ax2 = fig.add_subplot(212)
-            ax2.axis('off')
-            try:
-                table_data = [
-                    ['Metric', 'Value'],
-                    ['Customers', f"{int(data['customers'])}"],
-                    ['Suppliers', f"{int(data['suppliers'])}"],
-                    ['Number of Sales', f"{data['sales']:.2f}"],
-                    ['Number of Purchases', f"{data['purchases']:.2f}"]
-                ]
-                
-                # Simple table without advanced styling
-                table = ax2.table(
-                    cellText=table_data,
-                    loc='center',
-                    cellLoc='center',
-                    colWidths=[0.6, 0.6]
-                )
-                table.set_fontsize(10)
-            except Exception as table_error:
-                print(f"Table error: {table_error}")
-
-            # Embed in Tkinter
+            fig = plt.Figure(figsize=(6, 4), dpi=100)
+            ax = fig.add_subplot(111)
+            ax.bar(['Customers', 'Suppliers'], 
+                   [data['customers'], data['suppliers']], 
+                   color=['#003366', '#009999'])
+            ax.set_title("Customer & Supplier Count")
+            
             canvas = FigureCanvasTkAgg(fig, master=parent)
             canvas.draw()
-            canvas.get_tk_widget().pack(fill=tk.BOTH, expand=1)
+            canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
         except Exception as e:
-            print(f"Visualization failed: {str(e)}")
-            # Create error label as fallback
-            tk.Label(parent, text="Data visualization unavailable", fg="red").pack()
+            print(f"Visualization error: {e}")
 
     def create_right_visualization(self, parent):
         try:
-            # Safe data retrieval
-            sales = float(self.get_sales_count()) if hasattr(self, 'get_sales_count') else 0.0
-            purchases = float(self.get_purchase_count()) if hasattr(self, 'get_purchase_count') else 0.0
-            top_client = self.get_top_client() if hasattr(self, 'get_top_client') else None
+            data = {
+                'sales': self.get_sales_count(),
+                'purchases': self.get_purchase_count()
+            }
 
-            fig = plt.Figure(figsize=(6, 8), dpi=60)
-            fig.subplots_adjust(hspace=0.5)
-            fig.patch.set_facecolor('#FFFFFF')  # White background
-
-            # Pie Chart
-            ax1 = fig.add_subplot(211)
-            try:
-                ax1.pie([sales, purchases],
-                    labels=['Sales', 'Purchases'],
-                    autopct='%1.1f%%',
-                    colors=['#28B463', '#E74C3C'])
-                ax1.set_title("Sales vs Purchases", fontsize=12)
-            except Exception as pie_error:
-                print(f"Pie chart error: {pie_error}")
-
-            # Top Client Chart
-            ax2 = fig.add_subplot(212)
-            try:
-                if top_client and isinstance(top_client, (list, tuple)) and len(top_client) >= 2:
-                    name, value = top_client[0], float(top_client[1])
-                    bar = ax2.bar([name], [value], color='#8E44AD')
-                    ax2.set_title("Top Client", fontsize=12)
-                    ax2.set_ylabel("Amount")
-                    
-                    # Add value label
-                    for rect in bar:
-                        height = rect.get_height()
-                        ax2.text(rect.get_x() + rect.get_width()/2., height,
-                                f'${height:.2f}',
-                                ha='center', va='bottom')
-                else:
-                    ax2.text(0.5, 0.5, 'No client data',
-                            ha='center', va='center',
-                            fontsize=10, color='gray')
-                    ax2.axis('off')
-            except Exception as bar_error:
-                print(f"Client chart error: {bar_error}")
-
+            fig = plt.Figure(figsize=(6, 4), dpi=100)
+            ax = fig.add_subplot(111)
+            ax.pie([data['sales'], data['purchases']],
+                   labels=['Sales', 'Purchases'],
+                   autopct='%1.1f%%',
+                   colors=['#4CAF50', '#FF5252'])
+            ax.set_title("Sales vs Purchases Ratio")
+            
             canvas = FigureCanvasTkAgg(fig, master=parent)
             canvas.draw()
-            canvas.get_tk_widget().pack(fill=tk.BOTH, expand=1)
+            canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
         except Exception as e:
-            print(f"Visualization failed: {str(e)}")
-            tk.Label(parent, text="Right visualization unavailable", fg="red").pack()
-
-
-    # Database query methods
-    def get_customer_count(self):
-        try:
-            return self.customers_collection.count_documents({})
-        except PyMongoError as e:
-            print(f"Database error: {e}")
-            return 0
-
-    def get_supplier_count(self):
-        try:
-            return self.suppliers_collection.count_documents({})
-        except PyMongoError as e:
-            print(f"Database error: {e}")
-            return 0
-
-    def get_sales_count(self):
-        try:
-            return self.sales_collection.count_documents({})
-        except PyMongoError as e:
-            print(f"Database error: {e}")
-            return 0
-
-    def get_purchase_count(self):
-        try:
-            return self.purchases_collection.count_documents({})
-        except PyMongoError as e:
-            print(f"Database error: {e}")
-            return 0
-
-    def get_top_client(self):
-        try:
-            pipeline = [
-                {"$group": {"_id": "$client", "total_sales": {"$sum": "$amount"}}},
-                {"$sort": {"total_sales": -1}},
-                {"$limit": 1}
-            ]
-            result = list(self.sales_collection.aggregate(pipeline))
-            
-            if result:
-                return (result[0]["_id"], result[0]["total_sales"])
-            return ("No clients", 0)
-            
-        except PyMongoError as e:
-            print(f"Database error: {e}")
-            return ("Error", 0)
-        # Modify your show_visualizations method:
+            print(f"Visualization error: {e}")
+    # Modify your show_visualizations method:
     def show_visualizations(self,user_role):
         # Clear current window
         for widget in self.root.winfo_children():
@@ -717,7 +599,24 @@ class SalesSystemApp:
 
         except Exception as e:
             print(f"Error generating visualizations: {e}")
-            tk.messagebox.showerror("Error", f"Failed to load reports: {str(e)}")           
+            tk.messagebox.showerror("Error", f"Failed to load reports: {str(e)}")
+
+    # Add database query methods (implement with your actual DB connection)
+    def get_customer_count(self):
+        # Example: return self.db.execute("SELECT COUNT(*) FROM Customers").fetchone()[0]
+        return 42
+
+    def get_supplier_count(self):
+        return 15
+
+    def get_sales_count(self):
+        return 175
+
+    def get_purchase_count(self):
+        return 89
+
+    def get_top_client(self):
+        return ("Maggie Corp", 175000)             
     def manage_database_window(self):
                 # Clear current window
         for widget in self.root.winfo_children():
