@@ -90,9 +90,7 @@ class SalesSystemApp:
         self.root.state("zoomed")
         self.root.configure(bg=COLORS["background"])
         self.current_window = None
-        self.custom_font = ("Segoe UI", 12)
-        self.title_font = ("Segoe UI", 16, "bold")
-
+        
 
         style = ttk.Style()
         style.theme_use("clam")  # Looks cleaner than default
@@ -102,35 +100,42 @@ class SalesSystemApp:
                         rowheight=25,
                         fieldbackground="#f0f0f0",
                         font=("Arial", 10))
-        style.theme_create("modern", parent="alt", settings={
-            "TFrame": {"configure": {"background": COLORS["background"]}},
-            "TLabel": {
-                "configure": {
-                    "background": COLORS["background"],
-                    "foreground": COLORS["text"],
-                    "font": self.custom_font
-                }
-            },
-            "TButton": {
-                "configure": {
-                    "anchor": "center",
-                    "relief": "flat",
-                    "background": COLORS["primary"],
-                    "foreground": COLORS["text"],
-                    "font": self.custom_font,
-                    "padding": 10
-                },
-                "map": {
-                    "background": [
-                        ("active", COLORS["highlight"]),
-                        ("disabled", "#95a5a6")
-                    ]
-                }
-            }
-        })
+        
+        self.custom_font = ("Segoe UI", 12)
+        self.title_font = ("Segoe UI", 16, "bold")
+        
+        # style.theme_create("modern", parent="alt", settings={
+        #     "TFrame": {"configure": {"background": COLORS["background"]}},
+        #     "TLabel": {
+        #         "configure": {
+        #             "background": COLORS["background"],
+        #             "foreground": COLORS["text"],
+        #             "font": self.custom_font
+        #         }
+        #     },
+        #     "TButton": {
+        #         "configure": {
+        #             "anchor": "center",
+        #             "relief": "flat",
+        #             "background": COLORS["primary"],
+        #             "foreground": COLORS["text"],
+        #             "font": self.custom_font,
+        #             "padding": 10
+        #         },
+        #         "map": {
+        #             "background": [
+        #                 ("active", COLORS["highlight"]),
+        #                 ("disabled", "#95a5a6")
+        #             ]
+        #         }
+        #     }
+        # })
+
+
+
         style.map('Treeview', background=[('selected', '#2196F3')], foreground=[('selected', 'white')])
         
-        style.theme_use("modern")
+        # style.theme_use("modern")
 
         self.Connect_DB()
                     
@@ -385,16 +390,17 @@ class SalesSystemApp:
         # Main container
         main_container = tk.Frame(self.root, bg="white")
         main_container.pack(fill=tk.BOTH, expand=True)
-        
+        # canvas.get_tk_widget().grid(row=0, column=0, sticky="nsew")
+
         # Button frame
-        button_frame = tk.Frame(main_container, bg="white")
-        button_frame.grid(row=0, column=1, sticky="nsew", padx=20, pady=30)
+        button_frame = self.create_card_frame(main_container, padding=20)
+        button_frame.grid(row=0, column=1, sticky="nsew", padx=20, pady=10)
         
         # Visualization frames
-        left_viz_frame = tk.Frame(main_container, bg="white", width=400)
+        left_viz_frame = self.create_card_frame(main_container)
         left_viz_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
         
-        right_viz_frame = tk.Frame(main_container, bg="white", width=400)
+        right_viz_frame = self.create_card_frame(main_container)    
         right_viz_frame.grid(row=0, column=2, sticky="nsew", padx=10, pady=10)
         
         # Configure grid weights
@@ -406,6 +412,7 @@ class SalesSystemApp:
         # Create visualizations
         self.create_left_visualization(left_viz_frame)
         self.create_right_visualization(right_viz_frame)
+        self.create_main_buttons(button_frame)
 
         # Define buttons with images, text, and commands
         buttons = [
@@ -464,34 +471,38 @@ class SalesSystemApp:
         # Load images and create buttons
         images = []  # Keep references to prevent garbage collection
         columns_per_row = 3  # Number of buttons per row
+        button_size = 100
 
         try:
             for index, btn_info in enumerate(buttons):
-                # Load and resize image
-                img_path = os.path.join(BASE_DIR, "Static", "images", btn_info["image"])
-                img = Image.open(img_path).resize((70, 70), Image.LANCZOS)
-                photo_img = ImageTk.PhotoImage(img)
-                images.append(photo_img)
-
-                # Calculate grid position
                 row = index // columns_per_row
                 column = index % columns_per_row
 
-                # Create sub-frame for each button
-                sub_frame = tk.Frame(button_frame, bg="white")
-                sub_frame.grid(row=row, column=column, padx=20, pady=20)
+                btn_frame = tk.Frame(button_frame, bg=COLORS["card"])
+                btn_frame.grid(row=row, column=column, padx=15, pady=15)
 
-                # Image button
-                btn = tk.Button(sub_frame, image=photo_img, bd=0, 
+                # Load and process image
+                img_path = os.path.join(BASE_DIR, "Static", "images", btn_info["image"])
+                img = Image.open(img_path).resize((button_size, button_size), Image.LANCZOS)
+                photo_img = ImageTk.PhotoImage(img)
+
+                # Create modern button
+                btn = tk.Button(btn_frame,
+                            image=photo_img,
+                            text=btn_info["text"],
+                            compound=tk.TOP,
+                            bg=COLORS["card"],
+                            fg=COLORS["text"],
+                            activebackground=COLORS["highlight"],
+                            font=("Segoe UI", 10),
+                            borderwidth=0,
                             command=btn_info["command"])
-                btn.image = photo_img  # Keep reference
+                btn.image = photo_img
                 btn.pack()
 
-                # Text label
-                lbl = tk.Label(sub_frame, text=btn_info["text"], 
-                            font=("Arial", 15, "bold"), bg="white", fg="#003366")
-                lbl.pack(pady=5)
-
+                # Hover effect
+                btn.bind("<Enter>", lambda e, b=btn: b.config(bg=COLORS["primary"]))
+                btn.bind("<Leave>", lambda e, b=btn: b.config(bg=COLORS["card"]))
 
         except Exception as e:
             print(f"Error loading images: {e}")
@@ -514,9 +525,11 @@ class SalesSystemApp:
             }
 
             # Create figure with basic styling
-            fig = plt.Figure(figsize=(6, 8), dpi=60)
+
+            plt.style.use('dark_background')  # Modern dark theme
+            fig = plt.Figure(figsize=(6, 8), dpi=70, facecolor=COLORS["card"])
             fig.subplots_adjust(hspace=0.4)
-            fig.patch.set_facecolor('#FFFFFF')  # White background
+            # fig.patch.set_facecolor('#FFFFFF')  # White background
 
             # Bar Chart
             ax1 = fig.add_subplot(211)
@@ -525,6 +538,8 @@ class SalesSystemApp:
                             [data['customers'], data['suppliers']], 
                             color=['#2E86C1', '#17A589'])
                 ax1.set_title("Customer & Supplier Overview", fontsize=12)
+                ax1.set_facecolor(COLORS["card"])
+                ax1.tick_params(colors=COLORS["text"], labelsize=10)
                 ax1.set_ylabel("Count")
                 
                 # Add simple data labels
@@ -532,37 +547,49 @@ class SalesSystemApp:
                     height = bar.get_height()
                     ax1.text(bar.get_x() + bar.get_width()/2., height,
                             f'{int(height)}',
-                            ha='center', va='bottom')
+                            ha='center', va='bottom',
+                            color=COLORS["text"], fontsize=10)
+                    
             except Exception as bar_error:
                 print(f"Bar chart error: {bar_error}")
 
             # Summary Table
             ax2 = fig.add_subplot(212)
             ax2.axis('off')
-            try:
-                table_data = [
-                    ['Metric', 'Value'],
-                    ['Customers', f"{int(data['customers'])}"],
-                    ['Suppliers', f"{int(data['suppliers'])}"],
-                    ['Number of Sales', f"{data['sales']:.2f}"],
-                    ['Number of Purchases', f"{data['purchases']:.2f}"]
-                ]
-                
-                # Simple table without advanced styling
-                table = ax2.table(
-                    cellText=table_data,
-                    loc='center',
-                    cellLoc='center',
-                    colWidths=[0.6, 0.6]
-                )
-                table.set_fontsize(10)
-            except Exception as table_error:
-                print(f"Table error: {table_error}")
+            
+            table_data = [
+                ['Metric', 'Value'],
+                ['Customers', f"{int(data['customers'])}"],
+                ['Suppliers', f"{int(data['suppliers'])}"],
+                ['Number of Sales', f"{data['sales']:.2f}"],
+                ['Number of Purchases', f"{data['purchases']:.2f}"]
+            ]
+            
+            # Simple table without advanced styling
+            table = ax2.table(
+                cellText=table_data,
+                loc='center',
+                cellLoc='center',
+                colWidths=[0.6, 0.6]
+            )
+            table.auto_set_font_size(False)
+            table.set_fontsize(10)
+            table.set_zorder(100)
+            # except Exception as table_error:
+            #     print(f"Table error: {table_error}")
 
-            # Embed in Tkinter
+            for (row, col), cell in table.get_celld().items():
+                cell.set_facecolor(COLORS["card"])
+                cell.set_text_props(color=COLORS["text"])
+                if row == 0:
+                    cell.set_facecolor(COLORS["primary"])
+                    cell.set_text_props(weight='bold')
+
             canvas = FigureCanvasTkAgg(fig, master=parent)
             canvas.draw()
-            canvas.get_tk_widget().pack(fill=tk.BOTH, expand=1)
+            canvas.get_tk_widget().config(bg=COLORS["card"])
+            canvas.get_tk_widget().pack(fill="x", expand=True)
+            # canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
         except Exception as e:
             print(f"Visualization failed: {str(e)}")
@@ -579,7 +606,7 @@ class SalesSystemApp:
             print(2)
             fig = plt.Figure(figsize=(6, 8), dpi=60)
             fig.subplots_adjust(hspace=0.5)
-            fig.patch.set_facecolor('#FFFFFF')  # White background
+            fig.patch.set_facecolor('#FFFFFF')  
 
             # Pie Chart
             ax1 = fig.add_subplot(211)
@@ -622,7 +649,70 @@ class SalesSystemApp:
         except Exception as e:
             print(f"Visualization failed: {str(e)}")
             tk.Label(parent, text="Right visualization unavailable", fg="red").pack()
+    
+    def create_card_frame(self, parent, padding=0):
+        frame = tk.Frame(parent, bg=COLORS["card"], bd=0,
+                        highlightbackground=COLORS["primary"],
+                        highlightthickness=3)
+        if padding:
+            frame.grid_propagate(False)
+            frame.config(width=400, height=600)
+        return frame
 
+    def create_main_buttons(self, parent):
+        buttons = [
+            {"text": "New Sales Invoice", "image": "Sales.png",
+            "command": lambda: self.trash(self.user_role)},
+            {"text": "New Purchase Invoice", "image": "Purchase.png", 
+            "command": lambda: self.trash(self.user_role)},
+            {"text": "Production Order", "image": "Production Order.png", 
+            "command": lambda: self.trash(self.user_role)},
+            {"text": "Employee Interactions", "image": "Employees.png", 
+            "command": lambda: self.trash(self.user_role)},
+            {"text": "Treasury", "image": "Treasury.png", 
+            "command": lambda: self.trash(self.user_role)},
+            {"text": "Database", "image": "Database.png", 
+            "command": lambda: self.trash(self.user_role)},
+            # {"text": "Analytics", "image": "Analytics.png", 
+            # "command": lambda: self.trash(self.user_role)},
+        ]
+
+        columns_per_row = 3
+        button_size = 100
+
+        try:
+            for index, btn_info in enumerate(buttons):
+                row = index // columns_per_row
+                column = index % columns_per_row
+
+                btn_frame = tk.Frame(parent, bg=COLORS["card"])
+                btn_frame.grid(row=row, column=column, padx=15, pady=15)
+
+                # Load and process image
+                img_path = os.path.join(BASE_DIR, "Static", "images", btn_info["image"])
+                img = Image.open(img_path).resize((button_size, button_size), Image.LANCZOS)
+                photo_img = ImageTk.PhotoImage(img)
+
+                # Create modern button
+                btn = tk.Button(btn_frame,
+                            image=photo_img,
+                            text=btn_info["text"],
+                            compound=tk.TOP,
+                            bg=COLORS["card"],
+                            fg=COLORS["text"],
+                            activebackground=COLORS["highlight"],
+                            font=("Segoe UI", 10),
+                            borderwidth=0,
+                            command=btn_info["command"])
+                btn.image = photo_img
+                btn.pack()
+
+                # Hover effect
+                btn.bind("<Enter>", lambda e, b=btn: b.config(bg=COLORS["primary"]))
+                btn.bind("<Leave>", lambda e, b=btn: b.config(bg=COLORS["card"]))
+                
+        except Exception as e:
+            print(f"Button error: {e}")
 
     # Database query methods
     def get_customer_count(self):
