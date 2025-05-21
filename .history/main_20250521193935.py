@@ -85,15 +85,7 @@ class SalesSystemApp:
         self.old = None
         self.root.title("مصنع حسن سليم للمنتجات البلاستيكية")
         self.root.attributes('-fullscreen', True)
-        
-        
-        self.root.state("zoomed")
-        self.root.configure(bg=COLORS["background"])
-        self.current_window = None
-        self.custom_font = ("Segoe UI", 12)
-        self.title_font = ("Segoe UI", 16, "bold")
-
-
+        self.root.configure(bg="white")
         style = ttk.Style()
         style.theme_use("clam")  # Looks cleaner than default
         style.configure("Treeview", 
@@ -102,35 +94,7 @@ class SalesSystemApp:
                         rowheight=25,
                         fieldbackground="#f0f0f0",
                         font=("Arial", 10))
-        style.theme_create("modern", parent="alt", settings={
-            "TFrame": {"configure": {"background": COLORS["background"]}},
-            "TLabel": {
-                "configure": {
-                    "background": COLORS["background"],
-                    "foreground": COLORS["text"],
-                    "font": self.custom_font
-                }
-            },
-            "TButton": {
-                "configure": {
-                    "anchor": "center",
-                    "relief": "flat",
-                    "background": COLORS["primary"],
-                    "foreground": COLORS["text"],
-                    "font": self.custom_font,
-                    "padding": 10
-                },
-                "map": {
-                    "background": [
-                        ("active", COLORS["highlight"]),
-                        ("disabled", "#95a5a6")
-                    ]
-                }
-            }
-        })
         style.map('Treeview', background=[('selected', '#2196F3')], foreground=[('selected', 'white')])
-        
-        style.theme_use("modern")
 
         self.Connect_DB()
                     
@@ -656,30 +620,30 @@ class SalesSystemApp:
         try:
             pipeline = [
                 # Convert Credit string to a numeric value
-                # {
-                #     "$addFields": {
-                #         "creditNumeric": {
-                #             "$toDouble": {
-                #                 "$arrayElemAt": [
-                #                     {"$split": ["$Credit", "_"]}, 
-                #                     0
-                #                 ]
-                #             }
-                #         }
-                #     }
-                # },
+                {
+                    "$addFields": {
+                        "creditNumeric": {
+                            "$toDouble": {
+                                "$arrayElemAt": [
+                                    {"$split": ["$Credit", "_"]}, 
+                                    0
+                                ]
+                            }
+                        }
+                    }
+                },
                 # Sort by creditNumeric (descending)
-                {"$sort": {"Credit": -1}},
+                {"$sort": {"creditNumeric": -1}},
                 # Get the top client
                 {"$limit": 1},
                 # Project the correct identifier field: "Company address"
-                {"$project": {"Name": 1, "Credit": 1, "_id": 0}}  # 🔑 Fix here
+                {"$project": {"Name": 1, "creditNumeric": 1, "_id": 0}}  # 🔑 Fix here
             ]
-            result = list(self.customers_collection.aggregate(pipeline))
-            # print(1)
+            result = list(self.sales_collection.aggregate(pipeline))
+            
             if result:
-                print(f"{result[0]["Name"]} ,{result[0]["Credit"]}")
-                return (result[0]["Name"], result[0]["Credit"])  # 🔑 Fix here
+                print(f"{result[0]["Name"]} ,{result[0]["creditNumeric"]}")
+                return (result[0]["Name"], result[0]["creditNumeric"])  # 🔑 Fix here
             return ("No clients found", 0)
             
         except PyMongoError as e:
@@ -2521,8 +2485,7 @@ class SalesSystemApp:
 
         except Exception as e:
             messagebox.showerror("Error", f"Error updating record: {e}")
-    
-    #
+
     def delete_generic_entry(self, tree, current_collection):
         selected_item = tree.selection()
         id_index = None
@@ -4030,7 +3993,6 @@ class AlwaysOnTopInputDialog(tk.Toplevel):
 if __name__ == "__main__":
     root = tk.Tk()
     app = SalesSystemApp(root)
-    
     app.open_login_window()  # Start with the login window
     try:
         root.mainloop()
