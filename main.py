@@ -137,6 +137,7 @@ class SalesSystemApp:
         self.stop_event = threading.Event()
         
         self.image_refs = []
+        self.production_entries = []
         #         elif collection_name == "Sales_Header":
         #     return [self.t("Product_code"), self.t("product_name"), self.t("unit"),self.t("numbering"),self.t("QTY"),self.t("Discount Type"),self.t("Discount Value"),self.t("Total_QTY"),self.t("Unit_Price"),self.t("Total_Price")]
        
@@ -289,6 +290,7 @@ class SalesSystemApp:
         self.transactions_collection          = db['Transactions']
         self.big_deals_collection             = db['Big_deals']
         self.TEX_Calculations_collection      = db['TEX_Calculations']
+        self.production_collection            = db['Production']
 
 ############################################ Windows ########################################### 
     
@@ -418,7 +420,7 @@ class SalesSystemApp:
             {"text": self.t("Make Payment"), "image": "payment.png", 
             "command": lambda: self.trash(self.user_role)},
             {"text": self.t("Production Order"), "image": "Production Order.png", 
-            "command": lambda: self.trash(self.user_role)},
+            "command": lambda: self.new_production_order(self.user_role)},
             {"text": self.t("Employee interactions"), "image": "Employees.png", 
             "command": lambda: self.manage_Employees_window(self.user_role)},
             # {"text": self.t("Customers"), "image": "customers.png", 
@@ -1750,6 +1752,248 @@ class SalesSystemApp:
         button_frame.columnconfigure(0, weight=1)
         button_frame.columnconfigure(1, weight=1)
 
+    def new_production_order(self, user_role):
+        # Clear current window
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        # Create top bar
+        self.topbar(show_back_button=True)
+
+        # Main form frame
+        form_frame = tk.Frame(self.root, padx=20, pady=20)
+        form_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Define columns with bilingual headers
+        columns = [
+            ("Material Code", "كود الخامة"),
+            ("Material Name", "اسم الخامة"),
+            ("Material Ava qty", "الكمية المتاحة"),
+            ("Material_Qty", "الكمية المستخدمة"),
+            ("Product Code", "كود المنتج"),
+            ("Product Name", "اسم المنتج"),
+            ("Product Ava Qty", "الكمية المتاحة"),
+            ("Product_Qty", "الكمية المنتجة"),
+            ("Waste", "الهالك")
+        ]
+
+        # Create header row
+        header_frame = tk.Frame(form_frame, bg='#f0f0f0')
+        header_frame.grid(row=0, column=0, columnspan=len(columns), sticky='ew', pady=(10, 0))
+        
+        for col_idx, (eng_header, ar_header) in enumerate(columns):
+            tk.Label(header_frame, 
+                    text=f"{eng_header}\n{ar_header}",
+                    bg='#f0f0f0',
+                    relief='ridge',
+                    width=18,
+                    justify='center').grid(row=0, column=col_idx, sticky='ew')
+            header_frame.columnconfigure(col_idx, weight=1)
+
+        # Scrollable Canvas
+        canvas = tk.Canvas(form_frame)
+        scrollbar = tk.Scrollbar(form_frame, orient="vertical", command=canvas.yview)
+        self.rows_frame = tk.Frame(canvas)
+
+        self.rows_frame.bind("<Configure>", lambda e: canvas.configure(
+            scrollregion=canvas.bbox("all")))
+        canvas.create_window((0, 0), window=self.rows_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.grid(row=1, column=0, sticky="nsew")
+        scrollbar.grid(row=1, column=1, sticky="ns")
+        
+        form_frame.grid_rowconfigure(1, weight=1)
+        form_frame.columnconfigure(0, weight=1)
+
+        self.production_entries = []
+        print("button")
+        # Create initial rows
+        for i in range(3):
+            self.add_production_row()
+        print("button")
+        # Control buttons
+        button_frame = tk.Frame(form_frame)
+        button_frame.grid(row=2, column=0, columnspan=len(columns), pady=10, sticky='ew')
+        print("button")
+        tk.Button(button_frame, text="Add Row (+)",
+                command=self.add_production_row).pack(side=tk.LEFT, padx=5)
+        print("button")
+        tk.Button(button_frame, text="Save Order",
+                command=self.save_production_order).pack(side=tk.RIGHT, padx=5)
+
+        # Load initial data
+        self.load_production_data()
+
+    def add_production_row(self):
+        row_idx = len(self.production_entries)
+        row_frame = tk.Frame(self.rows_frame)
+        row_frame.grid(row=row_idx, column=0, sticky='ew')
+        
+        entries = []
+        for col_idx in range(9):
+            if col_idx == 0:  # Material Code
+                var = tk.StringVar()
+                cb = ttk.Combobox(row_frame, width=18)
+                cb.grid(row=0, column=col_idx, padx=2)
+                cb.bind('<<ComboboxSelected>>', lambda e, idx=row_idx: self.update_material_info(idx))
+                entries.append(cb)
+            elif col_idx == 4:  # Product Code
+                var = tk.StringVar()
+                cb = ttk.Combobox(row_frame, width=18)
+                cb.grid(row=0, column=col_idx, padx=2)
+                cb.bind('<<ComboboxSelected>>', lambda e, idx=row_idx: self.update_product_info(idx))
+                entries.append(cb)
+            elif col_idx in [1, 5]:  # Names (readonly)
+                entry = tk.Entry(row_frame, width=20, state='readonly')
+                entry.grid(row=0, column=col_idx, padx=2)
+                entries.append(entry)
+            elif col_idx in [2, 6]:  # Available quantities (readonly)
+                entry = tk.Entry(row_frame, width=12, state='readonly')
+                entry.grid(row=0, column=col_idx, padx=2)
+                entries.append(entry)
+            else:
+                entry = tk.Entry(row_frame, width=15)
+                entry.grid(row=0, column=col_idx, padx=2)
+                entries.append(entry)
+            
+            row_frame.columnconfigure(col_idx, weight=1)
+        
+        self.production_entries.append(entries)
+        self.update_combobox_values()
+
+    def update_combobox_values(self):
+        material_codes = list(self.material_map.keys())
+        product_codes = list(self.product_map.keys())
+        
+        for row in self.production_entries:
+            row[0]['values'] = material_codes
+            row[4]['values'] = product_codes
+
+    def load_production_data(self):
+        try:
+            # Load materials
+            materials = self.db.materials.find()
+            self.material_map = {
+                str(m['code']): {
+                    'name': m.get('name', ''),
+                    'stock': m.get('stock', 0)
+                } for m in materials
+            }
+            
+            # Load products
+            products = self.db.products.find()
+            self.product_map = {
+                str(p['code']): {
+                    'name': p.get('name', ''),
+                    'stock': p.get('stock', 0)
+                } for p in products
+            }
+            
+            self.update_combobox_values()
+            
+        except PyMongoError as e:
+            messagebox.showerror("Database Error", f"Failed to load data: {str(e)}")
+
+    def update_material_info(self, row_idx):
+        code = self.production_entries[row_idx][0].get()
+        material = self.material_map.get(code, {})
+        
+        # Update material name
+        self.production_entries[row_idx][1].config(state='normal')
+        self.production_entries[row_idx][1].delete(0, tk.END)
+        self.production_entries[row_idx][1].insert(0, material.get('name', ''))
+        self.production_entries[row_idx][1].config(state='readonly')
+        
+        # Update available quantity
+        self.production_entries[row_idx][2].config(state='normal')
+        self.production_entries[row_idx][2].delete(0, tk.END)
+        self.production_entries[row_idx][2].insert(0, str(material.get('stock', 0)))
+        self.production_entries[row_idx][2].config(state='readonly')
+
+    def update_product_info(self, row_idx):
+        code = self.production_entries[row_idx][4].get()
+        product = self.product_map.get(code, {})
+        
+        # Update product name
+        self.production_entries[row_idx][5].config(state='normal')
+        self.production_entries[row_idx][5].delete(0, tk.END)
+        self.production_entries[row_idx][5].insert(0, product.get('name', ''))
+        self.production_entries[row_idx][5].config(state='readonly')
+        
+        # Update available quantity
+        self.production_entries[row_idx][6].config(state='normal')
+        self.production_entries[row_idx][6].delete(0, tk.END)
+        self.production_entries[row_idx][6].insert(0, str(product.get('stock', 0)))
+        self.production_entries[row_idx][6].config(state='readonly')
+
+    def validate_production_row(self, row):
+        try:
+            # Validate numeric fields
+            float(row[3].get())  # Material Qty
+            float(row[7].get())  # Product Qty
+            float(row[8].get())  # Waste
+            return True
+        except ValueError:
+            return False
+
+    def save_production_order(self):
+        order_data = []
+        
+        for idx, row in enumerate(self.production_entries):
+            if not self.validate_production_row(row):
+                messagebox.showerror("Input Error", 
+                    f"Invalid numeric values in row {idx+1}")
+                return
+                
+            order_data.append({
+                'material_code': row[0].get(),
+                'material_qty': float(row[3].get()),
+                'product_code': row[4].get(),
+                'product_qty': float(row[7].get()),
+                'waste': float(row[8].get()),
+                'timestamp': datetime.now()
+            })
+        
+        try:
+            result = self.db.production_orders.insert_many(order_data)
+            if result.inserted_ids:
+                messagebox.showinfo("Success", 
+                    f"Saved {len(result.inserted_ids)} production records")
+                self.update_inventory()
+            else:
+                messagebox.showwarning("Warning", "No records saved")
+        except PyMongoError as e:
+            messagebox.showerror("Database Error", f"Failed to save order: {str(e)}")
+
+    def update_inventory(self):
+        # Update material and product stocks
+        try:
+            for row in self.production_entries:
+                material_code = row[0].get()
+                material_qty = float(row[3].get() or 0)
+                
+                product_code = row[4].get()
+                product_qty = float(row[7].get() or 0)
+                
+                # Update material stock
+                if material_code:
+                    self.db.materials.update_one(
+                        {'code': material_code},
+                        {'$inc': {'stock': -material_qty}}
+                    )
+                
+                # Update product stock
+                if product_code:
+                    self.db.products.update_one(
+                        {'code': product_code},
+                        {'$inc': {'stock': product_qty}}
+                    )
+                    
+        except PyMongoError as e:
+            messagebox.showerror("Inventory Error", 
+                f"Failed to update inventory: {str(e)}")
+
     def handle_combobox_change(self, event, row_idx, field_type):
         """Handle changes in product code/name comboboxes"""
         value = event.widget.get().strip()
@@ -2868,6 +3112,8 @@ class SalesSystemApp:
             return self.transactions_collection
         elif collection_name == "Big_deals":
             return self.big_deals_collection
+        elif collection_name == "Production":
+            return self.production_collection
         elif collection_name == "TEX_Calculations":
             return self.TEX_Calculations_collection
         else:
