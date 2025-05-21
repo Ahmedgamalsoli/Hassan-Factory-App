@@ -620,18 +620,18 @@ class SalesSystemApp:
         try:
             pipeline = [
                 # Convert Credit string to a numeric value
-                # {
-                #     "$addFields": {
-                #         "creditNumeric": {
-                #             "$toDouble": {
-                #                 "$arrayElemAt": [
-                #                     {"$split": ["$Credit", "_"]}, 
-                #                     0
-                #                 ]
-                #             }
-                #         }
-                #     }
-                # },
+                {
+                    "$addFields": {
+                        "creditNumeric": {
+                            "$toDouble": {
+                                "$arrayElemAt": [
+                                    {"$split": ["$Credit", "_"]}, 
+                                    0
+                                ]
+                            }
+                        }
+                    }
+                },
                 # Sort by creditNumeric (descending)
                 {"$sort": {"Credit": -1}},
                 # Get the top client

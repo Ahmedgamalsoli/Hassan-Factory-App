@@ -538,9 +538,8 @@ class SalesSystemApp:
             # Safe data retrieval
             sales = float(self.get_sales_count()) if hasattr(self, 'get_sales_count') else 0.0
             purchases = float(self.get_purchase_count()) if hasattr(self, 'get_purchase_count') else 0.0
-            print(1)
             top_client = self.get_top_client() if hasattr(self, 'get_top_client') else None
-            print(2)
+
             fig = plt.Figure(figsize=(6, 8), dpi=60)
             fig.subplots_adjust(hspace=0.5)
             fig.patch.set_facecolor('#FFFFFF')  # White background
@@ -620,30 +619,29 @@ class SalesSystemApp:
         try:
             pipeline = [
                 # Convert Credit string to a numeric value
-                # {
-                #     "$addFields": {
-                #         "creditNumeric": {
-                #             "$toDouble": {
-                #                 "$arrayElemAt": [
-                #                     {"$split": ["$Credit", "_"]}, 
-                #                     0
-                #                 ]
-                #             }
-                #         }
-                #     }
-                # },
+                {
+                    "$addFields": {
+                        "creditNumeric": {
+                            "$toDouble": {
+                                "$arrayElemAt": [
+                                    {"$split": ["$Credit", "_"]}, 
+                                    0
+                                ]
+                            }
+                        }
+                    }
+                },
                 # Sort by creditNumeric (descending)
-                {"$sort": {"Credit": -1}},
+                {"$sort": {"creditNumeric": -1}},
                 # Get the top client
                 {"$limit": 1},
                 # Project the correct identifier field: "Company address"
-                {"$project": {"Name": 1, "Credit": 1, "_id": 0}}  # 🔑 Fix here
+                {"$project": {"Company address": 1, "creditNumeric": 1, "_id": 0}}  # 🔑 Fix here
             ]
-            result = list(self.customers_collection.aggregate(pipeline))
-            # print(1)
+            result = list(self.sales_collection.aggregate(pipeline))
+            
             if result:
-                print(f"{result[0]["Name"]} ,{result[0]["Credit"]}")
-                return (result[0]["Name"], result[0]["Credit"])  # 🔑 Fix here
+                return (result[0]["Company address"], result[0]["creditNumeric"])  # 🔑 Fix here
             return ("No clients found", 0)
             
         except PyMongoError as e:

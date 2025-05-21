@@ -620,18 +620,18 @@ class SalesSystemApp:
         try:
             pipeline = [
                 # Convert Credit string to a numeric value
-                # {
-                #     "$addFields": {
-                #         "creditNumeric": {
-                #             "$toDouble": {
-                #                 "$arrayElemAt": [
-                #                     {"$split": ["$Credit", "_"]}, 
-                #                     0
-                #                 ]
-                #             }
-                #         }
-                #     }
-                # },
+                {
+                    "$addFields": {
+                        "creditNumeric": {
+                            "$toDouble": {
+                                "$arrayElemAt": [
+                                    {"$split": ["$Credit", "_"]}, 
+                                    0
+                                ]
+                            }
+                        }
+                    }
+                },
                 # Sort by creditNumeric (descending)
                 {"$sort": {"Credit": -1}},
                 # Get the top client
@@ -642,8 +642,8 @@ class SalesSystemApp:
             result = list(self.customers_collection.aggregate(pipeline))
             # print(1)
             if result:
-                print(f"{result[0]["Name"]} ,{result[0]["Credit"]}")
-                return (result[0]["Name"], result[0]["Credit"])  # 🔑 Fix here
+                print(f"{result[0]["Name"]} ,{result[0]["creditNumeric"]}")
+                return (result[0]["Name"], result[0]["creditNumeric"])  # 🔑 Fix here
             return ("No clients found", 0)
             
         except PyMongoError as e:
