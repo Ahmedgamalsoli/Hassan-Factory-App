@@ -2468,8 +2468,7 @@ class SalesSystemApp:
 
         except Exception as e:
             messagebox.showerror("Error", f"Error updating record: {e}")
-    
-    #
+
     def delete_generic_entry(self, tree, current_collection):
         selected_item = tree.selection()
         id_index = None

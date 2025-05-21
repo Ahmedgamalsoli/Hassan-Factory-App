@@ -508,8 +508,8 @@ class SalesSystemApp:
                     ['Metric', 'Value'],
                     ['Customers', f"{int(data['customers'])}"],
                     ['Suppliers', f"{int(data['suppliers'])}"],
-                    ['Number of Sales', f"{data['sales']:.2f}"],
-                    ['Number of Purchases', f"{data['purchases']:.2f}"]
+                    ['Sales', f"${data['sales']:.2f}"],
+                    ['Purchases', f"${data['purchases']:.2f}"]
                 ]
                 
                 # Simple table without advanced styling
@@ -517,7 +517,7 @@ class SalesSystemApp:
                     cellText=table_data,
                     loc='center',
                     cellLoc='center',
-                    colWidths=[0.6, 0.6]
+                    colWidths=[0.4, 0.4]
                 )
                 table.set_fontsize(10)
             except Exception as table_error:
@@ -590,28 +590,28 @@ class SalesSystemApp:
     # Database query methods
     def get_customer_count(self):
         try:
-            return self.customers_collection.count_documents({})
+            return self.customers.count_documents({})
         except PyMongoError as e:
             print(f"Database error: {e}")
             return 0
 
     def get_supplier_count(self):
         try:
-            return self.suppliers_collection.count_documents({})
+            return self.suppliers.count_documents({})
         except PyMongoError as e:
             print(f"Database error: {e}")
             return 0
 
     def get_sales_count(self):
         try:
-            return self.sales_collection.count_documents({})
+            return self.sales.count_documents({})
         except PyMongoError as e:
             print(f"Database error: {e}")
             return 0
 
     def get_purchase_count(self):
         try:
-            return self.purchases_collection.count_documents({})
+            return self.purchases.count_documents({})
         except PyMongoError as e:
             print(f"Database error: {e}")
             return 0
@@ -623,7 +623,7 @@ class SalesSystemApp:
                 {"$sort": {"total_sales": -1}},
                 {"$limit": 1}
             ]
-            result = list(self.sales_collection.aggregate(pipeline))
+            result = list(self.sales.aggregate(pipeline))
             
             if result:
                 return (result[0]["_id"], result[0]["total_sales"])
@@ -2468,8 +2468,7 @@ class SalesSystemApp:
 
         except Exception as e:
             messagebox.showerror("Error", f"Error updating record: {e}")
-    
-    #
+
     def delete_generic_entry(self, tree, current_collection):
         selected_item = tree.selection()
         id_index = None

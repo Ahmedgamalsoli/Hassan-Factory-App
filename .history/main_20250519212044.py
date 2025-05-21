@@ -619,19 +619,22 @@ class SalesSystemApp:
     def get_top_client(self):
         try:
             pipeline = [
-                {"$group": {"_id": "$client", "total_sales": {"$sum": "$amount"}}},
+                {"$group": {
+                    "_id": "$Customer",  # Field name from your sales documents
+                    "total_sales": {"$sum": "$Total_Prices"}  # Amount field
+                }},
                 {"$sort": {"total_sales": -1}},
                 {"$limit": 1}
             ]
-            result = list(self.sales_collection.aggregate(pipeline))
+            result = list(self.sales.aggregate(pipeline))
             
             if result:
-                return (result[0]["_id"], result[0]["total_sales"])
-            return ("No clients", 0)
+                return (str(result[0]["_id"]), float(result[0]["total_sales"]))
+            return ("No clients", 0.0)
             
         except PyMongoError as e:
             print(f"Database error: {e}")
-            return ("Error", 0)
+            return ("Error", 0.0)
         # Modify your show_visualizations method:
     def show_visualizations(self,user_role):
         # Clear current window
@@ -2468,8 +2471,7 @@ class SalesSystemApp:
 
         except Exception as e:
             messagebox.showerror("Error", f"Error updating record: {e}")
-    
-    #
+
     def delete_generic_entry(self, tree, current_collection):
         selected_item = tree.selection()
         id_index = None
