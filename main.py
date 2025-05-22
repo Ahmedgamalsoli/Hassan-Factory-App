@@ -4362,7 +4362,7 @@ class AlwaysOnTopInputDialog(tk.Toplevel):
         return self.result
 
 ######################### Main #########################################################
-
+#
 if __name__ == "__main__":
     root = tk.Tk()
     app = SalesSystemApp(root)
