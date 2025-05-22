@@ -639,14 +639,9 @@ class SalesSystemApp:
                     name, value = top_client[0], float(top_client[1])  # ✅ Uses corrected field
                     bar = ax2.bar([name], [value], color='#8E44AD')
                     ax2.set_title("Top Client", fontsize=14,color=COLORS["text"])
-                    ax1.set_facecolor(COLORS["text"])
+                    ax2.set_facecolor(COLORS["text"])
+                    ax2.tick_params(colors=COLORS["text"], labelsize=10)
                     ax2.set_ylabel("Amount",fontsize=10,color=COLORS["text"])
-                    ax1.tick_params(color=COLORS["text"], labelsize=10)
-                    ax2.spines['bottom'].set_color(COLORS["text"])
-                    ax2.spines['left'].set_color(COLORS["text"])
-                    ax2.spines['top'].set_visible(False)
-                    ax2.spines['right'].set_visible(False)
-                    
                     # Add value label
                     for rect in bar:
                         height = rect.get_height()
