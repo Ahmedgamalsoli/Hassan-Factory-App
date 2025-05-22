@@ -577,7 +577,7 @@ class SalesSystemApp:
             table.set_zorder(100)
             # except Exception as table_error:
             #     print(f"Table error: {table_error}")
-
+            #
             for (row, col), cell in table.get_celld().items():
                 cell.set_facecolor(COLORS["card"])
                 cell.set_text_props(color=COLORS["text"])
