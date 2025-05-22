@@ -588,7 +588,7 @@ class SalesSystemApp:
 
             # except Exception as table_error:
             #     print(f"Table error: {table_error}")
-
+            #
             for (row, col), cell in table.get_celld().items():
                 cell.set_facecolor(COLORS["card"])
                 # cell.set_facecolor("black") # background content
