@@ -529,8 +529,9 @@ class SalesSystemApp:
             # Create figure with basic styling
 
             plt.style.use('dark_background')  # Modern dark theme
-            fig = plt.Figure(figsize=(6, 8), dpi=70, facecolor=COLORS["card"])
-            fig.subplots_adjust(hspace=0.4)
+            fig = plt.Figure(figsize=(6, 10), dpi=70, facecolor=COLORS["card"])
+            # fig.subplots_adjust(hspace=0.4)
+            fig.subplots_adjust(hspace=0.4, left=0.15, right=0.85)
             # fig.patch.set_facecolor('#FFFFFF')  # White background
 
             # Bar Chart
@@ -539,10 +540,10 @@ class SalesSystemApp:
                 bars = ax1.bar(['Customers', 'Suppliers'], 
                             [data['customers'], data['suppliers']], 
                             color=['#2E86C1', '#17A589'])
-                ax1.set_title("Customer & Supplier Overview", fontsize=12)
-                ax1.set_facecolor(COLORS["card"])
+                ax1.set_title("Customer & Supplier Overview", fontsize=14,color=COLORS["text"])
+                ax1.set_facecolor(COLORS["text"])
                 ax1.tick_params(colors=COLORS["text"], labelsize=10)
-                ax1.set_ylabel("Count")
+                ax1.set_ylabel("Count",color=COLORS["text"])
                 
                 # Add simple data labels
                 for bar in bars:
@@ -568,24 +569,34 @@ class SalesSystemApp:
             ]
             
             # Simple table without advanced styling
+            # rowHeights = [0.25]
             table = ax2.table(
                 cellText=table_data,
                 loc='center',
                 cellLoc='center',
-                colWidths=[0.6, 0.6]
+                colWidths=[0.4, 0.4],  # Reduced column widths
+                # rowHeights=rowHeights,  # Custom heights
+                
+                # edges='closed'
             )
+            # Additional adjustments for better spacing
+            # fig.subplots_adjust(left=0.2, bottom=0.1, right=0.8, top=0.9, hspace=0.4)
             table.auto_set_font_size(False)
             table.set_fontsize(10)
             table.set_zorder(100)
+            table.scale(1, 2)  # Less aggressive scaling
+
             # except Exception as table_error:
             #     print(f"Table error: {table_error}")
             #
             for (row, col), cell in table.get_celld().items():
                 cell.set_facecolor(COLORS["card"])
+                # cell.set_facecolor("black") # background content
                 cell.set_text_props(color=COLORS["text"])
+                # cell.set_text_props(color="black") #text in header
                 if row == 0:
                     cell.set_facecolor(COLORS["primary"])
-                    cell.set_text_props(weight='bold')
+                    cell.set_text_props(weight='bold',color="white")
 
             canvas = FigureCanvasTkAgg(fig, master=parent)
             canvas.draw()
@@ -616,26 +627,28 @@ class SalesSystemApp:
                 ax1.pie([sales, purchases],
                     labels=['Sales', 'Purchases'],
                     autopct='%1.1f%%',
-                    colors=['#28B463', '#E74C3C'])
-                ax1.set_title("Sales vs Purchases", fontsize=12)
+                    colors=['#28B463', '#E74C3C'],
+                    textprops={'color': COLORS["text"]})
+                ax1.set_title("Sales vs Purchases", fontsize=14,color=COLORS["text"])
             except Exception as pie_error:
                 print(f"Pie chart error: {pie_error}")
-
             # Top Client Chart
             ax2 = fig.add_subplot(212)
             try:
                 if top_client and isinstance(top_client, (list, tuple)) and len(top_client) >= 2:
                     name, value = top_client[0], float(top_client[1])  # ✅ Uses corrected field
                     bar = ax2.bar([name], [value], color='#8E44AD')
-                    ax2.set_title("Top Client", fontsize=12)
-                    ax2.set_ylabel("Amount")
-                    
+                    ax2.set_title("Top Client", fontsize=14,color=COLORS["text"])
+                    ax2.set_facecolor(COLORS["text"])
+                    ax2.tick_params(colors=COLORS["text"], labelsize=10)
+                    ax2.set_ylabel("Amount",fontsize=10,color=COLORS["text"])
                     # Add value label
                     for rect in bar:
                         height = rect.get_height()
                         ax2.text(rect.get_x() + rect.get_width()/2., height,
                                 f'${height:.2f}',
-                                ha='center', va='bottom')
+                                ha='center', va='bottom',
+                                color=COLORS["text"], fontsize=10)
                 else:
                     ax2.text(0.5, 0.5, 'No client data',
                             ha='center', va='center',
