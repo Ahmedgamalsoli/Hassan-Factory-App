@@ -186,7 +186,9 @@ class SalesSystemApp:
             "Material_code":{"Arabic": "كود الخام", "English": "Material Code"},
             "Material_name":{"Arabic": "اسم الخام", "English": "Material Name"},
             "➕ Add 3 More Rows":{"Arabic": "➕ أضف 3 صفوف أخرى", "English": "➕ Add 3 More Rows"},
+            "➕ Add Row":{"Arabic": "➕ أضف صف", "English": "➕ Add Row"},
             "💾 Save Invoice":{"Arabic": "💾 حفظ الفاتورة", "English": "💾 Save Invoice"},
+            "💾 Save Order":{"Arabic": "💾 حفظ الطلب", "English": "💾 Save Order"},
             "Search":{"Arabic": "ابحث", "English": "Search"},
             "Name":{"Arabic": "الاسم", "English": "Name"},
             "Phone_number1":{"Arabic": "رقم التليفون 1", "English": "Phone Number 1"},
@@ -231,8 +233,25 @@ class SalesSystemApp:
             "Employee Statistics":{"Arabic": "احصائيات الموظفين", "English": "Employees Statistics"},
             "Employee hours":{"Arabic": "مواعيد الموظفين", "English": "Employees hours"},
             "Employee Withdrawals":{"Arabic": "مسحوبات الموظفين", "English": "Employees Withdrawals"},
-        }
-        
+            "Material Code":{"Arabic":"كود الخامة","English":"Material Code"},
+            "Material Name":{"Arabic":"اسم الخامة","English":"Material Name"},
+            "Material Available Qty":{"Arabic":"الكمية المتاحة","English":"Material Ava qty"},
+            "Material Qty":{"Arabic":"الكمية المستخدمة","English":"Material_Qty"},
+            "Product Code":{"Arabic":"كود المنتج","English":"Product Code"},
+            "Product Name":{"Arabic":"اسم المنتج","English":"Product Name"},
+            "Product Available Qty":{"Arabic":"الكمية المتاحة","English":"Product Ava Qty"},
+            "Product Qty":{"Arabic":"الكمية المنتجة","English":"Product_Qty"},
+            "Waste":{"Arabic":"الهالك","English":"Waste"},
+            "Employee Name:":{"Arabic":"اسم الموظف:","English":"Employee Name:"},
+            "Employee Code:":{"Arabic":"كود الموظف:","English":"Employee Code:"},
+            "Check In/Out":{"Arabic":"حضور وانصراف","English":"Check In/Out"},
+            "Employee Name":{"Arabic":"اسم الموظف","English":"Employee Name"},
+            "Check-in Time":{"Arabic":"وقت الحضور","English":"Check-in Time"},
+            "Duration":{"Arabic":"المدة","English":"Duration"},
+            "Still checked in":{"Arabic":"لا يزال قيد التسجيل","English":"Still checked in"},
+            "Customer & Supplier Overview":{"Arabic":"نظرة عامة على العملاء والموردين","English":"Customer & Supplier Overview"},
+        }        
+
         self.db = None
         self.db_name = tk.StringVar()
         self.table_name = tk.StringVar()
@@ -281,6 +300,7 @@ class SalesSystemApp:
 
         self.customers_collection             = db['Customers']
         self.employees_collection             = db['Employees']
+        self.employees_appointments_collection= db['Employee_appointimets']
         self.products_collection              = db['Products']
         self.sales_collection                 = db['Sales']
         self.suppliers_collection             = db['Suppliers']
@@ -289,7 +309,7 @@ class SalesSystemApp:
         self.shipping_collection              = db['Shipping']
         self.orders_collection                = db['Orders']
         self.expenses_collection              = db['Expenses']
-        self.employee_appointments_collection = db['Employee_appointments']
+        # self.employee_appointments_collection = db['Employee_appointments']
         self.daily_shifts_collection          = db['Daily_shifts']
         self.accounts_collection              = db['Accounts']
         self.transactions_collection          = db['Transactions']
@@ -429,7 +449,7 @@ class SalesSystemApp:
             {"text": self.t("Production Order"), "image": "Production Order.png", 
             "command": lambda: self.new_production_order(self.user_role)},
             {"text": self.t("Employee interactions"), "image": "Employees.png", 
-            "command": lambda: self.manage_Employees_window(self.user_role)},
+            "command": lambda: self.manage_Employees_window()},
             # {"text": self.t("Customers"), "image": "customers.png", 
             # "command": lambda: self.new_customer(self.user_role)},
             # {"text": self.t("Suppliers"), "image": "suppliers.png", 
@@ -614,9 +634,7 @@ class SalesSystemApp:
             # Safe data retrieval
             sales = float(self.get_sales_count()) if hasattr(self, 'get_sales_count') else 0.0
             purchases = float(self.get_purchase_count()) if hasattr(self, 'get_purchase_count') else 0.0
-            print(1)
             top_client = self.get_top_client() if hasattr(self, 'get_top_client') else None
-            print(2)
             fig = plt.Figure(figsize=(6, 8), dpi=60)
             fig.subplots_adjust(hspace=0.5)
             fig.patch.set_facecolor('#FFFFFF')  
@@ -943,7 +961,7 @@ class SalesSystemApp:
             for btn_info in buttons:
                 tk.Button(fallback_frame, text=btn_info["text"], 
                         command=btn_info["command"]).pack(side="left", padx=10)
-    def manage_Employees_window(self,user_role):
+    def manage_Employees_window(self):
                 # Clear current window
         for widget in self.root.winfo_children():
             widget.destroy()
@@ -955,14 +973,16 @@ class SalesSystemApp:
         button_frame = tk.Frame(self.root, bg="white")
         button_frame.pack(pady=30)
 
+
+
         # Define buttons with images, text, and commands
         buttons = [
             {"text": self.t("Employee hours"), "image": "Emp_hours.png", 
-            "command": lambda: self.trash(self.user_role)},
+            "command": lambda: self.employee_hours_window(self.user_role)},
             {"text": self.t("Employee Withdrawals"), "image": "Emp_Withdraw.png", 
-            "command": lambda: self.trash(self.user_role)},
+            "command": lambda: self.employee_withdrowls_window(self.user_role)},
             {"text": self.t("Employee Statistics"), "image": "employee time statistics.png", 
-            "command": lambda: self.trash(self.user_role)},
+            "command": lambda: self.employee_statistics_window(self.user_role)},
         ]
         images = []  # Keep references to prevent garbage collection
         columns_per_row = 3  # Number of buttons per row
@@ -1002,7 +1022,356 @@ class SalesSystemApp:
             for btn_info in buttons:
                 tk.Button(fallback_frame, text=btn_info["text"], 
                         command=btn_info["command"]).pack(side="left", padx=10)
+
+    def employee_hours_window(self, user_role):
+        # Clear current window
+        for widget in self.root.winfo_children():
+            widget.destroy()
+        
+        self.topbar(show_back_button=True, Back_to_Employee_Window=True)
+        
+        # Database collections
+        employees_col = self.get_collection_by_name("Employees")
+        appointments_col = self.get_collection_by_name("Employee_appointimets")
+        
+        # Create mappings
+        self.employee_code_name = {}
+        self.employee_name_code = {}
+        for emp in employees_col.find():
+            code = emp.get('Id', '')
+            name = emp.get('Name', '')
+            self.employee_code_name[code] = name
+            self.employee_name_code[name] = code
+
+        # Main frame
+        main_frame = tk.Frame(self.root, padx=20, pady=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Selection frame
+        selection_frame = tk.Frame(main_frame)
+        selection_frame.pack(fill=tk.X, pady=10)
+
+        # Employee name dropdown
+        tk.Label(selection_frame, text=self.t("Employee Name:")).pack(side=tk.LEFT, padx=5)
+        self.name_var = tk.StringVar()
+        name_cb = ttk.Combobox(selection_frame, textvariable=self.name_var, width=25)
+        name_cb.pack(side=tk.LEFT, padx=5)
+        name_cb.bind('<<ComboboxSelected>>', self.update_employee_code)
+
+        # Employee code dropdown
+        tk.Label(selection_frame, text=self.t("Employee Code:")).pack(side=tk.LEFT, padx=5)
+        self.code_var = tk.StringVar()
+        code_cb = ttk.Combobox(selection_frame, textvariable=self.code_var, width=15)
+        code_cb.pack(side=tk.LEFT, padx=5)
+        code_cb.bind('<<ComboboxSelected>>', self.update_employee_name)
+
+        # Update dropdown values
+        name_cb['values'] = list(self.employee_name_code.keys())
+        code_cb['values'] = list(self.employee_code_name.keys())
+
+        # Check-in/out button
+        tk.Button(selection_frame, text=self.t("Check In/Out"), 
+                command=lambda: self.toggle_check_in_out(employees_col, appointments_col))\
+                .pack(side=tk.RIGHT, padx=10)
+
+        # Checked-in employees treeview
+        tree_frame = tk.Frame(main_frame)
+        tree_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+        
+        columns = ("Employee Name", "Check-in Time", "Duration")
+        self.checkin_tree = ttk.Treeview(tree_frame, columns=columns, show='headings')
+        
+        for col in columns:
+            self.checkin_tree.heading(col, text=self.t(col))
+            self.checkin_tree.column(col, width=150, anchor='center')
+        
+        vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=self.checkin_tree.yview)
+        self.checkin_tree.configure(yscrollcommand=vsb.set)
+        
+        self.checkin_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        vsb.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Load initial check-ins
+        self.update_checkin_tree(appointments_col)
+
+    def update_employee_code(self, event):
+        name = self.name_var.get()
+        if name in self.employee_name_code:
+            self.code_var.set(self.employee_name_code[name])
+
+    def update_employee_name(self, event):
+        code = self.code_var.get()
+        if code in self.employee_code_name:
+            self.name_var.set(self.employee_code_name[code])
+
+    def toggle_check_in_out(self, employees_col, appointments_col):
+        code = self.code_var.get()
+        name = self.name_var.get()
+        
+        if not code or not name:
+            messagebox.showerror("Error", "Please select an employee")
+            return
+        
+        # Check existing appointment
+        existing = appointments_col.find_one({
+            'employee_code': code,
+             '$or': [
+                {'check_out': {'$exists': False}},
+                {'check_out': None}
+            ]
+        })
+        
+        try:
+            if existing:
+                # Check out
+                print("out")
+                check_out_time = datetime.now()
+                duration = check_out_time - existing['check_in']
                 
+                appointments_col.update_one(
+                    {'_id': existing['_id']},
+                    {'$set': {
+                        'check_out': check_out_time,
+                        'duration': duration.total_seconds() / 3600  # in hours
+                    }}
+                )
+            else:
+                # Check in
+                print("in")
+                appointments_col.insert_one({
+                    'employee_code': code,
+                    'employee_name': name,
+                    'check_in': datetime.now(),
+                    'check_out': None,
+                    'duration': None
+                })
+            print("sss")
+            self.update_checkin_tree(appointments_col)
+            messagebox.showinfo("Success", f"{name} checked {'out' if existing else 'in'} successfully")
+            
+        except PyMongoError as e:
+            messagebox.showerror("Database Error", str(e))
+
+    def update_checkin_tree(self, appointments_col):
+        # Clear existing data
+        for item in self.checkin_tree.get_children():
+            self.checkin_tree.delete(item)
+        
+        # Get active check-ins
+        active_appointments = appointments_col.find({
+            '$or': [
+            {'check_out': {'$exists': False}},
+            {'check_out': None}
+        ]
+        }).sort('check_in', -1)
+        
+        for appt in active_appointments:
+            # Convert string to datetime object
+            check_in_value = appt.get('check_in', '')
+            formatted_time = "Invalid timestamp"
+            
+            try:
+                if isinstance(check_in_value, datetime):
+                    formatted_time = check_in_value.strftime("%Y-%m-%d %H:%M:%S")
+                else:
+                    # Handle string representations
+                    if '.' in check_in_value:  # Handle milliseconds
+                        check_in_time = datetime.strptime(check_in_value, "%Y-%m-%d %H:%M:%S.%f")
+                    else:
+                        check_in_time = datetime.strptime(check_in_value, "%Y-%m-%d %H:%M:%S")
+                    formatted_time = check_in_time.strftime("%Y-%m-%d %H:%M:%S")
+                    
+            except (ValueError, TypeError, AttributeError) as e:
+                print(f"Timestamp error: {str(e)}")
+            
+            self.checkin_tree.insert('', 'end', values=(
+                appt.get('employee_name', ''),
+                formatted_time,
+                self.t('Still checked in')
+            ))
+
+    def employee_withdrowls_window(self, user_role):
+        # Clear current window
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        self.topbar(show_back_button=True, Back_to_Employee_Window=True)
+
+        # Database collections
+        employees_col = self.get_collection_by_name("Employees")
+        withdrawals_col = self.get_collection_by_name("Employee_withdrawls")
+
+        # Create mappings
+        self.employee_code_map = {}
+        self.employee_name_map = {}
+        for emp in employees_col.find():
+            code = emp.get('Id', '')
+            name = emp.get('Name', '')
+            self.employee_code_map[code] = name
+            self.employee_name_map[name] = code
+
+        # Main frame with left alignment
+        main_frame = tk.Frame(self.root, padx=40, pady=20)
+        main_frame.pack(fill=tk.BOTH, expand=True, anchor='nw')
+
+        # Configure grid layout
+        main_frame.grid_columnconfigure(0, weight=1)
+        main_frame.grid_columnconfigure(1, weight=3)
+
+        # Employee Selection Section
+        tk.Label(main_frame, text=self.t("Employee Selection"), font=('Helvetica', 14, 'bold'))\
+            .grid(row=0, column=0, columnspan=2, pady=10, sticky='w')
+
+        # Employee Name Dropdown
+        tk.Label(main_frame, text=self.t("Employee Name:"), font=('Helvetica', 12))\
+            .grid(row=1, column=0, pady=5, sticky='w')
+        self.withdraw_name_var = tk.StringVar()
+        name_cb = ttk.Combobox(main_frame, textvariable=self.withdraw_name_var, 
+                            width=30, font=('Helvetica', 12))
+        name_cb.grid(row=1, column=1, pady=5, padx=10, sticky='w')
+        name_cb.bind('<<ComboboxSelected>>', self.update_withdraw_code)
+
+        # Employee Code Dropdown
+        tk.Label(main_frame, text=self.t("Employee Code:"), font=('Helvetica', 12))\
+            .grid(row=2, column=0, pady=5, sticky='w')
+        self.withdraw_code_var = tk.StringVar()
+        code_cb = ttk.Combobox(main_frame, textvariable=self.withdraw_code_var, 
+                            width=30, font=('Helvetica', 12))
+        code_cb.grid(row=2, column=1, pady=5, padx=10, sticky='w')
+        code_cb.bind('<<ComboboxSelected>>', self.update_withdraw_name)
+
+        # Withdrawal Details Section
+        tk.Label(main_frame, text=self.t("Withdrawal Details"), font=('Helvetica', 14, 'bold'))\
+            .grid(row=3, column=0, columnspan=2, pady=10, sticky='w')
+
+        # Amount Entry
+        tk.Label(main_frame, text=self.t("Withdrawal Amount:"), font=('Helvetica', 12))\
+            .grid(row=4, column=0, pady=5, sticky='w')
+        self.amount_entry = tk.Entry(main_frame, width=33, font=('Helvetica', 12))
+        self.amount_entry.grid(row=4, column=1, pady=5, padx=10, sticky='w')
+
+        # Payment Method
+        tk.Label(main_frame, text=self.t("Payment Method:"), font=('Helvetica', 12))\
+            .grid(row=5, column=0, pady=5, sticky='w')
+        self.payment_method = ttk.Combobox(main_frame, 
+                                        values=["Cash", "Instapay", "E_wallet", "Bank Account"],
+                                        width=30, 
+                                        font=('Helvetica', 12),
+                                        state="readonly")
+        self.payment_method.grid(row=5, column=1, pady=5, padx=10, sticky='w')
+
+        # Previous Withdrawals
+        tk.Label(main_frame, text=self.t("Previous Withdrawals:"), font=('Helvetica', 12))\
+            .grid(row=6, column=0, pady=5, sticky='w')
+        self.prev_withdrawals = tk.Entry(main_frame, 
+                                    state='readonly', 
+                                    width=33, 
+                                    font=('Helvetica', 12))
+        self.prev_withdrawals.grid(row=6, column=1, pady=5, padx=10, sticky='w')
+
+        # Save Button
+        save_btn = tk.Button(main_frame, 
+                            text="Save Withdrawal", 
+                            font=('Helvetica', 12, 'bold'),
+                            width=20,
+                            command=lambda: self.save_withdrawal(withdrawals_col, employees_col))
+        save_btn.grid(row=7, column=0, columnspan=2, pady=20)
+
+        # Update dropdown values
+        name_cb['values'] = list(self.employee_name_map.keys())
+        code_cb['values'] = list(self.employee_code_map.keys())
+
+        # Bind selection updates
+        self.withdraw_name_var.trace_add('write', self.update_previous_withdrawals)
+        self.withdraw_code_var.trace_add('write', self.update_previous_withdrawals)
+
+    def update_withdraw_code(self, event):
+        name = self.withdraw_name_var.get()
+        if name in self.employee_name_map:
+            self.withdraw_code_var.set(self.employee_name_map[name])
+
+    def update_withdraw_name(self, event):
+        code = self.withdraw_code_var.get()
+        if code in self.employee_code_map:
+            self.withdraw_name_var.set(self.employee_code_map[code])
+
+    def update_previous_withdrawals(self, *args):
+        code = self.withdraw_code_var.get()
+        name = self.withdraw_name_var.get()
+        
+        if not code and name in self.employee_name_map:
+            code = self.employee_name_map[name]
+        elif not name and code in self.employee_code_map:
+            name = self.employee_code_map[code]
+        
+        if code:
+            total = self.calculate_previous_withdrawals(code)
+            self.prev_withdrawals.config(state='normal')
+            self.prev_withdrawals.delete(0, tk.END)
+            self.prev_withdrawals.insert(0, f"{total:.2f}")
+            self.prev_withdrawals.config(state='readonly')
+
+    def calculate_previous_withdrawals(self, employee_code):
+        withdrawals_col = self.get_collection_by_name("Employee_withdrawls")
+        total = 0
+        for withdrawal in withdrawals_col.find({'employee_code': employee_code}):
+            total += withdrawal.get('amount_ofthdrawls', 0)
+        return total
+
+    def save_withdrawal(self, withdrawals_col, employees_col):
+        code = self.withdraw_code_var.get()
+        name = self.withdraw_name_var.get()
+        amount = self.amount_entry.get()
+        method = self.payment_method.get()
+
+        if not code or not name:
+            messagebox.showerror("Error", "Please select an employee")
+            return
+        
+        try:
+            amount = float(amount)
+            if amount <= 0:
+                raise ValueError
+        except ValueError:
+            messagebox.showerror("Error", "Invalid amount entered")
+            return
+
+        if not method:
+            messagebox.showerror("Error", "Please select payment method")
+            return
+
+        try:
+            # Save withdrawal record
+            withdrawal_data = {
+                'employee_code': code,
+                'employee_name': name,
+                'amount_ofthdrawls': amount,
+                'payment_actions': method,
+                'timestamp': datetime.now()
+            }
+            withdrawals_col.insert_one(withdrawal_data)
+
+            # Update employee's previous withdrawals total
+            employees_col.update_one(
+                {'employee_code': code},
+                {'$inc': {'previous_window': amount}}
+            )
+
+            messagebox.showinfo("Success", "Withdrawal recorded successfully")
+            self.amount_entry.delete(0, tk.END)
+            self.payment_method.set('')
+            self.update_previous_withdrawals()
+
+        except PyMongoError as e:
+            messagebox.showerror("Database Error", f"Failed to save withdrawal: {str(e)}")
+
+    def employee_statistics_window(self,user_role):
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        # تحميل صورة الخلفية
+        self.topbar(show_back_button=True,Back_to_Employee_Window=True)
+
     def manage_old_database_window(self, db_name=None, table_name=None):
         # self.db_name.set(db_name if db_name else "")
         self.table_name.set(table_name if table_name else "")
@@ -1314,276 +1683,6 @@ class SalesSystemApp:
         
         button_frame.columnconfigure(0, weight=1)
         button_frame.columnconfigure(1, weight=1)
-    # def Receive_payment_window(self, user_role):
-    #     # Clear current window
-    #     for widget in self.root.winfo_children():
-    #         widget.destroy()
-
-    #     # Initialize product mappings
-    #     self.product_map = {}
-    #     self.name_to_code = {}
-        
-    #     # Create top bar
-    #     self.topbar(show_back_button=True)
-
-    #     # MongoDB collections
-    #     customers_col = self.get_collection_by_name("Customers")
-    #     # sales_col = self.get_collection_by_name("Sales")
-    #     # products_col = self.get_collection_by_name("Products")
-
-    #     # Main form frame
-    #     form_frame = tk.Frame(self.root, padx=20, pady=20)
-    #     form_frame.pack(fill=tk.BOTH, expand=True)
-
-    #     # Customer Selection Frame
-    #     customer_frame = tk.Frame(form_frame, bd=1, relief=tk.SOLID, padx=5, pady=5)
-    #     customer_frame.grid(row=0, column=0, columnspan=2, sticky='w', pady=5)
-
-    #     # Create bidirectional customer mappings
-    #     self.customer_code_map = {}  # name -> code
-    #     self.code_name_map = {}      # code -> name
-    #     self.customer_balance_map = {}  # name -> balance
-
-    #     # Populate customer data
-    #     all_customers = []
-    #     all_codes = []
-    #     for cust in customers_col.find():
-    #         name = cust.get('Name', '')
-    #         code = str(cust.get('Code', ''))
-    #         balance = cust.get('Balance', 0)
-            
-    #         self.customer_code_map[name] = code
-    #         self.code_name_map[code] = name
-    #         self.customer_balance_map[name] = balance
-    #         all_customers.append(name)
-    #         all_codes.append(code)
-
-    #     # Customer Name Combobox
-    #     tk.Label(customer_frame, text=self.t("Customer Name"), font=("Arial", 12, "bold")).grid(row=0, column=0, sticky='w')
-    #     self.customer_name_var = tk.StringVar()
-    #     self.customer_name_cb = ttk.Combobox(customer_frame, textvariable=self.customer_name_var, values=sorted(all_customers))
-    #     self.customer_name_cb.grid(row=0, column=1, padx=5, sticky='ew')
-
-    #     # Customer Code Combobox
-    #     tk.Label(customer_frame, text=self.t("Customer Code"), font=("Arial", 12, "bold")).grid(row=0, column=2, sticky='w')
-    #     self.customer_code_var = tk.StringVar()
-    #     self.customer_code_cb = ttk.Combobox(customer_frame, textvariable=self.customer_code_var, values=sorted(all_codes))
-    #     self.customer_code_cb.grid(row=0, column=3, padx=5, sticky='ew')
-
-    #     # Balance and Payment Fields
-    #     tk.Label(customer_frame, text=self.t("Previous Balance"), font=("Arial", 12, "bold")).grid(row=0, column=4, sticky='e', padx=(20, 0))
-    #     self.previous_balance_var = tk.StringVar()
-    #     self.previous_balance_entry = tk.Entry(customer_frame, textvariable=self.previous_balance_var, 
-    #                                         width=15, state='readonly')
-    #     self.previous_balance_entry.grid(row=0, column=5, sticky='e')
-
-    #     tk.Label(customer_frame, text=self.t("Paid Money"), font=("Arial", 12, "bold")).grid(row=0, column=6, sticky='e', padx=(20, 0))
-    #     self.payed_cash_var = tk.DoubleVar()
-    #     self.payed_cash_entry = tk.Entry(customer_frame, textvariable=self.payed_cash_var, width=15)
-    #     self.payed_cash_entry.grid(row=0, column=7, sticky='e')
-
-    #     # Payment Method Dropdown
-    #     tk.Label(customer_frame, text=self.t("Payment Method"), font=("Arial", 12, "bold")).grid(row=0, column=8, sticky='e', padx=(20, 0))
-    #     self.payment_method_var = tk.StringVar()
-    #     payment_methods = ['Cash', 'E_Wallet', 'Bank_account', 'Instapay']
-    #     payment_cb = ttk.Combobox(customer_frame, textvariable=self.payment_method_var, 
-    #                             values=payment_methods, state='readonly', width=12)
-    #     payment_cb.grid(row=0, column=9, sticky='ew', padx=(5, 10))
-    #     payment_cb.current(0)  # Set default to Cash
-
-    #     # Configure column weights
-    #     customer_frame.columnconfigure(1, weight=1)
-    #     customer_frame.columnconfigure(3, weight=1)
-    #     customer_frame.columnconfigure(5, weight=0)
-    #     customer_frame.columnconfigure(7, weight=0)
-    #     customer_frame.columnconfigure(9, weight=0)
-
-    #     # Synchronization functions
-    #     def sync_from_name(event=None):
-    #         name = self.customer_name_var.get()
-    #         code = self.customer_code_map.get(name, '')
-    #         self.customer_code_var.set(code)
-    #         self.previous_balance_var.set(str(self.customer_balance_map.get(name, 0)))
-
-    #     def sync_from_code(event=None):
-    #         code = self.customer_code_var.get()
-    #         name = self.code_name_map.get(code, '')
-    #         self.customer_name_var.set(name)
-    #         self.previous_balance_var.set(str(self.customer_balance_map.get(name, 0)))
-
-    #     # Event bindings
-    #     self.customer_name_cb.bind('<<ComboboxSelected>>', sync_from_name)
-    #     self.customer_code_cb.bind('<<ComboboxSelected>>', sync_from_code)
-        
-    #     self.customer_name_cb.bind('<KeyRelease>', lambda e: [
-    #         self.filter_combobox(e, all_customers, self.customer_name_cb),
-    #         sync_from_name()
-    #     ])
-        
-    #     self.customer_code_cb.bind('<KeyRelease>', lambda e: [
-    #         self.filter_combobox(e, all_codes, self.customer_code_cb),
-    #         sync_from_code()
-    #     ])
-
-    #     # # Load product data
-    #     # try:
-    #     #     products = list(products_col.find())
-    #     #     all_units = set()
-    #     #     product_names = []
-    #     #     product_codes = []
-
-    #     #     for p in products:
-    #     #         code = str(p.get('product_code', '')).strip()
-    #     #         name = p.get('product_name', '').strip()
-    #     #         units_list = p.get('Units', [])
-
-    #     #         # Process units
-    #     #         unit_names = []
-    #     #         for unit in units_list:
-    #     #             if isinstance(unit, dict):
-    #     #                 unit_name = str(unit.get('unit_name', '')).strip()
-    #     #             elif isinstance(unit, str):
-    #     #                 unit_name = unit.strip()
-    #     #             else:
-    #     #                 continue
-                    
-    #     #             if unit_name:
-    #     #                 unit_names.append(unit_name)
-    #     #                 all_units.add(unit_name)
-
-    #     #         # Handle price conversion
-    #     #         try:
-    #     #             price_str = str(p.get('Unit_Price', '0')).strip('kgm ')
-    #     #             price = float(price_str) if price_str else 0.0
-    #     #         except ValueError:
-    #     #             price = 0.0
-
-    #     #         # Update mappings
-    #     #         self.product_map[code] = {
-    #     #             'name': name,
-    #     #             'units': unit_names,
-    #     #             'price': price
-    #     #         }
-    #     #         self.name_to_code[name] = code
-    #     #         product_names.append(name)
-    #     #         product_codes.append(code)
-
-    #     #     self.product_codes = sorted(list(set(product_codes)))
-    #     #     self.product_names = sorted(list(set(product_names)))
-    #     #     all_units = sorted(list(all_units))
-
-    #     # except Exception as e:
-    #     #     messagebox.showerror("Database Error", f"Failed to load products: {str(e)}")
-    #     #     return
-
-    #     # # Invoice Items Grid
-    #     # columns = self.get_fields_by_name("Sales_Header")
-    #     # col_width = 23
-
-    #     # header_row = tk.Frame(form_frame, bg='#f0f0f0')
-    #     # header_row.grid(row=2, column=0, columnspan=len(columns), sticky='nsew', pady=(20, 0))
-    #     # for col_idx, col in enumerate(columns):
-    #     #     tk.Label(header_row, text=self.t(col), width=col_width, relief='ridge',
-    #     #             bg='#f0f0f0', anchor='w').grid(row=0, column=col_idx, sticky='ew')
-    #     #     header_row.columnconfigure(col_idx, weight=1)
-
-    #     # # Scrollable Canvas
-    #     # canvas = tk.Canvas(form_frame, highlightthickness=0)
-    #     # scrollbar = tk.Scrollbar(form_frame, orient="vertical", command=canvas.yview)
-    #     # self.rows_frame = tk.Frame(canvas)
-        
-    #     # self.rows_frame.bind("<Configure>", lambda e: canvas.configure(
-    #     #     scrollregion=canvas.bbox("all")))
-    #     # canvas.create_window((0, 0), window=self.rows_frame, anchor="nw")
-    #     # canvas.configure(yscrollcommand=scrollbar.set)
-
-    #     # canvas.grid(row=3, column=0, columnspan=len(columns), sticky="nsew")
-    #     # scrollbar.grid(row=3, column=len(columns), sticky="ns")
-        
-    #     # form_frame.grid_rowconfigure(3, weight=1)
-    #     # for i in range(len(columns)):
-    #     #     form_frame.columnconfigure(i, weight=1)
-
-    #     # self.entries = []
-
-    #     # # Modified create_row function with discount fields
-    #     # def create_row(parent, row_number, bg_color):
-    #     #     row_frame = tk.Frame(parent, bg=bg_color)
-    #     #     row_frame.grid(row=row_number, column=0, sticky='ew')
-            
-    #     #     row_entries = []
-    #     #     for col_idx, col in enumerate(columns):
-    #     #         if col == "Product_code":
-    #     #             var = tk.StringVar()
-    #     #             cb = ttk.Combobox(row_frame, textvariable=var, values=product_codes, width=col_width-2)
-    #     #             cb.bind('<<ComboboxSelected>>', lambda e, r=row_number: self.update_product_info(r, "code"))
-    #     #             cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_combobox_change(e, r, "code"))
-    #     #             cb.grid(row=0, column=col_idx, sticky='ew')
-    #     #             row_entries.append(cb)
-    #     #         elif col == "product_name":
-    #     #             var = tk.StringVar()
-    #     #             cb = ttk.Combobox(row_frame, textvariable=var, values=product_names, width=col_width-2)
-    #     #             cb.bind('<<ComboboxSelected>>', lambda e, r=row_number: self.update_product_info(r, "name"))
-    #     #             cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_combobox_change(e, r, "name"))
-    #     #             cb.grid(row=0, column=col_idx, sticky='ew')
-    #     #             row_entries.append(cb)
-    #     #         elif col == "unit":
-    #     #             var = tk.StringVar()
-    #     #             cb = ttk.Combobox(row_frame, textvariable=var, values=[], width=col_width-2)
-    #     #             cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_unit_change(e, r))
-    #     #             cb.grid(row=0, column=col_idx, sticky='ew')
-    #     #             row_entries.append(cb)
-    #     #         elif col == "Discount Type":
-    #     #             var = tk.StringVar()
-    #     #             cb = ttk.Combobox(row_frame, textvariable=var, 
-    #     #                             values=["Percentage", "Value"], 
-    #     #                             state="readonly",
-    #     #                             width=col_width-2)
-    #     #             cb.current(0)  # Default to Percentage
-    #     #             cb.grid(row=0, column=col_idx, sticky='ew')
-    #     #             row_entries.append(cb)
-    #     #         elif col == "Discount Value":
-    #     #             var = tk.StringVar()
-    #     #             entry = tk.Entry(row_frame, textvariable=var, width=col_width+1)
-    #     #             entry.bind('<KeyRelease>', lambda e, r=row_number: self.calculate_totals(r))
-    #     #             entry.grid(row=0, column=col_idx, sticky='ew')
-    #     #             row_entries.append(entry)
-    #     #         elif col in ["Unit_Price", "Total_QTY", "Total_Price"]:
-    #     #             entry = tk.Entry(row_frame, width=col_width+1, relief='flat', state='readonly')
-    #     #             entry.grid(row=0, column=col_idx, sticky='ew')
-    #     #             row_entries.append(entry)
-    #     #         else:
-    #     #             entry = tk.Entry(row_frame, width=col_width+1, relief='sunken')
-    #     #             entry.bind('<KeyRelease>', lambda e, r=row_number: self.calculate_totals(r))
-    #     #             entry.grid(row=0, column=col_idx, sticky='ew')
-    #     #             row_entries.append(entry)
-                
-    #     #         row_frame.columnconfigure(col_idx, weight=1)
-            
-    #     #     return row_entries
-
-    #     # def add_three_rows():
-    #     #     current_row_count = len(self.entries)
-    #     #     for i in range(3):
-    #     #         bg_color = 'white' if (current_row_count + i) % 2 == 0 else '#f0f0f0'
-    #     #         row_entries = create_row(self.rows_frame, current_row_count + i, bg_color)
-    #     #         self.entries.append(row_entries)
-
-    #     # add_three_rows()
-
-    #     # # Buttons Frame
-    #     button_frame = tk.Frame(form_frame)
-    #     # button_frame.grid(row=4, column=0, columnspan=len(columns), pady=10, sticky='ew')
-    #     button_frame.grid(row=4, column=0, pady=10, sticky='ew')
-        
-    #     # tk.Button(button_frame, text=self.t("➕ Add 3 More Rows"), command=add_three_rows,
-    #     #         bg='#4CAF50', fg='white').grid(row=0, column=0, padx=5, sticky='w')
-    #     # tk.Button(button_frame, text=self.t("💾 Save Invoice"), 
-    #     #         command=lambda: self.save_invoice(sales_col, customers_col,products_col),
-    #     #         bg='#2196F3', fg='white').grid(row=0, column=1, padx=5, sticky='e')
-        
-    #     button_frame.columnconfigure(0, weight=1)
-    #     button_frame.columnconfigure(1, weight=1)
 
     def new_Purchase_invoice(self, user_role):
         # Clear current window
@@ -1860,33 +1959,54 @@ class SalesSystemApp:
         for widget in self.root.winfo_children():
             widget.destroy()
 
+        # Initialize mappings
+        self.material_code_map = {}  # code -> {name, stock}
+        self.material_name_map = {}  # name -> {code, stock}
+        self.product_code_map = {}   # code -> {name, stock}
+        self.product_name_map = {}   # name -> {code, stock}
+
         # Create top bar
         self.topbar(show_back_button=True)
+
+        # Database collections
+        materials_col = self.get_collection_by_name("Materials")
+        products_col = self.get_collection_by_name("Products")
+        production_col = self.get_collection_by_name("Production")
+
+        # Load material data
+        for mat in materials_col.find():
+            code = mat.get('material_code', '')
+            name = mat.get('material_name', '')
+            stock = mat.get('stock_quantity', 0)
+            self.material_code_map[code] = {'name': name, 'stock_quantity': stock}
+            self.material_name_map[name] = {'code': code, 'stock_quantity': stock}
+
+        # Load product data
+        for prod in products_col.find():
+            code = prod.get('product_code', '')
+            name = prod.get('product_name', '')
+            stock = prod.get('stock_quantity', 0)
+            self.product_code_map[code] = {'name': name, 'stock_quantity': stock}
+            self.product_name_map[name] = {'code': code, 'stock_quantity': stock}
 
         # Main form frame
         form_frame = tk.Frame(self.root, padx=20, pady=20)
         form_frame.pack(fill=tk.BOTH, expand=True)
 
-        # Define columns with bilingual headers
+        # Define columns
         columns = [
-            ("Material Code", "كود الخامة"),
-            ("Material Name", "اسم الخامة"),
-            ("Material Ava qty", "الكمية المتاحة"),
-            ("Material_Qty", "الكمية المستخدمة"),
-            ("Product Code", "كود المنتج"),
-            ("Product Name", "اسم المنتج"),
-            ("Product Ava Qty", "الكمية المتاحة"),
-            ("Product_Qty", "الكمية المنتجة"),
-            ("Waste", "الهالك")
+            "Material Code", "Material Name", "Material Available Qty",
+            "Material Qty", "Product Code", "Product Name",
+            "Product Available Qty", "Product Qty", "Waste"
         ]
 
         # Create header row
         header_frame = tk.Frame(form_frame, bg='#f0f0f0')
         header_frame.grid(row=0, column=0, columnspan=len(columns), sticky='ew', pady=(10, 0))
         
-        for col_idx, (eng_header, ar_header) in enumerate(columns):
+        for col_idx, col in enumerate(columns):
             tk.Label(header_frame, 
-                    text=f"{eng_header}\n{ar_header}",
+                    text=self.t(col),
                     bg='#f0f0f0',
                     relief='ridge',
                     width=18,
@@ -1910,23 +2030,25 @@ class SalesSystemApp:
         form_frame.columnconfigure(0, weight=1)
 
         self.production_entries = []
-        print("button")
+
         # Create initial rows
-        for i in range(3):
+        for _ in range(1):
             self.add_production_row()
-        print("button")
+
         # Control buttons
         button_frame = tk.Frame(form_frame)
         button_frame.grid(row=2, column=0, columnspan=len(columns), pady=10, sticky='ew')
-        print("button")
-        tk.Button(button_frame, text="Add Row (+)",
-                command=self.add_production_row).pack(side=tk.LEFT, padx=5)
-        print("button")
-        tk.Button(button_frame, text="Save Order",
-                command=self.save_production_order).pack(side=tk.RIGHT, padx=5)
 
-        # Load initial data
-        self.load_production_data()
+        tk.Button(button_frame, text=self.t("➕ Add Row"),
+                command=self.add_production_row,bg='#4CAF50', fg='white').pack(side=tk.LEFT, padx=5)
+        tk.Button(button_frame, text=self.t("💾 Save Order"),
+                command=self.save_production_order,bg='#2196F3', fg='white').pack(side=tk.RIGHT, padx=5)
+        # tk.Button(button_frame, text=self.t("➕ Add 3 More Rows"), command=add_three_rows,
+        #         bg='#4CAF50', fg='white').grid(row=0, column=0, padx=5, sticky='w')
+        # tk.Button(button_frame, text=self.t("💾 Save Invoice"), 
+        #         command=lambda: self.save_invoice_purchase(purchases_col, suppliers_col,materials_col),
+        #         bg='#2196F3', fg='white').grid(row=0, column=1, padx=5, sticky='e')
+        self.update_combobox_values()
 
     def add_production_row(self):
         row_idx = len(self.production_entries)
@@ -1935,28 +2057,31 @@ class SalesSystemApp:
         
         entries = []
         for col_idx in range(9):
-            if col_idx == 0:  # Material Code
-                var = tk.StringVar()
-                cb = ttk.Combobox(row_frame, width=18)
+            if col_idx in [0, 1]:  # Material Code/Name comboboxes
+                cb = ttk.Combobox(row_frame, width=24)
                 cb.grid(row=0, column=col_idx, padx=2)
-                cb.bind('<<ComboboxSelected>>', lambda e, idx=row_idx: self.update_material_info(idx))
+                if col_idx == 0:
+                    cb.bind('<<ComboboxSelected>>', lambda e, idx=row_idx: self.update_material_code(idx))
+                else:
+                    cb.bind('<<ComboboxSelected>>', lambda e, idx=row_idx: self.update_material_name(idx))
                 entries.append(cb)
-            elif col_idx == 4:  # Product Code
-                var = tk.StringVar()
-                cb = ttk.Combobox(row_frame, width=18)
+            
+            elif col_idx in [4, 5]:  # Product Code/Name comboboxes
+                cb = ttk.Combobox(row_frame, width=24)
                 cb.grid(row=0, column=col_idx, padx=2)
-                cb.bind('<<ComboboxSelected>>', lambda e, idx=row_idx: self.update_product_info(idx))
+                if col_idx == 4:
+                    cb.bind('<<ComboboxSelected>>', lambda e, idx=row_idx: self.update_product_code(idx))
+                else:
+                    cb.bind('<<ComboboxSelected>>', lambda e, idx=row_idx: self.update_product_name(idx))
                 entries.append(cb)
-            elif col_idx in [1, 5]:  # Names (readonly)
-                entry = tk.Entry(row_frame, width=20, state='readonly')
-                entry.grid(row=0, column=col_idx, padx=2)
-                entries.append(entry)
+            
             elif col_idx in [2, 6]:  # Available quantities (readonly)
-                entry = tk.Entry(row_frame, width=12, state='readonly')
+                entry = tk.Entry(row_frame, width=26, state='readonly')
                 entry.grid(row=0, column=col_idx, padx=2)
                 entries.append(entry)
+            
             else:
-                entry = tk.Entry(row_frame, width=15)
+                entry = tk.Entry(row_frame, width=26)
                 entry.grid(row=0, column=col_idx, padx=2)
                 entries.append(entry)
             
@@ -1966,108 +2091,107 @@ class SalesSystemApp:
         self.update_combobox_values()
 
     def update_combobox_values(self):
-        material_codes = list(self.material_map.keys())
-        product_codes = list(self.product_map.keys())
+        material_codes = list(self.material_code_map.keys())
+        material_names = list(self.material_name_map.keys())
+        product_codes = list(self.product_code_map.keys())
+        product_names = list(self.product_name_map.keys())
         
         for row in self.production_entries:
             row[0]['values'] = material_codes
+            row[1]['values'] = material_names
             row[4]['values'] = product_codes
+            row[5]['values'] = product_names
 
-    def load_production_data(self):
-        try:
-            # Load materials
-            materials = self.db.materials.find()
-            self.material_map = {
-                str(m['code']): {
-                    'name': m.get('name', ''),
-                    'stock': m.get('stock', 0)
-                } for m in materials
-            }
-            
-            # Load products
-            products = self.db.products.find()
-            self.product_map = {
-                str(p['code']): {
-                    'name': p.get('name', ''),
-                    'stock': p.get('stock', 0)
-                } for p in products
-            }
-            
-            self.update_combobox_values()
-            
-        except PyMongoError as e:
-            messagebox.showerror("Database Error", f"Failed to load data: {str(e)}")
-
-    def update_material_info(self, row_idx):
+    def update_material_code(self, row_idx):
         code = self.production_entries[row_idx][0].get()
-        material = self.material_map.get(code, {})
-        
-        # Update material name
-        self.production_entries[row_idx][1].config(state='normal')
-        self.production_entries[row_idx][1].delete(0, tk.END)
-        self.production_entries[row_idx][1].insert(0, material.get('name', ''))
-        self.production_entries[row_idx][1].config(state='readonly')
-        
-        # Update available quantity
-        self.production_entries[row_idx][2].config(state='normal')
-        self.production_entries[row_idx][2].delete(0, tk.END)
-        self.production_entries[row_idx][2].insert(0, str(material.get('stock', 0)))
-        self.production_entries[row_idx][2].config(state='readonly')
+        if code in self.material_code_map:
+            material = self.material_code_map[code]
+            self.production_entries[row_idx][1].set(material['name'])
+            self.production_entries[row_idx][2].config(state='normal')
+            self.production_entries[row_idx][2].delete(0, tk.END)
+            self.production_entries[row_idx][2].insert(0, str(material['stock_quantity']))
+            self.production_entries[row_idx][2].config(state='readonly')
 
-    def update_product_info(self, row_idx):
+    def update_material_name(self, row_idx):
+        name = self.production_entries[row_idx][1].get()
+        if name in self.material_name_map:
+            material = self.material_name_map[name]
+            self.production_entries[row_idx][0].set(material['code'])
+            self.production_entries[row_idx][2].config(state='normal')
+            self.production_entries[row_idx][2].delete(0, tk.END)
+            self.production_entries[row_idx][2].insert(0, str(material['stock_quantity']))
+            self.production_entries[row_idx][2].config(state='readonly')
+
+    def update_product_code(self, row_idx):
         code = self.production_entries[row_idx][4].get()
-        product = self.product_map.get(code, {})
-        
-        # Update product name
-        self.production_entries[row_idx][5].config(state='normal')
-        self.production_entries[row_idx][5].delete(0, tk.END)
-        self.production_entries[row_idx][5].insert(0, product.get('name', ''))
-        self.production_entries[row_idx][5].config(state='readonly')
-        
-        # Update available quantity
-        self.production_entries[row_idx][6].config(state='normal')
-        self.production_entries[row_idx][6].delete(0, tk.END)
-        self.production_entries[row_idx][6].insert(0, str(product.get('stock', 0)))
-        self.production_entries[row_idx][6].config(state='readonly')
+        if code in self.product_code_map:
+            product = self.product_code_map[code]
+            self.production_entries[row_idx][5].set(product['name'])
+            self.production_entries[row_idx][6].config(state='normal')
+            self.production_entries[row_idx][6].delete(0, tk.END)
+            self.production_entries[row_idx][6].insert(0, str(product['stock_quantity']))
+            self.production_entries[row_idx][6].config(state='readonly')
 
-    def validate_production_row(self, row):
-        try:
-            # Validate numeric fields
-            float(row[3].get())  # Material Qty
-            float(row[7].get())  # Product Qty
-            float(row[8].get())  # Waste
-            return True
-        except ValueError:
-            return False
+    def update_product_name(self, row_idx):
+        name = self.production_entries[row_idx][5].get()
+        if name in self.product_name_map:
+            product = self.product_name_map[name]
+            self.production_entries[row_idx][4].set(product['code'])
+            self.production_entries[row_idx][6].config(state='normal')
+            self.production_entries[row_idx][6].delete(0, tk.END)
+            self.production_entries[row_idx][6].insert(0, str(product['stock_quantity']))
+            self.production_entries[row_idx][6].config(state='readonly')
 
     def save_production_order(self):
-        order_data = []
-        
-        for idx, row in enumerate(self.production_entries):
-            if not self.validate_production_row(row):
-                messagebox.showerror("Input Error", 
-                    f"Invalid numeric values in row {idx+1}")
-                return
-                
-            order_data.append({
-                'material_code': row[0].get(),
-                'material_qty': float(row[3].get()),
-                'product_code': row[4].get(),
-                'product_qty': float(row[7].get()),
-                'waste': float(row[8].get()),
-                'timestamp': datetime.now()
-            })
+        production_col = self.get_collection_by_name("Production")
+        materials_col = self.get_collection_by_name("Materials")
+        products_col = self.get_collection_by_name("Products")
         
         try:
-            result = self.db.production_orders.insert_many(order_data)
-            if result.inserted_ids:
-                messagebox.showinfo("Success", 
-                    f"Saved {len(result.inserted_ids)} production records")
-                self.update_inventory()
-            else:
-                messagebox.showwarning("Warning", "No records saved")
+            orders = []
+            for idx, row in enumerate(self.production_entries):
+                # Validate data
+                try:
+                    material_code = row[0].get()
+                    material_qty = float(row[3].get())
+                    product_code = row[4].get()
+                    product_qty = float(row[7].get())
+                    waste = float(row[8].get())
+                except ValueError:
+                    messagebox.showerror("Error", f"Invalid values in row {idx+1}")
+                    return
+
+                # Update material stock
+                materials_col.update_one(
+                    {'material_code': material_code},
+                    {'$inc': {'stock_quantity': -material_qty}}
+                )
+
+                # Update product stock
+                products_col.update_one(
+                    {'product_code': product_code},
+                    {'$inc': {'stock_quantity': product_qty}}
+                )
+
+                # Create production record
+                orders.append({
+                    'material_code': material_code,
+                    'material_qty': material_qty,
+                    'product_code': product_code,
+                    'product_qty': product_qty,
+                    'waste': waste,
+                    'timestamp': datetime.now()
+                })
+
+            # Insert production records
+            if orders:
+                production_col.insert_many(orders)
+            
+            messagebox.showinfo("Success", "Production order saved successfully")
+            self.new_production_order(None)  # Refresh form
+
         except PyMongoError as e:
-            messagebox.showerror("Database Error", f"Failed to save order: {str(e)}")
+            messagebox.showerror("Database Error", f"Operation failed: {str(e)}")
 
     def update_inventory(self):
         # Update material and product stocks
@@ -2083,20 +2207,20 @@ class SalesSystemApp:
                 if material_code:
                     self.db.materials.update_one(
                         {'code': material_code},
-                        {'$inc': {'stock': -material_qty}}
+                        {'$inc': {'stock_quantity': -material_qty}}
                     )
-                
+
                 # Update product stock
                 if product_code:
                     self.db.products.update_one(
                         {'code': product_code},
-                        {'$inc': {'stock': product_qty}}
+                        {'$inc': {'stock_quantity': product_qty}}
                     )
                     
         except PyMongoError as e:
             messagebox.showerror("Inventory Error", 
                 f"Failed to update inventory: {str(e)}")
-
+###########################################################################
     def handle_combobox_change(self, event, row_idx, field_type):
         """Handle changes in product code/name comboboxes"""
         value = event.widget.get().strip()
@@ -3187,6 +3311,8 @@ class SalesSystemApp:
                                                    or None if the name is not recognized."""
         if collection_name == "Employees":
             return self.employees_collection
+        if collection_name == "Employee_appointimets":
+            return self.employees_appointments_collection
         elif collection_name == "Products":
             return self.products_collection
         elif collection_name == "Sales":
@@ -3205,8 +3331,6 @@ class SalesSystemApp:
             return self.orders_collection
         elif collection_name == "Expenses":
             return self.expenses_collection
-        elif collection_name == "Employee_appointments":
-            return self.employee_appointments_collection
         elif collection_name == "Daily_shifts":
             return self.daily_shifts_collection
         elif collection_name == "Accounts":
@@ -3392,10 +3516,10 @@ class SalesSystemApp:
                 ):
                     try:
                         last_number = int(reciept_number.split("-")[-1])
-                        print(2)
+                        
                     except (ValueError, IndexError):
                         last_number = 0
-                        print(3)
+                        
             
             new_number = last_number + 1
             # print(4)
@@ -3424,10 +3548,8 @@ class SalesSystemApp:
                 ):
                     try:
                         last_number = int(reciept_number.split("-")[-1])
-                        print(2)
                     except (ValueError, IndexError):
                         last_number = 0
-                        print(3)
             
             new_number = last_number + 1
             # print(4)
@@ -4158,7 +4280,7 @@ class SalesSystemApp:
 
 
     # Function to make the top bar part
-    def topbar(self, show_back_button=False, Back_to_Database_Window = False):
+    def topbar(self, show_back_button=False, Back_to_Database_Window = False, Back_to_Employee_Window = False):
         # Top Bar
         top_bar = tk.Frame(self.root, bg="#dbb40f", height=60)
         top_bar.pack(fill="x")
@@ -4191,6 +4313,8 @@ class SalesSystemApp:
                 self.back_photo = ImageTk.PhotoImage(back_image)
                 if Back_to_Database_Window:
                     back_icon = tk.Button(top_bar, image=self.back_photo, bg="#dbb40f", bd=0, command=self.manage_database_window)
+                elif Back_to_Employee_Window:
+                    back_icon = tk.Button(top_bar, image=self.back_photo, bg="#dbb40f", bd=0, command=self.manage_Employees_window)
                 else:
                     back_icon = tk.Button(top_bar, image=self.back_photo, bg="#dbb40f", bd=0, command=self.main_menu)
                 back_icon.pack(side="left", padx=10)
