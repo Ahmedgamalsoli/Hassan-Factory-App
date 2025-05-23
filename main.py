@@ -907,7 +907,7 @@ class SalesSystemApp:
         self.topbar(show_back_button=True)
 
         # Main button frame
-        button_frame = tk.Frame(self.root, bg="white")
+        button_frame = tk.Frame(self.root, bg=COLORS["background"])
         button_frame.pack(pady=30)
 
         # Define buttons with images, text, and commands
@@ -943,13 +943,13 @@ class SalesSystemApp:
                 column = index % columns_per_row
 
                 # Create sub-frame for each button
-                sub_frame = tk.Frame(button_frame, bg="white")
+                sub_frame = tk.Frame(button_frame, bg=COLORS["background"])
                 sub_frame.grid(row=row, column=column, padx=20, pady=20)
 
                 # Image button
                 btn = tk.Button(sub_frame, image=photo_img, bd=0, 
                             compound=tk.TOP,
-                            bg=COLORS["card"],
+                            bg=COLORS["background"],
                             fg=COLORS["text"],
                             activebackground=COLORS["highlight"],
                             command=btn_info["command"])
@@ -957,17 +957,17 @@ class SalesSystemApp:
                 btn.pack()
                 
                 btn.bind("<Enter>", lambda e, b=btn: b.config(bg=COLORS["primary"]))
-                btn.bind("<Leave>", lambda e, b=btn: b.config(bg=COLORS["card"]))
+                btn.bind("<Leave>", lambda e, b=btn: b.config(bg=COLORS["background"]))
 
                 # Text label
                 lbl = tk.Label(sub_frame, text=btn_info["text"], 
-                            font=("Arial", 15, "bold"), bg="white", fg="#003366")
+                            font=("Arial", 15, "bold"), bg=COLORS["background"], fg="#003366")
                 lbl.pack(pady=5)
 
         except Exception as e:
             print(f"Error loading images: {e}")
             # Fallback to text buttons if images fail
-            fallback_frame = tk.Frame(self.root, bg="white")
+            fallback_frame = tk.Frame(self.root, bg=COLORS["background"])
             fallback_frame.pack(pady=20)
             for btn_info in buttons:
                 tk.Button(fallback_frame, text=btn_info["text"], 
@@ -980,7 +980,7 @@ class SalesSystemApp:
         # Create the top bar
         self.topbar(show_back_button=True)
 
-        button_frame = tk.Frame(self.root, bg="white")
+        button_frame = tk.Frame(self.root, bg=COLORS["background"])
         button_frame.pack(pady=30)
 
 
@@ -999,49 +999,58 @@ class SalesSystemApp:
 
         try:
             for index, btn_info in enumerate(buttons):
-                # Load and resize image
+                # Default transparent image
                 img_path = os.path.join(BASE_DIR, "Static", "images", btn_info["image"])
-                img = Image.open(img_path).resize((70, 70), Image.LANCZOS)
-                photo_img = ImageTk.PhotoImage(img)
-                images.append(photo_img)
+                original_img = Image.open(img_path).convert("RGBA")
+                transparent_img = original_img.resize((70, 70), Image.LANCZOS)
+                photo_transparent = ImageTk.PhotoImage(transparent_img)
+
+                # Image with background
+                bg_color = (0,0,0,0)  # F5F7FA in RGBA
+                bg_img = Image.new("RGBA", original_img.size, bg_color)
+                composited_img = Image.alpha_composite(bg_img, original_img)
+                resized_composited = composited_img.resize((70, 70), Image.LANCZOS)
+                photo_with_bg = ImageTk.PhotoImage(resized_composited)
+
+                # Save both images
+                images.append(photo_transparent)
+                images.append(photo_with_bg)
+                
+
 
                 # Calculate grid position
                 row = index // columns_per_row
                 column = index % columns_per_row
 
                 # Create sub-frame for each button
-                sub_frame = tk.Frame(button_frame, bg="white")
+                sub_frame = tk.Frame(button_frame, bg=COLORS["background"])
                 sub_frame.grid(row=row, column=column, padx=20, pady=20)
 
                 # Image button
-                btn = tk.Button(sub_frame, image=photo_img, bd=0, 
-                            compound=tk.TOP,
-                            bg=COLORS["card"],
-                            fg=COLORS["text"],
-                            activebackground=COLORS["highlight"],
-                            command=btn_info["command"])
-                btn.image = photo_img  # Keep reference
+                btn = tk.Button(sub_frame,
+                                image=photo_transparent,
+                                bd=0,
+                                compound=tk.TOP,
+                                bg=COLORS["background"],
+                                fg=COLORS["text"],
+                                activebackground=COLORS["highlight"],
+                                command=btn_info["command"])
+                btn.image_transparent = photo_transparent
+                btn.image_with_bg = photo_with_bg
                 btn.pack()
                 
                 btn.bind("<Enter>", lambda e, b=btn: b.config(bg=COLORS["primary"]))
-                btn.bind("<Leave>", lambda e, b=btn: b.config(bg=COLORS["card"]))
-
-
-                #                 btn = tk.Button(btn_frame,
-                #             image=photo_img,
-                #             text=btn_info["text"],
-                #             compound=tk.TOP,
-                #             borderwidth=0,)
+                btn.bind("<Leave>", lambda e, b=btn: b.config(bg=COLORS["background"]))
 
                 # Text label
                 lbl = tk.Label(sub_frame, text=btn_info["text"], 
-                            font=("Arial", 15, "bold"), bg="white", fg="#003366")
+                            font=("Arial", 15, "bold"), bg=COLORS["background"], fg="#003366")
                 lbl.pack(pady=5)
 
         except Exception as e:
             print(f"Error loading images: {e}")
             # Fallback to text buttons if images fail
-            fallback_frame = tk.Frame(self.root, bg="white")
+            fallback_frame = tk.Frame(self.root, bg=COLORS["background"])
             fallback_frame.pack(pady=20)
             for btn_info in buttons:
                 tk.Button(fallback_frame, text=btn_info["text"], 
@@ -3505,7 +3514,7 @@ class SalesSystemApp:
                     "Debit", "Balance", "Sales"]
         
         elif collection_name == "Customer_Payments":
-            return ["Operation_Number", "Time", "Customer_info", "Amount","Payment_method"]
+            return ["Operation_Number", "Time", "Credit", "Debit","Payment_method"]
 
         elif collection_name == "Shipping":
             return ["order_id", "shipping_date", "tracking_number", "shipping_address"]
