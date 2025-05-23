@@ -316,6 +316,7 @@ class SalesSystemApp:
         self.big_deals_collection             = db['Big_deals']
         self.TEX_Calculations_collection      = db['TEX_Calculations']
         self.production_collection            = db['Production']
+        self.customer_payments                = db["Customer_Payments"]
 
 ############################################ Windows ########################################### 
     
@@ -443,7 +444,7 @@ class SalesSystemApp:
             {"text": self.t("New Purchase Invoice"), "image": "Purchase.png", 
             "command": lambda: self.new_Purchase_invoice(self.user_role)},
             {"text": self.t("Receive Payment"), "image": "Recieve.png", 
-            "command": lambda: self.trash(self.user_role)},
+            "command": lambda: self.new_customer_payment(self.user_role)},
             {"text": self.t("Make Payment"), "image": "payment.png", 
             "command": lambda: self.trash(self.user_role)},
             {"text": self.t("Production Order"), "image": "Production Order.png", 
@@ -721,6 +722,9 @@ class SalesSystemApp:
                 btn_frame = tk.Frame(parent, bg=COLORS["card"])
                 btn_frame.grid(row=row, column=column, padx=15, pady=15)
 
+                # button_frame = tk.Frame(parent, bg=COLORS["card"])
+                # button_frame.pack(pady=30)
+                
                 # Load and process image
                 img_path = os.path.join(BASE_DIR, "Static", "images", btn_info["image"])
                 img = Image.open(img_path).resize((button_size, button_size), Image.LANCZOS)
@@ -944,9 +948,16 @@ class SalesSystemApp:
 
                 # Image button
                 btn = tk.Button(sub_frame, image=photo_img, bd=0, 
+                            compound=tk.TOP,
+                            bg=COLORS["card"],
+                            fg=COLORS["text"],
+                            activebackground=COLORS["highlight"],
                             command=btn_info["command"])
                 btn.image = photo_img  # Keep reference
                 btn.pack()
+                
+                btn.bind("<Enter>", lambda e, b=btn: b.config(bg=COLORS["primary"]))
+                btn.bind("<Leave>", lambda e, b=btn: b.config(bg=COLORS["card"]))
 
                 # Text label
                 lbl = tk.Label(sub_frame, text=btn_info["text"], 
@@ -969,7 +980,6 @@ class SalesSystemApp:
         # Create the top bar
         self.topbar(show_back_button=True)
 
-        # Main button frame
         button_frame = tk.Frame(self.root, bg="white")
         button_frame.pack(pady=30)
 
@@ -1005,9 +1015,23 @@ class SalesSystemApp:
 
                 # Image button
                 btn = tk.Button(sub_frame, image=photo_img, bd=0, 
+                            compound=tk.TOP,
+                            bg=COLORS["card"],
+                            fg=COLORS["text"],
+                            activebackground=COLORS["highlight"],
                             command=btn_info["command"])
                 btn.image = photo_img  # Keep reference
                 btn.pack()
+                
+                btn.bind("<Enter>", lambda e, b=btn: b.config(bg=COLORS["primary"]))
+                btn.bind("<Leave>", lambda e, b=btn: b.config(bg=COLORS["card"]))
+
+
+                #                 btn = tk.Button(btn_frame,
+                #             image=photo_img,
+                #             text=btn_info["text"],
+                #             compound=tk.TOP,
+                #             borderwidth=0,)
 
                 # Text label
                 lbl = tk.Label(sub_frame, text=btn_info["text"], 
@@ -2336,6 +2360,7 @@ class SalesSystemApp:
         except Exception as e:
             messagebox.showerror("Update Error", f"Failed to update product info: {str(e)}")
             self.clear_row_fields(row_idx)
+            
     def update_material_info(self, row_idx, source):
         """Update fields based on code or name selection"""
         try:
@@ -2466,6 +2491,89 @@ class SalesSystemApp:
     
         self.topbar(show_back_button=True,Back_to_Database_Window=True)
         self.display_general_table(self.materials_collection, "Materials")
+    
+    def new_customer_payment(self, user_role):
+        self.table_name.set("Customer_Payments")
+        for widget in self.root.winfo_children():
+            widget.destroy()
+    
+        self.topbar(show_back_button=True,Back_to_Database_Window=False)
+        self.display_general_table(self.materials_collection, "Customer_Payments")
+
+    def customer_interactions(self, user_role):
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        self.topbar(show_back_button=True,Back_to_Database_Window=False)
+        
+        customer_codes = ['C001', 'C002', 'C003']
+        customer_names = ['John Doe', 'Jane Smith', 'Alice Johnson']
+        
+        main_frame = tk.Frame(root)
+        main_frame.pack(fill="both", expand=True, padx=20, pady=50)
+        
+        left_frame = tk.Frame(main_frame, width=330)
+        left_frame.pack(side="left", fill="y")
+        left_frame.pack_propagate(False)  # Prevent auto-resizing
+
+        # Left half
+        tk.Label(left_frame, text="Cash", font=("Arial", 12)).pack(pady=10, anchor="w", padx=10)
+        cash_entry = tk.Entry(left_frame, font=("Arial", 12))
+        cash_entry.pack(pady=5, padx=10, fill="x")
+
+        tk.Label(left_frame, text="Payment Method", font=("Arial", 12)).pack(pady=10, anchor="w", padx=10)
+        payment_entry = tk.Entry(left_frame, font=("Arial", 12))
+        payment_entry.pack(pady=5, padx=10, fill="x")
+
+        # Vertical separator 
+        # tk.Frame(main_frame, width=2, bg=COLORS["primary"]).grid(row=0, column=2, rowspan=20, sticky="ns", padx=5)
+
+        #Right part (table)
+        right_frame = tk.Frame(main_frame)
+        right_frame.pack(side="left", fill="both", expand=True)
+
+        # ==== Drop-down Section ====
+        tk.Label(right_frame, text="Customer Code").grid(row=0, column=4)
+        customer_code_cb = ttk.Combobox(right_frame, values=customer_codes)
+        customer_code_cb.grid(row=1, column=4)
+
+        tk.Label(right_frame, text="Customer Name").grid(padx=(10,20), row=0, column=6)
+        customer_name_cb = ttk.Combobox(right_frame, values=customer_names)
+        customer_name_cb.grid(row=1, column=6)
+
+        # ==== Table Section ====
+        columns = ("date", "invoice_no", "debit", "credit")
+        tree = ttk.Treeview(right_frame, columns=columns, show="headings", height=8)
+        tree.grid(row=3, column=3, columnspan=6, padx=10, pady=10)
+
+        for col in columns:
+            tree.heading(col, text=col.capitalize())
+            tree.column(col, width=120)
+
+        # Example rows
+        sample_data = [
+            ("2025-05-01", "INV-0001", "500", "0"),
+            ("2025-05-03", "INV-0002", "0", "1000"),
+            ("2025-05-01", "INV-0001", "500", "0"),
+            ("2025-05-03", "INV-0002", "0", "1000"),
+            ("2025-05-01", "INV-0001", "500", "0"),
+        ]
+
+        for row in sample_data:
+            tree.insert("", tk.END, values=row)
+
+        # ==== Footer Totals ====
+        tk.Label(right_frame, text="Total Debit").grid(row=12, column=3, sticky="e")
+        total_debit_entry = tk.Entry(right_frame)
+        total_debit_entry.grid(row=12, column=4, sticky="w")
+
+        tk.Label(right_frame, text="Total Credit").grid(row=12, column=5, sticky="e")
+        total_credit_entry = tk.Entry(right_frame)
+        total_credit_entry.grid(row=12, column=6, sticky="w")
+
+        tk.Label(right_frame, text="Balance").grid(row=12, column=7, sticky="e")
+        balance_entry = tk.Entry(right_frame)
+        balance_entry.grid(row=12, column=8, sticky="w")
 
 ############################ Main Functions ########################################
     def display_table(self):
@@ -2578,7 +2686,7 @@ class SalesSystemApp:
 
         self.entries = {}
         for i, label in enumerate(ordered_fields):
-            if label == "Id":
+            if label in ["Id", "Operation_Number", "Customer_info","Time"]:
                 continue
             
             tk.Label(form_frame, text=self.t(label), font=("Arial", 12), anchor="w").grid(row=i, column=0, sticky="w", pady=5)
@@ -2587,6 +2695,11 @@ class SalesSystemApp:
                 entry = DateEntry(form_frame, font=("Arial", 12), date_pattern='dd-MM-yyyy', width=18)
                 entry.grid(row=i, column=1, pady=5)
                 self.entries[label] = entry
+            elif "payment_method" in label.lower():
+                selected_method = tk.StringVar()
+                dropdown = ttk.Combobox(form_frame, textvariable=selected_method, values=['Cash', 'E_Wallet', 'Bank_account', 'Instapay'], state="readonly", width=18)
+                dropdown.grid(row=i, column=1, pady=5)
+                dropdown.set("Cash")  # Optional: set default value
             elif "pic" in label.lower():
                 frame = tk.Frame(form_frame)
                 frame.grid(row=i, column=1, pady=5)
@@ -2750,7 +2863,8 @@ class SalesSystemApp:
                 columns = self.get_fields_by_name(collection_name)
                 if '_id' in columns:
                     columns.remove('_id')
-
+                if 'Customer_info' in columns:
+                    columns.remove('Customer_info')
                 tree["columns"] = columns
                 for col in columns:
                     tree.heading(col, text=col)
@@ -3339,6 +3453,8 @@ class SalesSystemApp:
             return self.big_deals_collection
         elif collection_name == "Production":
             return self.production_collection
+        elif collection_name == "Customer_Payments":
+            return self.customer_payments
         elif collection_name == "TEX_Calculations":
             return self.TEX_Calculations_collection
         else:
@@ -3386,6 +3502,9 @@ class SalesSystemApp:
                     "Instapay", "E_wallet", "Accountant_name", "Accountant_number", "Sales_grade", "Growth_grade", "Frequency_grade", "Credit",
                     "Debit", "Balance", "Sales"]
         
+        elif collection_name == "Customer_Payments":
+            return ["Operation_Number", "Time", "Customer_info", "Amount","Payment_method"]
+
         elif collection_name == "Shipping":
             return ["order_id", "shipping_date", "tracking_number", "shipping_address"]
         
