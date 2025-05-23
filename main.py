@@ -2237,6 +2237,7 @@ class SalesSystemApp:
         except Exception as e:
             messagebox.showerror("Update Error", f"Failed to update product info: {str(e)}")
             self.clear_row_fields(row_idx)
+            
     def update_material_info(self, row_idx, source):
         """Update fields based on code or name selection"""
         try:
