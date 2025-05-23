@@ -1200,7 +1200,6 @@ class SalesSystemApp:
         # Database collections
         employees_col = self.get_collection_by_name("Employees")
         withdrawals_col = self.get_collection_by_name("Employee_withdrawls")
-
         # Create mappings
         self.employee_code_map = {}
         self.employee_name_map = {}
@@ -1209,7 +1208,6 @@ class SalesSystemApp:
             name = emp.get('Name', '')
             self.employee_code_map[code] = name
             self.employee_name_map[name] = code
-
         # Main frame with left alignment
         main_frame = tk.Frame(self.root, padx=40, pady=20)
         main_frame.pack(fill=tk.BOTH, expand=True, anchor='nw')
