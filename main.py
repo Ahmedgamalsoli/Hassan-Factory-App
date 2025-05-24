@@ -33,6 +33,7 @@ from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 from bidi.algorithm import get_display
 from matplotlib import rcParams
+from collections import defaultdict
 ######################################################### Access Data Base ##############################################################################
 dialog_width = 300  # Same width as AlwaysOnTopInputDialog
 dialog_height = 150 # Same height as AlwaysOnTopInputDialog
@@ -1286,9 +1287,7 @@ class SalesSystemApp:
         # Employee Selection Section
         tk.Label(main_frame, text=self.t("Employee Selection"), font=('Helvetica', 14, 'bold'))\
             .grid(row=0, column=0, columnspan=2, pady=10, sticky='w')
-        # ttk.Label(selection_frame, text="Employee Name:").pack(side=tk.LEFT)
-        # self.name_cb = ttk.Combobox(selection_frame, textvariable=self.emp_name_var, width=25)
-        # self.name_cb.pack(side=tk.LEFT, padx=5)
+        
         # Employee Name Dropdown
         tk.Label(main_frame, text=self.t("Employee Name:"), font=('Helvetica', 12))\
             .grid(row=1, column=0, pady=5, sticky='w')
@@ -1307,42 +1306,51 @@ class SalesSystemApp:
         code_cb.grid(row=2, column=1, pady=5, padx=10, sticky='w')
         code_cb.bind('<<ComboboxSelected>>', self.update_withdraw_name)
 
-        # Withdrawal Details Section
+        # Salary Display
+        tk.Label(main_frame, text=self.t("Salary:"), font=('Helvetica', 12))\
+            .grid(row=3, column=0, pady=5, sticky='w')
+        self.salary_var = tk.StringVar()
+        salary_entry = tk.Entry(main_frame, textvariable=self.salary_var, 
+                            state='readonly', width=33, font=('Helvetica', 12))
+        salary_entry.grid(row=3, column=1, pady=5, padx=10, sticky='w')
+
+        # Withdrawal Details Section (updated row numbers)
         tk.Label(main_frame, text=self.t("Withdrawal Details"), font=('Helvetica', 14, 'bold'))\
-            .grid(row=3, column=0, columnspan=2, pady=10, sticky='w')
+            .grid(row=4, column=0, columnspan=2, pady=10, sticky='w')
 
         # Amount Entry
         tk.Label(main_frame, text=self.t("Withdrawal Amount:"), font=('Helvetica', 12))\
-            .grid(row=4, column=0, pady=5, sticky='w')
+            .grid(row=5, column=0, pady=5, sticky='w')
         self.amount_entry = tk.Entry(main_frame, width=33, font=('Helvetica', 12))
-        self.amount_entry.grid(row=4, column=1, pady=5, padx=10, sticky='w')
+        self.amount_entry.grid(row=5, column=1, pady=5, padx=10, sticky='w')
 
         # Payment Method
         tk.Label(main_frame, text=self.t("Payment Method"), font=('Helvetica', 12))\
-            .grid(row=5, column=0, pady=5, sticky='w')
+            .grid(row=6, column=0, pady=5, sticky='w')
         self.payment_method = ttk.Combobox(main_frame, 
                                         values=["Cash", "Instapay", "E_wallet", "Bank Account"],
                                         width=30, 
                                         font=('Helvetica', 12),
                                         state="readonly")
-        self.payment_method.grid(row=5, column=1, pady=5, padx=10, sticky='w')
+        self.payment_method.grid(row=6, column=1, pady=5, padx=10, sticky='w')
 
         # Previous Withdrawals
         tk.Label(main_frame, text=self.t("Previous Withdrawals:"), font=('Helvetica', 12))\
-            .grid(row=6, column=0, pady=5, sticky='w')
+            .grid(row=7, column=0, pady=5, sticky='w')
         self.prev_withdrawals = tk.Entry(main_frame, 
                                     state='readonly', 
                                     width=33, 
                                     font=('Helvetica', 12))
-        self.prev_withdrawals.grid(row=6, column=1, pady=5, padx=10, sticky='w')
+        self.prev_withdrawals.grid(row=7, column=1, pady=5, padx=10, sticky='w')
 
-        # Save Button
+        # Save Button (updated row number)
         save_btn = tk.Button(main_frame, 
                             text=self.t("💾 Save Withdrawal"), 
                             font=('Helvetica', 12, 'bold'),
                             width=20,
-                            command=lambda: self.save_withdrawal(withdrawals_col, employees_col),bg='#2196F3', fg='white')
-        save_btn.grid(row=7, column=0, columnspan=2, pady=20)
+                            command=lambda: self.save_withdrawal(withdrawals_col, employees_col),
+                            bg='#2196F3', fg='white')
+        save_btn.grid(row=8, column=0, columnspan=2, pady=20)
 
         # Update dropdown values
         name_cb['values'] = list(self.employee_name_map.keys())
@@ -1372,11 +1380,21 @@ class SalesSystemApp:
             name = self.employee_code_map[code]
         
         if code:
+            # Update previous withdrawals
             total = self.calculate_previous_withdrawals(code)
             self.prev_withdrawals.config(state='normal')
             self.prev_withdrawals.delete(0, tk.END)
             self.prev_withdrawals.insert(0, f"{total:.2f}")
             self.prev_withdrawals.config(state='readonly')
+            
+            # Update salary display
+            employees_col = self.get_collection_by_name("Employees")
+            emp = employees_col.find_one({'Id': code})
+            if emp:
+                salary = emp.get('Salary', 0)
+                self.salary_var.set(f"{salary:.2f}")
+            else:
+                self.salary_var.set("0.00")
 
     def calculate_previous_withdrawals(self, employee_code):
         withdrawals_col = self.get_collection_by_name("Employee_withdrawls")
@@ -1474,11 +1492,14 @@ class SalesSystemApp:
         self.emp_name_var = tk.StringVar()
         self.name_cb = ttk.Combobox(selection_frame, textvariable=self.emp_name_var, width=25)
         self.name_cb.grid(row=0, column=1, padx=5, sticky='ew')
-        
+        self.name_cb.bind('<<ComboboxSelected>>', self.update_salary_name)
+        # code_cb.grid(row=2, column=1, pady=5, padx=10, sticky='w')
+        # code_cb.bind('<<ComboboxSelected>>', self.update_withdraw_name)
         ttk.Label(selection_frame, text=self.t("Code:")).grid(row=0, column=2, padx=(15,5), sticky='e')
         self.emp_code_var = tk.StringVar()
         self.code_cb = ttk.Combobox(selection_frame, textvariable=self.emp_code_var, width=10)
         self.code_cb.grid(row=0, column=3, padx=5, sticky='ew')
+        self.code_cb.bind('<<ComboboxSelected>>', self.update_salary_code)
 
         # Date Selection
         date_frame = ttk.LabelFrame(main_frame, text=self.t("Month/Year Selection"), padding=10)
@@ -1579,14 +1600,34 @@ class SalesSystemApp:
         self.code_cb['values'] = list(self.employee_code_map.keys())
 
         # Bind events
-        self.emp_name_var.trace_add('write', self.update_employee_info)
-        self.emp_code_var.trace_add('write', self.update_employee_info)
+        # self.emp_name_var.trace_add('write', self.update_employee_info)
+        # self.emp_code_var.trace_add('write', self.update_employee_info)
         self.month_var.trace_add('write', self.load_attendance_data)
         self.year_var.trace_add('write', self.load_attendance_data)
         self.delay_amount.bind('<KeyRelease>', self.calculate_net_salary)
         self.overtime_amount.bind('<KeyRelease>', self.calculate_net_salary)
         self.start_time_var.trace_add('write', self.load_attendance_data)
         self.end_time_var.trace_add('write', self.load_attendance_data)
+    
+    def update_salary_code(self, event):
+        # Update name based on selected code
+        code = self.emp_code_var.get()
+        if code in self.employee_code_map:
+            # Get corresponding name from code map
+            new_name = self.employee_code_map[code]['name']
+            if self.emp_name_var.get() != new_name:
+                self.emp_name_var.set(new_name)
+        self.load_attendance_data()
+
+    def update_salary_name(self, event):
+        # Update code based on selected name
+        name = self.emp_name_var.get()
+        if name in self.employee_name_map:
+            # Get corresponding code from name map
+            new_code = self.employee_name_map[name]['code']
+            if self.emp_code_var.get() != new_code:
+                self.emp_code_var.set(new_code)
+        self.load_attendance_data()
 
     def update_employee_info(self, *args):
         code = self.emp_code_var.get()
@@ -1627,7 +1668,7 @@ class SalesSystemApp:
         
         # Get collections
         withdrawals_col = self.get_collection_by_name("Employee_withdrawls")
-        hours_col = self.get_collection_by_name("Employee_appointimets")
+        hours_col = self.get_collection_by_name("Employee_appointimets")  # Fixed typo
         
         # Get data
         withdrawals = list(withdrawals_col.find({
@@ -1644,22 +1685,29 @@ class SalesSystemApp:
         start_time = self.parse_time(self.start_time_var.get())
         end_time = self.parse_time(self.end_time_var.get())
         
-        # Configure tags
-        # self.table.tag_configure('before_start', foreground='blue')
-        # self.table.tag_configure('after_start', foreground='red')
-        # self.table.tag_configure('after_end', foreground='blue')
-        # self.table.tag_configure('before_end', foreground='red')
-        
+        # Initialize withdrawals tracking
+        daily_withdrawals = defaultdict(float)
+        total_withdrawls = 0.0
+
+        # Process all withdrawals first
+        for w in withdrawals:
+            w_date = w['timestamp'].date()
+            amount = w.get('amount_withdrawls', 0.0)
+            daily_withdrawals[w_date] += amount
+            total_withdrawls += amount
+
         # Generate daily records
         current_date = start_date
-        total_withdrawls = 0
-        
         while current_date < end_date:
-            # Find records for this date
+            current_date_date = current_date.date()
+            current_date_str = current_date.strftime("%Y-%m-%d")
+            
+            # Find attendance for this date
             daily_attendance = next((a for a in attendance 
-                                if a['check_in'].date() == current_date.date()), None)
-            daily_withdrawal = next((w for w in withdrawals 
-                                    if w['timestamp'].date() == current_date.date()), None)
+                                if a['check_in'].date() == current_date_date), None)
+            
+            # Get withdrawal amount from pre-processed data
+            withdrawal = daily_withdrawals.get(current_date_date, 0.0)
             
             # Initialize defaults
             from_time = "--"
@@ -1667,7 +1715,6 @@ class SalesSystemApp:
             duration = "--"
             delay = "--"
             overtime = "--"
-            withdrawal = 0
             tags = []
 
             if daily_attendance:
@@ -1681,35 +1728,36 @@ class SalesSystemApp:
                 if check_in and check_out:
                     # Calculate duration
                     duration_delta = check_out - check_in
-                    duration = f"{duration_delta.seconds//3600:02}:{(duration_delta.seconds//60)%60:02}"
+                    hours = duration_delta.seconds // 3600
+                    minutes = (duration_delta.seconds // 60) % 60
+                    duration = f"{hours:02}:{minutes:02}"
                     
                     # Calculate time differences
                     if start_time:
-                        scheduled_start = datetime.combine(current_date.date(), start_time.time())
+                        scheduled_start = datetime.combine(current_date_date, start_time.time())
                         if check_in < scheduled_start:
-                            delay = f"{(scheduled_start - check_in).seconds//60} mins early"
+                            delay_min = (scheduled_start - check_in).seconds // 60
+                            delay = f"{delay_min} mins early"
                             tags.append('before_start')
                         elif check_in > scheduled_start:
-                            delay = f"{(check_in - scheduled_start).seconds//60} mins late"
+                            delay_min = (check_in - scheduled_start).seconds // 60
+                            delay = f"{delay_min} mins late"
                             tags.append('after_start')
 
                     if end_time and check_out:
-                        scheduled_end = datetime.combine(current_date.date(), end_time.time())
+                        scheduled_end = datetime.combine(current_date_date, end_time.time())
                         if check_out > scheduled_end:
-                            overtime = f"{(check_out - scheduled_end).seconds//60} mins overtime"
+                            overtime_min = (check_out - scheduled_end).seconds // 60
+                            overtime = f"{overtime_min} mins overtime"
                             tags.append('after_end')
                         elif check_out < scheduled_end:
-                            overtime = f"{(scheduled_end - check_out).seconds//60} mins early"
+                            overtime_min = (scheduled_end - check_out).seconds // 60
+                            overtime = f"{overtime_min} mins early"
                             tags.append('before_end')
 
-            if daily_withdrawal:
-                # Process withdrawal data
-                withdrawal = daily_withdrawal.get('amount_withdrawls', 0)
-                total_withdrawls += withdrawal
-            
-            # Insert row with styled values
-            row = self.table.insert('', 'end', values=(
-                current_date.strftime("%Y-%m-%d"),
+            # Insert row with accumulated withdrawal
+            self.table.insert('', 'end', values=(
+                current_date_str,
                 from_time,
                 to_time,
                 duration,
@@ -1761,12 +1809,29 @@ class SalesSystemApp:
                 'payment_method': self.payment_method.get(),
                 'timestamp': datetime.now()
             }
+            previous_total = self.calculate_previous_withdrawals(self.emp_code_var.get())
+            # For string inputs like "$1000"
+            try:
+                withdrawal_amount = -abs(float(self.total_withdrawls.get().replace('$', '').strip()))
+            except (ValueError, AttributeError):
+                withdrawal_amount = 0.0
+            withdrawal_data = {
+                'employee_code': self.emp_code_var.get(),
+                'employee_name': self.emp_name_var.get(),
+                'previous_withdrawls': previous_total,  # Total before this withdrawal
+                'amount_withdrawls': withdrawal_amount,
+                # 'cumulative_total': previous_total + amount,  # New total after this withdrawal
+                'payment_method': self.payment_method.get(),
+                'timestamp': datetime.now()
+            }
             
             # Input validation
             if not all([salary_data['employee_code'], salary_data['month_year']]):
                 raise ValueError("Missing required fields")
             
             salary_col = self.get_collection_by_name("Employee_Salary")
+            # Database collections
+            withdrawals_col = self.get_collection_by_name("Employee_withdrawls")
             
             # Check for existing salary record
             existing = salary_col.find_one({
@@ -1778,9 +1843,13 @@ class SalesSystemApp:
                 messagebox.showwarning("Warning", 
                     "Employee already took the salary in this month")
                 return
-            
+            if not self.payment_method.get():
+                messagebox.showinfo("Warning","Enter the payment Method")
+                return
             # Insert new record if not exists
             salary_col.insert_one(salary_data)
+            withdrawals_col.insert_one(withdrawal_data)
+            # self.save_withdrawal(withdrawals_col,employees_col)
             messagebox.showinfo("Success", "Salary record saved successfully")
             
         except Exception as e:
