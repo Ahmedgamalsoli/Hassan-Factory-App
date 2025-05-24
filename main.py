@@ -2996,6 +2996,9 @@ class SalesSystemApp:
         self.payment_entry.pack(pady=5, padx=10, fill="x")
         self.payment_entry.set("Cash")  
 
+        add_btn = tk.Button(left_frame, text="Add Entry", width=20, command=lambda: self.add_customer_payment(tree))
+        add_btn.pack(pady=20 , padx=10)
+
         # Vertical separator 
         # tk.Frame(main_frame, width=2, bg=COLORS["primary"]).grid(row=0, column=2, rowspan=20, sticky="ns", padx=5)
 
@@ -3018,24 +3021,35 @@ class SalesSystemApp:
 
         # ==== Table Section ====
         columns = ("date", "invoice_no", "debit", "credit", "Payment_method")
-        tree = ttk.Treeview(right_frame, columns=columns, show="headings", height=8)
-        tree.grid(row=3, column=3, columnspan=6, padx=10, pady=10)
+        tree_container = ttk.Frame(right_frame)
+        tree_container.grid(row=3, column=3, columnspan=7, padx=10, pady=10, sticky="nsew")
 
+        # Scrollbar (attached to the right side of the tree)
+        scrollbar = ttk.Scrollbar(tree_container, orient="vertical")
+        scrollbar.pack(side="right", fill="y")
+
+        # Treeview
+        tree = ttk.Treeview(tree_container, columns=columns, show="headings", height=8, yscrollcommand=scrollbar.set)
+        tree.pack(side="left", fill="both", expand=True)
+
+        # Configure scrollbar to control tree
+        scrollbar.config(command=tree.yview)
+        
         for col in columns:
             tree.heading(col, text=col.capitalize())
-            tree.column(col, width=120)
+            tree.column(col, width=150)
 
         button_frame = tk.Frame(right_frame)
         button_frame.grid(row=15, column=3, columnspan=6, pady=10)
 
-        add_btn = tk.Button(button_frame, text="Add Entry", command=lambda: self.add_customer_payment(tree))
-        add_btn.pack(side="left", padx=5)
+        # add_btn = tk.Button(button_frame, text="Add Entry", command=lambda: self.add_customer_payment(tree))
+        # add_btn.pack(side="left", padx=5)
 
-        edit_btn = tk.Button(button_frame, text="Edit Entry", command=lambda: self.edit_customer_payment(tree))
-        edit_btn.pack(side="left", padx=5)
+        # edit_btn = tk.Button(button_frame, text="Edit Entry", command=lambda: self.edit_customer_payment(tree))
+        # edit_btn.pack(side="left", padx=5)
 
-        delete_btn = tk.Button(button_frame, text="Delete Entry", command=lambda: self.delete_customer_payment(tree))
-        delete_btn.pack(side="left", padx=5)
+        # delete_btn = tk.Button(button_frame, text="Delete Entry", command=lambda: self.delete_customer_payment(tree))
+        # delete_btn.pack(side="left", padx=5)
 
         total_debit  = 0
         total_credit = 0
@@ -3104,17 +3118,17 @@ class SalesSystemApp:
             tree.insert("", tk.END, values=row)
 
         # ==== Footer Totals ====
-        tk.Label(right_frame, text="Total Debit").grid(row=12, column=3, sticky="e")
+        tk.Label(right_frame, text="Total Debit").grid(row=13, column=3, sticky="e")
         self.total_debit_entry = tk.Entry(right_frame)
-        self.total_debit_entry.grid(row=12, column=4, sticky="w")
+        self.total_debit_entry.grid(row=13, column=4, sticky="w")
 
-        tk.Label(right_frame, text="Total Credit").grid(row=12, column=5, sticky="e")
+        tk.Label(right_frame, text="Total Credit").grid(row=13, column=5, sticky="e")
         self.total_credit_entry = tk.Entry(right_frame)
-        self.total_credit_entry.grid(row=12, column=6, sticky="w")
+        self.total_credit_entry.grid(row=13, column=6, sticky="w")
 
-        tk.Label(right_frame, text="Balance").grid(row=12, column=7, sticky="e")
+        tk.Label(right_frame, text="Balance").grid(row=13, column=7, sticky="e")
         self.balance_entry = tk.Entry(right_frame)
-        self.balance_entry.grid(row=12, column=8, sticky="w")
+        self.balance_entry.grid(row=13, column=8, sticky="w")
 
         self.total_debit_entry.insert(0, total_debit)
         self.total_credit_entry.insert(0, total_credit)
@@ -3164,6 +3178,11 @@ class SalesSystemApp:
         self.customer_payment_collection.insert_one(doc)
         tree.insert("", tk.END, values=(current_time, operation_number, 0.0, credit_val))
 
+        self.update_totals({
+            "Customer_info.code": customer_code,
+            "Customer_info.name": customer_name
+        })
+
         messagebox.showinfo("Success", f"Entry {operation_number} added.")
 
     def delete_customer_payment(self, tree):
@@ -3188,130 +3207,6 @@ class SalesSystemApp:
         values = tree.item(selected)["values"]
         # Implement a pop-up or re-use entries to update MongoDB
         # Find document by Operation_Number and update it
-
-    def customer_interactions2(self, user_role):
-        for widget in self.root.winfo_children():
-            widget.destroy()
-
-        self.topbar(show_back_button=True,Back_to_Database_Window=False)
-
-        img_label= None
-        customer_payment_columns = self.get_fields_by_name("Customer_Payments")
-        sales_payment_columns = self.get_fields_by_name("Sales")
-        
-        main_frame = tk.Frame(root)
-        main_frame.pack(fill="both", expand=True, padx=20, pady=50)
-
-        # ==== 1. Create scrollable form frame ====
-        form_container = tk.Frame(main_frame)
-        form_container.pack(side="left", fill="y", padx=10, pady=10)
-
-        canvas = tk.Canvas(form_container, width=350)   # Set width for form
-        scrollbar = tk.Scrollbar(form_container, orient="vertical", command=canvas.yview)
-        scrollbar.pack(side="right", fill="y")
-
-        canvas.pack(side="left", fill="y", expand=False)
-        canvas.configure(yscrollcommand=scrollbar.set)
-
-        # Frame inside canvas (holds labels + entries)
-        form_frame = tk.Frame(canvas)
-        canvas.create_window((0, 0), window=form_frame, anchor='nw')
-
-        # Ensure scrollregion resizes automatically
-        def on_frame_config(event):
-            canvas.configure(scrollregion=canvas.bbox("all"))
-
-        form_frame.bind("<Configure>", on_frame_config)
-
-        # Optional — enable mousewheel scrolling
-        def _on_mousewheel(event):
-            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
-
-        # Enable scrolling when mouse hovers inside form_frame
-        def enable_scrolling(event):
-            canvas.bind_all("<MouseWheel>", _on_mousewheel)
-                
-        def disable_scrolling(event):
-            canvas.unbind_all("<MouseWheel>")
-
-        # Bind mouse hovering for scroll enable/disable
-        form_container.bind("<Enter>", enable_scrolling)
-        form_container.bind("<Leave>", disable_scrolling)
-
-        self.entries = {}
-        for i, label in enumerate(customer_payment_columns):
-            if label in ["Id", "Operation_Number", "Debit", "Customer_info","Time"]:
-                continue
-            
-            tk.Label(form_frame, text=self.t(label), font=("Arial", 12), anchor="w").grid(row=i, column=0, sticky="w", pady=5)
-
-            if "payment_method" in label.lower():
-                selected_method = tk.StringVar()
-                dropdown = ttk.Combobox(form_frame, textvariable=selected_method, values=['Cash', 'E_Wallet', 'Bank_account', 'Instapay'], state="readonly", width=18)
-                dropdown.grid(row=i, column=1, pady=5)
-                dropdown.set("Cash")  # Optional: set default value
-            else:
-                entry = tk.Entry(form_frame, font=("Arial", 12), width=20)
-                entry.grid(row=i, column=1, pady=5)
-                self.entries[label] = entry
-
-
-        right_frame = tk.Frame(main_frame)
-        right_frame.pack(side="right", fill="both", expand=True)
-
-        search_frame = tk.Frame(right_frame)
-        search_frame.pack(fill="x", pady=(0, 10))
-
-        self.selected_field = tk.StringVar()
-        self.selected_field.set(customer_payment_columns[0])
-        field_dropdown = ttk.Combobox(search_frame, textvariable=self.selected_field, values=customer_payment_columns, width=14)
-        field_dropdown.pack(side="left", padx=(0, 5))
-
-        local_search_query = tk.StringVar()
-        search_entry = tk.Entry(search_frame, textvariable=local_search_query)
-        search_entry.pack(side="left", padx=(0, 5))
-
-        table_frame = tk.Frame(right_frame)
-        table_frame.pack(fill="both", expand=True)
-
-        tree = ttk.Treeview(table_frame, columns=customer_payment_columns, show="headings")
-        for col in customer_payment_columns:
-            tree.heading(col, text=col)
-            tree.column(col, anchor="center", stretch=True)
-        tree.pack(fill="both", expand=True)
-        tree.bind("<<TreeviewSelect>>", lambda event: self.on_tree_selection(event, tree, customer_payment_columns, "Customer_Payments", img_label)) #Bind tree selection to an event handler
-
-        horizontal_scrollbar = ttk.Scrollbar(tree, orient="horizontal", command=tree.xview)
-        horizontal_scrollbar.pack(side="bottom", fill="x")
-        tree.configure(xscrollcommand=horizontal_scrollbar.set)
-
-        vertical_scrollbar = ttk.Scrollbar(tree, orient="vertical", command=tree.yview)
-        vertical_scrollbar.pack(side="right", fill="y")
-        tree.configure(yscrollcommand=vertical_scrollbar.set)
-
-        # Search button now refreshes table, doesn't rebuild everything!
-        tk.Button(
-            search_frame,
-            text=self.t("Search"),
-            command=lambda: self.refresh_generic_table(tree, customer_payment_columns, "Customer_Payments", local_search_query.get())
-        ).pack(side="left")
-        
-        # Bottom buttons
-        button_frame = tk.LabelFrame(root, text="Actions", padx=10, pady=10, font=("Arial", 12, 'bold'))
-        button_frame.pack(pady=10)
-
-        btn_add = tk.Button(button_frame, text="Add Entry", font=("Arial", 12), width=15, command=lambda: self.add_generic_entry(tree, customer_payment_columns,"Customer_Payments"))
-        btn_edit = tk.Button(button_frame, text="Update Entry", font=("Arial", 12), width=15, command=lambda: self.edit_generic_entry(tree, customer_payment_columns,"Customer_Payments"))
-        btn_delete = tk.Button(button_frame, text="Delete Entry", font=("Arial", 12), width=15, command=lambda: self.delete_generic_entry(tree, customer_payment_columns))
-        btn_deselect = tk.Button(button_frame, text="Deselect Entry", font=("Arial", 12), width=15, command=lambda:self.deselect_entry(tree))
-
-        btn_add.grid(row=0, column=0, padx=10)
-        btn_edit.grid(row=0, column=1, padx=10)
-        btn_delete.grid(row=0, column=2, padx=10)
-        btn_deselect.grid(row=0, column=3, padx=10)
-
-        # Load initial table content
-        self.refresh_generic_table(tree, customer_payment_columns, "Customer_Payments", search_text="")
 
     def on_code_selected(self, event):
         selected_code = self.customer_code_cb.get().strip()
@@ -3348,12 +3243,14 @@ class SalesSystemApp:
             financials = inv.get("Financials", {})
             total_debit += float(financials.get("Net_total", 0))
             total_credit += float(financials.get("Payed_cash", 0))
-            balance += float(total_debit - total_credit)  # Or Remaining_balance based on your logic
+
+        balance += float(total_debit - total_credit)  # Or Remaining_balance based on your logic
 
         for payment in payments:
-            total_debit += float(financials.get("Debit", 0.0))
-            total_credit += float(financials.get("Credit", 0.0))
-            balance += float(total_debit - total_credit)  # Or Remaining_balance based on your logic
+            total_debit += float(payment.get("Debit", 0.0))
+            total_credit += float(payment.get("Credit", 0.0))
+
+        balance += float(total_debit - total_credit)  # Or Remaining_balance based on your logic
 
         # Insert calculated totals into entries (clear first)
         self.total_debit_entry.delete(0, tk.END)
