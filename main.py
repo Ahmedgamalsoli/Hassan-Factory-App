@@ -477,7 +477,7 @@ class SalesSystemApp:
             {"text": self.t("New Purchase Invoice"), "image": "Purchase.png", 
             "command": lambda: self.new_Purchase_invoice(self.user_role)},
             {"text": self.t("Receive Payment"), "image": "Recieve.png", 
-            "command": lambda: self.new_customer_payment(self.user_role)},
+            "command": lambda: self.customer_interactions(self.user_role)},
             {"text": self.t("Make Payment"), "image": "payment.png", 
             "command": lambda: self.trash(self.user_role)},
             {"text": self.t("Production Order"), "image": "Production Order.png", 
@@ -2889,7 +2889,7 @@ class SalesSystemApp:
             widget.destroy()
     
         self.topbar(show_back_button=True,Back_to_Database_Window=False)
-        self.display_general_table(self.materials_collection, "Customer_Payments")
+        self.display_general_table(self.customer_payments, "Customer_Payments")
 
     def customer_interactions(self, user_role):
         for widget in self.root.winfo_children():
@@ -2897,8 +2897,17 @@ class SalesSystemApp:
 
         self.topbar(show_back_button=True,Back_to_Database_Window=False)
         
-        customer_codes = ['C001', 'C002', 'C003']
-        customer_names = ['John Doe', 'Jane Smith', 'Alice Johnson']
+        self.customer_collection         = self.get_collection_by_name("Customers")
+        self.customer_payment_collection = self.get_collection_by_name("Customer_Payments")
+        self.sales_collection            = self.get_collection_by_name("Sales")
+
+        customer_codes = []
+        customer_names = []
+        sample_data = []
+
+        for customer in self.customer_collection.find({}, {"Name": 1, "Code": 1, "_id": 0}):
+            customer_codes.append(customer.get("Code"))
+            customer_names.append(customer.get("Name"))
         
         main_frame = tk.Frame(root)
         main_frame.pack(fill="both", expand=True, padx=20, pady=50)
@@ -2909,12 +2918,14 @@ class SalesSystemApp:
 
         # Left half
         tk.Label(left_frame, text="Cash", font=("Arial", 12)).pack(pady=10, anchor="w", padx=10)
-        cash_entry = tk.Entry(left_frame, font=("Arial", 12))
-        cash_entry.pack(pady=5, padx=10, fill="x")
+        self.cash_entry = tk.Entry(left_frame, font=("Arial", 12))
+        self.cash_entry.pack(pady=5, padx=10, fill="x")
 
         tk.Label(left_frame, text="Payment Method", font=("Arial", 12)).pack(pady=10, anchor="w", padx=10)
-        payment_entry = tk.Entry(left_frame, font=("Arial", 12))
-        payment_entry.pack(pady=5, padx=10, fill="x")
+        selected_method = tk.StringVar()
+        self.payment_entry = ttk.Combobox(left_frame, textvariable=selected_method, values=['Cash', 'E_Wallet', 'Bank_account', 'Instapay'], state="readonly", width=18)
+        self.payment_entry.pack(pady=5, padx=10, fill="x")
+        self.payment_entry.set("Cash")  
 
         # Vertical separator 
         # tk.Frame(main_frame, width=2, bg=COLORS["primary"]).grid(row=0, column=2, rowspan=20, sticky="ns", padx=5)
@@ -2925,15 +2936,19 @@ class SalesSystemApp:
 
         # ==== Drop-down Section ====
         tk.Label(right_frame, text="Customer Code").grid(row=0, column=4)
-        customer_code_cb = ttk.Combobox(right_frame, values=customer_codes)
-        customer_code_cb.grid(row=1, column=4)
+        self.customer_code_cb = ttk.Combobox(right_frame, values=customer_codes)
+        self.customer_code_cb.grid(row=1, column=4)
 
         tk.Label(right_frame, text="Customer Name").grid(padx=(10,20), row=0, column=6)
-        customer_name_cb = ttk.Combobox(right_frame, values=customer_names)
-        customer_name_cb.grid(row=1, column=6)
+        self.customer_name_cb = ttk.Combobox(right_frame, values=customer_names)
+        self.customer_name_cb.grid(row=1, column=6)
+
+        self.customer_code_cb.bind("<<ComboboxSelected>>", self.on_code_selected)
+        self.customer_name_cb.bind("<<ComboboxSelected>>", self.on_name_selected)
+
 
         # ==== Table Section ====
-        columns = ("date", "invoice_no", "debit", "credit")
+        columns = ("date", "invoice_no", "debit", "credit", "Payment_method")
         tree = ttk.Treeview(right_frame, columns=columns, show="headings", height=8)
         tree.grid(row=3, column=3, columnspan=6, padx=10, pady=10)
 
@@ -2941,30 +2956,345 @@ class SalesSystemApp:
             tree.heading(col, text=col.capitalize())
             tree.column(col, width=120)
 
-        # Example rows
-        sample_data = [
-            ("2025-05-01", "INV-0001", "500", "0"),
-            ("2025-05-03", "INV-0002", "0", "1000"),
-            ("2025-05-01", "INV-0001", "500", "0"),
-            ("2025-05-03", "INV-0002", "0", "1000"),
-            ("2025-05-01", "INV-0001", "500", "0"),
-        ]
+        button_frame = tk.Frame(right_frame)
+        button_frame.grid(row=15, column=3, columnspan=6, pady=10)
+
+        add_btn = tk.Button(button_frame, text="Add Entry", command=lambda: self.add_customer_payment(tree))
+        add_btn.pack(side="left", padx=5)
+
+        edit_btn = tk.Button(button_frame, text="Edit Entry", command=lambda: self.edit_customer_payment(tree))
+        edit_btn.pack(side="left", padx=5)
+
+        delete_btn = tk.Button(button_frame, text="Delete Entry", command=lambda: self.delete_customer_payment(tree))
+        delete_btn.pack(side="left", padx=5)
+
+        total_debit  = 0
+        total_credit = 0
+
+        for invoice in self.sales_collection.find({}, {
+            "Date": 1,
+            "Receipt_Number": 1,
+            "Financials.Net_total": 1,
+            "Financials.Payed_cash": 1,
+            "Financials.Payment_method": 1,
+            "_id": 0
+        }):
+            invoice = dict(invoice)
+            # Parse and format the date
+            raw_date = invoice.get("Date", "").split()[0]  # e.g. "04/05/2025"
+            date = "-".join(reversed(raw_date.split("/"))) if raw_date else ""
+
+            invoice_no = invoice.get("Receipt_Number", "")
+            financials = invoice.get("Financials", {})  # Get financials dict or empty dict
+
+            # Now access Net_total and Payed_cash directly (they are floats, not dicts)
+            debit = financials.get("Net_total", 0.0)   # This returns a float
+            credit = financials.get("Payed_cash", 0.0) # Also a float
+            payment_method = financials.get("Payment_method", "Cash")
+
+            total_debit  += debit
+            total_credit += credit
+
+            # Convert to string if needed
+            debit_str = str(debit)
+            credit_str = str(credit)
+
+            sample_data.append((date, invoice_no, debit_str, credit_str, payment_method))
+
+
+        for payment in self.customer_payment_collection.find({}, {
+            "Time": 1,
+            "Operation_Number": 1,
+            "Credit": 1,
+            "Debit": 1,
+            "Payment_method": 1,
+            "_id": 0
+        }):
+            payment = dict(payment)
+            # Parse and format the date
+            raw_date = payment.get("Time", "").split()[0]  # e.g. "04/05/2025"
+            date = "-".join(reversed(raw_date.split("/"))) if raw_date else ""
+
+            payment_no = payment.get("Operation_Number", "")
+
+            # Now access Net_total and Payed_cash directly (they are floats, not dicts)
+            debit = payment.get("Debit", 0.0)   # This returns a float
+            credit = payment.get("Credit", 0.0) # Also a float
+            payment_method = payment.get("Payment_method", "Cash")
+
+            total_debit  += debit
+            total_credit += credit
+
+            # Convert to string if needed
+            debit_str = str(debit)
+            credit_str = str(credit)
+
+            sample_data.append((date, payment_no, debit_str, credit_str, payment_method))
 
         for row in sample_data:
             tree.insert("", tk.END, values=row)
 
         # ==== Footer Totals ====
         tk.Label(right_frame, text="Total Debit").grid(row=12, column=3, sticky="e")
-        total_debit_entry = tk.Entry(right_frame)
-        total_debit_entry.grid(row=12, column=4, sticky="w")
+        self.total_debit_entry = tk.Entry(right_frame)
+        self.total_debit_entry.grid(row=12, column=4, sticky="w")
 
         tk.Label(right_frame, text="Total Credit").grid(row=12, column=5, sticky="e")
-        total_credit_entry = tk.Entry(right_frame)
-        total_credit_entry.grid(row=12, column=6, sticky="w")
+        self.total_credit_entry = tk.Entry(right_frame)
+        self.total_credit_entry.grid(row=12, column=6, sticky="w")
 
         tk.Label(right_frame, text="Balance").grid(row=12, column=7, sticky="e")
-        balance_entry = tk.Entry(right_frame)
-        balance_entry.grid(row=12, column=8, sticky="w")
+        self.balance_entry = tk.Entry(right_frame)
+        self.balance_entry.grid(row=12, column=8, sticky="w")
+
+        self.total_debit_entry.insert(0, total_debit)
+        self.total_credit_entry.insert(0, total_credit)
+        self.balance_entry.insert(0, total_debit - total_credit)
+        
+
+    def get_next_operation_number(self):
+        last_entry = self.customer_payment_collection.find_one(
+            sort=[("Operation_Number", -1)]
+        )
+        if last_entry and "Operation_Number" in last_entry:
+            last_num = int(last_entry["Operation_Number"].split("-")[1])
+            return f"PM-{last_num+1:04d}"
+        return "PM-0001"
+
+    def add_customer_payment(self, tree):
+        credit = self.cash_entry.get().strip()
+        payment_method = self.payment_entry.get().strip()
+        customer_code = self.customer_code_cb.get().strip()
+        customer_name = self.customer_name_cb.get().strip()
+
+        if not credit or not payment_method or not customer_code or not customer_name:
+            messagebox.showerror("Error", "All fields must be filled!")
+            return
+
+        try:
+            credit_val = float(credit)
+        except ValueError:
+            messagebox.showerror("Error", "Cash must be a valid number.")
+            return
+
+        operation_number = self.get_next_operation_number()
+        current_time = datetime.now().strftime("%d/%m/%Y %H:%M")
+
+        doc = {
+            "Operation_Number": operation_number,
+            "Time": current_time,
+            "Credit": credit_val,
+            "Debit": 0.0,
+            "Payment_method": payment_method,
+            "Customer_info": {
+                "code": customer_code,
+                "name": customer_name
+            }
+        }
+
+        self.customer_payment_collection.insert_one(doc)
+        tree.insert("", tk.END, values=(current_time, operation_number, 0.0, credit_val))
+
+        messagebox.showinfo("Success", f"Entry {operation_number} added.")
+
+    def delete_customer_payment(self, tree):
+        selected = tree.focus()
+        if not selected:
+            messagebox.showwarning("Select Entry", "Please select an entry to delete.")
+            return
+        values = tree.item(selected)["values"]
+        op_number = values[1]  # Assuming Operation_Number is in 2nd column
+        confirm = messagebox.askyesno("Confirm Delete", f"Delete {op_number}?")
+        if confirm:
+            self.customer_payment_collection.delete_one({"Operation_Number": op_number})
+            tree.delete(selected)
+            messagebox.showinfo("Deleted", f"Entry {op_number} deleted.")
+
+    #TODO
+    def edit_customer_payment(self,tree):
+        selected = tree.focus()
+        if not selected:
+            messagebox.showwarning("Select Entry", "Please select an entry to edit.")
+            return
+        values = tree.item(selected)["values"]
+        # Implement a pop-up or re-use entries to update MongoDB
+        # Find document by Operation_Number and update it
+
+    def customer_interactions2(self, user_role):
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        self.topbar(show_back_button=True,Back_to_Database_Window=False)
+
+        img_label= None
+        customer_payment_columns = self.get_fields_by_name("Customer_Payments")
+        sales_payment_columns = self.get_fields_by_name("Sales")
+        
+        main_frame = tk.Frame(root)
+        main_frame.pack(fill="both", expand=True, padx=20, pady=50)
+
+        # ==== 1. Create scrollable form frame ====
+        form_container = tk.Frame(main_frame)
+        form_container.pack(side="left", fill="y", padx=10, pady=10)
+
+        canvas = tk.Canvas(form_container, width=350)   # Set width for form
+        scrollbar = tk.Scrollbar(form_container, orient="vertical", command=canvas.yview)
+        scrollbar.pack(side="right", fill="y")
+
+        canvas.pack(side="left", fill="y", expand=False)
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        # Frame inside canvas (holds labels + entries)
+        form_frame = tk.Frame(canvas)
+        canvas.create_window((0, 0), window=form_frame, anchor='nw')
+
+        # Ensure scrollregion resizes automatically
+        def on_frame_config(event):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+
+        form_frame.bind("<Configure>", on_frame_config)
+
+        # Optional — enable mousewheel scrolling
+        def _on_mousewheel(event):
+            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+        # Enable scrolling when mouse hovers inside form_frame
+        def enable_scrolling(event):
+            canvas.bind_all("<MouseWheel>", _on_mousewheel)
+                
+        def disable_scrolling(event):
+            canvas.unbind_all("<MouseWheel>")
+
+        # Bind mouse hovering for scroll enable/disable
+        form_container.bind("<Enter>", enable_scrolling)
+        form_container.bind("<Leave>", disable_scrolling)
+
+        self.entries = {}
+        for i, label in enumerate(customer_payment_columns):
+            if label in ["Id", "Operation_Number", "Debit", "Customer_info","Time"]:
+                continue
+            
+            tk.Label(form_frame, text=self.t(label), font=("Arial", 12), anchor="w").grid(row=i, column=0, sticky="w", pady=5)
+
+            if "payment_method" in label.lower():
+                selected_method = tk.StringVar()
+                dropdown = ttk.Combobox(form_frame, textvariable=selected_method, values=['Cash', 'E_Wallet', 'Bank_account', 'Instapay'], state="readonly", width=18)
+                dropdown.grid(row=i, column=1, pady=5)
+                dropdown.set("Cash")  # Optional: set default value
+            else:
+                entry = tk.Entry(form_frame, font=("Arial", 12), width=20)
+                entry.grid(row=i, column=1, pady=5)
+                self.entries[label] = entry
+
+
+        right_frame = tk.Frame(main_frame)
+        right_frame.pack(side="right", fill="both", expand=True)
+
+        search_frame = tk.Frame(right_frame)
+        search_frame.pack(fill="x", pady=(0, 10))
+
+        self.selected_field = tk.StringVar()
+        self.selected_field.set(customer_payment_columns[0])
+        field_dropdown = ttk.Combobox(search_frame, textvariable=self.selected_field, values=customer_payment_columns, width=14)
+        field_dropdown.pack(side="left", padx=(0, 5))
+
+        local_search_query = tk.StringVar()
+        search_entry = tk.Entry(search_frame, textvariable=local_search_query)
+        search_entry.pack(side="left", padx=(0, 5))
+
+        table_frame = tk.Frame(right_frame)
+        table_frame.pack(fill="both", expand=True)
+
+        tree = ttk.Treeview(table_frame, columns=customer_payment_columns, show="headings")
+        for col in customer_payment_columns:
+            tree.heading(col, text=col)
+            tree.column(col, anchor="center", stretch=True)
+        tree.pack(fill="both", expand=True)
+        tree.bind("<<TreeviewSelect>>", lambda event: self.on_tree_selection(event, tree, customer_payment_columns, "Customer_Payments", img_label)) #Bind tree selection to an event handler
+
+        horizontal_scrollbar = ttk.Scrollbar(tree, orient="horizontal", command=tree.xview)
+        horizontal_scrollbar.pack(side="bottom", fill="x")
+        tree.configure(xscrollcommand=horizontal_scrollbar.set)
+
+        vertical_scrollbar = ttk.Scrollbar(tree, orient="vertical", command=tree.yview)
+        vertical_scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=vertical_scrollbar.set)
+
+        # Search button now refreshes table, doesn't rebuild everything!
+        tk.Button(
+            search_frame,
+            text=self.t("Search"),
+            command=lambda: self.refresh_generic_table(tree, customer_payment_columns, "Customer_Payments", local_search_query.get())
+        ).pack(side="left")
+        
+        # Bottom buttons
+        button_frame = tk.LabelFrame(root, text="Actions", padx=10, pady=10, font=("Arial", 12, 'bold'))
+        button_frame.pack(pady=10)
+
+        btn_add = tk.Button(button_frame, text="Add Entry", font=("Arial", 12), width=15, command=lambda: self.add_generic_entry(tree, customer_payment_columns,"Customer_Payments"))
+        btn_edit = tk.Button(button_frame, text="Update Entry", font=("Arial", 12), width=15, command=lambda: self.edit_generic_entry(tree, customer_payment_columns,"Customer_Payments"))
+        btn_delete = tk.Button(button_frame, text="Delete Entry", font=("Arial", 12), width=15, command=lambda: self.delete_generic_entry(tree, customer_payment_columns))
+        btn_deselect = tk.Button(button_frame, text="Deselect Entry", font=("Arial", 12), width=15, command=lambda:self.deselect_entry(tree))
+
+        btn_add.grid(row=0, column=0, padx=10)
+        btn_edit.grid(row=0, column=1, padx=10)
+        btn_delete.grid(row=0, column=2, padx=10)
+        btn_deselect.grid(row=0, column=3, padx=10)
+
+        # Load initial table content
+        self.refresh_generic_table(tree, customer_payment_columns, "Customer_Payments", search_text="")
+
+    def on_code_selected(self, event):
+        selected_code = self.customer_code_cb.get().strip()
+
+        if selected_code:
+            customer = self.customer_collection.find_one({"Code": selected_code}, {"Name": 1, "_id": 0})
+            if customer:
+                self.customer_name_cb.set(customer["Name"])
+            
+            self.update_totals({"Customer_info.code": selected_code})
+
+    def on_name_selected(self, event):
+        selected_name = self.customer_name_cb.get().strip()
+
+        if selected_name:
+            customer = self.customer_collection.find_one({"Name": selected_name}, {"Code": 1, "_id": 0})
+            if customer:
+                self.customer_code_cb.set(customer["Code"])
+
+            self.update_totals({"Customer_info.name": selected_name})
+
+    def update_totals(self, query=None):
+        if query is None:
+            query = {}
+
+        invoices = self.sales_collection.find(query)
+        payments = self.customer_payment_collection.find(query)
+
+        total_debit = 0.0
+        total_credit = 0.0
+        balance = 0.0
+
+        for inv in invoices:
+            financials = inv.get("Financials", {})
+            total_debit += float(financials.get("Net_total", 0))
+            total_credit += float(financials.get("Payed_cash", 0))
+            balance += float(total_debit - total_credit)  # Or Remaining_balance based on your logic
+
+        for payment in payments:
+            total_debit += float(financials.get("Debit", 0.0))
+            total_credit += float(financials.get("Credit", 0.0))
+            balance += float(total_debit - total_credit)  # Or Remaining_balance based on your logic
+
+        # Insert calculated totals into entries (clear first)
+        self.total_debit_entry.delete(0, tk.END)
+        self.total_debit_entry.insert(0, str(total_debit))
+
+        self.total_credit_entry.delete(0, tk.END)
+        self.total_credit_entry.insert(0, str(total_credit))
+
+        self.balance_entry.delete(0, tk.END)
+        self.balance_entry.insert(0, str(balance))
 
 ############################ Main Functions ########################################
     def display_table(self):
@@ -4786,9 +5116,9 @@ class SalesSystemApp:
         self.main_menu()
 
     #Function to update the time 
-    def update_time(self, time_label):
-        time_label.config(text=datetime.now().strftime('%B %d, %Y %I:%M %p'))
-        self.root.after(1000, self.update_time, time_label)
+    # def update_time(self, time_label):
+    #     time_label.config(text=datetime.now().strftime('%B %d, %Y %I:%M %p'))
+    #     self.root.after(1000, self.update_time, time_label)
 
 
     # Function to make the top bar part
@@ -4842,7 +5172,7 @@ class SalesSystemApp:
                             font=("Arial", 20, "bold"), fg="black", bg="#dbb40f")
 
         time_label.place(relx=0.5, rely=0.5, anchor="center")
-        self.update_time(time_label)
+        # self.update_time(time_label)
         #TODO
         # User info frame
         user_frame = tk.Frame(top_bar, bg="#dbb40f")
