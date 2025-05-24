@@ -496,7 +496,7 @@ class SalesSystemApp:
             # {"text": self.t("Materials"), "image": "Materials.png", 
             # "command": lambda: self.new_material(self.user_role)},
             {"text": self.t("Treasury"), "image": "Treasury.png", 
-            "command": lambda: self.trash(self.user_role)},
+            "command": lambda: self.Treasury_window(self.user_role)},
             {"text": self.t("Reports"), "image": "Reports.png", 
             "command": lambda: self.trash(self.user_role)},
         ]
@@ -1515,7 +1515,7 @@ class SalesSystemApp:
         ttk.Label(date_frame, text=self.t("Year:")).grid(row=0, column=2, padx=(15,5), sticky='e')
         self.year_var = tk.StringVar()
         self.year_cb = ttk.Combobox(date_frame, textvariable=self.year_var, 
-                                values=[str(year) for year in range(2020, 2031)],
+                                values=[str(year) for year in range(2020, 2040)],
                                 width=6)
         self.year_cb.grid(row=0, column=3, padx=5, sticky='w')
 
@@ -1895,6 +1895,12 @@ class SalesSystemApp:
         tk.Button(self.root, text="Delete Record", command=self.delete_entry).place(width=120, height=40, x=400, y=550)
 
         self.display_table()
+    def Treasury_window(self, user_role):
+            # Clear current window
+            for widget in self.root.winfo_children():
+                widget.destroy()
+
+            self.topbar(show_back_button=True)
 
     def new_sales_invoice(self, user_role):
         # Clear current window
