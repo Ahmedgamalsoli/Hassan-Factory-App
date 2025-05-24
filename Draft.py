@@ -850,3 +850,147 @@
         
         button_frame.columnconfigure(0, weight=1)
         button_frame.columnconfigure(1, weight=1)
+
+
+
+
+        ########################################################################################################################
+        def employee_statistics_window(self, user_role):
+        # Clear current window
+        for widget in self.root.winfo_children():
+            widget.destroy()
+        
+        self.topbar(show_back_button=True, Back_to_Employee_Window=True)
+        
+        # Database connections
+        employees_col = self.get_collection_by_name("Employees")
+        # Employee mappings
+        self.employee_code_map = {}
+        self.employee_name_map = {}
+        for emp in employees_col.find():
+            code = emp.get('Id', '')
+            name = emp.get('Name', '')
+            self.employee_code_map[code] = {
+                'name': name,
+                'salary': float(emp.get('Salary', 0))
+            }
+            self.employee_name_map[name] = {
+                'code': code,
+                'salary': float(emp.get('Salary', 0))
+            }
+
+        # Main GUI components
+        main_frame = tk.Frame(self.root, padx=20, pady=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Employee Selection
+        selection_frame = tk.Frame(main_frame)
+        selection_frame.pack(fill=tk.X, pady=5)
+        
+        self.emp_name_var = tk.StringVar()
+        self.emp_code_var = tk.StringVar()
+        
+        ttk.Label(selection_frame, text="Employee Name:").pack(side=tk.LEFT)
+        self.name_cb = ttk.Combobox(selection_frame, textvariable=self.emp_name_var, width=25)
+        self.name_cb.pack(side=tk.LEFT, padx=5)
+        
+        ttk.Label(selection_frame, text="Employee Code:").pack(side=tk.LEFT, padx=10)
+        self.code_cb = ttk.Combobox(selection_frame, textvariable=self.emp_code_var, width=15)
+        self.code_cb.pack(side=tk.LEFT)
+        print("hamada")
+        # Date Selection
+        date_frame = tk.Frame(main_frame)
+        date_frame.pack(fill=tk.X, pady=5)
+        ttk.Label(date_frame, text="Month/Year:").pack(side=tk.LEFT)
+        
+        self.month_var = tk.StringVar()
+        self.year_var = tk.StringVar()
+        
+        self.month_cb = ttk.Combobox(date_frame, textvariable=self.month_var, 
+                                values=["January", "February", "March", "April", "May", "June",
+                                        "July", "August", "September", "October", "November", "December"])
+        self.month_cb.pack(side=tk.LEFT, padx=5)
+        
+        self.year_cb = ttk.Combobox(date_frame, textvariable=self.year_var, 
+                                values=[str(year) for year in range(2020, 2031)])
+        self.year_cb.pack(side=tk.LEFT)
+        
+        # Working Hours
+        hours_frame = tk.Frame(main_frame)
+        hours_frame.pack(fill=tk.X, pady=5)
+        
+        self.start_time_var = tk.StringVar()
+        self.end_time_var = tk.StringVar()
+        
+        ttk.Label(hours_frame, text="Start Time:").pack(side=tk.LEFT)
+        ttk.Entry(hours_frame, textvariable=self.start_time_var, width=10).pack(side=tk.LEFT, padx=5)
+        ttk.Label(hours_frame, text="(e.g., 9:00 AM)").pack(side=tk.LEFT)
+        
+        ttk.Label(hours_frame, text="End Time:").pack(side=tk.LEFT, padx=10)
+        ttk.Entry(hours_frame, textvariable=self.end_time_var, width=10).pack(side=tk.LEFT)
+        ttk.Label(hours_frame, text="(e.g., 5:00 PM)").pack(side=tk.LEFT)
+        
+        # Attendance Table
+        columns = ("Date", "From", "To", "Duration", "Delay", "More", "Withdrawls")
+        self.table = ttk.Treeview(main_frame, columns=columns, show='headings', selectmode='browse')
+        
+        for col in columns:
+            self.table.heading(col, text=col)
+            self.table.column(col, width=100, anchor='center')
+        
+        self.scrollbar = ttk.Scrollbar(main_frame, orient="vertical", command=self.table.yview)
+        self.table.configure(yscrollcommand=self.scrollbar.set)
+        
+        self.table.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # Calculation Fields
+        totals_frame = tk.Frame(main_frame)
+        totals_frame.pack(fill=tk.X, pady=5)
+        
+        ttk.Label(totals_frame, text="Total Withdrawls:").pack(side=tk.LEFT)
+        self.total_withdrawls = ttk.Entry(totals_frame, width=10, state='readonly')
+        self.total_withdrawls.pack(side=tk.LEFT, padx=5)
+        
+        ttk.Label(totals_frame, text="Delay Amount:").pack(side=tk.LEFT, padx=10)
+        self.delay_amount = ttk.Entry(totals_frame, width=10)
+        self.delay_amount.pack(side=tk.LEFT)
+        
+        ttk.Label(totals_frame, text="Overtime Amount:").pack(side=tk.LEFT, padx=10)
+        self.overtime_amount = ttk.Entry(totals_frame, width=10)
+        self.overtime_amount.pack(side=tk.LEFT)
+        
+        # Payment and Salary
+        payment_frame = tk.Frame(main_frame)
+        payment_frame.pack(fill=tk.X, pady=5)
+        
+        ttk.Label(payment_frame, text="Payment Method:").pack(side=tk.LEFT)
+        self.payment_method = ttk.Combobox(payment_frame, 
+                                        values=["Cash", "Instapay", "E_wallet", "Bank_account"],
+                                        state="readonly",
+                                        width=15)
+        self.payment_method.pack(side=tk.LEFT, padx=5)
+        
+        ttk.Label(payment_frame, text="Salary:").pack(side=tk.LEFT, padx=10)
+        self.salary = ttk.Entry(payment_frame, width=15, state='readonly')
+        self.salary.pack(side=tk.LEFT)
+        ttk.Label(payment_frame, text="Net Salary:").pack(side=tk.LEFT, padx=10)
+        self.net_salary = ttk.Entry(payment_frame, width=15, state='readonly')
+        self.net_salary.pack(side=tk.LEFT)
+        
+        # Save Button
+        ttk.Button(main_frame, text="Take Salary", command=self.save_salary).pack(pady=10)
+        
+        # Initialize data
+        self.name_cb['values'] = list(self.employee_name_map.keys())
+        self.code_cb['values'] = list(self.employee_code_map.keys())
+        
+        # Bind events
+        self.emp_name_var.trace_add('write', self.update_employee_info)
+        self.emp_code_var.trace_add('write', self.update_employee_info)
+        self.month_var.trace_add('write', self.load_attendance_data)
+        self.year_var.trace_add('write', self.load_attendance_data)
+        self.delay_amount.bind('<KeyRelease>', self.calculate_net_salary)
+        self.overtime_amount.bind('<KeyRelease>', self.calculate_net_salary)
+        self.start_time_var.trace_add('write', self.load_attendance_data)
+        self.end_time_var.trace_add('write', self.load_attendance_data)

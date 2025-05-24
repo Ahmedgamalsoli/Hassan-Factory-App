@@ -2,9 +2,11 @@ import tkinter as tk
 from tkinter import filedialog, ttk, messagebox,Tk, Label, PhotoImage,simpledialog
 from PIL import Image, ImageTk, ImageDraw  # Import Pillow classes
 import pandas as pd
+import pytz
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
-from datetime import datetime,time , time
+from datetime import datetime,time , time, timedelta
+from babel.dates import format_time
 from fpdf import FPDF
 import sqlite3
 import csv
@@ -29,7 +31,8 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
-
+from bidi.algorithm import get_display
+from matplotlib import rcParams
 ######################################################### Access Data Base ##############################################################################
 dialog_width = 300  # Same width as AlwaysOnTopInputDialog
 dialog_height = 150 # Same height as AlwaysOnTopInputDialog
@@ -248,6 +251,34 @@ class SalesSystemApp:
             "Employee Name":{"Arabic":"اسم الموظف","English":"Employee Name"},
             "Check-in Time":{"Arabic":"وقت الحضور","English":"Check-in Time"},
             "Duration":{"Arabic":"المدة","English":"Duration"},
+            "Employee Selection":{"Arabic":"اختيار الموظفين","English":"Employee Selection"},
+            "Withdrawal Details":{"Arabic":"تفاصيل السحب","English":"Withdrawal Details"},
+            "Withdrawal Amount:":{"Arabic":"مبلغ السحب:","English":"Withdrawal Amount:"},
+            "Previous Withdrawals:":{"Arabic":"المسحوبات السابقة:","English":"Previous Withdrawals:"},
+            "💾 Save Withdrawal":{"Arabic":"💾 حفظ السحب","English":"💾 Save Withdrawal"},
+            "Name:":{"Arabic":"الاسم:","English":"Name:"},
+            "Code:":{"Arabic":"الكود:","English":"Code:"},
+            "Month/Year Selection":{"Arabic":"اختيار الشهر/السنة","English":"Month/Year Selection"},
+            "Month:":{"Arabic":"الشهر:","English":"Month:"},
+            "Year:":{"Arabic":"السنة:","English":"Year:"},
+            "Working Hours":{"Arabic":"ساعات العمل","English":"Working Hours"},
+            "Start Time:":{"Arabic":"وقت البدء:","English":"Start Time:"},
+            "End Time:":{"Arabic":"وقت الانتهاء:","English":"End Time:"},
+            "Date":{"Arabic":"التاريخ","English":"Date"},
+            "From":{"Arabic":"من","English":"From"},
+            "To":{"Arabic":"الي","English":"To"},
+            "Delay":{"Arabic":"من وقت البدء","English":"Delay"},
+            "More":{"Arabic":"من وقت النهاية","English":"More"},
+            "Withdrawls":{"Arabic":"المسحوبات","English":"Withdrawals"},
+            "Total Withdrawls:":{"Arabic":"اجمالي المسحوبات:","English":"Total Withdrawals:"},
+            "Delay Amount:":{"Arabic":"حساب التأخير","English":"Delay Amount:"},
+            "Overtime Amount:":{"Arabic":"حساب الوقت الزيادة","English":"Overtime Amount:"},
+            "Payment Method:":{"Arabic":"طريقة الدفع:","English":"Payment Method:"},
+            "Base Salary:":{"Arabic":"المرتب الاساسي:","English":"Base Salary:"},
+            "Net Salary:":{"Arabic":"صافي المرتب:","English":"Net Salary:"},
+            "Save Salary Record":{"Arabic":"💾 احفظ سجل الراتب","English":"💾 Save Salary Record"},
+            # "Duration":{"Arabic":"المدة","English":"Duration"},
+            # "Duration":{"Arabic":"المدة","English":"Duration"},
             "Still checked in":{"Arabic":"لا يزال قيد التسجيل","English":"Still checked in"},
             "Customer & Supplier Overview":{"Arabic":"نظرة عامة على العملاء والموردين","English":"Customer & Supplier Overview"},
         }        
@@ -301,6 +332,8 @@ class SalesSystemApp:
         self.customers_collection             = db['Customers']
         self.employees_collection             = db['Employees']
         self.employees_appointments_collection= db['Employee_appointimets']
+        self.employee_withdrawls_collection   = db['Employee_withdrawls']
+        self.employee_salary_collection       = db['Employee_Salary']
         self.products_collection              = db['Products']
         self.sales_collection                 = db['Sales']
         self.suppliers_collection             = db['Suppliers']
@@ -435,7 +468,7 @@ class SalesSystemApp:
         # Create visualizations
         self.create_left_visualization(left_viz_frame)
         self.create_right_visualization(right_viz_frame)
-        self.create_main_buttons(button_frame)
+        
 
         # Define buttons with images, text, and commands
         buttons = [
@@ -481,7 +514,7 @@ class SalesSystemApp:
             # buttons.insert(1, {"text": self.t("Edit Product"), "image": "Exit.png", 
             #                 "command": lambda: self.trash(self.user_role)})
             buttons.extend([
-            #     {"text": self.t("Accounting"), "image": "Exit.png", 
+            #     {"text": self.t("Accounting"), "  image": "Exit.png", 
             #     "command": lambda: self.Accounting_Window()},
             #     {"text": self.t("Reports"), "image": "Exit.png", 
             #     "command": lambda: self.trash(self.user_role)},
@@ -490,7 +523,7 @@ class SalesSystemApp:
                 {"text": self.t("Database"), "image": "database.png", 
                 "command": lambda: self.check_access_and_open(self.user_role)}
             ])
-
+        self.create_main_buttons(button_frame,buttons)
         # Load images and create buttons
         images = []  # Keep references to prevent garbage collection
         columns_per_row = 3  # Number of buttons per row
@@ -539,7 +572,7 @@ class SalesSystemApp:
 
     def create_left_visualization(self, parent):
         try:
-            # Get data with fallback values
+        
             data = {
                 'customers': self.get_customer_count() if hasattr(self, 'get_customer_count') else 0,
                 'suppliers': self.get_supplier_count() if hasattr(self, 'get_supplier_count') else 0,
@@ -561,11 +594,11 @@ class SalesSystemApp:
                 bars = ax1.bar(['Customers', 'Suppliers'], 
                             [data['customers'], data['suppliers']], 
                             color=['#2E86C1', '#17A589'])
+                
                 ax1.set_title("Customer & Supplier Overview", fontsize=14,color=COLORS["text"])
                 ax1.set_facecolor(COLORS["text"])
                 ax1.tick_params(colors=COLORS["text"], labelsize=10)
-                ax1.set_ylabel("Count",color=COLORS["text"])
-                
+                ax1.set_ylabel("xx",text=self.t("Count"),color=COLORS["text"])
                 # Add simple data labels
                 for bar in bars:
                     height = bar.get_height()
@@ -693,23 +726,23 @@ class SalesSystemApp:
             frame.config(width=400, height=600)
         return frame
 
-    def create_main_buttons(self, parent):
-        buttons = [
-            {"text": "New Sales Invoice", "image": "Sales.png",
-            "command": lambda: self.trash(self.user_role)},
-            {"text": "New Purchase Invoice", "image": "Purchase.png", 
-            "command": lambda: self.trash(self.user_role)},
-            {"text": "Production Order", "image": "Production Order.png", 
-            "command": lambda: self.trash(self.user_role)},
-            {"text": "Employee Interactions", "image": "Employees.png", 
-            "command": lambda: self.trash(self.user_role)},
-            {"text": "Treasury", "image": "Treasury.png", 
-            "command": lambda: self.trash(self.user_role)},
-            {"text": "Database", "image": "Database.png", 
-            "command": lambda: self.trash(self.user_role)},
-            # {"text": "Analytics", "image": "Analytics.png", 
-            # "command": lambda: self.trash(self.user_role)},
-        ]
+    def create_main_buttons(self, parent,buttons):
+        # buttons = [
+        #     {"text": "New Sales Invoice", "image": "Sales.png",
+        #     "command": lambda: self.trash(self.user_role)},
+        #     {"text": "New Purchase Invoice", "image": "Purchase.png", 
+        #     "command": lambda: self.trash(self.user_role)},
+        #     {"text": "Production Order", "image": "Production Order.png", 
+        #     "command": lambda: self.trash(self.user_role)},
+        #     {"text": "Employee Interactions", "image": "Employees.png", 
+        #     "command": lambda: self.trash(self.user_role)},
+        #     {"text": "Treasury", "image": "Treasury.png", 
+        #     "command": lambda: self.trash(self.user_role)},
+        #     {"text": "Database", "image": "Database.png", 
+        #     "command": lambda: self.trash(self.user_role)},
+        #     # {"text": "Analytics", "image": "Analytics.png", 
+        #     # "command": lambda: self.trash(self.user_role)},
+        # ]
 
         columns_per_row = 3
         button_size = 100
@@ -855,7 +888,7 @@ class SalesSystemApp:
             ax1.bar(['Customers', 'Suppliers'], 
                     [data['customers'], data['suppliers']], 
                     color=['#1f77b4', '#ff7f0e'])
-            ax1.set_title("Customer & Supplier Count", pad=15)
+            ax1.set_title(self.t("Customer & Supplier Count"), pad=15,font="Arial")
             ax1.set_ylabel("Count")
             print(1)
             # Chart 2: Sales/Purchases Ratio
@@ -1252,7 +1285,9 @@ class SalesSystemApp:
         # Employee Selection Section
         tk.Label(main_frame, text=self.t("Employee Selection"), font=('Helvetica', 14, 'bold'))\
             .grid(row=0, column=0, columnspan=2, pady=10, sticky='w')
-
+        # ttk.Label(selection_frame, text="Employee Name:").pack(side=tk.LEFT)
+        # self.name_cb = ttk.Combobox(selection_frame, textvariable=self.emp_name_var, width=25)
+        # self.name_cb.pack(side=tk.LEFT, padx=5)
         # Employee Name Dropdown
         tk.Label(main_frame, text=self.t("Employee Name:"), font=('Helvetica', 12))\
             .grid(row=1, column=0, pady=5, sticky='w')
@@ -1282,7 +1317,7 @@ class SalesSystemApp:
         self.amount_entry.grid(row=4, column=1, pady=5, padx=10, sticky='w')
 
         # Payment Method
-        tk.Label(main_frame, text=self.t("Payment Method:"), font=('Helvetica', 12))\
+        tk.Label(main_frame, text=self.t("Payment Method"), font=('Helvetica', 12))\
             .grid(row=5, column=0, pady=5, sticky='w')
         self.payment_method = ttk.Combobox(main_frame, 
                                         values=["Cash", "Instapay", "E_wallet", "Bank Account"],
@@ -1302,10 +1337,10 @@ class SalesSystemApp:
 
         # Save Button
         save_btn = tk.Button(main_frame, 
-                            text="Save Withdrawal", 
+                            text=self.t("💾 Save Withdrawal"), 
                             font=('Helvetica', 12, 'bold'),
                             width=20,
-                            command=lambda: self.save_withdrawal(withdrawals_col, employees_col))
+                            command=lambda: self.save_withdrawal(withdrawals_col, employees_col),bg='#2196F3', fg='white')
         save_btn.grid(row=7, column=0, columnspan=2, pady=20)
 
         # Update dropdown values
@@ -1346,7 +1381,7 @@ class SalesSystemApp:
         withdrawals_col = self.get_collection_by_name("Employee_withdrawls")
         total = 0
         for withdrawal in withdrawals_col.find({'employee_code': employee_code}):
-            total += withdrawal.get('amount_ofthdrawls', 0)
+            total += withdrawal.get('amount_withdrawls', 0)
         return total
 
     def save_withdrawal(self, withdrawals_col, employees_col):
@@ -1372,20 +1407,25 @@ class SalesSystemApp:
             return
 
         try:
-            # Save withdrawal record
+            # Calculate previous total before this withdrawal
+            previous_total = self.calculate_previous_withdrawals(code)
+            
+            # Save withdrawal record with cumulative tracking
             withdrawal_data = {
                 'employee_code': code,
                 'employee_name': name,
-                'amount_ofthdrawls': amount,
-                'payment_actions': method,
+                'previous_withdrawls': previous_total,  # Total before this withdrawal
+                'amount_withdrawls': amount,
+                # 'cumulative_total': previous_total + amount,  # New total after this withdrawal
+                'payment_method': method,
                 'timestamp': datetime.now()
             }
             withdrawals_col.insert_one(withdrawal_data)
 
-            # Update employee's previous withdrawals total
+            # Update employee's total withdrawals
             employees_col.update_one(
                 {'employee_code': code},
-                {'$inc': {'previous_window': amount}}
+                {'$set': {'previous_withdrawls': previous_total + amount}}
             )
 
             messagebox.showinfo("Success", "Withdrawal recorded successfully")
@@ -1396,12 +1436,354 @@ class SalesSystemApp:
         except PyMongoError as e:
             messagebox.showerror("Database Error", f"Failed to save withdrawal: {str(e)}")
 
-    def employee_statistics_window(self,user_role):
+    def employee_statistics_window(self, user_role):
+        # Clear current window
         for widget in self.root.winfo_children():
             widget.destroy()
+        
+        self.topbar(show_back_button=True, Back_to_Employee_Window=True)
+        
+        # Database connections
+        employees_col = self.get_collection_by_name("Employees")
+        
+        # Employee mappings
+        self.employee_code_map = {}
+        self.employee_name_map = {}
+        for emp in employees_col.find():
+            code = emp.get('Id', '')
+            name = emp.get('Name', '')
+            self.employee_code_map[code] = {
+                'name': name,
+                'salary': float(emp.get('Salary', 0))
+            }
+            self.employee_name_map[name] = {
+                'code': code,
+                'salary': float(emp.get('Salary', 0))
+            }
 
-        # تحميل صورة الخلفية
-        self.topbar(show_back_button=True,Back_to_Employee_Window=True)
+        # Main container
+        main_frame = ttk.Frame(self.root, padding=(20, 10))
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Employee Selection
+        selection_frame = ttk.LabelFrame(main_frame, text=self.t("Employee Selection"), padding=10)
+        selection_frame.grid(row=0, column=0, sticky='ew', pady=5)
+        
+        ttk.Label(selection_frame, text=self.t("Name:")).grid(row=0, column=0, padx=5, sticky='e')
+        self.emp_name_var = tk.StringVar()
+        self.name_cb = ttk.Combobox(selection_frame, textvariable=self.emp_name_var, width=25)
+        self.name_cb.grid(row=0, column=1, padx=5, sticky='ew')
+        
+        ttk.Label(selection_frame, text=self.t("Code:")).grid(row=0, column=2, padx=(15,5), sticky='e')
+        self.emp_code_var = tk.StringVar()
+        self.code_cb = ttk.Combobox(selection_frame, textvariable=self.emp_code_var, width=10)
+        self.code_cb.grid(row=0, column=3, padx=5, sticky='ew')
+
+        # Date Selection
+        date_frame = ttk.LabelFrame(main_frame, text=self.t("Month/Year Selection"), padding=10)
+        date_frame.grid(row=1, column=0, sticky='ew', pady=5)
+        
+        ttk.Label(date_frame, text=self.t("Month:")).grid(row=0, column=0, padx=5, sticky='e')
+        self.month_var = tk.StringVar()
+        self.month_cb = ttk.Combobox(date_frame, textvariable=self.month_var, 
+                                values=["January", "February", "March", "April", "May", "June",
+                                        "July", "August", "September", "October", "November", "December"],
+                                width=12)
+        self.month_cb.grid(row=0, column=1, padx=5, sticky='w')
+        
+        ttk.Label(date_frame, text=self.t("Year:")).grid(row=0, column=2, padx=(15,5), sticky='e')
+        self.year_var = tk.StringVar()
+        self.year_cb = ttk.Combobox(date_frame, textvariable=self.year_var, 
+                                values=[str(year) for year in range(2020, 2031)],
+                                width=6)
+        self.year_cb.grid(row=0, column=3, padx=5, sticky='w')
+
+        # Working Hours
+        hours_frame = ttk.LabelFrame(main_frame, text=self.t("Working Hours"), padding=10)
+        hours_frame.grid(row=2, column=0, sticky='ew', pady=5)
+        
+        ttk.Label(hours_frame, text=self.t("Start Time:")).grid(row=0, column=0, padx=5, sticky='e')
+        self.start_time_var = tk.StringVar()
+        ttk.Entry(hours_frame, textvariable=self.start_time_var, width=10).grid(row=0, column=1, padx=5, sticky='w')
+        ttk.Label(hours_frame, text="(e.g., 9:00 AM)").grid(row=0, column=2, padx=5, sticky='w')
+        
+        ttk.Label(hours_frame, text=self.t("End Time:")).grid(row=0, column=3, padx=(15,5), sticky='e')
+        self.end_time_var = tk.StringVar()
+        ttk.Entry(hours_frame, textvariable=self.end_time_var, width=10).grid(row=0, column=4, padx=5, sticky='w')
+        ttk.Label(hours_frame, text="(e.g., 5:00 PM)").grid(row=0, column=5, padx=5, sticky='w')
+
+        # Attendance Table
+        table_frame = ttk.Frame(main_frame)
+        table_frame.grid(row=3, column=0, sticky='nsew', pady=10)
+        
+        columns = ("Date", "From", "To", "Duration", "Delay", "More", "Withdrawls")
+        self.table = ttk.Treeview(table_frame, columns=columns, show='headings', selectmode='browse')
+        self.table.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        vsb = ttk.Scrollbar(table_frame, orient="vertical", command=self.table.yview)
+        vsb.pack(side=tk.RIGHT, fill=tk.Y)
+        self.table.configure(yscrollcommand=vsb.set)
+        
+        for col in columns:
+            self.table.heading(col, text=self.t(col), anchor='center')
+            self.table.column(col, width=100, anchor='center')
+
+        # Totals Section
+        totals_frame = ttk.Frame(main_frame)
+        totals_frame.grid(row=4, column=0, sticky='ew', pady=5)
+        
+        ttk.Label(totals_frame, text=self.t("Total Withdrawls:")).grid(row=0, column=0, padx=5, sticky='e')
+        self.total_withdrawls = ttk.Entry(totals_frame, width=12, state='readonly')
+        self.total_withdrawls.grid(row=0, column=1, padx=5, sticky='w')
+        
+        ttk.Label(totals_frame, text=self.t("Delay Amount:")).grid(row=0, column=2, padx=(20,5), sticky='e')
+        self.delay_amount = ttk.Entry(totals_frame, width=12)
+        self.delay_amount.grid(row=0, column=3, padx=5, sticky='w')
+        
+        ttk.Label(totals_frame, text=self.t("Overtime Amount:")).grid(row=0, column=4, padx=(20,5), sticky='e')
+        self.overtime_amount = ttk.Entry(totals_frame, width=12)
+        self.overtime_amount.grid(row=0, column=5, padx=5, sticky='w')
+
+        # Payment Section
+        payment_frame = ttk.Frame(main_frame)
+        payment_frame.grid(row=5, column=0, sticky='ew', pady=5)
+        
+        ttk.Label(payment_frame, text=self.t("Payment Method:")).grid(row=0, column=0, padx=5, sticky='e')
+        self.payment_method = ttk.Combobox(payment_frame, 
+                                        values=["Cash", "Instapay", "E_wallet", "Bank_account"],
+                                        state="readonly",
+                                        width=15)
+        self.payment_method.grid(row=0, column=1, padx=5, sticky='w')
+        
+        ttk.Label(payment_frame, text=self.t("Base Salary:")).grid(row=0, column=2, padx=(20,5), sticky='e')
+        self.salary = ttk.Entry(payment_frame, width=15, state='readonly')
+        self.salary.grid(row=0, column=3, padx=5, sticky='w')
+        
+        ttk.Label(payment_frame, text=self.t("Net Salary:")).grid(row=0, column=4, padx=(20,5), sticky='e')
+        self.net_salary = ttk.Entry(payment_frame, width=15, state='readonly')
+        self.net_salary.grid(row=0, column=5, padx=5, sticky='w')
+
+        # Save Button
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.grid(row=6, column=0, pady=15)
+        ttk.Button(btn_frame, text=self.t("Save Salary Record"), command=self.save_salary).pack()
+
+        # Configure grid weights
+        main_frame.columnconfigure(0, weight=1)
+        table_frame.rowconfigure(0, weight=1)
+        table_frame.columnconfigure(0, weight=1)
+
+        # Initialize data
+        self.name_cb['values'] = list(self.employee_name_map.keys())
+        self.code_cb['values'] = list(self.employee_code_map.keys())
+
+        # Bind events
+        self.emp_name_var.trace_add('write', self.update_employee_info)
+        self.emp_code_var.trace_add('write', self.update_employee_info)
+        self.month_var.trace_add('write', self.load_attendance_data)
+        self.year_var.trace_add('write', self.load_attendance_data)
+        self.delay_amount.bind('<KeyRelease>', self.calculate_net_salary)
+        self.overtime_amount.bind('<KeyRelease>', self.calculate_net_salary)
+        self.start_time_var.trace_add('write', self.load_attendance_data)
+        self.end_time_var.trace_add('write', self.load_attendance_data)
+
+    def update_employee_info(self, *args):
+        code = self.emp_code_var.get()
+        name = self.emp_name_var.get()
+        
+        if name in self.employee_name_map:
+            new_code = self.employee_name_map[name]['code']
+            if new_code != code:
+                self.emp_code_var.set(new_code)
+        
+        if code in self.employee_code_map:
+            new_name = self.employee_code_map[code]['name']
+            if new_name != name:
+                self.emp_name_var.set(new_name)
+        
+        self.load_attendance_data()
+
+    def parse_time(self, time_str):
+        try:
+            return datetime.strptime(time_str, "%I:%M %p")
+        except ValueError:
+            return None
+
+    def load_attendance_data(self, *args):
+        self.table.delete(*self.table.get_children())
+        
+        # Get selected month/year
+        month = self.month_var.get()
+        year = self.year_var.get()
+        employee_code = self.emp_code_var.get()
+        
+        if not all([month, year, employee_code]):
+            return
+        
+        # Get date range
+        start_date = datetime.strptime(f"1 {month} {year}", "%d %B %Y")
+        end_date = (start_date + timedelta(days=32)).replace(day=1)
+        
+        # Get collections
+        withdrawals_col = self.get_collection_by_name("Employee_withdrawls")
+        hours_col = self.get_collection_by_name("Employee_appointimets")
+        
+        # Get data
+        withdrawals = list(withdrawals_col.find({
+            'employee_code': employee_code,
+            'timestamp': {'$gte': start_date, '$lt': end_date}
+        }))
+        
+        attendance = list(hours_col.find({
+            'employee_code': employee_code,
+            'check_in': {'$gte': start_date, '$lt': end_date}
+        }))
+        
+        # Get scheduled hours
+        start_time = self.parse_time(self.start_time_var.get())
+        end_time = self.parse_time(self.end_time_var.get())
+        
+        # Configure tags
+        # self.table.tag_configure('before_start', foreground='blue')
+        # self.table.tag_configure('after_start', foreground='red')
+        # self.table.tag_configure('after_end', foreground='blue')
+        # self.table.tag_configure('before_end', foreground='red')
+        
+        # Generate daily records
+        current_date = start_date
+        total_withdrawls = 0
+        
+        while current_date < end_date:
+            # Find records for this date
+            daily_attendance = next((a for a in attendance 
+                                if a['check_in'].date() == current_date.date()), None)
+            daily_withdrawal = next((w for w in withdrawals 
+                                    if w['timestamp'].date() == current_date.date()), None)
+            
+            # Initialize defaults
+            from_time = "--"
+            to_time = "--"
+            duration = "--"
+            delay = "--"
+            overtime = "--"
+            withdrawal = 0
+            tags = []
+
+            if daily_attendance:
+                # Process attendance data
+                check_in = daily_attendance.get('check_in')
+                check_out = daily_attendance.get('check_out')
+                
+                from_time = format_time(check_in, format="short") if check_in else "--"
+                to_time = format_time(check_out, format="short") if check_out else "--"
+                
+                if check_in and check_out:
+                    # Calculate duration
+                    duration_delta = check_out - check_in
+                    duration = f"{duration_delta.seconds//3600:02}:{(duration_delta.seconds//60)%60:02}"
+                    
+                    # Calculate time differences
+                    if start_time:
+                        scheduled_start = datetime.combine(current_date.date(), start_time.time())
+                        if check_in < scheduled_start:
+                            delay = f"{(scheduled_start - check_in).seconds//60} mins early"
+                            tags.append('before_start')
+                        elif check_in > scheduled_start:
+                            delay = f"{(check_in - scheduled_start).seconds//60} mins late"
+                            tags.append('after_start')
+
+                    if end_time and check_out:
+                        scheduled_end = datetime.combine(current_date.date(), end_time.time())
+                        if check_out > scheduled_end:
+                            overtime = f"{(check_out - scheduled_end).seconds//60} mins overtime"
+                            tags.append('after_end')
+                        elif check_out < scheduled_end:
+                            overtime = f"{(scheduled_end - check_out).seconds//60} mins early"
+                            tags.append('before_end')
+
+            if daily_withdrawal:
+                # Process withdrawal data
+                withdrawal = daily_withdrawal.get('amount_withdrawls', 0)
+                total_withdrawls += withdrawal
+            
+            # Insert row with styled values
+            row = self.table.insert('', 'end', values=(
+                current_date.strftime("%Y-%m-%d"),
+                from_time,
+                to_time,
+                duration,
+                delay,
+                overtime,
+                f"{withdrawal:.2f}"
+            ), tags=tags)
+            
+            current_date += timedelta(days=1)
+        
+        # Update totals
+        self.total_withdrawls.config(state='normal')
+        self.total_withdrawls.delete(0, tk.END)
+        self.total_withdrawls.insert(0, f"{total_withdrawls:.2f}")
+        self.total_withdrawls.config(state='readonly')
+        self.calculate_net_salary()
+
+    def calculate_net_salary(self, event=None):
+        try:
+            base_salary = self.employee_code_map.get(self.emp_code_var.get(), {}).get('salary', 0)
+            total_withdrawls = float(self.total_withdrawls.get())
+            delay_penalty = float(self.delay_amount.get() or 0)
+            overtime_bonus = float(self.overtime_amount.get() or 0)
+
+            net_salary = base_salary - total_withdrawls - delay_penalty + overtime_bonus
+            
+            self.net_salary.config(state='normal')
+            self.net_salary.delete(0, tk.END)
+            self.net_salary.insert(0, f"{net_salary:.2f}")
+            self.net_salary.config(state='readonly')
+            self.salary.config(state='normal')
+            self.salary.delete(0, tk.END)
+            self.salary.insert(0, f"{base_salary:.2f}")
+            self.salary.config(state='readonly')
+        except ValueError:
+            pass
+
+    def save_salary(self):
+        try:
+            salary_data = {
+                'employee_code': self.emp_code_var.get(),
+                'employee_name': self.emp_name_var.get(),
+                'month_year': f"{self.month_var.get()} {self.year_var.get()}",
+                'base_salary': self.employee_code_map[self.emp_code_var.get()]['salary'],
+                'total_withdrawls': float(self.total_withdrawls.get()),
+                'delay_penalty': float(self.delay_amount.get() or 0),
+                'overtime_bonus': float(self.overtime_amount.get() or 0),
+                'net_salary': float(self.net_salary.get()),
+                'payment_method': self.payment_method.get(),
+                'timestamp': datetime.now()
+            }
+            
+            # Input validation
+            if not all([salary_data['employee_code'], salary_data['month_year']]):
+                raise ValueError("Missing required fields")
+            
+            salary_col = self.get_collection_by_name("Employee_Salary")
+            
+            # Check for existing salary record
+            existing = salary_col.find_one({
+                "employee_code": salary_data["employee_code"],
+                "month_year": salary_data["month_year"]
+            })
+            
+            if existing:
+                messagebox.showwarning("Warning", 
+                    "Employee already took the salary in this month")
+                return
+            
+            # Insert new record if not exists
+            salary_col.insert_one(salary_data)
+            messagebox.showinfo("Success", "Salary record saved successfully")
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to save salary: {str(e)}")
 
     def manage_old_database_window(self, db_name=None, table_name=None):
         # self.db_name.set(db_name if db_name else "")
@@ -3661,6 +4043,10 @@ class SalesSystemApp:
             return self.employees_collection
         if collection_name == "Employee_appointimets":
             return self.employees_appointments_collection
+        if collection_name == "Employee_withdrawls":
+            return self.employee_withdrawls_collection
+        if collection_name == "Employee_Salary":
+            return self.employee_salary_collection
         elif collection_name == "Products":
             return self.products_collection
         elif collection_name == "Sales":
