@@ -350,6 +350,7 @@ class SalesSystemApp:
         self.TEX_Calculations_collection      = db['TEX_Calculations']
         self.production_collection            = db['Production']
         self.customer_payments                = db["Customer_Payments"]
+        self.supplier_payments                = db["Supplier_Payments"]
 
 ############################################ Windows ########################################### 
     
@@ -479,7 +480,7 @@ class SalesSystemApp:
             {"text": self.t("Receive Payment"), "image": "Recieve.png", 
             "command": lambda: self.customer_interactions(self.user_role)},
             {"text": self.t("Make Payment"), "image": "payment.png", 
-            "command": lambda: self.trash(self.user_role)},
+            "command": lambda: self.supplier_interactions(self.user_role)},
             {"text": self.t("Production Order"), "image": "Production Order.png", 
             "command": lambda: self.new_production_order(self.user_role)},
             {"text": self.t("Employee interactions"), "image": "Employees.png", 
@@ -2883,14 +2884,6 @@ class SalesSystemApp:
         self.topbar(show_back_button=True,Back_to_Database_Window=True)
         self.display_general_table(self.materials_collection, "Materials")
     
-    def new_customer_payment(self, user_role):
-        self.table_name.set("Customer_Payments")
-        for widget in self.root.winfo_children():
-            widget.destroy()
-    
-        self.topbar(show_back_button=True,Back_to_Database_Window=False)
-        self.display_general_table(self.customer_payments, "Customer_Payments")
-
     def customer_interactions(self, user_role):
         for widget in self.root.winfo_children():
             widget.destroy()
@@ -2946,9 +2939,8 @@ class SalesSystemApp:
         self.customer_name_cb = ttk.Combobox(right_frame, values=customer_names)
         self.customer_name_cb.grid(row=1, column=6)
 
-        self.customer_code_cb.bind("<<ComboboxSelected>>", self.on_code_selected)
-        self.customer_name_cb.bind("<<ComboboxSelected>>", self.on_name_selected)
-
+        self.customer_code_cb.bind("<<ComboboxSelected>>", lambda event: self.on_code_selected(event, self.customer_code_cb, self.customer_name_cb, self.customer_collection, self.customer_payment_collection, "Customer_info.code"))
+        self.customer_name_cb.bind("<<ComboboxSelected>>", lambda event: self.on_name_selected(event, self.customer_code_cb, self.customer_name_cb, self.customer_collection, self.customer_payment_collection, "Customer_info.code"))
 
         # ==== Table Section ====
         columns = ("date", "invoice_no", "debit", "credit", "Payment_method")
@@ -2970,15 +2962,12 @@ class SalesSystemApp:
             tree.heading(col, text=col.capitalize())
             tree.column(col, width=150)
 
-        button_frame = tk.Frame(right_frame)
-        button_frame.grid(row=15, column=3, columnspan=6, pady=10)
-
+        # button_frame = tk.Frame(right_frame)
+        # button_frame.grid(row=15, column=3, columnspan=6, pady=10)
         # add_btn = tk.Button(button_frame, text="Add Entry", command=lambda: self.add_customer_payment(tree))
         # add_btn.pack(side="left", padx=5)
-
         # edit_btn = tk.Button(button_frame, text="Edit Entry", command=lambda: self.edit_customer_payment(tree))
         # edit_btn.pack(side="left", padx=5)
-
         # delete_btn = tk.Button(button_frame, text="Delete Entry", command=lambda: self.delete_customer_payment(tree))
         # delete_btn.pack(side="left", padx=5)
 
@@ -3066,8 +3055,217 @@ class SalesSystemApp:
         self.balance_entry.insert(0, total_debit - total_credit)
         
 
-    def get_next_operation_number(self):
-        last_entry = self.customer_payment_collection.find_one(
+    def supplier_interactions(self, user_role):
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        self.topbar(show_back_button=True,Back_to_Database_Window=False)
+        
+        self.supplier_collection             = self.get_collection_by_name("Suppliers")
+        self.supplier_payment_collection     = self.get_collection_by_name("Supplier_Payments")
+        self.purchases_collection            = self.get_collection_by_name("Purchases")
+
+        supplier_codes = []
+        supplier_names = []
+        sample_data = []
+
+        for supplier in self.supplier_collection.find({}, {"Name": 1, "Code": 1, "_id": 0}):
+            supplier_codes.append(supplier.get("Code"))
+            supplier_names.append(supplier.get("Name"))
+        
+        main_frame = tk.Frame(root)
+        main_frame.pack(fill="both", expand=True, padx=20, pady=50)
+        
+        left_frame = tk.Frame(main_frame, width=330)
+        left_frame.pack(side="left", fill="y")
+        left_frame.pack_propagate(False)  # Prevent auto-resizing
+
+        # Left half
+        tk.Label(left_frame, text="Cash", font=("Arial", 12)).pack(pady=10, anchor="w", padx=10)
+        self.cash_entry = tk.Entry(left_frame, font=("Arial", 12))
+        self.cash_entry.pack(pady=5, padx=10, fill="x")
+
+        tk.Label(left_frame, text="Payment Method", font=("Arial", 12)).pack(pady=10, anchor="w", padx=10)
+        selected_method = tk.StringVar()
+        self.payment_entry = ttk.Combobox(left_frame, textvariable=selected_method, values=['Cash', 'E_Wallet', 'Bank_account', 'Instapay'], state="readonly", width=18)
+        self.payment_entry.pack(pady=5, padx=10, fill="x")
+        self.payment_entry.set("Cash")  
+
+        add_btn = tk.Button(left_frame, text="Add Entry", width=20, command=lambda: self.add_supplier_payment(tree))
+        add_btn.pack(pady=20 , padx=10)
+
+        # Vertical separator 
+        # tk.Frame(main_frame, width=2, bg=COLORS["primary"]).grid(row=0, column=2, rowspan=20, sticky="ns", padx=5)
+
+        #Right part (table)
+        right_frame = tk.Frame(main_frame)
+        right_frame.pack(side="left", fill="both", expand=True)
+
+        # ==== Drop-down Section ====
+        tk.Label(right_frame, text="Supplier Code").grid(row=0, column=4)
+        self.supplier_code_cb = ttk.Combobox(right_frame, values=supplier_codes)
+        self.supplier_code_cb.grid(row=1, column=4)
+
+        tk.Label(right_frame, text="Supplier Name").grid(padx=(10,20), row=0, column=6)
+        self.supplier_name_cb = ttk.Combobox(right_frame, values=supplier_names)
+        self.supplier_name_cb.grid(row=1, column=6)
+
+        self.supplier_code_cb.bind("<<ComboboxSelected>>", lambda event: self.on_code_selected(event, self.supplier_code_cb, self.supplier_name_cb, self.supplier_collection, self.supplier_payment_collection, "supplier_info.code"))
+        self.supplier_name_cb.bind("<<ComboboxSelected>>", lambda event: self.on_name_selected(event, self.supplier_code_cb, self.supplier_name_cb, self.supplier_collection, self.supplier_payment_collection, "supplier_info.code"))
+        
+        # ==== Table Section ====
+        columns = ("date", "invoice_no", "debit", "credit", "Payment_method")
+        tree_container = ttk.Frame(right_frame)
+        tree_container.grid(row=3, column=3, columnspan=7, padx=10, pady=10, sticky="nsew")
+
+        # Scrollbar (attached to the right side of the tree)
+        scrollbar = ttk.Scrollbar(tree_container, orient="vertical")
+        scrollbar.pack(side="right", fill="y")
+
+        # Treeview
+        tree = ttk.Treeview(tree_container, columns=columns, show="headings", height=8, yscrollcommand=scrollbar.set)
+        tree.pack(side="left", fill="both", expand=True)
+
+        # Configure scrollbar to control tree
+        scrollbar.config(command=tree.yview)
+        
+        for col in columns:
+            tree.heading(col, text=col.capitalize())
+            tree.column(col, width=150)
+
+        total_debit  = 0
+        total_credit = 0
+
+        for invoice in self.purchases_collection.find({}, {
+            "Date": 1,
+            "Receipt_Number": 1,
+            "Financials.Net_total": 1,
+            "Financials.Payed_cash": 1,
+            "Financials.Payment_method": 1,
+            "_id": 0
+        }):
+            invoice = dict(invoice)
+            # Parse and format the date
+            raw_date = invoice.get("Date", "").split()[0]  # e.g. "04/05/2025"
+            date = "-".join(reversed(raw_date.split("/"))) if raw_date else ""
+
+            invoice_no = invoice.get("Receipt_Number", "")
+            financials = invoice.get("Financials", {})  # Get financials dict or empty dict
+
+            # Now access Net_total and Payed_cash directly (they are floats, not dicts)
+            credit = financials.get("Net_total", 0.0)   # This returns a float
+            debit = financials.get("Payed_cash", 0.0) # Also a float
+            payment_method = financials.get("Payment_method", "Cash")
+
+            total_debit  += debit
+            total_credit += credit
+
+            # Convert to string if needed
+            debit_str = str(debit)
+            credit_str = str(credit)
+
+            sample_data.append((date, invoice_no, debit_str, credit_str, payment_method))
+
+
+        for payment in self.supplier_payment_collection.find({}, {
+            "Time": 1,
+            "Operation_Number": 1,
+            "Credit": 1,
+            "Debit": 1,
+            "Payment_method": 1,
+            "_id": 0
+        }):
+            payment = dict(payment)
+            # Parse and format the date
+            raw_date = payment.get("Time", "").split()[0]  # e.g. "04/05/2025"
+            date = "-".join(reversed(raw_date.split("/"))) if raw_date else ""
+
+            payment_no = payment.get("Operation_Number", "")
+
+            # Now access Net_total and Payed_cash directly (they are floats, not dicts)
+            debit = payment.get("Debit", 0.0)   # This returns a float
+            credit = payment.get("Credit", 0.0) # Also a float
+            payment_method = payment.get("Payment_method", "Cash")
+
+            total_debit  += debit
+            total_credit += credit
+
+            # Convert to string if needed
+            debit_str = str(debit)
+            credit_str = str(credit)
+
+            sample_data.append((date, payment_no, debit_str, credit_str, payment_method))
+
+        for row in sample_data:
+            tree.insert("", tk.END, values=row)
+
+        # ==== Footer Totals ====
+        tk.Label(right_frame, text="Total Debit").grid(row=13, column=3, sticky="e")
+        self.total_debit_entry = tk.Entry(right_frame)
+        self.total_debit_entry.grid(row=13, column=4, sticky="w")
+
+        tk.Label(right_frame, text="Total Credit").grid(row=13, column=5, sticky="e")
+        self.total_credit_entry = tk.Entry(right_frame)
+        self.total_credit_entry.grid(row=13, column=6, sticky="w")
+
+        tk.Label(right_frame, text="Balance").grid(row=13, column=7, sticky="e")
+        self.balance_entry = tk.Entry(right_frame)
+        self.balance_entry.grid(row=13, column=8, sticky="w")
+
+        self.total_debit_entry.insert(0, total_debit)
+        self.total_credit_entry.insert(0, total_credit)
+        self.balance_entry.insert(0, total_debit - total_credit)
+        
+    def add_supplier_payment(self, tree):
+        debit = self.cash_entry.get().strip()
+        payment_method = self.payment_entry.get().strip()
+        supplier_code = self.supplier_code_cb.get().strip()
+        supplier_name = self.supplier_name_cb.get().strip()
+        supplier_payment_collection = self.get_fields_by_name("Supplier_Payments")
+        suppliers_collection = self.get_fields_by_name("Suppliers")
+        
+        if not debit or not payment_method or not supplier_code or not supplier_name:
+            messagebox.showerror("Error", "All fields must be filled!")
+            return
+
+        try:
+            debit_val = float(debit)
+        except ValueError:
+            messagebox.showerror("Error", "Cash must be a valid number.")
+            return
+
+        operation_number = self.get_next_operation_number(supplier_payment_collection)
+        current_time = datetime.now().strftime("%d/%m/%Y %H:%M")
+
+        doc = {
+            "Operation_Number": operation_number,
+            "Time": current_time,
+            "Credit": 0.0,
+            "Debit": debit_val,
+            "Payment_method": payment_method,
+            "supplier_info": {
+                "code": supplier_code,
+                "name": supplier_name
+            }
+        }
+
+        supplier_payment_collection.insert_one(doc)
+        tree.insert("", tk.END, values=(current_time, operation_number, 0.0, debit_val))
+
+        self.update_totals(
+            suppliers_collection,
+            supplier_payment_collection,
+            {
+                "supplier_info.code": supplier_code,
+                "supplier_info.name": supplier_name
+            }
+        )
+
+        messagebox.showinfo("Success", f"Entry {operation_number} added.")
+
+
+    def get_next_operation_number(self, payment_collection):
+        last_entry = payment_collection.find_one(
             sort=[("Operation_Number", -1)]
         )
         if last_entry and "Operation_Number" in last_entry:
@@ -3080,6 +3278,8 @@ class SalesSystemApp:
         payment_method = self.payment_entry.get().strip()
         customer_code = self.customer_code_cb.get().strip()
         customer_name = self.customer_name_cb.get().strip()
+        customer_payment_collection = self.get_fields_by_name("Customer_Payments")
+        customers_collection = self.get_fields_by_name("Customers")
 
         if not credit or not payment_method or not customer_code or not customer_name:
             messagebox.showerror("Error", "All fields must be filled!")
@@ -3091,7 +3291,7 @@ class SalesSystemApp:
             messagebox.showerror("Error", "Cash must be a valid number.")
             return
 
-        operation_number = self.get_next_operation_number()
+        operation_number = self.get_next_operation_number(customer_payment_collection)
         current_time = datetime.now().strftime("%d/%m/%Y %H:%M")
 
         doc = {
@@ -3106,13 +3306,19 @@ class SalesSystemApp:
             }
         }
 
-        self.customer_payment_collection.insert_one(doc)
+        customer_payment_collection.insert_one(doc)
         tree.insert("", tk.END, values=(current_time, operation_number, 0.0, credit_val))
 
-        self.update_totals({
-            "Customer_info.code": customer_code,
-            "Customer_info.name": customer_name
-        })
+
+        self.update_totals(
+            customers_collection,
+            customer_payment_collection,
+            {
+                "Customer_info.code": customer_code,
+                "Customer_info.name": customer_name
+            }
+        )
+
 
         messagebox.showinfo("Success", f"Entry {operation_number} added.")
 
@@ -3139,43 +3345,108 @@ class SalesSystemApp:
         # Implement a pop-up or re-use entries to update MongoDB
         # Find document by Operation_Number and update it
 
-    def on_code_selected(self, event):
-        selected_code = self.customer_code_cb.get().strip()
+    def on_code_selected(self, event, code_cb, name_cb, collection, payment_collection, field_path):
+        selected_code = code_cb.get().strip()
 
-        if selected_code:
-            customer = self.customer_collection.find_one({"Code": selected_code}, {"Name": 1, "_id": 0})
-            if customer:
-                self.customer_name_cb.set(customer["Name"])
+        if not selected_code:
+            return
+
+        try:
+            person = collection.find_one({"Code": selected_code}, {"Name": 1, "_id": 0})
+
+            if not person:
+                try:
+                    selected_code_int = int(selected_code)
+                    person = collection.find_one({"Code": selected_code_int}, {"Name": 1, "_id": 0})
+                    # selected_code = selected_code_int  # update for consistency in update_totals
+                except ValueError:
+                    pass  # If it can't be cast to int, just skip
+
+            if person:
+                name_cb.set(person["Name"])
+
+            self.update_totals(collection, payment_collection, {field_path: selected_code})
+
+        except Exception as e:
+            messagebox.showerror("Database Error", f"Failed to process code: {selected_code}.\nError: {str(e)}")
+
+    # def on_code_selected(self, event):
+    #     selected_code = self.customer_code_cb.get().strip()
+
+    #     if selected_code:
+    #         customer = self.customer_collection.find_one({"Code": selected_code}, {"Name": 1, "_id": 0})
+    #         if customer:
+    #             self.customer_name_cb.set(customer["Name"])
             
-            self.update_totals({"Customer_info.code": selected_code})
+    #         self.update_totals({"Customer_info.code": selected_code})
 
-    def on_name_selected(self, event):
-        selected_name = self.customer_name_cb.get().strip()
+    # def on_name_selected(self, event):
+    #     selected_name = self.customer_name_cb.get().strip()
 
-        if selected_name:
-            customer = self.customer_collection.find_one({"Name": selected_name}, {"Code": 1, "_id": 0})
-            if customer:
-                self.customer_code_cb.set(customer["Code"])
+    #     if selected_name:
+    #         customer = self.customer_collection.find_one({"Name": selected_name}, {"Code": 1, "_id": 0})
+    #         if customer:
+    #             self.customer_code_cb.set(customer["Code"])
 
-            self.update_totals({"Customer_info.name": selected_name})
+    #         self.update_totals({"Customer_info.name": selected_name})
 
-    def update_totals(self, query=None):
+    def on_name_selected(self, event, code_cb, name_cb, collection, payment_collection, field_path):
+        selected_name = name_cb.get().strip()
+
+        if not selected_name:
+            return
+
+        try:
+            person = collection.find_one({"Name": selected_name}, {"Code": 1, "_id": 0})
+            if person:
+                code = person["Code"]
+                code_cb.set(code)
+                self.update_totals(collection, payment_collection, {field_path: code})
+            else:
+                messagebox.showwarning("Warning", f"No matching code found for name: {selected_name}")
+        except Exception as e:
+            messagebox.showerror("Database Error", f"Failed to fetch code for {selected_name}.\nError: {str(e)}")
+
+
+    def update_totals(self, collection, payment_collection, query=None):
         if query is None:
             query = {}
 
-        invoices = self.sales_collection.find(query)
-        payments = self.customer_payment_collection.find(query)
+        print("elbolbol")
+        print(collection.count_documents(query))
 
+        invoices = collection.find(query)
+        payments = payment_collection.find(query)
+
+        count = collection.count_documents(query)
+        # count = collection.find(query).count()
+        query = {'supplier_info.code':'3003'}
+        # count2 = collection.find(query).count()
+        count2 = collection.count_documents(query)
+        query = {'supplier_info.code': 3003}
+        # count3 = collection.find(query).count()
+        count3 = collection.count_documents(query)
+
+        # sample_doc = collection.find_one()
+        # print(sample_doc['supplier_info']['code'], type(sample_doc['supplier_info']['code']))
+
+        print(collection.name)
         total_debit = 0.0
         total_credit = 0.0
         balance = 0.0
 
-        for inv in invoices:
-            financials = inv.get("Financials", {})
-            total_debit += float(financials.get("Net_total", 0))
-            total_credit += float(financials.get("Payed_cash", 0))
-
-        balance += float(total_debit - total_credit)  # Or Remaining_balance based on your logic
+        if collection.name == "Suppliers":
+            for inv in invoices:
+                financials = inv.get("Financials", {})
+                total_debit += float(financials.get("Net_total", 0))
+                total_credit += float(financials.get("Payed_cash", 0))
+            balance += float(total_debit - total_credit)  # Or Remaining_balance based on your logic
+        else:
+            for inv in invoices:
+                financials = inv.get("Financials", {})
+                total_credit += float(financials.get("Net_total", 0))
+                total_debit += float(financials.get("Payed_cash", 0))
+            balance += float(total_credit - total_debit)  # Or Remaining_balance based on your logic
 
         for payment in payments:
             total_debit += float(payment.get("Debit", 0.0))
@@ -4077,6 +4348,8 @@ class SalesSystemApp:
             return self.production_collection
         elif collection_name == "Customer_Payments":
             return self.customer_payments
+        elif collection_name == "Supplier_Payments":
+            return self.supplier_payments
         elif collection_name == "TEX_Calculations":
             return self.TEX_Calculations_collection
         else:
