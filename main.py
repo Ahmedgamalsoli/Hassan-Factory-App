@@ -286,34 +286,22 @@ class SalesSystemApp:
             "Total Credit:":{"Arabic":"مجموع الدائن:","English":"Total Credit:"},
             "Total Debit:":{"Arabic":"مجموع المدين:","English":"Total Debit:"},
             "Balance:":{"Arabic":"الصافي:","English":"Balance:"},
-            # "Delay":{"Arabic":"من وقت البدء","English":"Delay"},
-            # "Delay":{"Arabic":"من وقت البدء","English":"Delay"},
-            # "Delay":{"Arabic":"من وقت البدء","English":"Delay"},
+            "Login":{"Arabic":"تسجيل الدخول","English":"Login"},
+            "Username:":{"Arabic":"اسم المستخدم:","English":"Username:"},
+            "Password:":{"Arabic":"الباسورد:","English":"Password:"},
+            "Exit":{"Arabic":"خروج","English":"Exit"},
+            "Customer Payments":{"Arabic":"مدفوعات العملاء","English":"Customer Payments"},
+            "Supplier Payments":{"Arabic":"مدفوعات الموردين","English":"Supplier Payments"},
+            "Employee Salary":{"Arabic":"مرتبات الموظفين","English":"Employee Salary"},
+            "Employee Appointments":{"Arabic":"مواعيد الموظفين","English":"Employee Appointments"},
+            "Employee Withdrawals":{"Arabic":"مسحوبات الموظفين","English":"Employee Withdrawals"},
+            "Produnction":{"Arabic":"الانتاج","English":"Produnction"},
+            # "Delay":{"Arabic":"","English":"Delay"},
             "Still checked in":{"Arabic":"لا يزال قيد التسجيل","English":"Still checked in"},
             "Customer & Supplier Overview":{"Arabic":"نظرة عامة على العملاء والموردين","English":"Customer & Supplier Overview"},
             
         }        
-
-
-
-  
-
-    #     # Totals display
-    #     totals_frame = tk.Frame(main_frame)
-    #     totals_frame.pack(fill=tk.X, pady=10)
-
-    #     self.total_credit_var = tk.StringVar()
-    #     self.total_debit_var = tk.StringVar()
-    #     self.balance_var = tk.StringVar()
-
-    #     tk.Label(totals_frame, text=self.t("Total Credit:"), font=('Arial', 10, 'bold')).pack(side=tk.LEFT, padx=10)
-    #     tk.Label(totals_frame, textvariable=self.total_credit_var, font=('Arial', 10)).pack(side=tk.LEFT)
-
-    #     tk.Label(totals_frame, text=self.t("Total Debit:"), font=('Arial', 10, 'bold')).pack(side=tk.LEFT, padx=10)
-    #     tk.Label(totals_frame, textvariable=self.total_debit_var, font=('Arial', 10)).pack(side=tk.LEFT)
-
-    #     tk.Label(totals_frame, text=self.t("Balance:"), font=('Arial', 10, 'bold')).pack(side=tk.LEFT, padx=10)
-    #     tk.Label(totals_frame, textvariable=self.balance_var, font=('Arial', 10)).pack(side=tk.LEFT)
+        
         self.db = None
         self.db_name = tk.StringVar()
         self.table_name = tk.StringVar()
@@ -409,17 +397,17 @@ class SalesSystemApp:
             logo_label.place(x=150, y=10)
 
         # Title
-        title = tk.Label(login_frame, text="Login", font=("Arial", 18, "bold"), bg="white")
+        title = tk.Label(login_frame, text=self.t("Login"), font=("Arial", 18, "bold"), bg="white")
         title.place(x=150, y=120)
 
         # Username
-        username_label = tk.Label(login_frame, text="Username:", font=("Arial", 12), bg="white")
+        username_label = tk.Label(login_frame, text=self.t("Username:"), font=("Arial", 12), bg="white")
         username_label.place(x=50, y=160)
         username_entry = tk.Entry(login_frame, font=("Arial", 12), bg="#f0f0f0")
         username_entry.place(x=150, y=160, width=200)
 
         # Password
-        password_label = tk.Label(login_frame, text="Password:", font=("Arial", 12), bg="white")
+        password_label = tk.Label(login_frame, text=self.t("Password:"), font=("Arial", 12), bg="white")
         password_label.place(x=50, y=190)
         password_entry = tk.Entry(login_frame, font=("Arial", 12), bg="#f0f0f0", show="*")
         password_entry.place(x=150, y=190, width=200)
@@ -452,11 +440,11 @@ class SalesSystemApp:
                 self.silent_popup("Database Error", f"An error occurred: {e}", self.play_Error)
 
 
-        login_button = tk.Button(login_frame, text="Login", font=("Arial", 12), bg="lightblue", command=validate_login)
+        login_button = tk.Button(login_frame, text=self.t("Login"), font=("Arial", 12), bg="lightblue", command=validate_login)
         login_button.place(x=150, y=270, width=100)
 
         # Exit Button
-        exit_button = tk.Button(login_frame, text="Exit", font=("Arial", 12), bg="lightgray", command=self.root.quit)
+        exit_button = tk.Button(login_frame, text=self.t("Exit"), font=("Arial", 12), bg="lightgray", command=self.root.quit)
         exit_button.place(x=270, y=270, width=80)
         def open_main_menu(role):
             if role:
@@ -991,6 +979,18 @@ class SalesSystemApp:
             {"text": self.t("purchases"), "image": "Purchases_DB.png", 
             "command": lambda: self.trash(self.user_role)},
             {"text": self.t("sales"), "image": "Sales_DB.png", 
+            "command": lambda: self.trash(self.user_role)},
+            {"text": self.t("Customer Payments"), "image": "Recieve.png", 
+            "command": lambda: self.trash(self.user_role)},
+            {"text": self.t("Supplier Payments"), "image": "payment.png", 
+            "command": lambda: self.trash(self.user_role)},
+            {"text": self.t("Employee Salary"), "image": "employee-benefit.png", 
+            "command": lambda: self.trash(self.user_role)},
+            {"text": self.t("Employee Appointments"), "image": "employee.png", 
+            "command": lambda: self.trash(self.user_role)},
+            {"text": self.t("Employee Withdrawals"), "image": "compensation (1).png", 
+            "command": lambda: self.trash(self.user_role)},
+            {"text": self.t("Produnction"), "image": "manufacture.png", 
             "command": lambda: self.trash(self.user_role)},
         ]
         images = []  # Keep references to prevent garbage collection
@@ -4207,9 +4207,14 @@ class SalesSystemApp:
         try:
             # Generate unique Id
             if "Id" in fields:
-                existing_ids = [doc["Id"] for doc in current_collection.find({}, {"Id": 1})]
-                print(f"existing_ids{existing_ids}")
+                # Convert string IDs to integers and find the maximum
+                existing_ids = [int(doc["Id"]) for doc in current_collection.find({}, {"Id": 1})]
+                print(f"existing_ids: {existing_ids}")
+                
+                # Get the new ID (default to 0 if no IDs exist)
                 new_id = max(existing_ids, default=0) + 1
+                
+                # Ensure the new ID is stored as an integer
                 new_entry["Id"] = new_id
 
             current_collection.insert_one(new_entry)
