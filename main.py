@@ -2953,190 +2953,357 @@ class SalesSystemApp:
         self.topbar(show_back_button=True,Back_to_Database_Window=True)
         self.display_general_table(self.materials_collection, "Materials")
     
-    def customer_interactions(self, user_role):
-        for widget in self.root.winfo_children():
-            widget.destroy()
+    # def customer_interactions(self, user_role):
+    #     for widget in self.root.winfo_children():
+    #         widget.destroy()
 
-        self.topbar(show_back_button=True,Back_to_Database_Window=False)
+    #     self.topbar(show_back_button=True,Back_to_Database_Window=False)
         
-        self.customer_collection         = self.get_collection_by_name("Customers")
-        self.customer_payment_collection = self.get_collection_by_name("Customer_Payments")
-        self.sales_collection            = self.get_collection_by_name("Sales")
+    #     self.customer_collection         = self.get_collection_by_name("Customers")
+    #     self.customer_payment_collection = self.get_collection_by_name("Customer_Payments")
+    #     self.sales_collection            = self.get_collection_by_name("Sales")
 
-        customer_codes = []
-        customer_names = []
-        sample_data = []
+    #     customer_codes = []
+    #     customer_names = []
+    #     sample_data = []
 
-        for customer in self.customer_collection.find({}, {"Name": 1, "Code": 1, "_id": 0}):
-            customer_codes.append(customer.get("Code"))
-            customer_names.append(customer.get("Name"))
+    #     for customer in self.customer_collection.find({}, {"Name": 1, "Code": 1, "_id": 0}):
+    #         customer_codes.append(customer.get("Code"))
+    #         customer_names.append(customer.get("Name"))
         
-        main_frame = tk.Frame(root)
-        main_frame.pack(fill="both", expand=True, padx=20, pady=50)
+    #     main_frame = tk.Frame(root)
+    #     main_frame.pack(fill="both", expand=True, padx=20, pady=50)
         
-        left_frame = tk.Frame(main_frame, width=330)
-        left_frame.pack(side="left", fill="y")
-        left_frame.pack_propagate(False)  # Prevent auto-resizing
+    #     left_frame = tk.Frame(main_frame, width=330)
+    #     left_frame.pack(side="left", fill="y")
+    #     left_frame.pack_propagate(False)  # Prevent auto-resizing
 
-        # Left half
-        tk.Label(left_frame, text="Cash", font=("Arial", 12)).pack(pady=10, anchor="w", padx=10)
-        self.cash_entry = tk.Entry(left_frame, font=("Arial", 12))
-        self.cash_entry.pack(pady=5, padx=10, fill="x")
+    #     # Left half
+    #     tk.Label(left_frame, text="Cash", font=("Arial", 12)).pack(pady=10, anchor="w", padx=10)
+    #     self.cash_entry = tk.Entry(left_frame, font=("Arial", 12))
+    #     self.cash_entry.pack(pady=5, padx=10, fill="x")
 
-        tk.Label(left_frame, text="Payment Method", font=("Arial", 12)).pack(pady=10, anchor="w", padx=10)
-        selected_method = tk.StringVar()
-        self.payment_entry = ttk.Combobox(left_frame, textvariable=selected_method, values=['Cash', 'E_Wallet', 'Bank_account', 'Instapay'], state="readonly", width=18)
-        self.payment_entry.pack(pady=5, padx=10, fill="x")
-        self.payment_entry.set("Cash")  
+    #     tk.Label(left_frame, text="Payment Method", font=("Arial", 12)).pack(pady=10, anchor="w", padx=10)
+    #     selected_method = tk.StringVar()
+    #     self.payment_entry = ttk.Combobox(left_frame, textvariable=selected_method, values=['Cash', 'E_Wallet', 'Bank_account', 'Instapay'], state="readonly", width=18)
+    #     self.payment_entry.pack(pady=5, padx=10, fill="x")
+    #     self.payment_entry.set("Cash")  
 
-        add_btn = tk.Button(left_frame, text="Add Entry", width=20, command=lambda: self.add_customer_payment(tree))
-        add_btn.pack(pady=20 , padx=10)
+    #     add_btn = tk.Button(left_frame, text="Add Entry", width=20, command=lambda: self.add_customer_payment(tree))
+    #     add_btn.pack(pady=20 , padx=10)
 
-        # Vertical separator 
-        # tk.Frame(main_frame, width=2, bg=COLORS["primary"]).grid(row=0, column=2, rowspan=20, sticky="ns", padx=5)
+    #     # Vertical separator 
+    #     # tk.Frame(main_frame, width=2, bg=COLORS["primary"]).grid(row=0, column=2, rowspan=20, sticky="ns", padx=5)
 
-        #Right part (table)
-        right_frame = tk.Frame(main_frame)
-        right_frame.pack(side="left", fill="both", expand=True)
+    #     #Right part (table)
+    #     right_frame = tk.Frame(main_frame)
+    #     right_frame.pack(side="left", fill="both", expand=True)
 
-        # ==== Drop-down Section ====
-        tk.Label(right_frame, text="Customer Code").grid(row=0, column=4)
-        self.customer_code_cb = ttk.Combobox(right_frame, values=customer_codes)
-        self.customer_code_cb.grid(row=1, column=4)
+    #     # ==== Drop-down Section ====
+    #     tk.Label(right_frame, text="Customer Code").grid(row=0, column=4)
+    #     self.customer_code_cb = ttk.Combobox(right_frame, values=customer_codes)
+    #     self.customer_code_cb.grid(row=1, column=4)
 
-        tk.Label(right_frame, text="Customer Name").grid(padx=(10,20), row=0, column=6)
-        self.customer_name_cb = ttk.Combobox(right_frame, values=customer_names)
-        self.customer_name_cb.grid(row=1, column=6)
+    #     customer_code = self.customer_code_cb.get().strip()
 
-        self.customer_code_cb.bind("<<ComboboxSelected>>", lambda event: self.on_code_selected(event, self.customer_code_cb, self.customer_name_cb, self.customer_collection, self.customer_payment_collection, "Customer_info.code"))
-        self.customer_name_cb.bind("<<ComboboxSelected>>", lambda event: self.on_name_selected(event, self.customer_code_cb, self.customer_name_cb, self.customer_collection, self.customer_payment_collection, "Customer_info.code"))
+    #     tk.Label(right_frame, text="Customer Name").grid(padx=(10,20), row=0, column=6)
+    #     self.customer_name_cb = ttk.Combobox(right_frame, values=customer_names)
+    #     self.customer_name_cb.grid(row=1, column=6)
 
-        # ==== Table Section ====
-        columns = ("date", "invoice_no", "debit", "credit", "Payment_method")
-        tree_container = ttk.Frame(right_frame)
-        tree_container.grid(row=3, column=3, columnspan=7, padx=10, pady=10, sticky="nsew")
+    #     self.customer_code_cb.bind("<<ComboboxSelected>>", lambda event: self.on_code_selected(event, self.customer_code_cb, self.customer_name_cb, self.customer_collection, self.customer_payment_collection, "Customer_info.code"))
+    #     self.customer_name_cb.bind("<<ComboboxSelected>>", lambda event: self.on_name_selected(event, self.customer_code_cb, self.customer_name_cb, self.customer_collection, self.customer_payment_collection, "Customer_info.code"))
 
-        # Scrollbar (attached to the right side of the tree)
-        scrollbar = ttk.Scrollbar(tree_container, orient="vertical")
-        scrollbar.pack(side="right", fill="y")
+    #     # ==== Table Section ====
+    #     columns = ("date", "invoice_no", "debit", "credit", "Payment_method")
+    #     tree_container = ttk.Frame(right_frame)
+    #     tree_container.grid(row=3, column=3, columnspan=7, padx=10, pady=10, sticky="nsew")
 
-        # Treeview
-        tree = ttk.Treeview(tree_container, columns=columns, show="headings", height=8, yscrollcommand=scrollbar.set)
-        tree.pack(side="left", fill="both", expand=True)
+    #     # Scrollbar (attached to the right side of the tree)
+    #     scrollbar = ttk.Scrollbar(tree_container, orient="vertical")
+    #     scrollbar.pack(side="right", fill="y")
 
-        # Configure scrollbar to control tree
-        scrollbar.config(command=tree.yview)
+    #     # Treeview
+    #     tree = ttk.Treeview(tree_container, columns=columns, show="headings", height=8, yscrollcommand=scrollbar.set)
+    #     tree.pack(side="left", fill="both", expand=True)
+
+    #     # Configure scrollbar to control tree
+    #     scrollbar.config(command=tree.yview)
         
-        for col in columns:
-            tree.heading(col, text=col.capitalize())
-            tree.column(col, width=150)
+    #     for col in columns:
+    #         tree.heading(col, text=col.capitalize())
+    #         tree.column(col, width=150)
 
-        # button_frame = tk.Frame(right_frame)
-        # button_frame.grid(row=15, column=3, columnspan=6, pady=10)
-        # add_btn = tk.Button(button_frame, text="Add Entry", command=lambda: self.add_customer_payment(tree))
-        # add_btn.pack(side="left", padx=5)
-        # edit_btn = tk.Button(button_frame, text="Edit Entry", command=lambda: self.edit_customer_payment(tree))
-        # edit_btn.pack(side="left", padx=5)
-        # delete_btn = tk.Button(button_frame, text="Delete Entry", command=lambda: self.delete_customer_payment(tree))
-        # delete_btn.pack(side="left", padx=5)
+    #     # button_frame = tk.Frame(right_frame)
+    #     # button_frame.grid(row=15, column=3, columnspan=6, pady=10)
+    #     # add_btn = tk.Button(button_frame, text="Add Entry", command=lambda: self.add_customer_payment(tree))
+    #     # add_btn.pack(side="left", padx=5)
+    #     # edit_btn = tk.Button(button_frame, text="Edit Entry", command=lambda: self.edit_customer_payment(tree))
+    #     # edit_btn.pack(side="left", padx=5)
+    #     # delete_btn = tk.Button(button_frame, text="Delete Entry", command=lambda: self.delete_customer_payment(tree))
+    #     # delete_btn.pack(side="left", padx=5)
 
-        total_debit  = 0
-        total_credit = 0
+    #     total_debit  = 0
+    #     total_credit = 0
+    #     query = ""
 
-        for invoice in self.sales_collection.find({}, {
-            "Date": 1,
-            "Receipt_Number": 1,
-            "Financials.Net_total": 1,
-            "Financials.Payed_cash": 1,
-            "Financials.Payment_method": 1,
-            "_id": 0
-        }):
-            invoice = dict(invoice)
-            # Parse and format the date
-            raw_date = invoice.get("Date", "").split()[0]  # e.g. "04/05/2025"
-            date = "-".join(reversed(raw_date.split("/"))) if raw_date else ""
-
-            invoice_no = invoice.get("Receipt_Number", "")
-            financials = invoice.get("Financials", {})  # Get financials dict or empty dict
-
-            # Now access Net_total and Payed_cash directly (they are floats, not dicts)
-            debit = financials.get("Net_total", 0.0)   # This returns a float
-            credit = financials.get("Payed_cash", 0.0) # Also a float
-            payment_method = financials.get("Payment_method", "Cash")
-
-            total_debit  += debit
-            total_credit += credit
-
-            # Convert to string if needed
-            debit_str = str(debit)
-            credit_str = str(credit)
-
-            sample_data.append((date, invoice_no, debit_str, credit_str, payment_method))
-
-
-        for payment in self.customer_payment_collection.find({}, {
-            "Time": 1,
-            "Operation_Number": 1,
-            "Credit": 1,
-            "Debit": 1,
-            "Payment_method": 1,
-            "_id": 0
-        }):
-            payment = dict(payment)
-            # Parse and format the date
-            raw_date = payment.get("Time", "").split()[0]  # e.g. "04/05/2025"
-            date = "-".join(reversed(raw_date.split("/"))) if raw_date else ""
-
-            payment_no = payment.get("Operation_Number", "")
-
-            # Now access Net_total and Payed_cash directly (they are floats, not dicts)
-            debit = payment.get("Debit", 0.0)   # This returns a float
-            credit = payment.get("Credit", 0.0) # Also a float
-            payment_method = payment.get("Payment_method", "Cash")
-
-            total_debit  += debit
-            total_credit += credit
-
-            # Convert to string if needed
-            debit_str = str(debit)
-            credit_str = str(credit)
-
-            sample_data.append((date, payment_no, debit_str, credit_str, payment_method))
-
-        for row in sample_data:
-            tree.insert("", tk.END, values=row)
-
-        # ==== Footer Totals ====
-        tk.Label(right_frame, text="Total Debit").grid(row=13, column=3, sticky="e")
-        self.total_debit_entry = tk.Entry(right_frame)
-        self.total_debit_entry.grid(row=13, column=4, sticky="w")
-
-        tk.Label(right_frame, text="Total Credit").grid(row=13, column=5, sticky="e")
-        self.total_credit_entry = tk.Entry(right_frame)
-        self.total_credit_entry.grid(row=13, column=6, sticky="w")
-
-        tk.Label(right_frame, text="Balance").grid(row=13, column=7, sticky="e")
-        self.balance_entry = tk.Entry(right_frame)
-        self.balance_entry.grid(row=13, column=8, sticky="w")
-
-        self.total_debit_entry.insert(0, total_debit)
-        self.total_credit_entry.insert(0, total_credit)
-        self.balance_entry.insert(0, total_debit - total_credit)
+    #     if(customer_code):
+    #         query= {"Customer_info.code" : customer_code}
         
+    #     for invoice in self.sales_collection.find(query, {
+    #         "Date": 1,
+    #         "Receipt_Number": 1,
+    #         "Financials.Net_total": 1,
+    #         "Financials.Payed_cash": 1,
+    #         "Financials.Payment_method": 1,
+    #         "_id": 0
+    #     }):
+    #         invoice = dict(invoice)
+    #         # Parse and format the date
+    #         raw_date = invoice.get("Date", "").split()[0]  # e.g. "04/05/2025"
+    #         date = "-".join(reversed(raw_date.split("/"))) if raw_date else ""
 
+    #         invoice_no = invoice.get("Receipt_Number", "")
+    #         financials = invoice.get("Financials", {})  # Get financials dict or empty dict
+
+    #         # Now access Net_total and Payed_cash directly (they are floats, not dicts)
+    #         debit = financials.get("Net_total", 0.0)   # This returns a float
+    #         credit = financials.get("Payed_cash", 0.0) # Also a float
+    #         payment_method = financials.get("Payment_method", "Cash")
+
+    #         total_debit  += debit
+    #         total_credit += credit
+
+    #         # Convert to string if needed
+    #         debit_str = str(debit)
+    #         credit_str = str(credit)
+
+    #         sample_data.append((date, invoice_no, debit_str, credit_str, payment_method))
+
+
+    #     for payment in self.customer_payment_collection.find(query, {
+    #         "Time": 1,
+    #         "Operation_Number": 1,
+    #         "Credit": 1,
+    #         "Debit": 1,
+    #         "Payment_method": 1,
+    #         "_id": 0
+    #     }):
+    #         payment = dict(payment)
+    #         # Parse and format the date
+    #         raw_date = payment.get("Time", "").split()[0]  # e.g. "04/05/2025"
+    #         date = "-".join(reversed(raw_date.split("/"))) if raw_date else ""
+
+    #         payment_no = payment.get("Operation_Number", "")
+
+    #         # Now access Net_total and Payed_cash directly (they are floats, not dicts)
+    #         debit = payment.get("Debit", 0.0)   # This returns a float
+    #         credit = payment.get("Credit", 0.0) # Also a float
+    #         payment_method = payment.get("Payment_method", "Cash")
+
+    #         total_debit  += debit
+    #         total_credit += credit
+
+    #         # Convert to string if needed
+    #         debit_str = str(debit)
+    #         credit_str = str(credit)
+
+    #         sample_data.append((date, payment_no, debit_str, credit_str, payment_method))
+
+    #     for row in sample_data:
+    #         tree.insert("", tk.END, values=row)
+
+    #     # ==== Footer Totals ====
+    #     tk.Label(right_frame, text="Total Debit").grid(row=13, column=3, sticky="e")
+    #     self.total_debit_entry = tk.Entry(right_frame)
+    #     self.total_debit_entry.grid(row=13, column=4, sticky="w")
+
+    #     tk.Label(right_frame, text="Total Credit").grid(row=13, column=5, sticky="e")
+    #     self.total_credit_entry = tk.Entry(right_frame)
+    #     self.total_credit_entry.grid(row=13, column=6, sticky="w")
+
+    #     tk.Label(right_frame, text="Balance").grid(row=13, column=7, sticky="e")
+    #     self.balance_entry = tk.Entry(right_frame)
+    #     self.balance_entry.grid(row=13, column=8, sticky="w")
+
+    #     self.total_debit_entry.insert(0, total_debit)
+    #     self.total_credit_entry.insert(0, total_credit)
+    #     self.balance_entry.insert(0, total_debit - total_credit)
+
+    # def supplier_interactions(self, user_role):
+    #     for widget in self.root.winfo_children():
+    #         widget.destroy()
+
+    #     self.topbar(show_back_button=True,Back_to_Database_Window=False)
+        
+    #     self.supplier_collection             = self.get_collection_by_name("Suppliers")
+    #     self.supplier_payment_collection     = self.get_collection_by_name("Supplier_Payments")
+    #     self.purchases_collection            = self.get_collection_by_name("Purchases")
+
+    #     supplier_codes = []
+    #     supplier_names = []
+    #     sample_data = []
+
+    #     for supplier in self.supplier_collection.find({}, {"Name": 1, "Code": 1, "_id": 0}):
+    #         supplier_codes.append(supplier.get("Code"))
+    #         supplier_names.append(supplier.get("Name"))
+        
+    #     main_frame = tk.Frame(root)
+    #     main_frame.pack(fill="both", expand=True, padx=20, pady=50)
+        
+    #     left_frame = tk.Frame(main_frame, width=330)
+    #     left_frame.pack(side="left", fill="y")
+    #     left_frame.pack_propagate(False)  # Prevent auto-resizing
+
+    #     # Left half
+    #     tk.Label(left_frame, text="Cash", font=("Arial", 12)).pack(pady=10, anchor="w", padx=10)
+    #     self.cash_entry = tk.Entry(left_frame, font=("Arial", 12))
+    #     self.cash_entry.pack(pady=5, padx=10, fill="x")
+
+    #     tk.Label(left_frame, text="Payment Method", font=("Arial", 12)).pack(pady=10, anchor="w", padx=10)
+    #     selected_method = tk.StringVar()
+    #     self.payment_entry = ttk.Combobox(left_frame, textvariable=selected_method, values=['Cash', 'E_Wallet', 'Bank_account', 'Instapay'], state="readonly", width=18)
+    #     self.payment_entry.pack(pady=5, padx=10, fill="x")
+    #     self.payment_entry.set("Cash")  
+
+    #     add_btn = tk.Button(left_frame, text="Add Entry", width=20, command=lambda: self.add_supplier_payment(tree))
+    #     add_btn.pack(pady=20 , padx=10)
+
+    #     # Vertical separator 
+    #     # tk.Frame(main_frame, width=2, bg=COLORS["primary"]).grid(row=0, column=2, rowspan=20, sticky="ns", padx=5)
+
+    #     #Right part (table)
+    #     right_frame = tk.Frame(main_frame)
+    #     right_frame.pack(side="left", fill="both", expand=True)
+
+    #     # ==== Drop-down Section ====
+    #     tk.Label(right_frame, text="Supplier Code").grid(row=0, column=4)
+    #     self.supplier_code_cb = ttk.Combobox(right_frame, values=supplier_codes)
+    #     self.supplier_code_cb.grid(row=1, column=4)
+
+    #     tk.Label(right_frame, text="Supplier Name").grid(padx=(10,20), row=0, column=6)
+    #     self.supplier_name_cb = ttk.Combobox(right_frame, values=supplier_names)
+    #     self.supplier_name_cb.grid(row=1, column=6)
+
+    #     self.supplier_code_cb.bind("<<ComboboxSelected>>", lambda event: self.on_code_selected(event, self.supplier_code_cb, self.supplier_name_cb, self.supplier_collection, self.supplier_payment_collection, "supplier_info.code"), tree)
+    #     self.supplier_name_cb.bind("<<ComboboxSelected>>", lambda event: self.on_name_selected(event, self.supplier_code_cb, self.supplier_name_cb, self.supplier_collection, self.supplier_payment_collection, "supplier_info.code"), tree)
+        
+    #     # ==== Table Section ====
+    #     columns = ("date", "invoice_no", "debit", "credit", "Payment_method")
+    #     tree_container = ttk.Frame(right_frame)
+    #     tree_container.grid(row=3, column=3, columnspan=7, padx=10, pady=10, sticky="nsew")
+
+    #     # Scrollbar (attached to the right side of the tree)
+    #     scrollbar = ttk.Scrollbar(tree_container, orient="vertical")
+    #     scrollbar.pack(side="right", fill="y")
+
+    #     # Treeview
+    #     tree = ttk.Treeview(tree_container, columns=columns, show="headings", height=8, yscrollcommand=scrollbar.set)
+    #     tree.pack(side="left", fill="both", expand=True)
+
+    #     # Configure scrollbar to control tree
+    #     scrollbar.config(command=tree.yview)
+        
+    #     for col in columns:
+    #         tree.heading(col, text=col.capitalize())
+    #         tree.column(col, width=150)
+
+    #     total_debit  = 0
+    #     total_credit = 0
+
+    #     # query = ....
+
+    #     for invoice in self.purchases_collection.find({}, {
+    #         "Date": 1,
+    #         "Receipt_Number": 1,
+    #         "Financials.Net_total": 1,
+    #         "Financials.Payed_cash": 1,
+    #         "Financials.Payment_method": 1,
+    #         "_id": 0
+    #     }):
+    #         invoice = dict(invoice)
+    #         # Parse and format the date
+    #         raw_date = invoice.get("Date", "").split()[0]  # e.g. "04/05/2025"
+    #         date = "-".join(reversed(raw_date.split("/"))) if raw_date else ""
+
+    #         invoice_no = invoice.get("Receipt_Number", "")
+    #         financials = invoice.get("Financials", {})  # Get financials dict or empty dict
+
+    #         # Now access Net_total and Payed_cash directly (they are floats, not dicts)
+    #         credit = financials.get("Net_total", 0.0)   # This returns a float
+    #         debit = financials.get("Payed_cash", 0.0) # Also a float
+    #         payment_method = financials.get("Payment_method", "Cash")
+
+    #         total_debit  += debit
+    #         total_credit += credit
+
+    #         # Convert to string if needed
+    #         debit_str = str(debit)
+    #         credit_str = str(credit)
+
+    #         sample_data.append((date, invoice_no, debit_str, credit_str, payment_method))
+
+
+    #     for payment in self.supplier_payment_collection.find({}, {
+    #         "Time": 1,
+    #         "Operation_Number": 1,
+    #         "Credit": 1,
+    #         "Debit": 1,
+    #         "Payment_method": 1,
+    #         "_id": 0
+    #     }):
+    #         payment = dict(payment)
+    #         # Parse and format the date
+    #         raw_date = payment.get("Time", "").split()[0]  # e.g. "04/05/2025"
+    #         date = "-".join(reversed(raw_date.split("/"))) if raw_date else ""
+
+    #         payment_no = payment.get("Operation_Number", "")
+
+    #         # Now access Net_total and Payed_cash directly (they are floats, not dicts)
+    #         debit = payment.get("Debit", 0.0)   # This returns a float
+    #         credit = payment.get("Credit", 0.0) # Also a float
+    #         payment_method = payment.get("Payment_method", "Cash")
+
+    #         total_debit  += debit
+    #         total_credit += credit
+
+    #         # Convert to string if needed
+    #         debit_str = str(debit)
+    #         credit_str = str(credit)
+
+    #         sample_data.append((date, payment_no, debit_str, credit_str, payment_method))
+
+    #     for row in sample_data:
+    #         tree.insert("", tk.END, values=row)
+
+    #     # ==== Footer Totals ====
+    #     tk.Label(right_frame, text="Total Debit").grid(row=13, column=3, sticky="e")
+    #     self.total_debit_entry = tk.Entry(right_frame)
+    #     self.total_debit_entry.grid(row=13, column=4, sticky="w")
+
+    #     tk.Label(right_frame, text="Total Credit").grid(row=13, column=5, sticky="e")
+    #     self.total_credit_entry = tk.Entry(right_frame)
+    #     self.total_credit_entry.grid(row=13, column=6, sticky="w")
+
+    #     tk.Label(right_frame, text="Balance").grid(row=13, column=7, sticky="e")
+    #     self.balance_entry = tk.Entry(right_frame)
+    #     self.balance_entry.grid(row=13, column=8, sticky="w")
+
+    #     self.total_debit_entry.insert(0, total_debit)
+    #     self.total_credit_entry.insert(0, total_credit)
+    #     self.balance_entry.insert(0, total_debit - total_credit)
+        
     def supplier_interactions(self, user_role):
         for widget in self.root.winfo_children():
             widget.destroy()
 
-        self.topbar(show_back_button=True,Back_to_Database_Window=False)
+        self.topbar(show_back_button=True, Back_to_Database_Window=False)
         
-        self.supplier_collection             = self.get_collection_by_name("Suppliers")
-        self.supplier_payment_collection     = self.get_collection_by_name("Supplier_Payments")
-        self.purchases_collection            = self.get_collection_by_name("Purchases")
+        self.supplier_collection = self.get_collection_by_name("Suppliers")
+        self.supplier_payment_collection = self.get_collection_by_name("Supplier_Payments")
+        self.purchases_collection = self.get_collection_by_name("Purchases")
 
         supplier_codes = []
         supplier_names = []
-        sample_data = []
 
         for supplier in self.supplier_collection.find({}, {"Name": 1, "Code": 1, "_id": 0}):
             supplier_codes.append(supplier.get("Code"))
@@ -3156,17 +3323,17 @@ class SalesSystemApp:
 
         tk.Label(left_frame, text="Payment Method", font=("Arial", 12)).pack(pady=10, anchor="w", padx=10)
         selected_method = tk.StringVar()
-        self.payment_entry = ttk.Combobox(left_frame, textvariable=selected_method, values=['Cash', 'E_Wallet', 'Bank_account', 'Instapay'], state="readonly", width=18)
+        self.payment_entry = ttk.Combobox(left_frame, textvariable=selected_method, 
+                                        values=['Cash', 'E_Wallet', 'Bank_account', 'Instapay'], 
+                                        state="readonly", width=18)
         self.payment_entry.pack(pady=5, padx=10, fill="x")
         self.payment_entry.set("Cash")  
 
-        add_btn = tk.Button(left_frame, text="Add Entry", width=20, command=lambda: self.add_supplier_payment(tree))
-        add_btn.pack(pady=20 , padx=10)
+        add_btn = tk.Button(left_frame, text="Add Entry", width=20, 
+                           command=lambda: self.add_supplier_payment(tree))
+        add_btn.pack(pady=20, padx=10)
 
-        # Vertical separator 
-        # tk.Frame(main_frame, width=2, bg=COLORS["primary"]).grid(row=0, column=2, rowspan=20, sticky="ns", padx=5)
-
-        #Right part (table)
+        # Right part (table)
         right_frame = tk.Frame(main_frame)
         right_frame.pack(side="left", fill="both", expand=True)
 
@@ -3179,94 +3346,26 @@ class SalesSystemApp:
         self.supplier_name_cb = ttk.Combobox(right_frame, values=supplier_names)
         self.supplier_name_cb.grid(row=1, column=6)
 
-        self.supplier_code_cb.bind("<<ComboboxSelected>>", lambda event: self.on_code_selected(event, self.supplier_code_cb, self.supplier_name_cb, self.supplier_collection, self.supplier_payment_collection, "supplier_info.code"))
-        self.supplier_name_cb.bind("<<ComboboxSelected>>", lambda event: self.on_name_selected(event, self.supplier_code_cb, self.supplier_name_cb, self.supplier_collection, self.supplier_payment_collection, "supplier_info.code"))
-        
         # ==== Table Section ====
         columns = ("date", "invoice_no", "debit", "credit", "Payment_method")
         tree_container = ttk.Frame(right_frame)
         tree_container.grid(row=3, column=3, columnspan=7, padx=10, pady=10, sticky="nsew")
 
-        # Scrollbar (attached to the right side of the tree)
+        # Scrollbar
         scrollbar = ttk.Scrollbar(tree_container, orient="vertical")
         scrollbar.pack(side="right", fill="y")
 
         # Treeview
-        tree = ttk.Treeview(tree_container, columns=columns, show="headings", height=8, yscrollcommand=scrollbar.set)
+        tree = ttk.Treeview(tree_container, columns=columns, show="headings", height=8, 
+                           yscrollcommand=scrollbar.set)
         tree.pack(side="left", fill="both", expand=True)
 
-        # Configure scrollbar to control tree
+        # Configure scrollbar
         scrollbar.config(command=tree.yview)
         
         for col in columns:
             tree.heading(col, text=col.capitalize())
             tree.column(col, width=150)
-
-        total_debit  = 0
-        total_credit = 0
-
-        for invoice in self.purchases_collection.find({}, {
-            "Date": 1,
-            "Receipt_Number": 1,
-            "Financials.Net_total": 1,
-            "Financials.Payed_cash": 1,
-            "Financials.Payment_method": 1,
-            "_id": 0
-        }):
-            invoice = dict(invoice)
-            # Parse and format the date
-            raw_date = invoice.get("Date", "").split()[0]  # e.g. "04/05/2025"
-            date = "-".join(reversed(raw_date.split("/"))) if raw_date else ""
-
-            invoice_no = invoice.get("Receipt_Number", "")
-            financials = invoice.get("Financials", {})  # Get financials dict or empty dict
-
-            # Now access Net_total and Payed_cash directly (they are floats, not dicts)
-            credit = financials.get("Net_total", 0.0)   # This returns a float
-            debit = financials.get("Payed_cash", 0.0) # Also a float
-            payment_method = financials.get("Payment_method", "Cash")
-
-            total_debit  += debit
-            total_credit += credit
-
-            # Convert to string if needed
-            debit_str = str(debit)
-            credit_str = str(credit)
-
-            sample_data.append((date, invoice_no, debit_str, credit_str, payment_method))
-
-
-        for payment in self.supplier_payment_collection.find({}, {
-            "Time": 1,
-            "Operation_Number": 1,
-            "Credit": 1,
-            "Debit": 1,
-            "Payment_method": 1,
-            "_id": 0
-        }):
-            payment = dict(payment)
-            # Parse and format the date
-            raw_date = payment.get("Time", "").split()[0]  # e.g. "04/05/2025"
-            date = "-".join(reversed(raw_date.split("/"))) if raw_date else ""
-
-            payment_no = payment.get("Operation_Number", "")
-
-            # Now access Net_total and Payed_cash directly (they are floats, not dicts)
-            debit = payment.get("Debit", 0.0)   # This returns a float
-            credit = payment.get("Credit", 0.0) # Also a float
-            payment_method = payment.get("Payment_method", "Cash")
-
-            total_debit  += debit
-            total_credit += credit
-
-            # Convert to string if needed
-            debit_str = str(debit)
-            credit_str = str(credit)
-
-            sample_data.append((date, payment_no, debit_str, credit_str, payment_method))
-
-        for row in sample_data:
-            tree.insert("", tk.END, values=row)
 
         # ==== Footer Totals ====
         tk.Label(right_frame, text="Total Debit").grid(row=13, column=3, sticky="e")
@@ -3281,17 +3380,30 @@ class SalesSystemApp:
         self.balance_entry = tk.Entry(right_frame)
         self.balance_entry.grid(row=13, column=8, sticky="w")
 
-        self.total_debit_entry.insert(0, total_debit)
-        self.total_credit_entry.insert(0, total_credit)
-        self.balance_entry.insert(0, total_debit - total_credit)
-        
+        # Bind combobox events with tree parameter
+        self.supplier_code_cb.bind("<<ComboboxSelected>>", 
+                                  lambda event: self.on_code_selected(
+                                      event, self.supplier_code_cb, self.supplier_name_cb, 
+                                      self.supplier_collection, self.purchases_collection, self.supplier_payment_collection, 
+                                      "supplier_info.code", tree))
+                                      
+        self.supplier_name_cb.bind("<<ComboboxSelected>>", 
+                                  lambda event: self.on_name_selected(
+                                      event, self.supplier_code_cb, self.supplier_name_cb, 
+                                      self.supplier_collection, self.purchases_collection, self.supplier_payment_collection, 
+                                      "supplier_info.code", tree))
+
+        # Initial update with empty query
+        self.update_totals(self.purchases_collection, self.supplier_payment_collection, tree=tree)
+
     def add_supplier_payment(self, tree):
         debit = self.cash_entry.get().strip()
         payment_method = self.payment_entry.get().strip()
         supplier_code = self.supplier_code_cb.get().strip()
         supplier_name = self.supplier_name_cb.get().strip()
-        supplier_payment_collection = self.get_fields_by_name("Supplier_Payments")
-        suppliers_collection = self.get_fields_by_name("Suppliers")
+        supplier_payment_collection = self.get_collection_by_name("Supplier_Payments")
+        # suppliers_collection = self.get_fields_by_name("Suppliers")
+        purchases_collection = self.get_collection_by_name("Purchases")
         
         if not debit or not payment_method or not supplier_code or not supplier_name:
             messagebox.showerror("Error", "All fields must be filled!")
@@ -3322,16 +3434,16 @@ class SalesSystemApp:
         tree.insert("", tk.END, values=(current_time, operation_number, 0.0, debit_val))
 
         self.update_totals(
-            suppliers_collection,
+            purchases_collection,
             supplier_payment_collection,
             {
                 "supplier_info.code": supplier_code,
                 "supplier_info.name": supplier_name
-            }
+            },
+            tree
         )
 
         messagebox.showinfo("Success", f"Entry {operation_number} added.")
-
 
     def get_next_operation_number(self, payment_collection):
         last_entry = payment_collection.find_one(
@@ -3347,8 +3459,9 @@ class SalesSystemApp:
         payment_method = self.payment_entry.get().strip()
         customer_code = self.customer_code_cb.get().strip()
         customer_name = self.customer_name_cb.get().strip()
-        customer_payment_collection = self.get_fields_by_name("Customer_Payments")
-        customers_collection = self.get_fields_by_name("Customers")
+        customer_payment_collection = self.get_collection_by_name("Customer_Payments")
+        # customers_collection = self.get_fields_by_name("Customers")
+        sales_collection = self.get_collection_by_name("Sales")
 
         if not credit or not payment_method or not customer_code or not customer_name:
             messagebox.showerror("Error", "All fields must be filled!")
@@ -3380,32 +3493,33 @@ class SalesSystemApp:
 
 
         self.update_totals(
-            customers_collection,
+            sales_collection,
             customer_payment_collection,
             {
                 "Customer_info.code": customer_code,
                 "Customer_info.name": customer_name
-            }
+            },
+            tree
         )
 
 
         messagebox.showinfo("Success", f"Entry {operation_number} added.")
 
-    def delete_customer_payment(self, tree):
-        selected = tree.focus()
-        if not selected:
-            messagebox.showwarning("Select Entry", "Please select an entry to delete.")
-            return
-        values = tree.item(selected)["values"]
-        op_number = values[1]  # Assuming Operation_Number is in 2nd column
-        confirm = messagebox.askyesno("Confirm Delete", f"Delete {op_number}?")
-        if confirm:
-            self.customer_payment_collection.delete_one({"Operation_Number": op_number})
-            tree.delete(selected)
-            messagebox.showinfo("Deleted", f"Entry {op_number} deleted.")
+    # def delete_customer_payment(self, tree):
+    #     selected = tree.focus()
+    #     if not selected:
+    #         messagebox.showwarning("Select Entry", "Please select an entry to delete.")
+    #         return
+    #     values = tree.item(selected)["values"]
+    #     op_number = values[1]  # Assuming Operation_Number is in 2nd column
+    #     confirm = messagebox.askyesno("Confirm Delete", f"Delete {op_number}?")
+    #     if confirm:
+    #         self.customer_payment_collection.delete_one({"Operation_Number": op_number})
+    #         tree.delete(selected)
+    #         messagebox.showinfo("Deleted", f"Entry {op_number} deleted.")
 
-    #TODO
-    def edit_customer_payment(self,tree):
+    # #TODO
+    # def edit_customer_payment(self,tree):
         selected = tree.focus()
         if not selected:
             messagebox.showwarning("Select Entry", "Please select an entry to edit.")
@@ -3414,54 +3528,30 @@ class SalesSystemApp:
         # Implement a pop-up or re-use entries to update MongoDB
         # Find document by Operation_Number and update it
 
-    def on_code_selected(self, event, code_cb, name_cb, collection, payment_collection, field_path):
+    def on_code_selected(self, event, code_cb, name_cb, collection, invoices_collection, payment_collection, field_path, tree):
         selected_code = code_cb.get().strip()
-
         if not selected_code:
             return
 
         try:
             person = collection.find_one({"Code": selected_code}, {"Name": 1, "_id": 0})
-
             if not person:
                 try:
                     selected_code_int = int(selected_code)
                     person = collection.find_one({"Code": selected_code_int}, {"Name": 1, "_id": 0})
                     # selected_code = selected_code_int  # update for consistency in update_totals
                 except ValueError:
-                    pass  # If it can't be cast to int, just skip
+                    pass 
 
             if person:
                 name_cb.set(person["Name"])
 
-            self.update_totals(collection, payment_collection, {field_path: selected_code})
-
+            self.update_totals(invoices_collection, payment_collection, {field_path: selected_code}, tree)
         except Exception as e:
             messagebox.showerror("Database Error", f"Failed to process code: {selected_code}.\nError: {str(e)}")
 
-    # def on_code_selected(self, event):
-    #     selected_code = self.customer_code_cb.get().strip()
-
-    #     if selected_code:
-    #         customer = self.customer_collection.find_one({"Code": selected_code}, {"Name": 1, "_id": 0})
-    #         if customer:
-    #             self.customer_name_cb.set(customer["Name"])
-            
-    #         self.update_totals({"Customer_info.code": selected_code})
-
-    # def on_name_selected(self, event):
-    #     selected_name = self.customer_name_cb.get().strip()
-
-    #     if selected_name:
-    #         customer = self.customer_collection.find_one({"Name": selected_name}, {"Code": 1, "_id": 0})
-    #         if customer:
-    #             self.customer_code_cb.set(customer["Code"])
-
-    #         self.update_totals({"Customer_info.name": selected_name})
-
-    def on_name_selected(self, event, code_cb, name_cb, collection, payment_collection, field_path):
+    def on_name_selected(self, event, code_cb, name_cb, collection, invoices_collection, payment_collection, field_path, tree):
         selected_name = name_cb.get().strip()
-
         if not selected_name:
             return
 
@@ -3470,58 +3560,123 @@ class SalesSystemApp:
             if person:
                 code = person["Code"]
                 code_cb.set(code)
-                self.update_totals(collection, payment_collection, {field_path: code})
+                self.update_totals(invoices_collection, payment_collection, {field_path: code}, tree)
             else:
                 messagebox.showwarning("Warning", f"No matching code found for name: {selected_name}")
         except Exception as e:
             messagebox.showerror("Database Error", f"Failed to fetch code for {selected_name}.\nError: {str(e)}")
 
+    # def update_totals(self, collection, payment_collection, query=None):
+    #     if query is None:
+    #         query = {}
 
-    def update_totals(self, collection, payment_collection, query=None):
+    #     invoices = collection.find(query)
+    #     payments = payment_collection.find(query)
+
+    #     count = collection.count_documents(query)
+    #     # count = collection.find(query).count()
+
+    #     query = {'supplier_info.code':'3003'}
+    #     count2 = collection.count_documents(query)
+
+    #     query = {'supplier_info.code': 3003}
+    #     count3 = collection.count_documents(query)
+
+    #     total_debit = 0.0
+    #     total_credit = 0.0
+    #     balance = 0.0
+
+    #     if collection.name == "Suppliers":
+    #         for inv in invoices:
+    #             financials = inv.get("Financials", {})
+    #             total_debit += float(financials.get("Net_total", 0))
+    #             total_credit += float(financials.get("Payed_cash", 0))
+    #         balance += float(total_debit - total_credit)  # Or Remaining_balance based on your logic
+    #     else:
+    #         for inv in invoices:
+    #             financials = inv.get("Financials", {})
+    #             total_debit += float(financials.get("Payed_cash", 0))
+    #             total_credit += float(financials.get("Net_total", 0))
+    #         balance += float(total_credit - total_debit)  # Or Remaining_balance based on your logic
+
+    #     for payment in payments:
+    #         total_debit += float(payment.get("Debit", 0.0))
+    #         total_credit += float(payment.get("Credit", 0.0))
+
+    #     balance += float(total_debit - total_credit)  # Or Remaining_balance based on your logic
+
+    #     # Insert calculated totals into entries (clear first)
+    #     self.total_debit_entry.delete(0, tk.END)
+    #     self.total_debit_entry.insert(0, str(total_debit))
+
+    #     self.total_credit_entry.delete(0, tk.END)
+    #     self.total_credit_entry.insert(0, str(total_credit))
+
+    #     self.balance_entry.delete(0, tk.END)
+    #     self.balance_entry.insert(0, str(balance))
+    
+    def update_totals(self, invoices_collection, payment_collection, query=None, tree=None):
         if query is None:
             query = {}
 
-        print("elbolbol")
-        print(collection.count_documents(query))
-
-        invoices = collection.find(query)
+        invoices = invoices_collection.find(query)
         payments = payment_collection.find(query)
 
-        count = collection.count_documents(query)
-        # count = collection.find(query).count()
+        count = invoices_collection.count_documents(query)
+        # count = invoices_collection.find(query).count()
+        
         query = {'supplier_info.code':'3003'}
-        # count2 = collection.find(query).count()
-        count2 = collection.count_documents(query)
+        count2 = invoices_collection.count_documents(query)
+
         query = {'supplier_info.code': 3003}
-        # count3 = collection.find(query).count()
-        count3 = collection.count_documents(query)
+        count3 = invoices_collection.count_documents(query)
 
-        # sample_doc = collection.find_one()
-        # print(sample_doc['supplier_info']['code'], type(sample_doc['supplier_info']['code']))
-
-        print(collection.name)
         total_debit = 0.0
         total_credit = 0.0
         balance = 0.0
+        sample_data = []
 
-        if collection.name == "Suppliers":
+        if invoices_collection.name == "Purchases":
             for inv in invoices:
                 financials = inv.get("Financials", {})
                 total_debit += float(financials.get("Net_total", 0))
                 total_credit += float(financials.get("Payed_cash", 0))
-            balance += float(total_debit - total_credit)  # Or Remaining_balance based on your logic
+                
+                # Add to sample_data for tree
+                raw_date = inv.get("Date", "").split()[0]
+                date = "-".join(reversed(raw_date.split("/"))) if raw_date else ""
+                invoice_no = inv.get("Receipt_Number", "")
+                payment_method = financials.get("Payment_method", "Cash") #if it doesn't exist then by default = "Cash"
+                sample_data.append((date, invoice_no, str(financials.get("Net_total", 0.0)), str(financials.get("Payed_cash", 0.0)), payment_method))
+                
+            balance += float(total_debit - total_credit)
         else:
             for inv in invoices:
                 financials = inv.get("Financials", {})
-                total_credit += float(financials.get("Net_total", 0))
                 total_debit += float(financials.get("Payed_cash", 0))
-            balance += float(total_credit - total_debit)  # Or Remaining_balance based on your logic
+                total_credit += float(financials.get("Net_total", 0))
+                
+                # Add to sample_data for tree
+                raw_date = inv.get("Date", "").split()[0]
+                date = "-".join(reversed(raw_date.split("/"))) if raw_date else ""
+                invoice_no = inv.get("Receipt_Number", "")
+                payment_method = financials.get("Payment_method", "Cash")
+                sample_data.append((date, invoice_no, str(financials.get("Payed_cash", 0.0)), str(financials.get("Net_total", 0.0)), payment_method))
+                
+            balance += float(total_credit - total_debit)
 
         for payment in payments:
             total_debit += float(payment.get("Debit", 0.0))
             total_credit += float(payment.get("Credit", 0.0))
+            
+            # Add to sample_data for tree
+            raw_date = payment.get("Time", "").split()[0]
+            date = "-".join(reversed(raw_date.split("/"))) if raw_date else ""
+            payment_no = payment.get("Operation_Number", "")
+            payment_method = payment.get("Payment_method", "Cash")
+            sample_data.append((date, payment_no, str(payment.get("Debit", 0.0)), str(payment.get("Credit", 0.0)), payment_method))
 
-        balance += float(total_debit - total_credit)  # Or Remaining_balance based on your logic
+        balance += float(total_debit - total_credit)
 
         # Insert calculated totals into entries (clear first)
         self.total_debit_entry.delete(0, tk.END)
@@ -3532,6 +3687,102 @@ class SalesSystemApp:
 
         self.balance_entry.delete(0, tk.END)
         self.balance_entry.insert(0, str(balance))
+
+        # Update tree if provided
+        if tree:
+            tree.delete(*tree.get_children())
+            for row in sample_data:
+                tree.insert("", tk.END, values=row)
+
+    def customer_interactions(self, user_role):
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        self.topbar(show_back_button=True,Back_to_Database_Window=False)
+        
+        self.customer_collection         = self.get_collection_by_name("Customers")
+        self.customer_payment_collection = self.get_collection_by_name("Customer_Payments")
+        self.sales_collection            = self.get_collection_by_name("Sales")
+
+        customer_codes = []
+        customer_names = []
+
+        for customer in self.customer_collection.find({}, {"Name": 1, "Code": 1, "_id": 0}):
+            customer_codes.append(customer.get("Code"))
+            customer_names.append(customer.get("Name"))
+        
+        main_frame = tk.Frame(root)
+        main_frame.pack(fill="both", expand=True, padx=20, pady=50)
+        
+        left_frame = tk.Frame(main_frame, width=330)
+        left_frame.pack(side="left", fill="y")
+        left_frame.pack_propagate(False)  # Prevent auto-resizing
+
+        # Left half
+        tk.Label(left_frame, text="Cash", font=("Arial", 12)).pack(pady=10, anchor="w", padx=10)
+        self.cash_entry = tk.Entry(left_frame, font=("Arial", 12))
+        self.cash_entry.pack(pady=5, padx=10, fill="x")
+
+        tk.Label(left_frame, text="Payment Method", font=("Arial", 12)).pack(pady=10, anchor="w", padx=10)
+        selected_method = tk.StringVar()
+        self.payment_entry = ttk.Combobox(left_frame, textvariable=selected_method, values=['Cash', 'E_Wallet', 'Bank_account', 'Instapay'], state="readonly", width=18)
+        self.payment_entry.pack(pady=5, padx=10, fill="x")
+        self.payment_entry.set("Cash")  
+
+        add_btn = tk.Button(left_frame, text="Add Entry", width=20, command=lambda: self.add_customer_payment(tree))
+        add_btn.pack(pady=20 , padx=10)
+
+        #Right part (table)
+        right_frame = tk.Frame(main_frame)
+        right_frame.pack(side="left", fill="both", expand=True)
+
+        # ==== Drop-down Section ====
+        tk.Label(right_frame, text="Customer Code").grid(row=0, column=4)
+        self.customer_code_cb = ttk.Combobox(right_frame, values=customer_codes)
+        self.customer_code_cb.grid(row=1, column=4)
+
+        tk.Label(right_frame, text="Customer Name").grid(padx=(10,20), row=0, column=6)
+        self.customer_name_cb = ttk.Combobox(right_frame, values=customer_names)
+        self.customer_name_cb.grid(row=1, column=6)
+
+        self.customer_code_cb.bind("<<ComboboxSelected>>", lambda event: self.on_code_selected(event, self.customer_code_cb, self.customer_name_cb, self.customer_collection, self.sales_collection, self.customer_payment_collection, "Customer_info.code", tree))
+        self.customer_name_cb.bind("<<ComboboxSelected>>", lambda event: self.on_name_selected(event, self.customer_code_cb, self.customer_name_cb, self.customer_collection, self.sales_collection, self.customer_payment_collection, "Customer_info.code", tree))
+
+        # ==== Table Section ====
+        columns = ("date", "invoice_no", "debit", "credit", "Payment_method")
+        tree_container = ttk.Frame(right_frame)
+        tree_container.grid(row=3, column=3, columnspan=7, padx=10, pady=10, sticky="nsew")
+
+        # Scrollbar (attached to the right side of the tree)
+        scrollbar = ttk.Scrollbar(tree_container, orient="vertical")
+        scrollbar.pack(side="right", fill="y")
+
+        # Treeview
+        tree = ttk.Treeview(tree_container, columns=columns, show="headings", height=8, yscrollcommand=scrollbar.set)
+        tree.pack(side="left", fill="both", expand=True)
+
+        # Configure scrollbar to control tree
+        scrollbar.config(command=tree.yview)
+        
+        for col in columns:
+            tree.heading(col, text=col.capitalize())
+            tree.column(col, width=150)
+
+        # ==== Footer Totals ====
+        tk.Label(right_frame, text="Total Debit").grid(row=13, column=3, sticky="e")
+        self.total_debit_entry = tk.Entry(right_frame)
+        self.total_debit_entry.grid(row=13, column=4, sticky="w")
+
+        tk.Label(right_frame, text="Total Credit").grid(row=13, column=5, sticky="e")
+        self.total_credit_entry = tk.Entry(right_frame)
+        self.total_credit_entry.grid(row=13, column=6, sticky="w")
+
+        tk.Label(right_frame, text="Balance").grid(row=13, column=7, sticky="e")
+        self.balance_entry = tk.Entry(right_frame)
+        self.balance_entry.grid(row=13, column=8, sticky="w")
+
+        # Initial update with empty query
+        self.update_totals(self.sales_collection, self.customer_payment_collection, tree=tree)
 
 ############################ Main Functions ########################################
     def display_table(self):
@@ -4436,9 +4687,6 @@ class SalesSystemApp:
         elif collection_name == "Products":
             return ["product_name", "category", "stock_quantity", "Specs", "Unit_Price", "product_code", "Units", "prod_pic"]
         
-        elif collection_name == "Sales":
-            return ["product_code", "Product_name", "unit", "QTY", "numbering","Total_QTY","Unit_Price","Total Price","Date","Reciept_Number","Customer_name","Customer_code"]
-
         # elif collection_name == "Sales_Header":
         #     return [self.t("Product_code"), self.t("product_name"), self.t("unit"),self.t("numbering"),self.t("QTY"),self.t("Discount Type"),self.t("Discount Value"),self.t("Total_QTY"),self.t("Unit_Price"),self.t("Total_Price")]
        
@@ -4447,7 +4695,7 @@ class SalesSystemApp:
       
         elif collection_name == "Sales_Header":
             return ["Product_code", "product_name", "unit","numbering","QTY","Discount Type","Discount Value","Total_QTY","Unit_Price","Total_Price"]
-       
+        
         elif collection_name == "Materials":
             return ["material_name", "category","stock_quantity","specs","material_code","Units","material_pic","Unit_Price"]
 
@@ -4466,9 +4714,6 @@ class SalesSystemApp:
                     "Instapay", "E_wallet", "Accountant_name", "Accountant_number", "Sales_grade", "Growth_grade", "Frequency_grade", "Credit",
                     "Debit", "Balance", "Sales"]
         
-        elif collection_name == "Customer_Payments":
-            return ["Operation_Number", "Time", "Credit", "Debit","Payment_method"]
-
         elif collection_name == "Shipping":
             return ["order_id", "shipping_date", "tracking_number", "shipping_address"]
         
@@ -4479,7 +4724,7 @@ class SalesSystemApp:
             return ["expense_id", "expense_type", "amount", "date", "description"]
         
         elif collection_name == "Employee_appointments":
-            return ["appointment_id", "employee_id", "appointment_date", "appointment_type"]
+            return ["employee_code", "employee_name", "check_in", "check_out", "duration"]
         
         elif collection_name == "Daily_shifts":
             return ["shift_id", "employee_id", "shift_date", "start_time", "end_time"]
@@ -4493,9 +4738,39 @@ class SalesSystemApp:
         elif collection_name == "Big_deals":
             return ["deal_id", "deal_date", "customer_id", "product_id", "deal_value"]
         
+        elif collection_name == "Sales":
+            return ["Receipt_Number", "Date", "customer_code", "customer_name", "customer_phone1","customer_phone2","customer_address","Product_code","product_name","QTY","numbering","Total_QTY", "Unit_price", "Discount_Type", "Discount_Value", "Final_Price", "Net_total", "Previous_balance", "Total balance", "Payed_cash", "Remaining_balance", "Payment_method", "PDF_Path"]
+        
+        elif collection_name == "Purchases":
+            return ["Receipt_Number", "Date", "supplier_code", "supplier_name", "supplier_phone1","supplier_phone2","supplier_address","material_code","material_name","Unit","QTY", "numbering","Total_QTY", "Unit_price", "Discount_Type", "Discount_Value", "Final_Price", "Net_total", "Previous_balance", "Total balance", "Payed_cash", "Remaining_balance", "Payment_method", "PDF_Path"]
+        
+        elif collection_name == "Customer_Payments":
+            return ["Operation_Number", "Time", "Credit", "Debit","Payment_method", "customer_code", "customer_name"]
+
+        elif collection_name == "Supplier_Payments":
+            return ["Operation_Number", "Time", "Credit", "Debit","Payment_method", "supplier_code", "supplier_name"]
+
+        elif collection_name == "Production":
+            return ["Material Code", "Material Name", "Material_Qty", "Product Code","Product Name", "Material Ava qty", "Product Ava Qty", "Product_Qty", "Waste"]
+
         elif collection_name == "TEX_Calculations":
             return ["calculation_id", "product_id", "calculation_date", "value"]
         
+        elif collection_name == "Enployee_Salary":
+            return ["employee_code", "employee_name", "month_year", "base_salary","total_withdrawals" , "delay_penalty", "overtime_bonus", "net_salary", "payment_method", "timestamp"]
+        
+        elif collection_name == "Employee_withdrawals":
+            return ["employee_code", "employee_name", "previous_withdrawls", "amount_withdrawls", "paymenet_method", "timestamp"]
+        
+        # Purchases_DB
+        # Sales_DB
+        # Employee_Salary
+        # Employee_Appointments
+        # Employee_Withdrawals
+        # Production_DB
+        # Supplier_Payments_DB
+        # Customer_Payments_DB
+
         else:
             print(f"Warning: Collection name '{collection_name}' not recognized.")
             return []
@@ -5355,9 +5630,9 @@ class SalesSystemApp:
         self.main_menu()
 
     #Function to update the time 
-    # def update_time(self, time_label):
-    #     time_label.config(text=datetime.now().strftime('%B %d, %Y %I:%M %p'))
-    #     self.root.after(1000, self.update_time, time_label)
+    def update_time(self, time_label):
+        time_label.config(text=datetime.now().strftime('%B %d, %Y %I:%M %p'))
+        self.root.after(1000, self.update_time, time_label)
 
 
     # Function to make the top bar part
@@ -5411,7 +5686,7 @@ class SalesSystemApp:
                             font=("Arial", 20, "bold"), fg="black", bg="#dbb40f")
 
         time_label.place(relx=0.5, rely=0.5, anchor="center")
-        # self.update_time(time_label)
+        self.update_time(time_label)
         #TODO
         # User info frame
         user_frame = tk.Frame(top_bar, bg="#dbb40f")
