@@ -353,6 +353,9 @@ class SalesSystemApp:
         self.employees_appointments_collection= db['Employee_appointimets']
         self.employee_withdrawls_collection   = db['Employee_withdrawls']
         self.employee_salary_collection       = db['Employee_Salary']
+        print(f"employee_salary_collection: {self.employee_salary_collection}")
+        print(f"employees_appointments_collection: {self.employees_appointments_collection}")
+        print(f"employee_withdrawls_collection: {self.employee_withdrawls_collection}")
         self.products_collection              = db['Products']
         self.sales_collection                 = db['Sales']
         self.suppliers_collection             = db['Suppliers']
@@ -361,7 +364,6 @@ class SalesSystemApp:
         self.shipping_collection              = db['Shipping']
         self.orders_collection                = db['Orders']
         self.expenses_collection              = db['Expenses']
-        # self.employee_appointments_collection = db['Employee_appointments']
         self.daily_shifts_collection          = db['Daily_shifts']
         self.accounts_collection              = db['Accounts']
         self.transactions_collection          = db['Transactions']
@@ -370,6 +372,7 @@ class SalesSystemApp:
         self.production_collection            = db['Production']
         self.customer_payments                = db["Customer_Payments"]
         self.supplier_payments                = db["Supplier_Payments"]
+        
         
 
 ############################################ Windows ########################################### 
@@ -977,21 +980,21 @@ class SalesSystemApp:
             {"text": self.t("Materials"), "image": "Materials.png", 
             "command": lambda: self.new_material(self.user_role)},
             {"text": self.t("purchases"), "image": "Purchases_DB.png", 
-            "command": lambda: self.trash(self.user_role)},
+            "command": lambda: self.new_purchases(self.user_role)},
             {"text": self.t("sales"), "image": "Sales_DB.png", 
-            "command": lambda: self.trash(self.user_role)},
+            "command": lambda: self.new_sales(self.user_role)},
             {"text": self.t("Customer Payments"), "image": "Recieve.png", 
-            "command": lambda: self.trash(self.user_role)},
+            "command": lambda: self.new_customer_payment(self.user_role)},
             {"text": self.t("Supplier Payments"), "image": "payment.png", 
-            "command": lambda: self.trash(self.user_role)},
+            "command": lambda: self.new_supplier_payment(self.user_role)},
             {"text": self.t("Employee Salary"), "image": "employee-benefit.png", 
-            "command": lambda: self.trash(self.user_role)},
+            "command": lambda: self.new_emp_salary(self.user_role)},
             {"text": self.t("Employee Appointments"), "image": "employee.png", 
-            "command": lambda: self.trash(self.user_role)},
+            "command": lambda: self.new_emp_appointment(self.user_role)},
             {"text": self.t("Employee Withdrawals"), "image": "compensation (1).png", 
-            "command": lambda: self.trash(self.user_role)},
+            "command": lambda: self.new_emp_withdrawal(self.user_role)},
             {"text": self.t("Produnction"), "image": "manufacture.png", 
-            "command": lambda: self.trash(self.user_role)},
+            "command": lambda: self.new_production(self.user_role)},
         ]
         images = []  # Keep references to prevent garbage collection
         columns_per_row = 3  # Number of buttons per row
@@ -1081,8 +1084,6 @@ class SalesSystemApp:
                 # Save both images
                 images.append(photo_transparent)
                 images.append(photo_with_bg)
-                
-
 
                 # Calculate grid position
                 row = index // columns_per_row
@@ -3232,6 +3233,70 @@ class SalesSystemApp:
         self.topbar(show_back_button=True,Back_to_Database_Window=True)
         self.display_general_table(self.materials_collection, "Materials")
     
+    def new_sales(self,user_role):
+        self.table_name.set("Sales")
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        self.topbar(show_back_button=True,Back_to_Database_Window=True)
+        self.display_general_table(self.sales_collection, "Sales")
+
+    def new_purchases(self,user_role):
+        self.table_name.set("Purchases")
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        self.topbar(show_back_button=True,Back_to_Database_Window=True)
+        self.display_general_table(self.purchases_collection, "Purchases")
+    
+    def new_customer_payment(self,user_role):
+        self.table_name.set("Customer_Payments")
+        for widget in self.root.winfo_children():
+            widget.destroy()
+    
+        self.topbar(show_back_button=True,Back_to_Database_Window=True)
+        self.display_general_table(self.customer_payments, "Customer_Payments")
+    
+    def new_supplier_payment(self,user_role):
+        self.table_name.set("Supplier_Payments")
+        for widget in self.root.winfo_children():
+            widget.destroy()
+    
+        self.topbar(show_back_button=True,Back_to_Database_Window=True)
+        self.display_general_table(self.supplier_payments, "Supplier_Payments")
+    
+    def new_emp_salary(self,user_role):
+        self.table_name.set("Employee_Salary")
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        self.topbar(show_back_button=True,Back_to_Database_Window=True)
+        self.display_general_table(self.employee_salary_collection, "Employee_Salary")
+    
+    def new_emp_appointment(self,user_role):
+        self.table_name.set("Employee_appointimets")
+        for widget in self.root.winfo_children():
+            widget.destroy()
+    
+        self.topbar(show_back_button=True,Back_to_Database_Window=True)
+        self.display_general_table(self.employees_appointments_collection, "Employee_appointimets")
+    
+    def new_emp_withdrawal(self,user_role):
+        self.table_name.set("Employee_withdrawls")
+        for widget in self.root.winfo_children():
+            widget.destroy()
+    
+        self.topbar(show_back_button=True,Back_to_Database_Window=True)
+        self.display_general_table(self.employee_withdrawls_collection, "Employee_withdrawls")
+    
+    def new_production(self,user_role):
+        self.table_name.set("Production")
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        self.topbar(show_back_button=True,Back_to_Database_Window=True)
+        self.display_general_table(self.production_collection, "Production")
+
     # def customer_interactions(self, user_role):
     #     for widget in self.root.winfo_children():
     #         widget.destroy()
@@ -5007,7 +5072,7 @@ class SalesSystemApp:
         elif collection_name == "Expenses":
             return ["expense_id", "expense_type", "amount", "date", "description"]
         
-        elif collection_name == "Employee_appointments":
+        elif collection_name == "Employee_appointiments":
             return ["employee_code", "employee_name", "check_in", "check_out", "duration"]
         
         elif collection_name == "Daily_shifts":
@@ -5040,20 +5105,11 @@ class SalesSystemApp:
         elif collection_name == "TEX_Calculations":
             return ["calculation_id", "product_id", "calculation_date", "value"]
         
-        elif collection_name == "Enployee_Salary":
-            return ["employee_code", "employee_name", "month_year", "base_salary","total_withdrawals" , "delay_penalty", "overtime_bonus", "net_salary", "payment_method", "timestamp"]
+        elif collection_name == "Employee_Salary":
+            return ["employee_code", "employee_name", "month_year", "base_salary","total_withdrawls" , "delay_penalty", "overtime_bonus", "net_salary", "payment_method", "timestamp"]
         
-        elif collection_name == "Employee_withdrawals":
-            return ["employee_code", "employee_name", "previous_withdrawls", "amount_withdrawls", "paymenet_method", "timestamp"]
-        
-        # Purchases_DB
-        # Sales_DB
-        # Employee_Salary
-        # Employee_Appointments
-        # Employee_Withdrawals
-        # Production_DB
-        # Supplier_Payments_DB
-        # Customer_Payments_DB
+        elif collection_name == "Employee_withdrawls":
+            return ["employee_code", "employee_name", "previous_withdrawls", "amount_withdrawls", "payment_method", "timestamp"]
 
         else:
             print(f"Warning: Collection name '{collection_name}' not recognized.")
@@ -5914,9 +5970,9 @@ class SalesSystemApp:
         self.main_menu()
 
     #Function to update the time 
-    def update_time(self, time_label):
-        time_label.config(text=datetime.now().strftime('%B %d, %Y %I:%M %p'))
-        self.root.after(1000, self.update_time, time_label)
+    # def update_time(self, time_label):
+    #     time_label.config(text=datetime.now().strftime('%B %d, %Y %I:%M %p'))
+    #     self.root.after(1000, self.update_time, time_label)
 
 
     # Function to make the top bar part
@@ -5970,7 +6026,7 @@ class SalesSystemApp:
                             font=("Arial", 20, "bold"), fg="black", bg="#dbb40f")
 
         time_label.place(relx=0.5, rely=0.5, anchor="center")
-        self.update_time(time_label)
+        # self.update_time(time_label)
         #TODO
         # User info frame
         user_frame = tk.Frame(top_bar, bg="#dbb40f")
