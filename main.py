@@ -11,6 +11,7 @@ from fpdf import FPDF
 import sqlite3
 import csv
 import io
+import re
 import os
 from tkcalendar import DateEntry  # Import DateEntry
 import sys
@@ -278,12 +279,41 @@ class SalesSystemApp:
             "Base Salary:":{"Arabic":"المرتب الاساسي:","English":"Base Salary:"},
             "Net Salary:":{"Arabic":"صافي المرتب:","English":"Net Salary:"},
             "Save Salary Record":{"Arabic":"💾 احفظ سجل الراتب","English":"💾 Save Salary Record"},
-            # "Duration":{"Arabic":"المدة","English":"Duration"},
-            # "Duration":{"Arabic":"المدة","English":"Duration"},
+            "From Date:":{"Arabic":"من تاريخ:","English":"From Date:"},
+            "To Date:":{"Arabic":"الي تاريخ:","English":"To Date:"},
+            "Description":{"Arabic":"الوصف","English":"Description"},
+            "Payment_Method":{"Arabic":"طريقة الدفع","English":"Payment Method"},
+            "Total Credit:":{"Arabic":"مجموع الدائن:","English":"Total Credit:"},
+            "Total Debit:":{"Arabic":"مجموع المدين:","English":"Total Debit:"},
+            "Balance:":{"Arabic":"الصافي:","English":"Balance:"},
+            # "Delay":{"Arabic":"من وقت البدء","English":"Delay"},
+            # "Delay":{"Arabic":"من وقت البدء","English":"Delay"},
+            # "Delay":{"Arabic":"من وقت البدء","English":"Delay"},
             "Still checked in":{"Arabic":"لا يزال قيد التسجيل","English":"Still checked in"},
             "Customer & Supplier Overview":{"Arabic":"نظرة عامة على العملاء والموردين","English":"Customer & Supplier Overview"},
+            
         }        
 
+
+
+  
+
+    #     # Totals display
+    #     totals_frame = tk.Frame(main_frame)
+    #     totals_frame.pack(fill=tk.X, pady=10)
+
+    #     self.total_credit_var = tk.StringVar()
+    #     self.total_debit_var = tk.StringVar()
+    #     self.balance_var = tk.StringVar()
+
+    #     tk.Label(totals_frame, text=self.t("Total Credit:"), font=('Arial', 10, 'bold')).pack(side=tk.LEFT, padx=10)
+    #     tk.Label(totals_frame, textvariable=self.total_credit_var, font=('Arial', 10)).pack(side=tk.LEFT)
+
+    #     tk.Label(totals_frame, text=self.t("Total Debit:"), font=('Arial', 10, 'bold')).pack(side=tk.LEFT, padx=10)
+    #     tk.Label(totals_frame, textvariable=self.total_debit_var, font=('Arial', 10)).pack(side=tk.LEFT)
+
+    #     tk.Label(totals_frame, text=self.t("Balance:"), font=('Arial', 10, 'bold')).pack(side=tk.LEFT, padx=10)
+    #     tk.Label(totals_frame, textvariable=self.balance_var, font=('Arial', 10)).pack(side=tk.LEFT)
         self.db = None
         self.db_name = tk.StringVar()
         self.table_name = tk.StringVar()
@@ -352,6 +382,7 @@ class SalesSystemApp:
         self.production_collection            = db['Production']
         self.customer_payments                = db["Customer_Payments"]
         self.supplier_payments                = db["Supplier_Payments"]
+        
 
 ############################################ Windows ########################################### 
     
@@ -1897,11 +1928,253 @@ class SalesSystemApp:
 
         self.display_table()
     def Treasury_window(self, user_role):
-            # Clear current window
-            for widget in self.root.winfo_children():
-                widget.destroy()
+        # Clear current window
+        for widget in self.root.winfo_children():
+            widget.destroy()
 
-            self.topbar(show_back_button=True)
+        self.topbar(show_back_button=True)
+
+        # Main container
+        main_frame = tk.Frame(self.root)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+
+        # Filter controls
+        filter_frame = tk.Frame(main_frame)
+        filter_frame.pack(fill=tk.X, pady=10)
+
+        # Date filters
+        date_frame = tk.Frame(filter_frame)
+        date_frame.pack(side=tk.LEFT, padx=10)
+
+        tk.Label(date_frame, text=self.t("From Date:")).pack(side=tk.LEFT)
+        self.from_date = DateEntry(date_frame, date_pattern="dd/mm/yyyy")
+        self.from_date.pack(side=tk.LEFT, padx=10)
+
+        tk.Label(date_frame, text=self.t("To Date:")).pack(side=tk.LEFT, padx=(20,0))
+        self.to_date = DateEntry(date_frame, date_pattern="dd/mm/yyyy")
+        self.to_date.pack(side=tk.LEFT)
+
+        # Payment method filter
+        method_frame = tk.Frame(filter_frame)
+        method_frame.pack(side=tk.LEFT, padx=20)
+
+        tk.Label(method_frame, text=self.t("Payment Method:")).pack(side=tk.LEFT)
+        self.payment_method = ttk.Combobox(
+            method_frame,
+            values=["All", "Cash", "Instapay", "Bank Account", "E Wallet"]
+        )
+        self.payment_method.set("All")
+        self.payment_method.pack(side=tk.LEFT, padx=10)
+
+        # Search button
+        search_btn = tk.Button(filter_frame, text=self.t("Search"), command=self.fetch_transactions)
+        search_btn.pack(side=tk.RIGHT, padx=10)
+
+        # Results Treeview
+        columns = ("date", "description", "credit", "debit", "payment_method")
+        self.tree = ttk.Treeview(main_frame, columns=columns, show="headings")
+        
+        # Configure columns
+        self.tree.heading("date", text=self.t("Date"))
+        self.tree.heading("description", text=self.t("Description"))
+        self.tree.heading("credit", text=self.t("Credit"))
+        self.tree.heading("debit", text=self.t("Debit"))
+        self.tree.heading("payment_method", text=self.t("Payment Method"))
+
+        self.tree.column("date", width=120)
+        self.tree.column("description", width=250)
+        self.tree.column("credit", width=120)
+        self.tree.column("debit", width=120)
+        self.tree.column("payment_method", width=150)
+
+        # Add scrollbar
+        scrollbar = ttk.Scrollbar(main_frame, orient=tk.VERTICAL, command=self.tree.yview)
+        self.tree.configure(yscroll=scrollbar.set)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.tree.pack(fill=tk.BOTH, expand=True)
+
+        # Totals display
+        totals_frame = tk.Frame(main_frame)
+        totals_frame.pack(fill=tk.X, pady=10)
+
+        self.total_credit_var = tk.StringVar()
+        self.total_debit_var = tk.StringVar()
+        self.balance_var = tk.StringVar()
+
+        tk.Label(totals_frame, text=self.t("Total Credit:"), font=('Arial', 10, 'bold')).pack(side=tk.LEFT, padx=10)
+        tk.Label(totals_frame, textvariable=self.total_credit_var, font=('Arial', 10)).pack(side=tk.LEFT)
+
+        tk.Label(totals_frame, text=self.t("Total Debit:"), font=('Arial', 10, 'bold')).pack(side=tk.LEFT, padx=10)
+        tk.Label(totals_frame, textvariable=self.total_debit_var, font=('Arial', 10)).pack(side=tk.LEFT)
+
+        tk.Label(totals_frame, text=self.t("Balance:"), font=('Arial', 10, 'bold')).pack(side=tk.LEFT, padx=10)
+        tk.Label(totals_frame, textvariable=self.balance_var, font=('Arial', 10)).pack(side=tk.LEFT)
+
+    def parse_date(self, date_str):
+        # print(date_str)
+        if not date_str:
+            return None
+        # print(date_str)
+        date_str = str(date_str).strip()  # Remove leading/trailing whitespace
+        # print(date_str)
+        # Remove surrounding quotes if present
+        if date_str.startswith(('"', "'")) and date_str.endswith(('"', "'")):
+            date_str = date_str[1:-1].strip()
+
+        # Preprocessing for malformed timezone formats
+        if 'T' in date_str and '+' not in date_str and 'Z' not in date_str:
+            if date_str.endswith(':00'):
+                date_str = date_str[:-3] + '+00:00'
+            elif date_str.count(':') == 4:
+                parts = date_str.rsplit(':', 1)
+                date_str = f"{parts[0]}+00:00"
+
+        # Fix timezone colon format using regex to target only timezone offsets
+        tz_colon_match = re.search(r'([+-]\d{2}):(\d{2})$', date_str)
+        if tz_colon_match:
+            date_str = date_str[:-3] + date_str[-2:]
+
+        formats = [
+            "%d/%m/%Y %H:%M",          # Format: "23/05/2025 23:10"
+            "%Y-%m-%dT%H:%M:%S.%f%z",  # ISO format with timezone
+            "%Y-%m-%dT%H:%M:%S%z",     # ISO without milliseconds
+            "%Y-%m-%d",                # Simple date format
+            "%d/%m/%Y",                # Date without time
+            "%d/%m/%y %H:%M"           # Short year format
+        ]
+
+        for fmt in formats:
+            try:
+                dt = datetime.strptime(date_str, fmt)
+                if dt.tzinfo is None:
+                    dt = pytz.utc.localize(dt)
+                else:
+                    dt = dt.astimezone(pytz.utc)
+                return dt
+            except ValueError:
+                continue
+        
+        try:
+            return datetime.fromisoformat(date_str).astimezone(pytz.utc)
+        except:
+            return None
+
+    def fetch_transactions(self):
+        self.tree.delete(*self.tree.get_children())
+        self.totals = {'credit': 0.0, 'debit': 0.0}
+
+        # Get filter parameters
+        start_date = self.from_date.get_date()
+        end_date = self.to_date.get_date()
+        selected_method = self.payment_method.get().lower()
+
+        # Convert dates to UTC datetime
+        tz = pytz.timezone('UTC')
+        start_date = tz.localize(datetime.combine(start_date, datetime.min.time()))
+        end_date = tz.localize(datetime.combine(end_date, datetime.max.time()))
+        start_date_str = start_date.strftime("%d/%m/%Y %H:%M")
+        end_date_str = end_date.strftime("%d/%m/%Y %H:%M")
+        transactions = []
+
+        # 1. Customer Payments (Credit) done
+        customer_payments = self.customer_payments.find({"Time": {"$gte": start_date_str, "$lte": end_date_str}})
+        # print(customer_payments)
+        for doc in customer_payments:
+            transactions.append({
+                "date": self.parse_date(doc.get("Time", "")),
+                "description": doc.get("Operation_Number", ""),
+                "credit": float(doc.get("Credit", 0)),
+                "debit": 0.0,
+                "payment_method": doc.get("Payment_method", "").lower().replace(" ", "_")
+            })
+        # # print(transactions)
+
+        # 2. Employee Salary (Debit) done
+        salaries = self.employee_salary_collection.find({"timestamp": {"$gte": start_date, "$lte": end_date}})
+        # print(salaries)
+        for doc in salaries:
+            transactions.append({
+                "date": self.parse_date(doc.get("timestamp", "")),
+                "description": f"Salary {doc.get('month_year', '')}",
+                "credit": 0.0,
+                "debit": float(doc.get("net_salary", 0)),
+                "payment_method": doc.get("payment_method", "").lower().replace(" ", "_")
+            })
+        # # print(transactions)
+        # 3. Employee Withdrawals (Debit) done  
+        withdrawals = self.employee_withdrawls_collection.find({"timestamp": {"$gte": start_date, "$lte": end_date}})
+        for doc in withdrawals:
+            transactions.append({
+                "date": self.parse_date(doc.get("timestamp", "")),
+                "description": f"Withdrawal {doc.get('employee_code', '')}",
+                "credit": 0.0,
+                "debit": float(doc.get("amount_withdrawls", 0)),
+                "payment_method": doc.get("payment_method", "").lower().replace(" ", "_")
+            })
+        # print(transactions)
+        # 4. Purchases (Debit)
+        purchases = self.purchases_collection.find({"Date": {"$gte": start_date_str, "$lte": end_date_str}})
+        for doc in purchases:
+            financials = doc.get("Financials", {})  # Safely get the nested Financials object
+            transactions.append({
+                "date": self.parse_date(doc.get("Date", "")),
+                "description": doc.get("Receipt_Number", ""),
+                "credit": 0.0,
+                "debit": float(financials.get("Payed_cash", 0)),  # Access via Financials
+                "payment_method": financials.get("Payment_method", "").lower().replace(" ", "_")  # Acce
+            })
+        # # print(transactions)
+        # 5. Sales (Credit)
+        sales = self.sales_collection.find({"Date": {"$gte": start_date_str, "$lte": end_date_str}})
+        for doc in sales:
+            financials = doc.get("Financials", {})  # Safely get the nested Financials object
+            transactions.append({
+                "date": self.parse_date(doc.get("Date", "")),
+                "description": doc.get("Receipt_Number", ""),
+                "credit": float(financials.get("Payed_cash", 0)),
+                "debit": 0.0,
+                "payment_method": financials.get("Payment_method", "").lower().replace(" ", "_")  # Acce
+            })
+        # # print(transactions)
+        # 6. Supplier Payments (Debit)
+        supplier_payments = self.supplier_payments.find({"Time": {"$gte": start_date_str, "$lte": end_date_str}})
+        for doc in supplier_payments:
+            transactions.append({
+                "date": self.parse_date(doc.get("Time", "")),
+                "description": doc.get("Operation_Number", ""),
+                "credit": 0.0,
+                "debit": float(doc.get("Debit", 0)),
+                "payment_method": doc.get("Payment_method", "").lower().replace(" ", "_")
+            })
+        # print(transactions)
+        # Filter transactions
+        allowed_methods = ["cash", "instapay", "bank_account", "e_wallet"]
+        filtered_transactions = []
+        for t in transactions:
+            if selected_method != "all":
+                if t["payment_method"] != selected_method.replace(" ", "_"):
+                    continue
+            if t["payment_method"] in allowed_methods and t["date"] is not None:
+                filtered_transactions.append(t)
+
+        # Populate treeview and calculate totals
+        for t in filtered_transactions:
+            self.totals['credit'] += t['credit']
+            self.totals['debit'] += t['debit']
+            
+            self.tree.insert("", "end", values=(
+                t["date"].strftime("%d/%m/%Y %H:%M"),
+                t["description"],
+                f"${t['credit']:,.2f}",
+                f"${t['debit']:,.2f}",
+                t["payment_method"].replace("_", " ").title()
+            ))
+
+        # Update totals display
+        self.total_credit_var.set(f"${self.totals['credit']:,.2f}")
+        self.total_debit_var.set(f"${self.totals['debit']:,.2f}")
+        balance = self.totals['credit'] - self.totals['debit']
+        self.balance_var.set(f"${balance:,.2f}")
 
     def new_sales_invoice(self, user_role):
         # Clear current window
