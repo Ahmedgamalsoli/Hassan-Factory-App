@@ -35,6 +35,7 @@ from pymongo.errors import PyMongoError
 from bidi.algorithm import get_display
 from matplotlib import rcParams
 from collections import defaultdict
+
 ######################################################### Access Data Base ##############################################################################
 dialog_width = 300  # Same width as AlwaysOnTopInputDialog
 dialog_height = 150 # Same height as AlwaysOnTopInputDialog
@@ -314,6 +315,7 @@ class SalesSystemApp:
         self._after_id = None
         self.logout_icon_path = os.path.join(BASE_DIR, "Static", "images", "Logout.png")  # Path to logout icon
         self.exit_icon_path   = os.path.join(BASE_DIR, "Static", "images", "Exit.png")  # Path to exit icon
+        self.calc_icon_path   = os.path.join(BASE_DIR, "Static", "images", "calculator.png")  # Path to exit icon
         self.back_icon_path   = os.path.join(BASE_DIR, "Static", "images", "Back.png")  # Path to back icon
         # self.customer_name_var = None
         # Get the correct path for the icon
@@ -353,9 +355,6 @@ class SalesSystemApp:
         self.employees_appointments_collection= db['Employee_appointimets']
         self.employee_withdrawls_collection   = db['Employee_withdrawls']
         self.employee_salary_collection       = db['Employee_Salary']
-        print(f"employee_salary_collection: {self.employee_salary_collection}")
-        print(f"employees_appointments_collection: {self.employees_appointments_collection}")
-        print(f"employee_withdrawls_collection: {self.employee_withdrawls_collection}")
         self.products_collection              = db['Products']
         self.sales_collection                 = db['Sales']
         self.suppliers_collection             = db['Suppliers']
@@ -552,7 +551,7 @@ class SalesSystemApp:
         images = []  # Keep references to prevent garbage collection
         columns_per_row = 3  # Number of buttons per row
         button_size = 100
-
+        
         try:
             for index, btn_info in enumerate(buttons):
                 row = index // columns_per_row
@@ -1170,9 +1169,7 @@ class SalesSystemApp:
         code_cb['values'] = list(self.employee_code_name.keys())
 
         # Check-in/out button
-        tk.Button(selection_frame, text=self.t("Check In/Out"), 
-                command=lambda: self.toggle_check_in_out(employees_col, appointments_col))\
-                .pack(side=tk.RIGHT, padx=10)
+        tk.Button(selection_frame, text=self.t("Check In/Out"), command=lambda: self.toggle_check_in_out(employees_col, appointments_col)).pack(side=tk.RIGHT, padx=10)
 
         # Checked-in employees treeview
         tree_frame = tk.Frame(main_frame)
@@ -1317,12 +1314,10 @@ class SalesSystemApp:
         main_frame.grid_columnconfigure(1, weight=3)
 
         # Employee Selection Section
-        tk.Label(main_frame, text=self.t("Employee Selection"), font=('Helvetica', 14, 'bold'))\
-            .grid(row=0, column=0, columnspan=2, pady=10, sticky='w')
+        tk.Label(main_frame, text=self.t("Employee Selection"), font=('Helvetica', 14, 'bold')).grid(row=0, column=0, columnspan=2, pady=10, sticky='w')
         
         # Employee Name Dropdown
-        tk.Label(main_frame, text=self.t("Employee Name:"), font=('Helvetica', 12))\
-            .grid(row=1, column=0, pady=5, sticky='w')
+        tk.Label(main_frame, text=self.t("Employee Name:"), font=('Helvetica', 12)).grid(row=1, column=0, pady=5, sticky='w')
         self.withdraw_name_var = tk.StringVar()
         name_cb = ttk.Combobox(main_frame, textvariable=self.withdraw_name_var, 
                             width=30, font=('Helvetica', 12))
@@ -1330,8 +1325,7 @@ class SalesSystemApp:
         name_cb.bind('<<ComboboxSelected>>', self.update_withdraw_code)
 
         # Employee Code Dropdown
-        tk.Label(main_frame, text=self.t("Employee Code:"), font=('Helvetica', 12))\
-            .grid(row=2, column=0, pady=5, sticky='w')
+        tk.Label(main_frame, text=self.t("Employee Code:"), font=('Helvetica', 12)).grid(row=2, column=0, pady=5, sticky='w')
         self.withdraw_code_var = tk.StringVar()
         code_cb = ttk.Combobox(main_frame, textvariable=self.withdraw_code_var, 
                             width=30, font=('Helvetica', 12))
@@ -1339,26 +1333,22 @@ class SalesSystemApp:
         code_cb.bind('<<ComboboxSelected>>', self.update_withdraw_name)
 
         # Salary Display
-        tk.Label(main_frame, text=self.t("Salary:"), font=('Helvetica', 12))\
-            .grid(row=3, column=0, pady=5, sticky='w')
+        tk.Label(main_frame, text=self.t("Salary:"), font=('Helvetica', 12)).grid(row=3, column=0, pady=5, sticky='w')
         self.salary_var = tk.StringVar()
         salary_entry = tk.Entry(main_frame, textvariable=self.salary_var, 
                             state='readonly', width=33, font=('Helvetica', 12))
         salary_entry.grid(row=3, column=1, pady=5, padx=10, sticky='w')
 
         # Withdrawal Details Section (updated row numbers)
-        tk.Label(main_frame, text=self.t("Withdrawal Details"), font=('Helvetica', 14, 'bold'))\
-            .grid(row=4, column=0, columnspan=2, pady=10, sticky='w')
+        tk.Label(main_frame, text=self.t("Withdrawal Details"), font=('Helvetica', 14, 'bold')).grid(row=4, column=0, columnspan=2, pady=10, sticky='w')
 
         # Amount Entry
-        tk.Label(main_frame, text=self.t("Withdrawal Amount:"), font=('Helvetica', 12))\
-            .grid(row=5, column=0, pady=5, sticky='w')
+        tk.Label(main_frame, text=self.t("Withdrawal Amount:"), font=('Helvetica', 12)).grid(row=5, column=0, pady=5, sticky='w')
         self.amount_entry = tk.Entry(main_frame, width=33, font=('Helvetica', 12))
         self.amount_entry.grid(row=5, column=1, pady=5, padx=10, sticky='w')
 
         # Payment Method
-        tk.Label(main_frame, text=self.t("Payment Method"), font=('Helvetica', 12))\
-            .grid(row=6, column=0, pady=5, sticky='w')
+        tk.Label(main_frame, text=self.t("Payment Method"), font=('Helvetica', 12)).grid(row=6, column=0, pady=5, sticky='w')
         self.payment_method = ttk.Combobox(main_frame, 
                                         values=["Cash", "Instapay", "E_wallet", "Bank Account"],
                                         width=30, 
@@ -1367,8 +1357,7 @@ class SalesSystemApp:
         self.payment_method.grid(row=6, column=1, pady=5, padx=10, sticky='w')
 
         # Previous Withdrawals
-        tk.Label(main_frame, text=self.t("Previous Withdrawals:"), font=('Helvetica', 12))\
-            .grid(row=7, column=0, pady=5, sticky='w')
+        tk.Label(main_frame, text=self.t("Previous Withdrawals:"), font=('Helvetica', 12)).grid(row=7, column=0, pady=5, sticky='w')
         self.prev_withdrawals = tk.Entry(main_frame, 
                                     state='readonly', 
                                     width=33, 
@@ -3845,8 +3834,6 @@ class SalesSystemApp:
             },
             tree
         )
-
-
         messagebox.showinfo("Success", f"Entry {operation_number} added.")
 
     # def delete_customer_payment(self, tree):
@@ -3909,55 +3896,6 @@ class SalesSystemApp:
                 messagebox.showwarning("Warning", f"No matching code found for name: {selected_name}")
         except Exception as e:
             messagebox.showerror("Database Error", f"Failed to fetch code for {selected_name}.\nError: {str(e)}")
-
-    # def update_totals(self, collection, payment_collection, query=None):
-    #     if query is None:
-    #         query = {}
-
-    #     invoices = collection.find(query)
-    #     payments = payment_collection.find(query)
-
-    #     count = collection.count_documents(query)
-    #     # count = collection.find(query).count()
-
-    #     query = {'supplier_info.code':'3003'}
-    #     count2 = collection.count_documents(query)
-
-    #     query = {'supplier_info.code': 3003}
-    #     count3 = collection.count_documents(query)
-
-    #     total_debit = 0.0
-    #     total_credit = 0.0
-    #     balance = 0.0
-
-    #     if collection.name == "Suppliers":
-    #         for inv in invoices:
-    #             financials = inv.get("Financials", {})
-    #             total_debit += float(financials.get("Net_total", 0))
-    #             total_credit += float(financials.get("Payed_cash", 0))
-    #         balance += float(total_debit - total_credit)  # Or Remaining_balance based on your logic
-    #     else:
-    #         for inv in invoices:
-    #             financials = inv.get("Financials", {})
-    #             total_debit += float(financials.get("Payed_cash", 0))
-    #             total_credit += float(financials.get("Net_total", 0))
-    #         balance += float(total_credit - total_debit)  # Or Remaining_balance based on your logic
-
-    #     for payment in payments:
-    #         total_debit += float(payment.get("Debit", 0.0))
-    #         total_credit += float(payment.get("Credit", 0.0))
-
-    #     balance += float(total_debit - total_credit)  # Or Remaining_balance based on your logic
-
-    #     # Insert calculated totals into entries (clear first)
-    #     self.total_debit_entry.delete(0, tk.END)
-    #     self.total_debit_entry.insert(0, str(total_debit))
-
-    #     self.total_credit_entry.delete(0, tk.END)
-    #     self.total_credit_entry.insert(0, str(total_credit))
-
-    #     self.balance_entry.delete(0, tk.END)
-    #     self.balance_entry.insert(0, str(balance))
     
     def update_totals(self, invoices_collection, payment_collection, query=None, tree=None):
         if query is None:
@@ -4188,7 +4126,6 @@ class SalesSystemApp:
         except Exception as e:
             messagebox.showerror("Error", f"Error displaying data:\n{e}")
 
-    #TODO fix search feature ... start fixing add,edit and delete
     def display_general_table(self, current_collection, collection_name):
         img_label= None
         columns = self.get_fields_by_name(collection_name)
@@ -4237,11 +4174,24 @@ class SalesSystemApp:
         form_container.bind("<Enter>", enable_scrolling)
         form_container.bind("<Leave>", disable_scrolling)
 
+        if 'Customer_info' in ordered_fields:
+            ordered_fields.remove('Customer_info')
+            if 'customer_code' not in ordered_fields:
+                ordered_fields.append('customer_code')
+            if 'customer_name' not in ordered_fields:
+                ordered_fields.append('customer_name')
+        if 'supplier_info' in ordered_fields:
+            ordered_fields.remove('supplier_info')
+            if 'supplier_code' not in ordered_fields:
+                ordered_fields.append('supplier_code')
+            if 'supplier_name' not in ordered_fields:
+                ordered_fields.append('supplier_name')
+
         self.entries = {}
         for i, label in enumerate(ordered_fields):
-            if label in ["Id", "Operation_Number", "Customer_info","Time"]:
+            if label in ["Id", "Operation_Number", "Customer_info", "supplier_info", "Time"]:
                 continue
-            
+
             tk.Label(form_frame, text=self.t(label), font=("Arial", 12), anchor="w").grid(row=i, column=0, sticky="w", pady=5)
 
             if "date" in label.lower():
@@ -4252,7 +4202,9 @@ class SalesSystemApp:
                 selected_method = tk.StringVar()
                 dropdown = ttk.Combobox(form_frame, textvariable=selected_method, values=['Cash', 'E_Wallet', 'Bank_account', 'Instapay'], state="readonly", width=18)
                 dropdown.grid(row=i, column=1, pady=5)
-                dropdown.set("Cash")  # Optional: set default value
+                dropdown.set("Cash")  
+                self.entries[label] = dropdown  
+                
             elif "pic" in label.lower():
                 frame = tk.Frame(form_frame)
                 frame.grid(row=i, column=1, pady=5)
@@ -4342,8 +4294,16 @@ class SalesSystemApp:
         selected_item = tree.selection()
         if not selected_item:
             for entry in self.entries.values():
-                entry.delete(0, tk.END)
-            # Also clear image preview(s)
+                if isinstance(entry, ttk.Combobox):
+                    entry.set('')
+                elif isinstance(entry, DateEntry):
+                    entry.set_date(datetime.now())
+                elif hasattr(entry, 'image') and img_label:
+                    img_label.config(image='')
+                    img_label.image = None
+                else:
+                    entry.delete(0, tk.END)
+            
             if(img_label):
                 img_label.config(image="")
                 img_label.image = None
@@ -4359,6 +4319,7 @@ class SalesSystemApp:
                         break
             unique_id = tree.item(selected_item)['values'][id_index]
             print(f"unique_id type: {get_type(unique_id)}")
+
             current_collection = self.get_collection_by_name(collection_name)
             first_document = current_collection.find_one({columns[id_index]: unique_id})
 
@@ -4375,9 +4336,21 @@ class SalesSystemApp:
         except IndexError:
             return
 
-
         for field, entry in self.entries.items():
-            value = first_document.get(field, "")
+            if field == 'supplier_code':
+                value = first_document.get('supplier_info', {}).get('code', "")
+            elif field == 'supplier_name':
+                value = first_document.get('supplier_info', {}).get('name', "")
+            elif field == 'customer_code':
+                value = first_document.get('Customer_info', {}).get('code', "")
+            elif field == 'customer_name':
+                value = first_document.get('Customer_info', {}).get('name', "")
+            else:
+                value = first_document.get(field, "")
+
+            if isinstance(entry, ttk.Combobox):
+                entry.set(value)
+
             if isinstance(value, datetime):
                 value = value.strftime('%d-%m-%Y')
                 entry.delete(0, tk.END)
@@ -4418,6 +4391,17 @@ class SalesSystemApp:
                     columns.remove('_id')
                 if 'Customer_info' in columns:
                     columns.remove('Customer_info')
+                    if 'customer_code' not in columns:
+                        columns.append('customer_code')
+                    if 'customer_name' not in columns:
+                        columns.append('customer_name')
+                if 'supplier_info' in columns:
+                    columns.remove('supplier_info')
+                    if 'supplier_code' not in columns:
+                        columns.append('supplier_code')
+                    if 'supplier_name' not in columns:
+                        columns.append('supplier_name')
+                        
                 tree["columns"] = columns
                 for col in columns:
                     tree.heading(col, text=col)
@@ -4425,7 +4409,14 @@ class SalesSystemApp:
 
                 for row_data in data:
                     units = row_data.get('Units', [])
-                    
+                    if(collection_name == "Customer_Payments"):
+                        customer_info = row_data.get('Customer_info', {})
+                        row_data['customer_code'] = customer_info.get('code', '')
+                        row_data['customer_name'] = customer_info.get('name', '')
+                    if(collection_name == "Supplier_Payments"):
+                        customer_info = row_data.get('supplier_info', {})
+                        row_data['supplier_code'] = customer_info.get('code', '')
+                        row_data['supplier_name'] = customer_info.get('name', '')
                     # If Units is a non-empty list
                     if isinstance(units, list) and len(units) > 0:
                         for unit_value in units:
@@ -4467,8 +4458,40 @@ class SalesSystemApp:
         fields = self.get_fields_by_name(collection_name)
 
         new_entry = {}
+
+        # Handle customer/supplier info
+        if collection_name in ["Customer_Payments", "Supplier_Payments"]:
+            prefix = "Customer" if collection_name == "Customer_Payments" else "supplier"
+            
+            operation_number = self.get_next_operation_number(current_collection)
+            
+            new_entry["Operation_Number"] = operation_number
+            current_time = datetime.now().strftime("%d/%m/%Y %H:%M")
+            new_entry["Time"] = current_time
+
+            # Get the code and name from entries
+            code = self.entries.get(f"{prefix.lower()}_code", None)
+            name = self.entries.get(f"{prefix.lower()}_name", None)
+            
+            if code:
+                code_value = code.get()
+            else:
+                code_value = ""
+                
+            if name:
+                name_value = name.get()
+            else:
+                name_value = ""
+
+            # Create the nested info object
+            info_object = {
+                "code": code_value,
+                "name": name_value
+            }
+            new_entry[f"{prefix}_info"] = info_object
+
         for field, widget in self.entries.items():
-            if field == "Id":
+            if field in ["customer_code", "customer_name", "supplier_code", "supplier_name", "Id"]:
                 continue  # Skip Id
 
             if "date" in field.lower():
@@ -4566,7 +4589,9 @@ class SalesSystemApp:
         columns = tree["columns"]  # This returns a tuple/list of column names
         try:
             lower_columns = [col.lower() for col in columns]
-            if "id" in lower_columns:
+            if current_collection.name in ["Customer_Payments","Supplier_Payments"]:
+                id_index = 0
+            elif "id" in lower_columns:
                 id_index = columns.index("Id")  # Dynamically get the index of "Id" #TODO need something different to loop on
             elif any('code' in col for col in lower_columns):
                 for idx, col in enumerate(lower_columns):
@@ -4592,9 +4617,30 @@ class SalesSystemApp:
             return
 
         updated_entry = {}
+        # Handle special cases for Customer_Payments and Supplier_Payments
+        if collection_name in ["Customer_Payments", "Supplier_Payments"]:
+            prefix = "Customer" if collection_name == "Customer_Payments" else "supplier"
+            info_object = existing_record.get(f"{prefix}_info", {})
+            
+            # Update info object if code/name fields were modified
+            code_field = f"{prefix.lower()}_code"
+            name_field = f"{prefix.lower()}_name"
+            
+            if code_field in self.entries:
+                code_value = self.entries[code_field].get()
+                if code_value:
+                    info_object["code"] = code_value
+            
+            if name_field in self.entries:
+                name_value = self.entries[name_field].get()
+                if name_value:
+                    info_object["name"] = name_value
+            
+            updated_entry[f"{prefix}_info"] = info_object
+
         for field, widget in self.entries.items():
-            if field == "Id":
-                continue  # Skip Id
+            if field in ["Id", "customer_code", "customer_name", "supplier_code", "supplier_name"]:
+                continue  # Skip Id and special fields (handled above)
 
             existing_value = existing_record.get(field, None)
 
@@ -4664,7 +4710,7 @@ class SalesSystemApp:
             messagebox.showerror("Error", f"Error updating record: {e}")
     
     #
-    def delete_generic_entry(self, tree, current_collection):
+    def delete_generic_entry(self, tree, current_collection):   
         selected_item = tree.selection()
         id_index = None
         if not selected_item:
@@ -4676,8 +4722,9 @@ class SalesSystemApp:
             lower_columns = [col.lower() for col in columns]
 
             # Find which column is used as identifier (id / code)
-
-            if "id" in lower_columns:
+            if current_collection.name in ["Customer_Payments","Supplier_Payments"]:
+                id_index = 0
+            elif "id" in lower_columns:
                 id_index = columns.index("Id")
             elif any('code' in col for col in lower_columns):
                 for idx, col in enumerate(lower_columns):
@@ -5072,7 +5119,7 @@ class SalesSystemApp:
         elif collection_name == "Expenses":
             return ["expense_id", "expense_type", "amount", "date", "description"]
         
-        elif collection_name == "Employee_appointiments":
+        elif collection_name == "Employee_appointimets":
             return ["employee_code", "employee_name", "check_in", "check_out", "duration"]
         
         elif collection_name == "Daily_shifts":
@@ -5094,13 +5141,13 @@ class SalesSystemApp:
             return ["Receipt_Number", "Date", "supplier_code", "supplier_name", "supplier_phone1","supplier_phone2","supplier_address","material_code","material_name","Unit","QTY", "numbering","Total_QTY", "Unit_price", "Discount_Type", "Discount_Value", "Final_Price", "Net_total", "Previous_balance", "Total balance", "Payed_cash", "Remaining_balance", "Payment_method", "PDF_Path"]
         
         elif collection_name == "Customer_Payments":
-            return ["Operation_Number", "Time", "Credit", "Debit","Payment_method", "customer_code", "customer_name"]
+            return ["Operation_Number", "Time", "Credit", "Debit","Payment_method", "Customer_info"]
 
         elif collection_name == "Supplier_Payments":
-            return ["Operation_Number", "Time", "Credit", "Debit","Payment_method", "supplier_code", "supplier_name"]
+            return ["Operation_Number", "Time", "Credit", "Debit","Payment_method", "supplier_info"]
 
         elif collection_name == "Production":
-            return ["Material Code", "Material Name", "Material_Qty", "Product Code","Product Name", "Material Ava qty", "Product Ava Qty", "Product_Qty", "Waste"]
+            return ["material_code", "material_qty", "product_code","product_qty", "timestamp", "waste"]
 
         elif collection_name == "TEX_Calculations":
             return ["calculation_id", "product_id", "calculation_date", "value"]
@@ -5626,11 +5673,16 @@ class SalesSystemApp:
             import arabic_reshaper
             from reportlab.lib.utils import ImageReader
 
-            # تسجيل الخط العربي
-            arabic_font_path = os.path.join("Static", "Fonts", "Amiri-Regular.ttf")
-            if not os.path.exists(arabic_font_path):
-                raise FileNotFoundError(f"ملف الخط غير موجود: {arabic_font_path}")
-            pdfmetrics.registerFont(TTFont('Arabic', arabic_font_path))
+            # Load Arabic font
+            try:
+                arabic_font_path = resource_path(os.path.join("Static", "Fonts", "Amiri-Regular.ttf"))
+                if not os.path.exists(arabic_font_path):
+                    raise FileNotFoundError(f"Font file not found: {arabic_font_path}")
+                pdfmetrics.registerFont(TTFont('Arabic', arabic_font_path))
+            except Exception as e:
+                print(f"Error loading Arabic font: {e}")
+                # Fallback to a default font if Arabic font fails to load
+                pdfmetrics.registerFont(TTFont('Arabic', 'Arial'))
 
             # دالة معالجة النصوص العربية
             def format_arabic(text):
@@ -5776,11 +5828,16 @@ class SalesSystemApp:
             import arabic_reshaper
             from reportlab.lib.utils import ImageReader
 
-            # تسجيل الخط العربي
-            arabic_font_path = os.path.join("Static", "Fonts", "Amiri-Regular.ttf")
-            if not os.path.exists(arabic_font_path):
-                raise FileNotFoundError(f"ملف الخط غير موجود: {arabic_font_path}")
-            pdfmetrics.registerFont(TTFont('Arabic', arabic_font_path))
+            # Load Arabic font
+            try:
+                arabic_font_path = resource_path(os.path.join("Static", "Fonts", "Amiri-Regular.ttf"))
+                if not os.path.exists(arabic_font_path):
+                    raise FileNotFoundError(f"Font file not found: {arabic_font_path}")
+                pdfmetrics.registerFont(TTFont('Arabic', arabic_font_path))
+            except Exception as e:
+                print(f"Error loading Arabic font: {e}")
+                # Fallback to a default font if Arabic font fails to load
+                pdfmetrics.registerFont(TTFont('Arabic', 'Arial'))
 
             # دالة معالجة النصوص العربية
             def format_arabic(text):
@@ -5981,7 +6038,7 @@ class SalesSystemApp:
         top_bar = tk.Frame(self.root, bg="#dbb40f", height=60)
         top_bar.pack(fill="x")
         # Exit icon
-        try:
+        try:    
             exit_image = Image.open(self.exit_icon_path)
             exit_image = exit_image.resize((35, 35), Image.LANCZOS)
             self.exit_photo = ImageTk.PhotoImage(exit_image)
@@ -6001,7 +6058,7 @@ class SalesSystemApp:
         except Exception as e:
             self.silent_popup("Error", "Error loading Logout icon: {e}", self.play_Error)
 
-        # Left side: Language or Back button
+
         if show_back_button:
             try:
                 back_image = Image.open(self.back_icon_path)
@@ -6021,6 +6078,15 @@ class SalesSystemApp:
                                 font=("Arial", 10, "bold"), bd=0, command=self.toggle_language)
             lang_btn.pack(side="left", padx=10)
 
+        # Left side: Language or Back button
+        # tk.Button(top_bar, text="Open Calculator", command=open_calculator, font=("Arial", 14)).pack(side="left", padx=10)
+        calc_image = Image.open(self.calc_icon_path)
+        calc_image = calc_image.resize((35, 35), Image.LANCZOS)
+        self.calc_photo = ImageTk.PhotoImage(calc_image)
+        calc_icon = tk.Label(top_bar, image=self.calc_photo, bg="#dbb40f")
+        calc_icon.pack(side="left", padx=10)
+        calc_icon.bind("<Button-1>", lambda event: open_calculator())
+        
         # Time label
         time_label = tk.Label(top_bar, text=datetime.now().strftime('%B %d, %Y %I:%M %p'),
                             font=("Arial", 20, "bold"), fg="black", bg="#dbb40f")
@@ -6064,7 +6130,6 @@ class SalesSystemApp:
                 while not self.stop_event.is_set():  # Check if stop_event is set
                     playsound(sound_path)
                     break  # In this case, we'll play the sound only once.
-                print("done")
             else:
                 print("Sound file not found:", sound_path)
 
@@ -6103,6 +6168,58 @@ class SalesSystemApp:
 
         popup.wait_window()  # Blocks further execution until the popup is closed
         self.stop_sound()
+
+class CalculatorPopup(tk.Toplevel):
+    def __init__(self, parent, target_entry=None):
+        super().__init__(parent)
+        self.title("Calculator")
+        self.target_entry = target_entry  # Entry widget to receive the result
+        self.geometry("300x400")
+        self.create_widgets()
+        
+    def create_widgets(self):
+        # Display
+        self.display = tk.Entry(self, font=('Arial', 24), justify='right', bd=10)
+        self.display.grid(row=0, column=0, columnspan=4, sticky="nsew")
+        
+        # Button layout
+        buttons = [
+            ('7', 1, 0), ('8', 1, 1), ('9', 1, 2), ('/', 1, 3),
+            ('4', 2, 0), ('5', 2, 1), ('6', 2, 2), ('*', 2, 3),
+            ('1', 3, 0), ('2', 3, 1), ('3', 3, 2), ('-', 3, 3),
+            ('C', 4, 0), ('0', 4, 1), ('=', 4, 2), ('+', 4, 3)
+        ]
+        
+        # Create buttons
+        for (text, row, col) in buttons:
+            btn = ttk.Button(self, text=text, 
+                           command=lambda t=text: self.on_button_click(t))
+            btn.grid(row=row, column=col, sticky="nsew", padx=2, pady=2)
+        
+        # Configure grid weights
+        for i in range(5):
+            self.grid_rowconfigure(i, weight=1)
+        for i in range(4):
+            self.grid_columnconfigure(i, weight=1)
+    
+    def on_button_click(self, text):
+        current = self.display.get()
+        
+        if text == '=':
+            try:
+                result = str(eval(current))
+                self.display.delete(0, tk.END)
+                self.display.insert(0, result)
+                if self.target_entry:
+                    self.target_entry.delete(0, tk.END)
+                    self.target_entry.insert(0, result)
+            except:
+                self.display.delete(0, tk.END)
+                self.display.insert(0, "Error")
+        elif text == 'C':
+            self.display.delete(0, tk.END)
+        else:
+            self.display.insert(tk.END, text)
 
 def upload_file_to_cloudinary(file_path_param):
     # import cloudinary.uploader
@@ -6193,6 +6310,88 @@ class AlwaysOnTopInputDialog(tk.Toplevel):
     def get_result(self):
         self.wait_window(self)
         return self.result
+
+
+def open_calculator():
+    calc_win = tk.Toplevel()
+    calc_win.title("Calculator")
+    calc_win.configure(bg="#2e2e2e")
+    calc_win.resizable(False, False)
+
+    entry = tk.Entry(calc_win, width=18, font=('Helvetica', 28), bd=0, bg="#1e1e1e", fg="white", justify='right')
+    entry.grid(row=0, column=0, columnspan=4, pady=(10, 20), padx=10, ipady=20)
+
+    # Button styles
+    btn_config = {
+        "font": ('Helvetica', 18),
+        "bd": 0,
+        "width": 5,
+        "height": 2,
+        "bg": "#3c3f41",
+        "fg": "white",
+        "activebackground": "#505354",
+        "activeforeground": "white"
+    }
+
+    special_btn_config = {
+        "=": {"bg": "#4caf50", "activebackground": "#45a049"},
+        "C": {"bg": "#f44336", "activebackground": "#e53935"},
+        "/": {"bg": "#ff9800"},
+        "*": {"bg": "#ff9800"},
+        "-": {"bg": "#ff9800"},
+        "+": {"bg": "#ff9800"},
+    }
+
+    def on_click(value):
+        if value == '=':
+            try:
+                result = eval(entry.get())
+                entry.delete(0, tk.END)
+                entry.insert(tk.END, result)
+            except:
+                entry.delete(0, tk.END)
+                entry.insert(tk.END, "Error")
+        elif value == 'C':
+            entry.delete(0, tk.END)
+        else:
+            entry.insert(tk.END, value)
+
+    buttons = [
+        '7', '8', '9', '/',
+        '4', '5', '6', '*',
+        '1', '2', '3', '-',
+        'C', '0', '=', '+'
+    ]
+
+    row, col = 1, 0
+    for btn in buttons:
+        style = btn_config.copy()
+        if btn in special_btn_config:
+            style.update(special_btn_config[btn])
+
+        pady_val = 5
+        if row == 4:
+            pady_val = 20  
+
+        tk.Button(calc_win, text=btn, command=lambda b=btn: on_click(b), **style).grid(
+            row=row, column=col, padx=5, pady=pady_val
+        )
+
+        col += 1
+        if col > 3:
+            col = 0
+            row += 1
+
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
+
 
 ######################### Main #########################################################
 #
