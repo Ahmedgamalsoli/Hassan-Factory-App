@@ -346,7 +346,7 @@ class SalesSystemApp:
             client.admin.command('ping')
             print("✅ Connected to MongoDB")
         except Exception as e:
-            print("❌ MongoDB connection failed:", e)
+            messagebox.showerror("No Internet Connection", str(e))
 
         db = client["Hassan"]   
 
@@ -372,7 +372,22 @@ class SalesSystemApp:
         self.customer_payments                = db["Customer_Payments"]
         self.supplier_payments                = db["Supplier_Payments"]
         
-        
+
+        field_to_convert1 = 'Customer_info.code'  # Change this to your actual field name
+        field_to_convert2 = 'Customer_info.name'  # Change this to your actual field name
+        docs_to_update = self.sales_collection.find({field_to_convert1: "1212"})
+
+        for doc in docs_to_update:
+            original_value = doc['Customer_info']['code']
+            new_value = original_value + "1"
+            self.sales_collection.update_one(
+                {"_id": doc["_id"]},
+                {"$set": {
+                    field_to_convert1: new_value,
+                    field_to_convert2: "mohsen1"
+                }}
+            )
+            print("updated")
 
 ############################################ Windows ########################################### 
     
@@ -3836,29 +3851,6 @@ class SalesSystemApp:
         )
         messagebox.showinfo("Success", f"Entry {operation_number} added.")
 
-    # def delete_customer_payment(self, tree):
-    #     selected = tree.focus()
-    #     if not selected:
-    #         messagebox.showwarning("Select Entry", "Please select an entry to delete.")
-    #         return
-    #     values = tree.item(selected)["values"]
-    #     op_number = values[1]  # Assuming Operation_Number is in 2nd column
-    #     confirm = messagebox.askyesno("Confirm Delete", f"Delete {op_number}?")
-    #     if confirm:
-    #         self.customer_payment_collection.delete_one({"Operation_Number": op_number})
-    #         tree.delete(selected)
-    #         messagebox.showinfo("Deleted", f"Entry {op_number} deleted.")
-
-    # #TODO
-    # def edit_customer_payment(self,tree):
-        selected = tree.focus()
-        if not selected:
-            messagebox.showwarning("Select Entry", "Please select an entry to edit.")
-            return
-        values = tree.item(selected)["values"]
-        # Implement a pop-up or re-use entries to update MongoDB
-        # Find document by Operation_Number and update it
-
     def on_code_selected(self, event, code_cb, name_cb, collection, invoices_collection, payment_collection, field_path, tree):
         selected_code = code_cb.get().strip()
         if not selected_code:
@@ -3904,14 +3896,14 @@ class SalesSystemApp:
         invoices = invoices_collection.find(query)
         payments = payment_collection.find(query)
 
-        count = invoices_collection.count_documents(query)
-        # count = invoices_collection.find(query).count()
+        # count = invoices_collection.count_documents(query)
+        # # count = invoices_collection.find(query).count()
         
-        query = {'supplier_info.code':'3003'}
-        count2 = invoices_collection.count_documents(query)
+        # query = {'supplier_info.code':'3003'}
+        # count2 = invoices_collection.count_documents(query)
 
-        query = {'supplier_info.code': 3003}
-        count3 = invoices_collection.count_documents(query)
+        # query = {'supplier_info.code': 3003}
+        # count3 = invoices_collection.count_documents(query)
 
         total_debit = 0.0
         total_credit = 0.0
@@ -3921,20 +3913,6 @@ class SalesSystemApp:
         if invoices_collection.name == "Purchases":
             for inv in invoices:
                 financials = inv.get("Financials", {})
-                total_debit += float(financials.get("Net_total", 0))
-                total_credit += float(financials.get("Payed_cash", 0))
-                
-                # Add to sample_data for tree
-                raw_date = inv.get("Date", "").split()[0]
-                date = "-".join(reversed(raw_date.split("/"))) if raw_date else ""
-                invoice_no = inv.get("Receipt_Number", "")
-                payment_method = financials.get("Payment_method", "Cash") #if it doesn't exist then by default = "Cash"
-                sample_data.append((date, invoice_no, str(financials.get("Net_total", 0.0)), str(financials.get("Payed_cash", 0.0)), payment_method))
-                
-            balance += float(total_debit - total_credit)
-        else:
-            for inv in invoices:
-                financials = inv.get("Financials", {})
                 total_debit += float(financials.get("Payed_cash", 0))
                 total_credit += float(financials.get("Net_total", 0))
                 
@@ -3942,10 +3920,24 @@ class SalesSystemApp:
                 raw_date = inv.get("Date", "").split()[0]
                 date = "-".join(reversed(raw_date.split("/"))) if raw_date else ""
                 invoice_no = inv.get("Receipt_Number", "")
-                payment_method = financials.get("Payment_method", "Cash")
+                payment_method = financials.get("Payment_method", "Cash") #if it doesn't exist then by default = "Cash"
                 sample_data.append((date, invoice_no, str(financials.get("Payed_cash", 0.0)), str(financials.get("Net_total", 0.0)), payment_method))
                 
-            balance += float(total_credit - total_debit)
+            # balance += float(total_debit - total_credit)
+        else:
+            for inv in invoices:
+                financials = inv.get("Financials", {})
+                total_debit += float(financials.get("Net_total", 0))
+                total_credit += float(financials.get("Payed_cash", 0))
+                
+                # Add to sample_data for tree
+                raw_date = inv.get("Date", "").split()[0]
+                date = "-".join(reversed(raw_date.split("/"))) if raw_date else ""
+                invoice_no = inv.get("Receipt_Number", "")
+                payment_method = financials.get("Payment_method", "Cash")
+                sample_data.append((date, invoice_no, str(financials.get("Net_total", 0.0)), str(financials.get("Payed_cash", 0.0)), payment_method))
+                
+            # balance += float(total_credit - total_debit)
 
         for payment in payments:
             total_debit += float(payment.get("Debit", 0.0))
@@ -3957,8 +3949,11 @@ class SalesSystemApp:
             payment_no = payment.get("Operation_Number", "")
             payment_method = payment.get("Payment_method", "Cash")
             sample_data.append((date, payment_no, str(payment.get("Debit", 0.0)), str(payment.get("Credit", 0.0)), payment_method))
-
-        balance += float(total_debit - total_credit)
+        
+        if invoices_collection.name == "Purchases": #Case of Supplier/Purchases
+            balance += float(total_credit - total_debit)
+        else: #Case of Customer/Sales
+            balance += float(total_debit - total_credit)
 
         # Insert calculated totals into entries (clear first)
         self.total_debit_entry.delete(0, tk.END)
