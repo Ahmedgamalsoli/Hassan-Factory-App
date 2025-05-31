@@ -83,7 +83,6 @@ class SalesSystemApp:
         "TEX_Calculations": [],    # array of strings
     }
 
-
 ############################ Init ########################################################
 
     def __init__(self, root):
@@ -477,22 +476,17 @@ class SalesSystemApp:
         # Create the top bar
         self.topbar(show_back_button=False)
 
-        # # Main button frame
-        # button_frame = tk.Frame(self.root, bg="white")
-        # button_frame.pack(pady=30)
-
         # Main container
         main_container = tk.Frame(self.root, bg="white")
         main_container.pack(fill=tk.BOTH, expand=True)
-        # canvas.get_tk_widget().grid(row=0, column=0, sticky="nsew")
-
-        # Button frame
-        button_frame = self.create_card_frame(main_container, padding=20)
-        button_frame.grid(row=0, column=1, sticky="nsew", padx=20, pady=10)
         
         # Visualization frames
         left_viz_frame = self.create_card_frame(main_container)
         left_viz_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
+        
+        # Button frame
+        button_frame = self.create_card_frame(main_container, padding=20)
+        button_frame.grid(row=0, column=1, sticky="nsew", padx=20, pady=10)
         
         right_viz_frame = self.create_card_frame(main_container)    
         right_viz_frame.grid(row=0, column=2, sticky="nsew", padx=10, pady=10)
@@ -507,7 +501,6 @@ class SalesSystemApp:
         self.create_left_visualization(left_viz_frame)
         self.create_right_visualization(right_viz_frame)
         
-
         # Define buttons with images, text, and commands
         buttons = [
             {"text": self.t("New Sales Invoice"), "image": "Sales.png",
@@ -522,46 +515,34 @@ class SalesSystemApp:
             "command": lambda: self.new_production_order(self.user_role)},
             {"text": self.t("Employee interactions"), "image": "Employees.png", 
             "command": lambda: self.manage_Employees_window()},
-            # {"text": self.t("Customers"), "image": "customers.png", 
-            # "command": lambda: self.new_customer(self.user_role)},
-            # {"text": self.t("Suppliers"), "image": "suppliers.png", 
-            # "command": lambda: self.new_supplier(self.user_role)},
-            # {"text": self.t("Employees"), "image": "Employees.png", 
-            # "command": lambda: self.new_employee(self.user_role)},
-            # {"text": self.t("Products"), "image": "Products.png", 
-            # "command": lambda: self.new_products(self.user_role)},
-            # {"text": self.t("Materials"), "image": "Materials.png", 
-            # "command": lambda: self.new_material(self.user_role)},
             {"text": self.t("Treasury"), "image": "Treasury.png", 
             "command": lambda: self.Treasury_window(self.user_role)},
             {"text": self.t("Reports"), "image": "Reports.png", 
             "command": lambda: self.trash(self.user_role)},
         ]
 
-        # if self.user_role == "employee":
-        #     buttons.extend([
-        #         {"text": self.t("View Product"), "image": "Exit.png", 
-        #         "command": lambda: self.trash(self.user_role)},
-        #         {"text": self.t("View Orders"), "image": "Exit.png", 
-        #         "command": lambda: self.trash(self.user_role)},
-        #         {"text": self.t("View Customers"), "image": "Exit.png", 
-        #         "command": lambda: self.trash(self.user_role)}
-        #     ])
-
         if self.user_role == "admin":
-            # buttons.insert(1, {"text": self.t("Edit Product"), "image": "Exit.png", 
-            #                 "command": lambda: self.trash(self.user_role)})
             buttons.extend([
-            #     {"text": self.t("Accounting"), "  image": "Exit.png", 
-            #     "command": lambda: self.Accounting_Window()},
-            #     {"text": self.t("Reports"), "image": "Exit.png", 
-            #     "command": lambda: self.trash(self.user_role)},
-            #     {"text": self.t("Big Deals"), "image": "Exit.png", 
-            #     "command": lambda: self.trash(self.user_role)},
                 {"text": self.t("Database"), "image": "database.png", 
                 "command": lambda: self.check_access_and_open(self.user_role)}
             ])
-        self.create_main_buttons(button_frame,buttons)
+        
+        # Create button container with centered alignment
+        button_container = tk.Frame(button_frame, bg=COLORS["card"])
+        button_container.pack(fill=tk.BOTH, expand=True)  # Expand to fill available space
+        
+        # Create frame for the button grid (centered horizontally, aligned to top)
+        grid_container = tk.Frame(button_container, bg=COLORS["card"])
+        grid_container.pack(side="top", pady=20)  # Align to top with padding
+        
+        # Center the grid horizontally
+        grid_container.grid_columnconfigure(0, weight=1)  # Left spacer
+        grid_container.grid_columnconfigure(2, weight=1)  # Right spacer
+        
+        # Create a centered frame inside grid_container
+        centered_frame = tk.Frame(grid_container, bg=COLORS["card"])
+        centered_frame.grid(row=0, column=1)  # Center column
+        
         # Load images and create buttons
         images = []  # Keep references to prevent garbage collection
         columns_per_row = 3  # Number of buttons per row
@@ -571,15 +552,17 @@ class SalesSystemApp:
             for index, btn_info in enumerate(buttons):
                 row = index // columns_per_row
                 column = index % columns_per_row
-
-                btn_frame = tk.Frame(button_frame, bg=COLORS["card"])
-                btn_frame.grid(row=row, column=column, padx=15, pady=15)
-
+                
+                # Create frame for each button
+                btn_frame = tk.Frame(centered_frame, bg=COLORS["card"])
+                btn_frame.grid(row=row, column=column, padx=15, pady=15, sticky="nsew")
+                
                 # Load and process image
                 img_path = os.path.join(BASE_DIR, "Static", "images", btn_info["image"])
                 img = Image.open(img_path).resize((button_size, button_size), Image.LANCZOS)
                 photo_img = ImageTk.PhotoImage(img)
-
+                images.append(photo_img)  # Keep reference to prevent garbage collection
+                
                 # Create modern button
                 btn = tk.Button(btn_frame,
                             image=photo_img,
@@ -591,21 +574,32 @@ class SalesSystemApp:
                             font=("Segoe UI", 10),
                             borderwidth=0,
                             command=btn_info["command"])
-                btn.image = photo_img
-                btn.pack()
-
+                btn.image = photo_img  # Keep reference
+                btn.pack(expand=True, fill=tk.BOTH)  # Make button expand to fill frame
+                
                 # Hover effect
                 btn.bind("<Enter>", lambda e, b=btn: b.config(bg=COLORS["primary"]))
                 btn.bind("<Leave>", lambda e, b=btn: b.config(bg=COLORS["card"]))
-
+                
         except Exception as e:
             print(f"Error loading images: {e}")
             # Fallback to text buttons if images fail
-            fallback_frame = tk.Frame(self.root, bg="white")
-            fallback_frame.pack(pady=20)
-            for btn_info in buttons:
-                tk.Button(fallback_frame, text=btn_info["text"], 
-                        command=btn_info["command"]).pack(side="left", padx=10)
+            text_frame = tk.Frame(centered_frame, bg=COLORS["card"])
+            text_frame.grid(row=0, column=0, sticky="nsew")
+            
+            for i, btn_info in enumerate(buttons):
+                row = i // columns_per_row
+                column = i % columns_per_row
+                
+                btn = tk.Button(text_frame, 
+                            text=btn_info["text"], 
+                            command=btn_info["command"],
+                            padx=10, pady=5,
+                            bg=COLORS["card"],
+                            fg=COLORS["text"],
+                            activebackground=COLORS["highlight"],
+                            font=("Segoe UI", 10))
+                btn.grid(row=row, column=column, padx=5, pady=5)
                 
 
     def create_left_visualization(self, parent):
@@ -1185,6 +1179,7 @@ class SalesSystemApp:
 
         # Check-in/out button
         tk.Button(selection_frame, text=self.t("Check In/Out"), command=lambda: self.toggle_check_in_out(employees_col, appointments_col)).pack(side=tk.RIGHT, padx=10)
+        tk.Button(selection_frame, text=self.t("Check In/Out"), command=lambda: self.toggle_check_in_out(employees_col, appointments_col)).pack(side=tk.RIGHT, padx=10)
 
         # Checked-in employees treeview
         tree_frame = tk.Frame(main_frame)
@@ -1330,8 +1325,10 @@ class SalesSystemApp:
 
         # Employee Selection Section
         tk.Label(main_frame, text=self.t("Employee Selection"), font=('Helvetica', 14, 'bold')).grid(row=0, column=0, columnspan=2, pady=10, sticky='w')
+        tk.Label(main_frame, text=self.t("Employee Selection"), font=('Helvetica', 14, 'bold')).grid(row=0, column=0, columnspan=2, pady=10, sticky='w')
         
         # Employee Name Dropdown
+        tk.Label(main_frame, text=self.t("Employee Name:"), font=('Helvetica', 12)).grid(row=1, column=0, pady=5, sticky='w')
         tk.Label(main_frame, text=self.t("Employee Name:"), font=('Helvetica', 12)).grid(row=1, column=0, pady=5, sticky='w')
         self.withdraw_name_var = tk.StringVar()
         name_cb = ttk.Combobox(main_frame, textvariable=self.withdraw_name_var, 
@@ -1341,6 +1338,7 @@ class SalesSystemApp:
 
         # Employee Code Dropdown
         tk.Label(main_frame, text=self.t("Employee Code:"), font=('Helvetica', 12)).grid(row=2, column=0, pady=5, sticky='w')
+        tk.Label(main_frame, text=self.t("Employee Code:"), font=('Helvetica', 12)).grid(row=2, column=0, pady=5, sticky='w')
         self.withdraw_code_var = tk.StringVar()
         code_cb = ttk.Combobox(main_frame, textvariable=self.withdraw_code_var, 
                             width=30, font=('Helvetica', 12))
@@ -1349,6 +1347,7 @@ class SalesSystemApp:
 
         # Salary Display
         tk.Label(main_frame, text=self.t("Salary:"), font=('Helvetica', 12)).grid(row=3, column=0, pady=5, sticky='w')
+        tk.Label(main_frame, text=self.t("Salary:"), font=('Helvetica', 12)).grid(row=3, column=0, pady=5, sticky='w')
         self.salary_var = tk.StringVar()
         salary_entry = tk.Entry(main_frame, textvariable=self.salary_var, 
                             state='readonly', width=33, font=('Helvetica', 12))
@@ -1356,13 +1355,16 @@ class SalesSystemApp:
 
         # Withdrawal Details Section (updated row numbers)
         tk.Label(main_frame, text=self.t("Withdrawal Details"), font=('Helvetica', 14, 'bold')).grid(row=4, column=0, columnspan=2, pady=10, sticky='w')
+        tk.Label(main_frame, text=self.t("Withdrawal Details"), font=('Helvetica', 14, 'bold')).grid(row=4, column=0, columnspan=2, pady=10, sticky='w')
 
         # Amount Entry
+        tk.Label(main_frame, text=self.t("Withdrawal Amount:"), font=('Helvetica', 12)).grid(row=5, column=0, pady=5, sticky='w')
         tk.Label(main_frame, text=self.t("Withdrawal Amount:"), font=('Helvetica', 12)).grid(row=5, column=0, pady=5, sticky='w')
         self.amount_entry = tk.Entry(main_frame, width=33, font=('Helvetica', 12))
         self.amount_entry.grid(row=5, column=1, pady=5, padx=10, sticky='w')
 
         # Payment Method
+        tk.Label(main_frame, text=self.t("Payment Method"), font=('Helvetica', 12)).grid(row=6, column=0, pady=5, sticky='w')
         tk.Label(main_frame, text=self.t("Payment Method"), font=('Helvetica', 12)).grid(row=6, column=0, pady=5, sticky='w')
         self.payment_method = ttk.Combobox(main_frame, 
                                         values=["Cash", "Instapay", "E_wallet", "Bank Account"],
@@ -1372,6 +1374,7 @@ class SalesSystemApp:
         self.payment_method.grid(row=6, column=1, pady=5, padx=10, sticky='w')
 
         # Previous Withdrawals
+        tk.Label(main_frame, text=self.t("Previous Withdrawals:"), font=('Helvetica', 12)).grid(row=7, column=0, pady=5, sticky='w')
         tk.Label(main_frame, text=self.t("Previous Withdrawals:"), font=('Helvetica', 12)).grid(row=7, column=0, pady=5, sticky='w')
         self.prev_withdrawals = tk.Entry(main_frame, 
                                     state='readonly', 
@@ -2198,14 +2201,23 @@ class SalesSystemApp:
         sales_col = self.get_collection_by_name("Sales")
         products_col = self.get_collection_by_name("Products")
 
-        # Main form frame
-        form_frame = tk.Frame(self.root, padx=20, pady=20)
-        form_frame.pack(fill=tk.BOTH, expand=True)
+        # Main form frame with responsive sizing
+        form_frame = tk.Frame(self.root)
+        form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        
+        # Configure columns - 10 columns with equal weight
+        for i in range(10):
+            form_frame.columnconfigure(i, weight=1)
+        form_frame.grid_rowconfigure(3, weight=1)  # Make items grid expandable
 
-        # Customer Selection Frame
+        # Customer Selection Frame - responsive layout
         customer_frame = tk.Frame(form_frame, bd=1, relief=tk.SOLID, padx=5, pady=5)
-        customer_frame.grid(row=0, column=0, columnspan=2, sticky='w', pady=5)
-
+        customer_frame.grid(row=0, column=0, columnspan=10, sticky='ew', pady=5)
+        
+        # Configure customer frame columns with weights
+        for i in range(10):
+            customer_frame.columnconfigure(i, weight=1 if i in [1, 3, 5, 7, 9] else 0)
+        
         # Create bidirectional customer mappings
         self.customer_code_map = {}  # name -> code
         self.code_name_map = {}      # code -> name
@@ -2226,44 +2238,50 @@ class SalesSystemApp:
             all_codes.append(code)
 
         # Customer Name Combobox
-        tk.Label(customer_frame, text=self.t("Customer Name"), font=("Arial", 12, "bold")).grid(row=0, column=0, sticky='w')
+        tk.Label(customer_frame, text=self.t("Customer Name"), 
+                font=("Arial", 10, "bold")).grid(row=0, column=0, sticky='w')
         self.customer_name_var = tk.StringVar()
-        self.customer_name_cb = ttk.Combobox(customer_frame, textvariable=self.customer_name_var, values=sorted(all_customers))
+        self.customer_name_cb = ttk.Combobox(customer_frame, 
+                                            textvariable=self.customer_name_var, 
+                                            values=sorted(all_customers))
         self.customer_name_cb.grid(row=0, column=1, padx=5, sticky='ew')
 
         # Customer Code Combobox
-        tk.Label(customer_frame, text=self.t("Customer Code"), font=("Arial", 12, "bold")).grid(row=0, column=2, sticky='w')
+        tk.Label(customer_frame, text=self.t("Customer Code"), 
+                font=("Arial", 10, "bold")).grid(row=0, column=2, sticky='w')
         self.customer_code_var = tk.StringVar()
-        self.customer_code_cb = ttk.Combobox(customer_frame, textvariable=self.customer_code_var, values=sorted(all_codes))
+        self.customer_code_cb = ttk.Combobox(customer_frame, 
+                                            textvariable=self.customer_code_var, 
+                                            values=sorted(all_codes))
         self.customer_code_cb.grid(row=0, column=3, padx=5, sticky='ew')
 
         # Balance and Payment Fields
-        tk.Label(customer_frame, text=self.t("Previous Balance"), font=("Arial", 12, "bold")).grid(row=0, column=4, sticky='e', padx=(20, 0))
+        tk.Label(customer_frame, text=self.t("Previous Balance"), 
+                font=("Arial", 10, "bold")).grid(row=0, column=4, sticky='e')
         self.previous_balance_var = tk.StringVar()
-        self.previous_balance_entry = tk.Entry(customer_frame, textvariable=self.previous_balance_var, 
-                                            width=15, state='readonly')
-        self.previous_balance_entry.grid(row=0, column=5, sticky='e')
+        self.previous_balance_entry = tk.Entry(customer_frame, 
+                                            textvariable=self.previous_balance_var, 
+                                            state='readonly')
+        self.previous_balance_entry.grid(row=0, column=5, sticky='ew', padx=5)
 
-        tk.Label(customer_frame, text=self.t("Paid Money"), font=("Arial", 12, "bold")).grid(row=0, column=6, sticky='e', padx=(20, 0))
+        tk.Label(customer_frame, text=self.t("Paid Money"), 
+                font=("Arial", 10, "bold")).grid(row=0, column=6, sticky='e')
         self.payed_cash_var = tk.DoubleVar()
-        self.payed_cash_entry = tk.Entry(customer_frame, textvariable=self.payed_cash_var, width=15)
-        self.payed_cash_entry.grid(row=0, column=7, sticky='e')
+        self.payed_cash_entry = tk.Entry(customer_frame, 
+                                        textvariable=self.payed_cash_var)
+        self.payed_cash_entry.grid(row=0, column=7, sticky='ew', padx=5)
 
         # Payment Method Dropdown
-        tk.Label(customer_frame, text=self.t("Payment Method"), font=("Arial", 12, "bold")).grid(row=0, column=8, sticky='e', padx=(20, 0))
+        tk.Label(customer_frame, text=self.t("Payment Method"), 
+                font=("Arial", 10, "bold")).grid(row=0, column=8, sticky='e')
         self.payment_method_var = tk.StringVar()
         payment_methods = ['Cash', 'E_Wallet', 'Bank_account', 'Instapay']
-        payment_cb = ttk.Combobox(customer_frame, textvariable=self.payment_method_var, 
-                                values=payment_methods, state='readonly', width=12)
-        payment_cb.grid(row=0, column=9, sticky='ew', padx=(5, 10))
+        payment_cb = ttk.Combobox(customer_frame, 
+                                textvariable=self.payment_method_var, 
+                                values=payment_methods, 
+                                state='readonly')
+        payment_cb.grid(row=0, column=9, sticky='ew', padx=5)
         payment_cb.current(0)  # Set default to Cash
-
-        # Configure column weights
-        customer_frame.columnconfigure(1, weight=1)
-        customer_frame.columnconfigure(3, weight=1)
-        customer_frame.columnconfigure(5, weight=0)
-        customer_frame.columnconfigure(7, weight=0)
-        customer_frame.columnconfigure(9, weight=0)
 
         # Synchronization functions
         def sync_from_name(event=None):
@@ -2343,89 +2361,114 @@ class SalesSystemApp:
             messagebox.showerror("Database Error", f"Failed to load products: {str(e)}")
             return
 
-        # Invoice Items Grid
+        # Invoice Items Grid - Responsive Configuration
         columns = self.get_fields_by_name("Sales_Header")
-        col_width = 23
+        num_columns = len(columns)
+        
+        # Create header frame with uniform columns
+        header_frame = tk.Frame(form_frame, bg='#f0f0f0')
+        header_frame.grid(row=2, column=0, columnspan=10, sticky='ew', pady=(20, 0))
+        
+        # Configure header columns with uniform weights
+        for col_idx in range(num_columns):
+            header_frame.columnconfigure(col_idx, weight=1, uniform='cols')
+            tk.Label(header_frame, text=self.t(columns[col_idx]), relief='ridge', 
+                    bg='#f0f0f0', anchor='w', padx=5).grid(row=0, column=col_idx, sticky='ew')
 
-        header_row = tk.Frame(form_frame, bg='#f0f0f0')
-        header_row.grid(row=2, column=0, columnspan=len(columns), sticky='nsew', pady=(20, 0))
-        for col_idx, col in enumerate(columns):
-            tk.Label(header_row, text=self.t(col), width=col_width, relief='ridge',
-                    bg='#f0f0f0', anchor='w').grid(row=0, column=col_idx, sticky='ew')
-            header_row.columnconfigure(col_idx, weight=1)
-
-        # Scrollable Canvas
-        canvas = tk.Canvas(form_frame, highlightthickness=0)
-        scrollbar = tk.Scrollbar(form_frame, orient="vertical", command=canvas.yview)
+        # Scrollable Canvas with responsive sizing - FIXED SOLUTION
+        # Create a container frame for canvas and scrollbar
+        canvas_container = tk.Frame(form_frame)
+        canvas_container.grid(row=3, column=0, columnspan=10, sticky='nsew')
+        canvas_container.grid_rowconfigure(0, weight=1)
+        canvas_container.grid_columnconfigure(0, weight=1)
+        
+        # Create canvas and scrollbar
+        canvas = tk.Canvas(canvas_container, highlightthickness=0)
+        scrollbar = tk.Scrollbar(canvas_container, orient="vertical", command=canvas.yview)
+        
+        # Create a frame inside the canvas for the rows
         self.rows_frame = tk.Frame(canvas)
+        canvas.create_window((0, 0), window=self.rows_frame, anchor="nw", tags="inner_frame")
         
-        self.rows_frame.bind("<Configure>", lambda e: canvas.configure(
-            scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=self.rows_frame, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
+        # Grid layout for canvas and scrollbar
+        canvas.grid(row=0, column=0, sticky="nsew")
+        scrollbar.grid(row=0, column=1, sticky="ns")
+        
+        # Configure scroll region
+        def configure_scroll_region(event):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+        
+        # Configure canvas width
+        def configure_canvas(event):
+            canvas_width = event.width
+            canvas.itemconfig("inner_frame", width=canvas_width)
+        
+        # Bind events
+        self.rows_frame.bind("<Configure>", configure_scroll_region)
+        canvas.bind("<Configure>", configure_canvas)
 
-        canvas.grid(row=3, column=0, columnspan=len(columns), sticky="nsew")
-        scrollbar.grid(row=3, column=len(columns), sticky="ns")
-        
-        form_frame.grid_rowconfigure(3, weight=1)
-        for i in range(len(columns)):
-            form_frame.columnconfigure(i, weight=1)
+        # Set initial width
+        canvas.update_idletasks()
+        canvas_width = canvas.winfo_width()
+        if canvas_width > 1:
+            canvas.itemconfig("inner_frame", width=canvas_width)
 
         self.entries = []
 
-        # Modified create_row function with discount fields
+        # Modified create_row function with responsive widgets
         def create_row(parent, row_number, bg_color):
             row_frame = tk.Frame(parent, bg=bg_color)
-            row_frame.grid(row=row_number, column=0, sticky='ew')
+            row_frame.pack(fill=tk.X)  # Use pack with fill to ensure full width
+            
+            # Configure columns with uniform weights (same as header)
+            for col_idx in range(num_columns):
+                row_frame.columnconfigure(col_idx, weight=1, uniform='cols')
             
             row_entries = []
             for col_idx, col in enumerate(columns):
                 if col == "Product_code":
                     var = tk.StringVar()
-                    cb = ttk.Combobox(row_frame, textvariable=var, values=product_codes, width=col_width-2)
+                    cb = ttk.Combobox(row_frame, textvariable=var, values=product_codes)
                     cb.bind('<<ComboboxSelected>>', lambda e, r=row_number: self.update_product_info(r, "code"))
                     cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_combobox_change(e, r, "code"))
-                    cb.grid(row=0, column=col_idx, sticky='ew')
+                    cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
                     row_entries.append(cb)
                 elif col == "product_name":
                     var = tk.StringVar()
-                    cb = ttk.Combobox(row_frame, textvariable=var, values=product_names, width=col_width-2)
+                    cb = ttk.Combobox(row_frame, textvariable=var, values=product_names)
                     cb.bind('<<ComboboxSelected>>', lambda e, r=row_number: self.update_product_info(r, "name"))
                     cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_combobox_change(e, r, "name"))
-                    cb.grid(row=0, column=col_idx, sticky='ew')
+                    cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
                     row_entries.append(cb)
                 elif col == "unit":
                     var = tk.StringVar()
-                    cb = ttk.Combobox(row_frame, textvariable=var, values=[], width=col_width-2)
+                    cb = ttk.Combobox(row_frame, textvariable=var, values=[])
                     cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_unit_change(e, r))
-                    cb.grid(row=0, column=col_idx, sticky='ew')
+                    cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
                     row_entries.append(cb)
                 elif col == "Discount Type":
                     var = tk.StringVar()
                     cb = ttk.Combobox(row_frame, textvariable=var, 
                                     values=["Percentage", "Value"], 
-                                    state="readonly",
-                                    width=col_width-2)
-                    cb.current(0)  # Default to Percentage
-                    cb.grid(row=0, column=col_idx, sticky='ew')
+                                    state="readonly")
+                    cb.current(0)
+                    cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
                     row_entries.append(cb)
                 elif col == "Discount Value":
                     var = tk.StringVar()
-                    entry = tk.Entry(row_frame, textvariable=var, width=col_width+1)
+                    entry = tk.Entry(row_frame, textvariable=var)
                     entry.bind('<KeyRelease>', lambda e, r=row_number: self.calculate_totals(r))
-                    entry.grid(row=0, column=col_idx, sticky='ew')
+                    entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
                     row_entries.append(entry)
                 elif col in ["Unit_Price", "Total_QTY", "Total_Price"]:
-                    entry = tk.Entry(row_frame, width=col_width+1, relief='flat', state='readonly')
-                    entry.grid(row=0, column=col_idx, sticky='ew')
+                    entry = tk.Entry(row_frame, relief='flat', state='readonly')
+                    entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
                     row_entries.append(entry)
                 else:
-                    entry = tk.Entry(row_frame, width=col_width+1, relief='sunken')
+                    entry = tk.Entry(row_frame, relief='sunken')
                     entry.bind('<KeyRelease>', lambda e, r=row_number: self.calculate_totals(r))
-                    entry.grid(row=0, column=col_idx, sticky='ew')
+                    entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
                     row_entries.append(entry)
-                
-                row_frame.columnconfigure(col_idx, weight=1)
             
             return row_entries
 
@@ -2440,16 +2483,20 @@ class SalesSystemApp:
 
         # Buttons Frame
         button_frame = tk.Frame(form_frame)
-        button_frame.grid(row=4, column=0, columnspan=len(columns), pady=10, sticky='ew')
+        button_frame.grid(row=4, column=0, columnspan=10, pady=10, sticky='ew')
         
-        tk.Button(button_frame, text=self.t("➕ Add 3 More Rows"), command=add_three_rows,
-                bg='#4CAF50', fg='white').grid(row=0, column=0, padx=5, sticky='w')
-        tk.Button(button_frame, text=self.t("💾 Save Invoice"), 
-                command=lambda: self.save_invoice(sales_col, customers_col,products_col),
-                bg='#2196F3', fg='white').grid(row=0, column=1, padx=5, sticky='e')
-        
+        # Configure button frame columns
         button_frame.columnconfigure(0, weight=1)
         button_frame.columnconfigure(1, weight=1)
+        
+        add_btn = tk.Button(button_frame, text=self.t("➕ Add 3 More Rows"), 
+                        command=add_three_rows, bg='#4CAF50', fg='white')
+        add_btn.grid(row=0, column=0, padx=5, sticky='w')
+        
+        save_btn = tk.Button(button_frame, text=self.t("💾 Save Invoice"), 
+                            command=lambda: self.save_invoice(sales_col, customers_col, products_col),
+                            bg='#2196F3', fg='white')
+        save_btn.grid(row=0, column=1, padx=5, sticky='e')
 
     def new_Purchase_invoice(self, user_role):
         # Clear current window
@@ -2468,20 +2515,29 @@ class SalesSystemApp:
         purchases_col = self.get_collection_by_name("Purchases")
         materials_col = self.get_collection_by_name("Materials")
 
-        # Main form frame
-        form_frame = tk.Frame(self.root, padx=20, pady=20)
-        form_frame.pack(fill=tk.BOTH, expand=True)
+        # Main form frame with responsive sizing
+        form_frame = tk.Frame(self.root)
+        form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        
+        # Configure columns - 10 columns with equal weight
+        for i in range(10):
+            form_frame.columnconfigure(i, weight=1)
+        form_frame.grid_rowconfigure(3, weight=1)  # Make items grid expandable
 
-        # Supplier Selection Frame
-        Supplier_frame = tk.Frame(form_frame, bd=1, relief=tk.SOLID, padx=5, pady=5)
-        Supplier_frame.grid(row=0, column=0, columnspan=2, sticky='w', pady=5)
-
-        # Create bidirectional Supplier mappings
+        # Supplier Selection Frame - responsive layout
+        supplier_frame = tk.Frame(form_frame, bd=1, relief=tk.SOLID, padx=5, pady=5)
+        supplier_frame.grid(row=0, column=0, columnspan=10, sticky='ew', pady=5)
+        
+        # Configure supplier frame columns with weights
+        for i in range(10):
+            supplier_frame.columnconfigure(i, weight=1 if i in [1, 3, 5, 7, 9] else 0)
+        
+        # Create bidirectional supplier mappings
         self.supplier_code_map = {}  # name -> code
         self.code_name_map = {}      # code -> name
         self.supplier_balance_map = {}  # name -> balance
 
-        # Populate Supplier data
+        # Populate supplier data
         all_suppliers = []
         all_codes = []
         for supp in suppliers_col.find():
@@ -2496,44 +2552,50 @@ class SalesSystemApp:
             all_codes.append(code)
 
         # Supplier Name Combobox
-        tk.Label(Supplier_frame, text=self.t("Supplier Name"), font=("Arial", 12, "bold")).grid(row=0, column=0, sticky='w')
+        tk.Label(supplier_frame, text=self.t("Supplier Name"), 
+                font=("Arial", 10, "bold")).grid(row=0, column=0, sticky='w')
         self.supplier_name_var = tk.StringVar()
-        self.supplier_name_cb = ttk.Combobox(Supplier_frame, textvariable=self.supplier_name_var, values=sorted(all_suppliers))
+        self.supplier_name_cb = ttk.Combobox(supplier_frame, 
+                                            textvariable=self.supplier_name_var, 
+                                            values=sorted(all_suppliers))
         self.supplier_name_cb.grid(row=0, column=1, padx=5, sticky='ew')
 
         # Supplier Code Combobox
-        tk.Label(Supplier_frame, text=self.t("Supplier Code"), font=("Arial", 12, "bold")).grid(row=0, column=2, sticky='w')
+        tk.Label(supplier_frame, text=self.t("Supplier Code"), 
+                font=("Arial", 10, "bold")).grid(row=0, column=2, sticky='w')
         self.supplier_code_var = tk.StringVar()
-        self.supplier_code_cb = ttk.Combobox(Supplier_frame, textvariable=self.supplier_code_var, values=sorted(all_codes))
+        self.supplier_code_cb = ttk.Combobox(supplier_frame, 
+                                            textvariable=self.supplier_code_var, 
+                                            values=sorted(all_codes))
         self.supplier_code_cb.grid(row=0, column=3, padx=5, sticky='ew')
 
         # Balance and Payment Fields
-        tk.Label(Supplier_frame, text=self.t("Previous Balance"), font=("Arial", 12, "bold")).grid(row=0, column=4, sticky='e', padx=(20, 0))
+        tk.Label(supplier_frame, text=self.t("Previous Balance"), 
+                font=("Arial", 10, "bold")).grid(row=0, column=4, sticky='e')
         self.previous_balance_var = tk.StringVar()
-        self.previous_balance_entry = tk.Entry(Supplier_frame, textvariable=self.previous_balance_var, 
-                                            width=15, state='readonly')
-        self.previous_balance_entry.grid(row=0, column=5, sticky='e')
+        self.previous_balance_entry = tk.Entry(supplier_frame, 
+                                            textvariable=self.previous_balance_var, 
+                                            state='readonly')
+        self.previous_balance_entry.grid(row=0, column=5, sticky='ew', padx=5)
 
-        tk.Label(Supplier_frame, text=self.t("Paid Money"), font=("Arial", 12, "bold")).grid(row=0, column=6, sticky='e', padx=(20, 0))
+        tk.Label(supplier_frame, text=self.t("Paid Money"), 
+                font=("Arial", 10, "bold")).grid(row=0, column=6, sticky='e')
         self.payed_cash_var = tk.DoubleVar()
-        self.payed_cash_entry = tk.Entry(Supplier_frame, textvariable=self.payed_cash_var, width=15)
-        self.payed_cash_entry.grid(row=0, column=7, sticky='e')
+        self.payed_cash_entry = tk.Entry(supplier_frame, 
+                                        textvariable=self.payed_cash_var)
+        self.payed_cash_entry.grid(row=0, column=7, sticky='ew', padx=5)
 
         # Payment Method Dropdown
-        tk.Label(Supplier_frame, text=self.t("Payment Method"), font=("Arial", 12, "bold")).grid(row=0, column=8, sticky='e', padx=(20, 0))
+        tk.Label(supplier_frame, text=self.t("Payment Method"), 
+                font=("Arial", 10, "bold")).grid(row=0, column=8, sticky='e')
         self.payment_method_var = tk.StringVar()
         payment_methods = ['Cash', 'E_Wallet', 'Bank_account', 'Instapay']
-        payment_cb = ttk.Combobox(Supplier_frame, textvariable=self.payment_method_var, 
-                                values=payment_methods, state='readonly', width=12)
-        payment_cb.grid(row=0, column=9, sticky='ew', padx=(5, 10))
+        payment_cb = ttk.Combobox(supplier_frame, 
+                                textvariable=self.payment_method_var, 
+                                values=payment_methods, 
+                                state='readonly')
+        payment_cb.grid(row=0, column=9, sticky='ew', padx=5)
         payment_cb.current(0)  # Set default to Cash
-
-        # Configure column weights
-        Supplier_frame.columnconfigure(1, weight=1)
-        Supplier_frame.columnconfigure(3, weight=1)
-        Supplier_frame.columnconfigure(5, weight=0)
-        Supplier_frame.columnconfigure(7, weight=0)
-        Supplier_frame.columnconfigure(9, weight=0)
 
         # Synchronization functions
         def sync_from_name(event=None):
@@ -2562,7 +2624,7 @@ class SalesSystemApp:
             sync_from_code()
         ])
 
-        # Load product data
+        # Load material data
         try:
             materials = list(materials_col.find())
             all_units = set()
@@ -2610,92 +2672,116 @@ class SalesSystemApp:
             all_units = sorted(list(all_units))
 
         except Exception as e:
-            messagebox.showerror("Database Error", f"Failed to load products: {str(e)}")
+            messagebox.showerror("Database Error", f"Failed to load materials: {str(e)}")
             return
 
-        # Invoice Items Grid
+        # Invoice Items Grid - Responsive Configuration
         columns = self.get_fields_by_name("Materials_Header")
-        col_width = 23
+        num_columns = len(columns)
+        
+        # Create header frame with uniform columns
+        header_frame = tk.Frame(form_frame, bg='#f0f0f0')
+        header_frame.grid(row=2, column=0, columnspan=10, sticky='ew', pady=(20, 0))
+        
+        # Configure header columns with uniform weights
+        for col_idx in range(num_columns):
+            header_frame.columnconfigure(col_idx, weight=1, uniform='cols')
+            tk.Label(header_frame, text=self.t(columns[col_idx]), relief='ridge', 
+                    bg='#f0f0f0', anchor='w', padx=5).grid(row=0, column=col_idx, sticky='ew')
 
-        header_row = tk.Frame(form_frame, bg='#f0f0f0')
-        header_row.grid(row=2, column=0, columnspan=len(columns), sticky='nsew', pady=(20, 0))
-        for col_idx, col in enumerate(columns):
-            tk.Label(header_row, text=self.t(col), width=col_width, relief='ridge',
-                    bg='#f0f0f0', anchor='w').grid(row=0, column=col_idx, sticky='ew')
-            header_row.columnconfigure(col_idx, weight=1)
-
-        # Scrollable Canvas
-        canvas = tk.Canvas(form_frame, highlightthickness=0)
-        scrollbar = tk.Scrollbar(form_frame, orient="vertical", command=canvas.yview)
+        # Scrollable Canvas with responsive sizing
+        canvas_container = tk.Frame(form_frame)
+        canvas_container.grid(row=3, column=0, columnspan=10, sticky='nsew')
+        canvas_container.grid_rowconfigure(0, weight=1)
+        canvas_container.grid_columnconfigure(0, weight=1)
+        
+        # Create canvas and scrollbar
+        canvas = tk.Canvas(canvas_container, highlightthickness=0)
+        scrollbar = tk.Scrollbar(canvas_container, orient="vertical", command=canvas.yview)
+        
+        # Create a frame inside the canvas for the rows
         self.rows_frame = tk.Frame(canvas)
+        canvas.create_window((0, 0), window=self.rows_frame, anchor="nw", tags="inner_frame")
         
-        self.rows_frame.bind("<Configure>", lambda e: canvas.configure(
-            scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=self.rows_frame, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
+        # Grid layout for canvas and scrollbar
+        canvas.grid(row=0, column=0, sticky="nsew")
+        scrollbar.grid(row=0, column=1, sticky="ns")
+        
+        # Configure scroll region
+        def configure_scroll_region(event):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+        
+        # Configure canvas width
+        def configure_canvas(event):
+            canvas_width = event.width
+            canvas.itemconfig("inner_frame", width=canvas_width)
+        
+        # Bind events
+        self.rows_frame.bind("<Configure>", configure_scroll_region)
+        canvas.bind("<Configure>", configure_canvas)
 
-        canvas.grid(row=3, column=0, columnspan=len(columns), sticky="nsew")
-        scrollbar.grid(row=3, column=len(columns), sticky="ns")
-        
-        form_frame.grid_rowconfigure(3, weight=1)
-        for i in range(len(columns)):
-            form_frame.columnconfigure(i, weight=1)
+        # Set initial width
+        canvas.update_idletasks()
+        canvas_width = canvas.winfo_width()
+        if canvas_width > 1:
+            canvas.itemconfig("inner_frame", width=canvas_width)
 
         self.entries = []
 
-        # Modified create_row function with discount fields
+        # Modified create_row function with responsive widgets
         def create_row(parent, row_number, bg_color):
             row_frame = tk.Frame(parent, bg=bg_color)
-            row_frame.grid(row=row_number, column=0, sticky='ew')
+            row_frame.pack(fill=tk.X)  # Use pack with fill to ensure full width
+            
+            # Configure columns with uniform weights (same as header)
+            for col_idx in range(num_columns):
+                row_frame.columnconfigure(col_idx, weight=1, uniform='cols')
             
             row_entries = []
             for col_idx, col in enumerate(columns):
                 if col == "Material_code":
                     var = tk.StringVar()
-                    cb = ttk.Combobox(row_frame, textvariable=var, values=material_codes, width=col_width-2)
+                    cb = ttk.Combobox(row_frame, textvariable=var, values=material_codes)
                     cb.bind('<<ComboboxSelected>>', lambda e, r=row_number: self.update_material_info(r, "code"))
                     cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_combobox_change_purchase(e, r, "code"))
-                    cb.grid(row=0, column=col_idx, sticky='ew')
+                    cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
                     row_entries.append(cb)
                 elif col == "Material_name":
                     var = tk.StringVar()
-                    cb = ttk.Combobox(row_frame, textvariable=var, values=material_names, width=col_width-2)
+                    cb = ttk.Combobox(row_frame, textvariable=var, values=material_names)
                     cb.bind('<<ComboboxSelected>>', lambda e, r=row_number: self.update_material_info(r, "name"))
                     cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_combobox_change_purchase(e, r, "name"))
-                    cb.grid(row=0, column=col_idx, sticky='ew')
+                    cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
                     row_entries.append(cb)
                 elif col == "unit":
                     var = tk.StringVar()
-                    cb = ttk.Combobox(row_frame, textvariable=var, values=[], width=col_width-2)
+                    cb = ttk.Combobox(row_frame, textvariable=var, values=[])
                     cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_unit_change(e, r))
-                    cb.grid(row=0, column=col_idx, sticky='ew')
+                    cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
                     row_entries.append(cb)
                 elif col == "Discount Type":
                     var = tk.StringVar()
                     cb = ttk.Combobox(row_frame, textvariable=var, 
                                     values=["Percentage", "Value"], 
-                                    state="readonly",
-                                    width=col_width-2)
-                    cb.current(0)  # Default to Percentage
-                    cb.grid(row=0, column=col_idx, sticky='ew')
+                                    state="readonly")
+                    cb.current(0)
+                    cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
                     row_entries.append(cb)
                 elif col == "Discount Value":
                     var = tk.StringVar()
-                    entry = tk.Entry(row_frame, textvariable=var, width=col_width+1)
+                    entry = tk.Entry(row_frame, textvariable=var)
                     entry.bind('<KeyRelease>', lambda e, r=row_number: self.calculate_totals(r))
-                    entry.grid(row=0, column=col_idx, sticky='ew')
+                    entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
                     row_entries.append(entry)
                 elif col in ["Unit_Price", "Total_QTY", "Total_Price"]:
-                    entry = tk.Entry(row_frame, width=col_width+1, relief='flat', state='readonly')
-                    entry.grid(row=0, column=col_idx, sticky='ew')
+                    entry = tk.Entry(row_frame, relief='flat', state='readonly')
+                    entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
                     row_entries.append(entry)
                 else:
-                    entry = tk.Entry(row_frame, width=col_width+1, relief='sunken')
+                    entry = tk.Entry(row_frame, relief='sunken')
                     entry.bind('<KeyRelease>', lambda e, r=row_number: self.calculate_totals(r))
-                    entry.grid(row=0, column=col_idx, sticky='ew')
+                    entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
                     row_entries.append(entry)
-                
-                row_frame.columnconfigure(col_idx, weight=1)
             
             return row_entries
 
@@ -2710,16 +2796,20 @@ class SalesSystemApp:
 
         # Buttons Frame
         button_frame = tk.Frame(form_frame)
-        button_frame.grid(row=4, column=0, columnspan=len(columns), pady=10, sticky='ew')
+        button_frame.grid(row=4, column=0, columnspan=10, pady=10, sticky='ew')
         
-        tk.Button(button_frame, text=self.t("➕ Add 3 More Rows"), command=add_three_rows,
-                bg='#4CAF50', fg='white').grid(row=0, column=0, padx=5, sticky='w')
-        tk.Button(button_frame, text=self.t("💾 Save Invoice"), 
-                command=lambda: self.save_invoice_purchase(purchases_col, suppliers_col,materials_col),
-                bg='#2196F3', fg='white').grid(row=0, column=1, padx=5, sticky='e')
-        
+        # Configure button frame columns
         button_frame.columnconfigure(0, weight=1)
         button_frame.columnconfigure(1, weight=1)
+        
+        add_btn = tk.Button(button_frame, text=self.t("➕ Add 3 More Rows"), 
+                        command=add_three_rows, bg='#4CAF50', fg='white')
+        add_btn.grid(row=0, column=0, padx=5, sticky='w')
+        
+        save_btn = tk.Button(button_frame, text=self.t("💾 Save Invoice"), 
+                            command=lambda: self.save_invoice_purchase(purchases_col, suppliers_col, materials_col),
+                            bg='#2196F3', fg='white')
+        save_btn.grid(row=0, column=1, padx=5, sticky='e')
 
     def new_production_order(self, user_role):
         # Clear current window
@@ -2756,9 +2846,14 @@ class SalesSystemApp:
             self.product_code_map[code] = {'name': name, 'stock_quantity': stock}
             self.product_name_map[name] = {'code': code, 'stock_quantity': stock}
 
-        # Main form frame
-        form_frame = tk.Frame(self.root, padx=20, pady=20)
-        form_frame.pack(fill=tk.BOTH, expand=True)
+        # Main form frame with responsive sizing
+        form_frame = tk.Frame(self.root)
+        form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        
+        # Configure columns - 9 columns with equal weight
+        for i in range(9):
+            form_frame.columnconfigure(i, weight=1)
+        form_frame.grid_rowconfigure(1, weight=1)  # Make items grid expandable
 
         # Define columns
         columns = [
@@ -2766,35 +2861,58 @@ class SalesSystemApp:
             "Material Qty", "Product Code", "Product Name",
             "Product Available Qty", "Product Qty", "Waste"
         ]
+        num_columns = len(columns)
 
-        # Create header row
+        # Create header frame with uniform columns
         header_frame = tk.Frame(form_frame, bg='#f0f0f0')
-        header_frame.grid(row=0, column=0, columnspan=len(columns), sticky='ew', pady=(10, 0))
+        header_frame.grid(row=0, column=0, columnspan=num_columns, sticky='ew', pady=(10, 0))
         
-        for col_idx, col in enumerate(columns):
+        # Configure header columns with uniform weights
+        for col_idx in range(num_columns):
+            header_frame.columnconfigure(col_idx, weight=1, uniform='cols')
             tk.Label(header_frame, 
-                    text=self.t(col),
+                    text=self.t(columns[col_idx]),
                     bg='#f0f0f0',
                     relief='ridge',
-                    width=18,
-                    justify='center').grid(row=0, column=col_idx, sticky='ew')
-            header_frame.columnconfigure(col_idx, weight=1)
+                    anchor='center',
+                    padx=5).grid(row=0, column=col_idx, sticky='ew')
 
-        # Scrollable Canvas
-        canvas = tk.Canvas(form_frame)
-        scrollbar = tk.Scrollbar(form_frame, orient="vertical", command=canvas.yview)
-        self.rows_frame = tk.Frame(canvas)
-
-        self.rows_frame.bind("<Configure>", lambda e: canvas.configure(
-            scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=self.rows_frame, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-
-        canvas.grid(row=1, column=0, sticky="nsew")
-        scrollbar.grid(row=1, column=1, sticky="ns")
+        # Scrollable Canvas with responsive sizing
+        canvas_container = tk.Frame(form_frame)
+        canvas_container.grid(row=1, column=0, columnspan=num_columns, sticky='nsew')
+        canvas_container.grid_rowconfigure(0, weight=1)
+        canvas_container.grid_columnconfigure(0, weight=1)
         
-        form_frame.grid_rowconfigure(1, weight=1)
-        form_frame.columnconfigure(0, weight=1)
+        # Create canvas and scrollbar
+        canvas = tk.Canvas(canvas_container, highlightthickness=0)
+        scrollbar = tk.Scrollbar(canvas_container, orient="vertical", command=canvas.yview)
+        
+        # Create a frame inside the canvas for the rows
+        self.rows_frame = tk.Frame(canvas)
+        canvas.create_window((0, 0), window=self.rows_frame, anchor="nw", tags="inner_frame")
+        
+        # Grid layout for canvas and scrollbar
+        canvas.grid(row=0, column=0, sticky="nsew")
+        scrollbar.grid(row=0, column=1, sticky="ns")
+        
+        # Configure scroll region
+        def configure_scroll_region(event):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+        
+        # Configure canvas width
+        def configure_canvas(event):
+            canvas_width = event.width
+            canvas.itemconfig("inner_frame", width=canvas_width)
+        
+        # Bind events
+        self.rows_frame.bind("<Configure>", configure_scroll_region)
+        canvas.bind("<Configure>", configure_canvas)
+
+        # Set initial width
+        canvas.update_idletasks()
+        canvas_width = canvas.winfo_width()
+        if canvas_width > 1:
+            canvas.itemconfig("inner_frame", width=canvas_width)
 
         self.production_entries = []
 
@@ -2804,29 +2922,34 @@ class SalesSystemApp:
 
         # Control buttons
         button_frame = tk.Frame(form_frame)
-        button_frame.grid(row=2, column=0, columnspan=len(columns), pady=10, sticky='ew')
-
+        button_frame.grid(row=2, column=0, columnspan=num_columns, pady=10, sticky='ew')
+        
+        button_frame.columnconfigure(0, weight=1)
+        button_frame.columnconfigure(1, weight=1)
+        
         tk.Button(button_frame, text=self.t("➕ Add Row"),
-                command=self.add_production_row,bg='#4CAF50', fg='white').pack(side=tk.LEFT, padx=5)
+                command=self.add_production_row,
+                bg='#4CAF50', fg='white').grid(row=0, column=0, padx=5, sticky='w')
         tk.Button(button_frame, text=self.t("💾 Save Order"),
-                command=self.save_production_order,bg='#2196F3', fg='white').pack(side=tk.RIGHT, padx=5)
-        # tk.Button(button_frame, text=self.t("➕ Add 3 More Rows"), command=add_three_rows,
-        #         bg='#4CAF50', fg='white').grid(row=0, column=0, padx=5, sticky='w')
-        # tk.Button(button_frame, text=self.t("💾 Save Invoice"), 
-        #         command=lambda: self.save_invoice_purchase(purchases_col, suppliers_col,materials_col),
-        #         bg='#2196F3', fg='white').grid(row=0, column=1, padx=5, sticky='e')
+                command=self.save_production_order,
+                bg='#2196F3', fg='white').grid(row=0, column=1, padx=5, sticky='e')
+        
         self.update_combobox_values()
 
     def add_production_row(self):
         row_idx = len(self.production_entries)
-        row_frame = tk.Frame(self.rows_frame)
-        row_frame.grid(row=row_idx, column=0, sticky='ew')
+        row_frame = tk.Frame(self.rows_frame, bg='white' if row_idx % 2 == 0 else '#f0f0f0')
+        row_frame.pack(fill=tk.X)  # Use pack with fill to ensure full width
+        
+        # Configure columns with uniform weights
+        for col_idx in range(9):
+            row_frame.columnconfigure(col_idx, weight=1, uniform='cols')
         
         entries = []
         for col_idx in range(9):
             if col_idx in [0, 1]:  # Material Code/Name comboboxes
-                cb = ttk.Combobox(row_frame, width=24)
-                cb.grid(row=0, column=col_idx, padx=2)
+                cb = ttk.Combobox(row_frame)
+                cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
                 if col_idx == 0:
                     cb.bind('<<ComboboxSelected>>', lambda e, idx=row_idx: self.update_material_code(idx))
                 else:
@@ -2834,8 +2957,8 @@ class SalesSystemApp:
                 entries.append(cb)
             
             elif col_idx in [4, 5]:  # Product Code/Name comboboxes
-                cb = ttk.Combobox(row_frame, width=24)
-                cb.grid(row=0, column=col_idx, padx=2)
+                cb = ttk.Combobox(row_frame)
+                cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
                 if col_idx == 4:
                     cb.bind('<<ComboboxSelected>>', lambda e, idx=row_idx: self.update_product_code(idx))
                 else:
@@ -2843,16 +2966,14 @@ class SalesSystemApp:
                 entries.append(cb)
             
             elif col_idx in [2, 6]:  # Available quantities (readonly)
-                entry = tk.Entry(row_frame, width=26, state='readonly')
-                entry.grid(row=0, column=col_idx, padx=2)
+                entry = tk.Entry(row_frame, state='readonly')
+                entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
                 entries.append(entry)
             
             else:
-                entry = tk.Entry(row_frame, width=26)
-                entry.grid(row=0, column=col_idx, padx=2)
+                entry = tk.Entry(row_frame)
+                entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
                 entries.append(entry)
-            
-            row_frame.columnconfigure(col_idx, weight=1)
         
         self.production_entries.append(entries)
         self.update_combobox_values()
@@ -3901,10 +4022,25 @@ class SalesSystemApp:
             if 'supplier_name' not in ordered_fields:
                 ordered_fields.append('supplier_name')
 
+        if 'Customer_info' in ordered_fields:
+            ordered_fields.remove('Customer_info')
+            if 'customer_code' not in ordered_fields:
+                ordered_fields.append('customer_code')
+            if 'customer_name' not in ordered_fields:
+                ordered_fields.append('customer_name')
+        if 'supplier_info' in ordered_fields:
+            ordered_fields.remove('supplier_info')
+            if 'supplier_code' not in ordered_fields:
+                ordered_fields.append('supplier_code')
+            if 'supplier_name' not in ordered_fields:
+                ordered_fields.append('supplier_name')
+
         self.entries = {}
         for i, label in enumerate(ordered_fields):
+            # if label in ["Id", "Operation_Number", "Customer_info", "supplier_info", "Time"]:
             if label in ["Id", "Operation_Number", "Customer_info", "supplier_info", "Time"]:
                 continue
+
 
             tk.Label(form_frame, text=self.t(label), font=("Arial", 12), anchor="w").grid(row=i, column=0, sticky="w", pady=5)
 
@@ -4034,6 +4170,7 @@ class SalesSystemApp:
             unique_id = tree.item(selected_item)['values'][id_index]
             print(f"unique_id type: {get_type(unique_id)}")
 
+
             current_collection = self.get_collection_by_name(collection_name)
             first_document = current_collection.find_one({columns[id_index]: unique_id})
 
@@ -4116,6 +4253,17 @@ class SalesSystemApp:
                     if 'supplier_name' not in columns:
                         columns.append('supplier_name')
                         
+                    if 'customer_code' not in columns:
+                        columns.append('customer_code')
+                    if 'customer_name' not in columns:
+                        columns.append('customer_name')
+                if 'supplier_info' in columns:
+                    columns.remove('supplier_info')
+                    if 'supplier_code' not in columns:
+                        columns.append('supplier_code')
+                    if 'supplier_name' not in columns:
+                        columns.append('supplier_name')
+                        
                 tree["columns"] = columns
                 for col in columns:
                     tree.heading(col, text=col)
@@ -4123,6 +4271,14 @@ class SalesSystemApp:
 
                 for row_data in data:
                     units = row_data.get('Units', [])
+                    if(collection_name == "Customer_Payments"):
+                        customer_info = row_data.get('Customer_info', {})
+                        row_data['customer_code'] = customer_info.get('code', '')
+                        row_data['customer_name'] = customer_info.get('name', '')
+                    if(collection_name == "Supplier_Payments"):
+                        customer_info = row_data.get('supplier_info', {})
+                        row_data['supplier_code'] = customer_info.get('code', '')
+                        row_data['supplier_name'] = customer_info.get('name', '')
                     if(collection_name == "Customer_Payments"):
                         customer_info = row_data.get('Customer_info', {})
                         row_data['customer_code'] = customer_info.get('code', '')
@@ -4833,6 +4989,7 @@ class SalesSystemApp:
         elif collection_name == "Expenses":
             return ["expense_id", "expense_type", "amount", "date", "description"]
         
+        # elif collection_name == "Employee_appointimets":
         elif collection_name == "Employee_appointimets":
             return ["employee_code", "employee_name", "check_in", "check_out", "duration"]
         
@@ -4856,11 +5013,14 @@ class SalesSystemApp:
         
         elif collection_name == "Customer_Payments":
             return ["Operation_Number", "Time", "Credit", "Debit","Payment_method", "Customer_info"]
+            return ["Operation_Number", "Time", "Credit", "Debit","Payment_method", "Customer_info"]
 
         elif collection_name == "Supplier_Payments":
             return ["Operation_Number", "Time", "Credit", "Debit","Payment_method", "supplier_info"]
+            return ["Operation_Number", "Time", "Credit", "Debit","Payment_method", "supplier_info"]
 
         elif collection_name == "Production":
+            return ["material_code", "material_qty", "product_code","product_qty", "timestamp", "waste"]
             return ["material_code", "material_qty", "product_code","product_qty", "timestamp", "waste"]
 
         elif collection_name == "TEX_Calculations":
@@ -5178,13 +5338,13 @@ class SalesSystemApp:
             # التحقق من وجود بيانات العميل
             supplier_name = self.supplier_name_var.get().strip()
             if not supplier_name:
-                messagebox.showerror("خطأ", "يرجى اختيار عميل")
+                messagebox.showerror("خطأ", "يرجى اختيار مورد")
                 return
 
             # البحث عن العميل في قاعدة البيانات
             supplier = suppliers_col.find_one({"Name": supplier_name})
             if not supplier:
-                messagebox.showerror("خطأ", "العميل غير مسجل!")
+                messagebox.showerror("خطأ", "المورد غير مسجل!")
                 return
 
             # التحقق من المبلغ المدفوع
@@ -5287,7 +5447,7 @@ class SalesSystemApp:
                 "PDF_Path": "",
                 
             }
-
+            
             # تحديث المخزون
             for code, new_stock in stock_updates.items():
                 materials_col.update_one(
@@ -5387,6 +5547,16 @@ class SalesSystemApp:
             import arabic_reshaper
             from reportlab.lib.utils import ImageReader
 
+            # Load Arabic font
+            try:
+                arabic_font_path = resource_path(os.path.join("Static", "Fonts", "Amiri-Regular.ttf"))
+                if not os.path.exists(arabic_font_path):
+                    raise FileNotFoundError(f"Font file not found: {arabic_font_path}")
+                pdfmetrics.registerFont(TTFont('Arabic', arabic_font_path))
+            except Exception as e:
+                print(f"Error loading Arabic font: {e}")
+                # Fallback to a default font if Arabic font fails to load
+                pdfmetrics.registerFont(TTFont('Arabic', 'Arial'))
             # Load Arabic font
             try:
                 arabic_font_path = resource_path(os.path.join("Static", "Fonts", "Amiri-Regular.ttf"))
@@ -5542,6 +5712,16 @@ class SalesSystemApp:
             import arabic_reshaper
             from reportlab.lib.utils import ImageReader
 
+            # Load Arabic font
+            try:
+                arabic_font_path = resource_path(os.path.join("Static", "Fonts", "Amiri-Regular.ttf"))
+                if not os.path.exists(arabic_font_path):
+                    raise FileNotFoundError(f"Font file not found: {arabic_font_path}")
+                pdfmetrics.registerFont(TTFont('Arabic', arabic_font_path))
+            except Exception as e:
+                print(f"Error loading Arabic font: {e}")
+                # Fallback to a default font if Arabic font fails to load
+                pdfmetrics.registerFont(TTFont('Arabic', 'Arial'))
             # Load Arabic font
             try:
                 arabic_font_path = resource_path(os.path.join("Static", "Fonts", "Amiri-Regular.ttf"))
@@ -6106,6 +6286,17 @@ def resource_path(relative_path):
 
     return os.path.join(base_path, relative_path)
 
+
+
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
 
 ######################### Main #########################################################
 #
