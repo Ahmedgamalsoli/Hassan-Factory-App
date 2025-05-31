@@ -5573,10 +5573,20 @@ class SalesSystemApp:
                 reshaped_text = arabic_reshaper.reshape(str(text))
                 return get_display(reshaped_text)
 
-            # إنشاء مسار الحفظ
+            # Create save path
             desktop = os.path.join(os.path.expanduser('~'), 'Desktop')
-            file_name = f"فاتورة بيع_{str(invoice_data['Receipt_Number']).replace("INV-", "").strip()}.pdf"
-            pdf_path = os.path.join(desktop, file_name)
+            invoice_folder = os.path.join(desktop, "sale_invoice")
+
+            # Create folder if it doesn't exist
+            if not os.path.exists(invoice_folder):
+                os.makedirs(invoice_folder)
+
+            # Generate file name
+            invoice_number = str(invoice_data['Receipt_Number']).replace("INV-", "").strip()
+            file_name = f"فاتورة بيع_{invoice_number}.pdf"
+
+            # Full PDF path
+            pdf_path = os.path.join(invoice_folder, file_name)
 
             # إعداد مستند PDF
             c = canvas.Canvas(pdf_path, pagesize=A5)
@@ -5737,11 +5747,21 @@ class SalesSystemApp:
             def format_arabic(text):
                 reshaped_text = arabic_reshaper.reshape(str(text))
                 return get_display(reshaped_text)
-
-            # إنشاء مسار الحفظ
+ 
+            # Create save path
             desktop = os.path.join(os.path.expanduser('~'), 'Desktop')
-            file_name = f"فاتورة شراء_{invoice_data['Receipt_Number']}.pdf"
-            pdf_path = os.path.join(desktop, file_name)
+            invoice_folder = os.path.join(desktop, "purchase_invoice")
+
+            # Create folder if it doesn't exist
+            if not os.path.exists(invoice_folder):
+                os.makedirs(invoice_folder)
+
+            # Generate file name
+            invoice_number = str(invoice_data['Receipt_Number']).replace("INV-", "").strip()
+            file_name = f"فاتورة شراء_{invoice_number}.pdf"
+
+            # Full PDF path
+            pdf_path = os.path.join(invoice_folder, file_name)
 
             # إعداد مستند PDF
             c = canvas.Canvas(pdf_path, pagesize=A5)
