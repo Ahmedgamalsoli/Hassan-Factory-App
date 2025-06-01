@@ -1179,7 +1179,7 @@ class SalesSystemApp:
 
         # Check-in/out button
         tk.Button(selection_frame, text=self.t("Check In/Out"), command=lambda: self.toggle_check_in_out(employees_col, appointments_col)).pack(side=tk.RIGHT, padx=10)
-        tk.Button(selection_frame, text=self.t("Check In/Out"), command=lambda: self.toggle_check_in_out(employees_col, appointments_col)).pack(side=tk.RIGHT, padx=10)
+        # tk.Button(selection_frame, text=self.t("Check In/Out"), command=lambda: self.toggle_check_in_out(employees_col, appointments_col)).pack(side=tk.RIGHT, padx=10)
 
         # Checked-in employees treeview
         tree_frame = tk.Frame(main_frame)
@@ -1428,9 +1428,11 @@ class SalesSystemApp:
             
             # Update salary display
             employees_col = self.get_collection_by_name("Employees")
+            code = int(code)
             emp = employees_col.find_one({'Id': code})
             if emp:
                 salary = emp.get('Salary', 0)
+                salary = float(salary)
                 self.salary_var.set(f"{salary:.2f}")
             else:
                 self.salary_var.set("0.00")
@@ -1508,7 +1510,7 @@ class SalesSystemApp:
         self.employee_code_map = {}
         self.employee_name_map = {}
         for emp in employees_col.find():
-            code = emp.get('Id', '')
+            code = int(emp.get('Id', ''))
             name = emp.get('Name', '')
             self.employee_code_map[code] = {
                 'name': name,
@@ -1761,8 +1763,9 @@ class SalesSystemApp:
                 check_in = daily_attendance.get('check_in')
                 check_out = daily_attendance.get('check_out')
                 
-                from_time = format_time(check_in, format="short") if check_in else "--"
-                to_time = format_time(check_out, format="short") if check_out else "--"
+                # With this:
+                from_time = check_in.strftime("%H:%M") if check_in else "--"
+                to_time = check_out.strftime("%H:%M") if check_out else "--"
                 
                 if check_in and check_out:
                     # Calculate duration
@@ -1816,7 +1819,9 @@ class SalesSystemApp:
 
     def calculate_net_salary(self, event=None):
         try:
-            base_salary = self.employee_code_map.get(self.emp_code_var.get(), {}).get('salary', 0)
+            base_salary = self.employee_code_map.get(int(self.emp_code_var.get()), {}).get('salary', 0)
+            base_salary = float(base_salary)
+            print(base_salary)
             total_withdrawls = float(self.total_withdrawls.get())
             delay_penalty = float(self.delay_amount.get() or 0)
             overtime_bonus = float(self.overtime_amount.get() or 0)
@@ -1840,7 +1845,7 @@ class SalesSystemApp:
                 'employee_code': self.emp_code_var.get(),
                 'employee_name': self.emp_name_var.get(),
                 'month_year': f"{self.month_var.get()} {self.year_var.get()}",
-                'base_salary': self.employee_code_map[self.emp_code_var.get()]['salary'],
+                'base_salary': self.employee_code_map.get(int(self.emp_code_var.get()), {}).get('salary', 0),
                 'total_withdrawls': float(self.total_withdrawls.get()),
                 'delay_penalty': float(self.delay_amount.get() or 0),
                 'overtime_bonus': float(self.overtime_amount.get() or 0),
@@ -1863,6 +1868,9 @@ class SalesSystemApp:
                 'payment_method': self.payment_method.get(),
                 'timestamp': datetime.now()
             }
+            
+            
+
             
             # Input validation
             if not all([salary_data['employee_code'], salary_data['month_year']]):
@@ -4385,7 +4393,7 @@ class SalesSystemApp:
                 except Exception as e:
                     messagebox.showerror("Upload Error", f"Failed to upload image: {e}")
                     return
-            elif any(word in field.lower() for word in ["stock_quantity","instapay","bank_account","e-wallet"]):
+            elif any(word in field.lower() for word in ["stock_quantity","instapay","bank_account","e-wallet"]) or (current_collection.name == "Customers" and field=="Sales") :
                 value = widget.get()
                 try: 
                     value = int(value)
@@ -5177,7 +5185,7 @@ class SalesSystemApp:
             return None
 
     def save_invoice(self, sales_col, customers_col, products_col):
-        """حفظ الفاتورة مع التحقق من المخزون وتحديثه"""
+        """Prepare invoice data and show preview without saving"""
         try:
             # التحقق من وجود بيانات العميل
             customer_name = self.customer_name_var.get().strip()
@@ -5193,9 +5201,6 @@ class SalesSystemApp:
 
             # التحقق من المبلغ المدفوع
             payed_cash = float(self.payed_cash_var.get() or 0)
-            # if payed_cash < 0:
-            #     messagebox.showerror("خطأ", "المبلغ المدفوع لا يمكن أن يكون سالبًا!")
-            #     return
 
             # جمع بيانات العناصر والتحقق من المخزون
             items = []
@@ -5213,7 +5218,6 @@ class SalesSystemApp:
                     return
 
                 try:
-                    
                     # استخراج القيم من الحقول
                     qty = float(row[4].get() or 0)
                     numbering = float(row[3].get() or 0)
@@ -5235,6 +5239,7 @@ class SalesSystemApp:
 
                     # التحقق من المخزون
                     stock = product.get("stock_quantity", 0)
+                    stock = float(stock)
                     if total_qty > stock:
                         messagebox.showerror("نقص في المخزون", 
                             f"الكمية المطلوبة ({total_qty}) تتجاوز المخزون ({stock}) للمنتج {product_code}")
@@ -5264,10 +5269,12 @@ class SalesSystemApp:
             if not items:
                 messagebox.showerror("خطأ", "لا توجد عناصر في الفاتورة!")
                 return
+                
             # توليد رقم الفاتورة
             invoice_number = self.generate_invoice_number()
             if not invoice_number:
                 return
+                
             # إنشاء بيانات الفاتورة الكاملة
             invoice_data = {
                 "Receipt_Number": invoice_number,
@@ -5289,20 +5296,212 @@ class SalesSystemApp:
                     "Payment_method": self.payment_method_var.get()
                 },
                 "PDF_Path": "",
-                
             }
 
-            # تحديث المخزون
-            for code, new_stock in stock_updates.items():
+            # Store prepared invoice data for preview/final save
+            self.pending_invoice_data = invoice_data
+            self.pending_stock_updates = stock_updates
+            self.pending_customer_id = customer["_id"]
+            self.pending_collections = (sales_col, customers_col, products_col)
+            
+            # Show preview instead of saving immediately
+            self.show_invoice_preview(invoice_data)
+            
+        except Exception as e:
+            messagebox.showerror("خطأ", f"فشل في العملية: {str(e)}")
+
+    def show_invoice_preview(self, invoice_data):
+        """Display invoice preview window"""
+        preview_win = tk.Toplevel(self.root)
+        preview_win.title("معاينة الفاتورة")
+        preview_win.geometry("900x650")
+        preview_win.resizable(True, True)
+        
+        # Create a container frame for canvas and scrollbar
+        container = tk.Frame(preview_win)
+        container.pack(fill=tk.BOTH, expand=True)
+        
+        # Create canvas and scrollbar
+        canvas = tk.Canvas(container)
+        scrollbar = ttk.Scrollbar(container, orient=tk.VERTICAL, command=canvas.yview)
+        
+        # Pack scrollbar and canvas
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        # Configure canvas scrolling
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        
+        # Create scrollable frame inside canvas
+        main_frame = tk.Frame(canvas)
+        canvas_frame = canvas.create_window((0, 0), window=main_frame, anchor="nw")
+        
+        # Update the scroll region when main_frame size changes
+        main_frame.bind("<Configure>", lambda event, canvas=canvas: canvas.configure(scrollregion=canvas.bbox("all")))
+        
+        # Header section
+        header_frame = tk.Frame(main_frame)
+        header_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        tk.Label(
+            header_frame, 
+            text=f"فاتورة مبيعات رقم: {invoice_data['Receipt_Number']}", 
+            font=("Arial", 16, "bold"),
+            fg="#2c3e50"
+        ).pack(side=tk.TOP, anchor=tk.CENTER)
+        
+        tk.Label(
+            header_frame, 
+            text=f"التاريخ: {invoice_data['Date']}", 
+            font=("Arial", 12)
+        ).pack(side=tk.TOP, anchor=tk.CENTER, pady=5)
+        
+        # Customer info section
+        cust_frame = ttk.LabelFrame(main_frame, text="معلومات العميل")
+        cust_frame.pack(fill=tk.X, pady=10, padx=20)
+        
+        cust_grid = tk.Frame(cust_frame)
+        cust_grid.pack(fill=tk.X, padx=10, pady=10)
+        
+        labels = [
+            ("اسم العميل:", invoice_data['Customer_info']['name']),
+            ("كود العميل:", invoice_data['Customer_info']['code']),
+            ("التليفون:", invoice_data['Customer_info']['phone1']),
+            ("العنوان:", invoice_data['Customer_info']['address'])
+        ]
+        
+        for i, (label, value) in enumerate(labels):
+            tk.Label(cust_grid, text=label, font=("Arial", 11, "bold"), 
+                    anchor="e", width=10).grid(row=i//2, column=(i%2)*2, sticky="e", padx=5, pady=2)
+            tk.Label(cust_grid, text=value, font=("Arial", 11), 
+                    anchor="w", width=25).grid(row=i//2, column=(i%2)*2+1, sticky="w", padx=5, pady=2)
+        
+        # Items table
+        table_frame = ttk.LabelFrame(main_frame, text="تفاصيل الفاتورة")
+        table_frame.pack(fill=tk.BOTH, expand=True, pady=10, padx=20)
+        
+        # Create Treeview with scrollbars
+        tree_scroll = tk.Scrollbar(table_frame)
+        tree_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        columns = ("#", "الصنف", "الوحدة", "الكمية", "العدد", "السعر", "الخصم", "الإجمالي")
+        tree = ttk.Treeview(
+            table_frame, 
+            columns=columns, 
+            show="headings", 
+            height=10,
+            yscrollcommand=tree_scroll.set
+        )
+        tree_scroll.config(command=tree.yview)
+        
+        # Define columns
+        col_widths = [40, 150, 70, 60, 60, 80, 80, 80]
+        for idx, col in enumerate(columns):
+            tree.heading(col, text=col)
+            tree.column(col, width=col_widths[idx], anchor="center")
+        
+        tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        # Add items to tree
+        for i, item in enumerate(invoice_data["Items"], 1):
+            discount = f"{item['Discount_Value']}{'%' if item['Discount_Type'] == 'Percentage' else 'ج'}"
+            tree.insert("", "end", values=(
+                i,
+                item["product_name"],
+                item["Unit"],
+                f"{item['QTY']}",
+                f"{item['numbering']}",
+                f"{item['Unit_price']:.2f}",
+                discount,
+                f"{item['Final_Price']:.2f}"
+            ))
+        
+        # Financial summary
+        fin_frame = ttk.LabelFrame(main_frame, text="الملخص المالي")
+        fin_frame.pack(fill=tk.X, pady=10, padx=20)
+        
+        fin_data = [
+            ("صافي الفاتورة:", f"{invoice_data['Financials']['Net_total']:,.2f} ج"),
+            ("رصيد سابق:", f"{invoice_data['Financials']['Previous_balance']:,.2f} ج"),
+            ("إجمالي المستحق:", f"{invoice_data['Financials']['Total_balance']:,.2f} ج"),
+            ("المدفوع:", f"{invoice_data['Financials']['Payed_cash']:,.2f} ج"),
+            ("الباقي:", f"{invoice_data['Financials']['Remaining_balance']:,.2f} ج"),
+            ("طريقة الدفع:", invoice_data['Financials']['Payment_method'])
+        ]
+        
+        for i, (label, value) in enumerate(fin_data):
+            row = tk.Frame(fin_frame)
+            row.pack(fill=tk.X, padx=10, pady=3)
+            tk.Label(row, text=label, font=("Arial", 11, "bold"), 
+                    width=15, anchor="e").pack(side=tk.LEFT)
+            tk.Label(row, text=value, font=("Arial", 11), 
+                    fg="#2980b9", anchor="w").pack(side=tk.LEFT)
+        
+        # Action buttons (outside scrollable area)
+        btn_frame = tk.Frame(preview_win)
+        btn_frame.pack(fill=tk.X, pady=20)
+        
+        tk.Button(
+            btn_frame, 
+            text="إلغاء الفاتورة", 
+            command=preview_win.destroy,
+            bg="#e74c3c",
+            fg="white",
+            font=("Arial", 12, "bold"),
+            padx=15,
+            pady=5
+        ).pack(side=tk.LEFT, padx=10)
+        
+        tk.Button(
+            btn_frame, 
+            text="حفظ الفاتورة", 
+            command=lambda: self.finalize_invoice_save(preview_win),
+            bg="#27ae60",
+            fg="white",
+            font=("Arial", 12, "bold"),
+            padx=15,
+            pady=5
+        ).pack(side=tk.RIGHT, padx=10)
+        
+        # Center window
+        preview_win.update_idletasks()
+        width = preview_win.winfo_width()
+        height = preview_win.winfo_height()
+        x = (preview_win.winfo_screenwidth() // 2) - (width // 2)
+        y = (preview_win.winfo_screenheight() // 2) - (height // 2)
+        preview_win.geometry(f'+{x}+{y}')
+        
+        # Add mouse wheel scrolling
+        def _on_mousewheel(event):
+            canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        
+        canvas.bind_all("<MouseWheel>", _on_mousewheel)
+
+    def finalize_invoice_save(self, preview_window):
+        """Finalize invoice saving process and generate PDF"""
+        if not hasattr(self, 'pending_invoice_data') or not self.pending_invoice_data:
+            messagebox.showerror("خطأ", "لا توجد بيانات فاتورة معلقة!")
+            preview_window.destroy()
+            return
+        
+        try:
+            sales_col, customers_col, products_col = self.pending_collections
+            invoice_data = self.pending_invoice_data
+            total_amount = invoice_data['Financials']['Net_total']
+            payed_cash = invoice_data['Financials']['Payed_cash']
+            
+            # 1. Update stock
+            for code, new_stock in self.pending_stock_updates.items():
                 products_col.update_one(
                     {"product_code": code},
                     {"$set": {"stock_quantity": new_stock}}
                 )
-
-            # تحديث بيانات العميل
-            new_balance = (customer.get("Balance", 0) + total_amount) - payed_cash
+            
+            # 2. Update customer
+            new_balance = (invoice_data['Financials']['Previous_balance'] + total_amount) - payed_cash
             customers_col.update_one(
-                {"_id": customer["_id"]},
+                {"_id": self.pending_customer_id},
                 {
                     "$set": {
                         "Last_purchase_date": datetime.now(),
@@ -5315,33 +5514,42 @@ class SalesSystemApp:
                     }
                 }
             )
-
-            # توليد ملف PDF
+            
+            # 3. Generate PDF
             pdf_path = self.generate_pdf(invoice_data)
             if not pdf_path:
+                preview_window.destroy()
                 return
-            # إضافة مسار PDF للبيانات
+                
+            # 4. Save invoice with PDF path
             invoice_data["PDF_Path"] = pdf_path
-            
-            # حفظ الفاتورة في قاعدة البيانات
             sales_col.insert_one(invoice_data)
-
+            
+            # 5. Show success and clean up
             messagebox.showinfo("نجاح", f"تم حفظ فاتورة البيع رقم {invoice_data['Receipt_Number']}")
             self.clear_invoice_form()
-
+            
+            # 6. Clear pending data
+            del self.pending_invoice_data
+            del self.pending_stock_updates
+            del self.pending_customer_id
+            del self.pending_collections
+            
+            preview_window.destroy()
+            
         except Exception as e:
-            messagebox.showerror("خطأ", f"فشل في العملية: {str(e)}")
-            # logging.error(f"Invoice Error: {str(e)}")
+            messagebox.showerror("خطأ", f"فشل في حفظ الفاتورة: {str(e)}")
+            preview_window.destroy()
     def save_invoice_purchase(self, purchase_col, suppliers_col, materials_col):
-        """حفظ الفاتورة مع التحقق من المخزون وتحديثه"""
+        """Prepare purchase invoice data and show preview without saving"""
         try:
-            # التحقق من وجود بيانات العميل
+            # التحقق من وجود بيانات المورد
             supplier_name = self.supplier_name_var.get().strip()
             if not supplier_name:
                 messagebox.showerror("خطأ", "يرجى اختيار مورد")
                 return
 
-            # البحث عن العميل في قاعدة البيانات
+            # البحث عن المورد في قاعدة البيانات
             supplier = suppliers_col.find_one({"Name": supplier_name})
             if not supplier:
                 messagebox.showerror("خطأ", "المورد غير مسجل!")
@@ -5349,9 +5557,6 @@ class SalesSystemApp:
 
             # التحقق من المبلغ المدفوع
             payed_cash = float(self.payed_cash_var.get() or 0)
-            # if payed_cash < 0:
-            #     messagebox.showerror("خطأ", "المبلغ المدفوع لا يمكن أن يكون سالبًا!")
-            #     return
 
             # جمع بيانات العناصر والتحقق من المخزون
             items = []
@@ -5369,7 +5574,6 @@ class SalesSystemApp:
                     return
 
                 try:
-                    
                     # استخراج القيم من الحقول
                     qty = float(row[4].get() or 0)
                     numbering = float(row[3].get() or 0)
@@ -5391,12 +5595,13 @@ class SalesSystemApp:
 
                     # التحقق من المخزون
                     stock = material.get("stock_quantity", 0)
-                    if total_qty > stock:
-                        messagebox.showerror("نقص في المخزون", 
-                            f"الكمية المطلوبة ({total_qty}) تتجاوز المخزون ({stock}) للمنتج {material_code}")
-                        return
+                    stock = float(stock)
+                    # if total_qty > stock:
+                    #     messagebox.showerror("نقص في المخزون", 
+                    #         f"الكمية المطلوبة ({total_qty}) تتجاوز المخزون ({stock}) للمنتج {material_code}")
+                    #     return
 
-                    stock_updates[material_code] = stock - total_qty
+                    stock_updates[material_code] = stock + total_qty
                     total_amount += final_price
 
                     # إضافة العنصر
@@ -5420,16 +5625,18 @@ class SalesSystemApp:
             if not items:
                 messagebox.showerror("خطأ", "لا توجد عناصر في الفاتورة!")
                 return
+                
             # توليد رقم الفاتورة
             invoice_number = self.generate_invoice_number_purchase()
             if not invoice_number:
                 return
+                
             # إنشاء بيانات الفاتورة الكاملة
             invoice_data = {
                 "Receipt_Number": invoice_number,
                 "Date": datetime.now().strftime("%d/%m/%Y %H:%M"),
                 "supplier_info": {
-                    "code": supplier.get("Code", "CUST-001"),
+                    "code": supplier.get("Code", "SUP-001"),
                     "name": supplier.get("Name", "غير معروف"),
                     "phone1": supplier.get("Phone_number1", ""),
                     "phone2": supplier.get("Phone_number2", ""),
@@ -5445,50 +5652,276 @@ class SalesSystemApp:
                     "Payment_method": self.payment_method_var.get()
                 },
                 "PDF_Path": "",
-                
             }
+
+            # Store prepared invoice data for preview/final save
+            self.pending_invoice_data = invoice_data
+            self.pending_stock_updates = stock_updates
+            self.pending_supplier_id = supplier["_id"]
+            self.pending_collections = (purchase_col, suppliers_col, materials_col)
             
-            # تحديث المخزون
-            for code, new_stock in stock_updates.items():
+            # Show preview instead of saving immediately
+            self.show_invoice_preview_purchase(invoice_data)
+            
+        except Exception as e:
+            messagebox.showerror("خطأ", f"فشل في العملية: {str(e)}")
+
+    def show_invoice_preview_purchase(self, invoice_data):
+        """Display purchase invoice preview window"""
+        preview_win = tk.Toplevel(self.root)
+        preview_win.title("معاينة فاتورة الشراء")
+        preview_win.geometry("900x650")
+        preview_win.resizable(True, True)
+        
+        # Create a container frame for canvas and scrollbar
+        container = tk.Frame(preview_win)
+        container.pack(fill=tk.BOTH, expand=True)
+        
+        # Create canvas and scrollbar
+        canvas = tk.Canvas(container)
+        scrollbar = ttk.Scrollbar(container, orient=tk.VERTICAL, command=canvas.yview)
+        
+        # Pack scrollbar and canvas
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        # Configure canvas scrolling
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        
+        # Create scrollable frame inside canvas
+        main_frame = tk.Frame(canvas)
+        canvas_frame = canvas.create_window((0, 0), window=main_frame, anchor="nw")
+        
+        # Update the scroll region when main_frame size changes
+        main_frame.bind("<Configure>", lambda event, canvas=canvas: canvas.configure(scrollregion=canvas.bbox("all")))
+        
+        # Header section
+        header_frame = tk.Frame(main_frame)
+        header_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        tk.Label(
+            header_frame, 
+            text=f"فاتورة شراء رقم: {invoice_data['Receipt_Number']}", 
+            font=("Arial", 16, "bold"),
+            fg="#2c3e50"
+        ).pack(side=tk.TOP, anchor=tk.CENTER)
+        
+        tk.Label(
+            header_frame, 
+            text=f"التاريخ: {invoice_data['Date']}", 
+            font=("Arial", 12)
+        ).pack(side=tk.TOP, anchor=tk.CENTER, pady=5)
+        
+        # Supplier info section
+        supp_frame = ttk.LabelFrame(main_frame, text="معلومات المورد")
+        supp_frame.pack(fill=tk.X, pady=10, padx=20)
+        
+        supp_grid = tk.Frame(supp_frame)
+        supp_grid.pack(fill=tk.X, padx=10, pady=10)
+        
+        labels = [
+            ("اسم المورد:", invoice_data['supplier_info']['name']),
+            ("كود المورد:", invoice_data['supplier_info']['code']),
+            ("التليفون:", invoice_data['supplier_info']['phone1']),
+            ("العنوان:", invoice_data['supplier_info']['address'])
+        ]
+        
+        for i, (label, value) in enumerate(labels):
+            tk.Label(supp_grid, text=label, font=("Arial", 11, "bold"), 
+                    anchor="e", width=10).grid(row=i//2, column=(i%2)*2, sticky="e", padx=5, pady=2)
+            tk.Label(supp_grid, text=value, font=("Arial", 11), 
+                    anchor="w", width=25).grid(row=i//2, column=(i%2)*2+1, sticky="w", padx=5, pady=2)
+        
+        # Items table
+        table_frame = ttk.LabelFrame(main_frame, text="تفاصيل الفاتورة")
+        table_frame.pack(fill=tk.BOTH, expand=True, pady=10, padx=20)
+        
+        # Create Treeview with scrollbars
+        tree_scroll = tk.Scrollbar(table_frame)
+        tree_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        columns = ("#", "الصنف", "الوحدة", "الكمية", "العدد", "السعر", "الخصم", "الإجمالي")
+        tree = ttk.Treeview(
+            table_frame, 
+            columns=columns, 
+            show="headings", 
+            height=10,
+            yscrollcommand=tree_scroll.set
+        )
+        tree_scroll.config(command=tree.yview)
+        
+        # Define columns
+        col_widths = [40, 150, 70, 60, 60, 80, 80, 80]
+        for idx, col in enumerate(columns):
+            tree.heading(col, text=col)
+            tree.column(col, width=col_widths[idx], anchor="center")
+        
+        tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        # Add items to tree
+        for i, item in enumerate(invoice_data["Items"], 1):
+            discount = f"{item['Discount_Value']}{'%' if item['Discount_Type'] == 'Percentage' else 'ج'}"
+            tree.insert("", "end", values=(
+                i,
+                item["material_name"],
+                item["Unit"],
+                f"{item['QTY']}",
+                f"{item['numbering']}",
+                f"{item['Unit_price']:.2f}",
+                discount,
+                f"{item['Final_Price']:.2f}"
+            ))
+        
+        # Financial summary
+        fin_frame = ttk.LabelFrame(main_frame, text="الملخص المالي")
+        fin_frame.pack(fill=tk.X, pady=10, padx=20)
+        
+        fin_data = [
+            ("صافي الفاتورة:", f"{invoice_data['Financials']['Net_total']:,.2f} ج"),
+            ("رصيد سابق:", f"{invoice_data['Financials']['Previous_balance']:,.2f} ج"),
+            ("إجمالي المستحق:", f"{invoice_data['Financials']['Total_balance']:,.2f} ج"),
+            ("المدفوع:", f"{invoice_data['Financials']['Payed_cash']:,.2f} ج"),
+            ("الباقي:", f"{invoice_data['Financials']['Remaining_balance']:,.2f} ج"),
+            ("طريقة الدفع:", invoice_data['Financials']['Payment_method'])
+        ]
+        
+        for i, (label, value) in enumerate(fin_data):
+            row = tk.Frame(fin_frame)
+            row.pack(fill=tk.X, padx=10, pady=3)
+            tk.Label(row, text=label, font=("Arial", 11, "bold"), 
+                    width=15, anchor="e").pack(side=tk.LEFT)
+            tk.Label(row, text=value, font=("Arial", 11), 
+                    fg="#2980b9", anchor="w").pack(side=tk.LEFT)
+        
+        # Action buttons (outside scrollable area)
+        btn_frame = tk.Frame(preview_win)
+        btn_frame.pack(fill=tk.X, pady=20)
+        
+        tk.Button(
+            btn_frame, 
+            text="إلغاء الفاتورة", 
+            command=preview_win.destroy,
+            bg="#e74c3c",
+            fg="white",
+            font=("Arial", 12, "bold"),
+            padx=15,
+            pady=5
+        ).pack(side=tk.LEFT, padx=10)
+        
+        tk.Button(
+            btn_frame, 
+            text="حفظ الفاتورة", 
+            command=lambda: self.finalize_purchase_invoice(preview_win),
+            bg="#27ae60",
+            fg="white",
+            font=("Arial", 12, "bold"),
+            padx=15,
+            pady=5
+        ).pack(side=tk.RIGHT, padx=10)
+        
+        # Center window
+        preview_win.update_idletasks()
+        width = preview_win.winfo_width()
+        height = preview_win.winfo_height()
+        x = (preview_win.winfo_screenwidth() // 2) - (width // 2)
+        y = (preview_win.winfo_screenheight() // 2) - (height // 2)
+        preview_win.geometry(f'+{x}+{y}')
+        
+        # Add mouse wheel scrolling
+        def _on_mousewheel(event):
+            canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        
+        canvas.bind_all("<MouseWheel>", _on_mousewheel)
+
+    def finalize_purchase_invoice(self, preview_window):
+        """Finalize purchase invoice saving process and generate PDF"""
+        if not hasattr(self, 'pending_invoice_data') or not self.pending_invoice_data:
+            messagebox.showerror("خطأ", "لا توجد بيانات فاتورة معلقة!")
+            preview_window.destroy()
+            return
+        
+        try:
+            purchase_col, suppliers_col, materials_col = self.pending_collections
+            invoice_data = self.pending_invoice_data
+            total_amount = invoice_data['Financials']['Net_total']
+            payed_cash = invoice_data['Financials']['Payed_cash']
+            
+            # 1. Update stock
+            for code, new_stock in self.pending_stock_updates.items():
                 materials_col.update_one(
-                    {"product_code": code},
+                    {"material_code": code},
                     {"$set": {"stock_quantity": new_stock}}
                 )
-
-            # تحديث بيانات العميل
-            new_balance = (supplier.get("Balance", 0) + total_amount) - payed_cash
+            
+            # 2. Update supplier
+            new_balance = (invoice_data['Financials']['Previous_balance'] + total_amount) - payed_cash
             suppliers_col.update_one(
-                {"_id": supplier["_id"]},
+                {"_id": self.pending_supplier_id},
                 {
                     "$set": {
                         "Last_purchase": datetime.now(),
                         "Balance": new_balance
                     },
                     "$inc": {
-                        "Sales": 1,
-                        "Debit": total_amount,
-                        "Credit": payed_cash
+                        "Purchases": 1,
+                        "Debit": payed_cash,
+                        "Credit": total_amount
                     }
                 }
             )
-
-            # توليد ملف PDF
+            
+            # 3. Generate PDF
             pdf_path = self.generate_pdf_purchase(invoice_data)
             if not pdf_path:
+                preview_window.destroy()
                 return
-            # إضافة مسار PDF للبيانات
+                
+            # 4. Save invoice with PDF path
             invoice_data["PDF_Path"] = pdf_path
-            
-            # حفظ الفاتورة في قاعدة البيانات
             purchase_col.insert_one(invoice_data)
-
+            
+            # 5. Show success and clean up
             messagebox.showinfo("نجاح", f"تم حفظ فاتورة الشراء رقم {invoice_data['Receipt_Number']}")
-            print(3)
             self.clear_invoice_form_purchase()
-            print(4)
+            
+            # 6. Clear pending data
+            del self.pending_invoice_data
+            del self.pending_stock_updates
+            del self.pending_supplier_id
+            del self.pending_collections
+            
+            preview_window.destroy()
+            
         except Exception as e:
-            messagebox.showerror("خطأ", f"فشل في العملية: {str(e)}")
-            # logging.error(f"Invoice Error: {str(e)}")
+            messagebox.showerror("خطأ", f"فشل في حفظ الفاتورة: {str(e)}")
+            preview_window.destroy()
+
+    def clear_invoice_form_purchase(self):
+        """Clear the purchase invoice form"""
+        try:
+            # تنظيف Combobox المورد
+            self.supplier_name_var.set('')
+            
+            # تنظيف حقول العناصر
+            for row in self.entries:
+                for entry in row:
+                    if isinstance(entry, ttk.Combobox):
+                        entry.set('')
+                    elif isinstance(entry, tk.Entry):
+                        entry.delete(0, tk.END)
+            
+            # تنظيف الحقول المالية
+            self.payed_cash_var.set('0.0')
+            self.payment_method_var.set('نقدي')
+            
+            # إعادة تعيين القائمة
+            self.entries = []
+            # إعادة إنشاء الصفوف الأساسية
+            # إذا كنت تستخدم دالة لإضافة الصفوف
+            self.new_purchase_invoice(self.user_role)
+        except Exception as e:
+            messagebox.showerror("خطأ", f"فشل في تنظيف الحقول: {str(e)}")
 
     def clear_invoice_form(self):
             """تنظيف جميع حقول الفاتورة"""
@@ -5573,10 +6006,20 @@ class SalesSystemApp:
                 reshaped_text = arabic_reshaper.reshape(str(text))
                 return get_display(reshaped_text)
 
-            # إنشاء مسار الحفظ
+            # Create save path
             desktop = os.path.join(os.path.expanduser('~'), 'Desktop')
-            file_name = f"فاتورة بيع_{str(invoice_data['Receipt_Number']).replace("INV-", "").strip()}.pdf"
-            pdf_path = os.path.join(desktop, file_name)
+            invoice_folder = os.path.join(desktop, "sale_invoice")
+
+            # Create folder if it doesn't exist
+            if not os.path.exists(invoice_folder):
+                os.makedirs(invoice_folder)
+
+            # Generate file name
+            invoice_number = str(invoice_data['Receipt_Number']).replace("INV-", "").strip()
+            file_name = f"فاتورة بيع_{invoice_number}.pdf"
+
+            # Full PDF path
+            pdf_path = os.path.join(invoice_folder, file_name)
 
             # إعداد مستند PDF
             c = canvas.Canvas(pdf_path, pagesize=A5)
@@ -5737,11 +6180,21 @@ class SalesSystemApp:
             def format_arabic(text):
                 reshaped_text = arabic_reshaper.reshape(str(text))
                 return get_display(reshaped_text)
-
-            # إنشاء مسار الحفظ
+ 
+            # Create save path
             desktop = os.path.join(os.path.expanduser('~'), 'Desktop')
-            file_name = f"فاتورة شراء_{invoice_data['Receipt_Number']}.pdf"
-            pdf_path = os.path.join(desktop, file_name)
+            invoice_folder = os.path.join(desktop, "purchase_invoice")
+
+            # Create folder if it doesn't exist
+            if not os.path.exists(invoice_folder):
+                os.makedirs(invoice_folder)
+
+            # Generate file name
+            invoice_number = str(invoice_data['Receipt_Number']).replace("INV-", "").strip()
+            file_name = f"فاتورة شراء_{invoice_number}.pdf"
+
+            # Full PDF path
+            pdf_path = os.path.join(invoice_folder, file_name)
 
             # إعداد مستند PDF
             c = canvas.Canvas(pdf_path, pagesize=A5)
