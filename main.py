@@ -370,23 +370,22 @@ class SalesSystemApp:
         self.production_collection            = db['Production']
         self.customer_payments                = db["Customer_Payments"]
         self.supplier_payments                = db["Supplier_Payments"]
-        
 
-        field_to_convert1 = 'Customer_info.code'  # Change this to your actual field name
-        field_to_convert2 = 'Customer_info.name'  # Change this to your actual field name
-        docs_to_update = self.sales_collection.find({field_to_convert1: "1212"})
+        # field_to_convert1 = 'Customer_info.code'  # Change this to your actual field name
+        # field_to_convert2 = 'Customer_info.name'  # Change this to your actual field name
+        # docs_to_update = self.sales_collection.find({field_to_convert1: "1212"})
 
-        for doc in docs_to_update:
-            original_value = doc['Customer_info']['code']
-            new_value = original_value + "1"
-            self.sales_collection.update_one(
-                {"_id": doc["_id"]},
-                {"$set": {
-                    field_to_convert1: new_value,
-                    field_to_convert2: "mohsen1"
-                }}
-            )
-            print("updated")
+        # for doc in docs_to_update:
+        #     original_value = doc['Customer_info']['code']
+        #     new_value = original_value + "1"
+        #     self.sales_collection.update_one(
+        #         {"_id": doc["_id"]},
+        #         {"$set": {
+        #             field_to_convert1: new_value,
+        #             field_to_convert2: "mohsen1"
+        #         }}
+        #     )
+        #     print("updated")
 
 ############################################ Windows ########################################### 
     
