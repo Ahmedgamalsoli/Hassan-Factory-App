@@ -5861,6 +5861,7 @@ class SalesSystemApp:
                         "Last_purchase": datetime.now(),
                         "Balance": new_balance
                     },
+                    
                     "$inc": {
                         "Purchases": 1,
                         "Debit": payed_cash,
