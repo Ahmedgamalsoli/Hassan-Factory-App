@@ -5965,7 +5965,7 @@ class SalesSystemApp:
             except Exception as e:
                 messagebox.showerror("خطأ", f"فشل في تنظيف الحقول: {str(e)}")
                 
-    def generate_pdf(self, invoice_data):
+    def generate_old_pdf(self, invoice_data):
         """توليد ملف PDF بحجم A5 بتنسيق عربي مطابق للنموذج"""
         """توليد ملف PDF بحجم A5 بتنسيق عربي مطابق للنموذج"""
         try:
@@ -6130,7 +6130,245 @@ class SalesSystemApp:
         except Exception as e:
             messagebox.showerror("خطأ PDF", f"فشل في توليد الملف: {str(e)}")
             return None
-    def generate_pdf_purchase(self, invoice_data):
+    def generate_pdf(self, invoice_data):
+        """توليد ملف PDF بحجم A5 بتنسيق عربي مطابق للنموذج"""
+        try:
+            from reportlab.lib.pagesizes import A5
+            from reportlab.pdfgen import canvas
+            from reportlab.lib.units import cm
+            from reportlab.pdfbase import pdfmetrics
+            from reportlab.pdfbase.ttfonts import TTFont
+            import os
+            from bidi.algorithm import get_display
+            import arabic_reshaper
+            from reportlab.lib.utils import ImageReader
+            from reportlab.lib import colors
+
+            # Load Arabic font
+            try:
+                arabic_font_path = resource_path(os.path.join("Static", "Fonts", "Amiri-Regular.ttf"))
+                if not os.path.exists(arabic_font_path):
+                    raise FileNotFoundError(f"Font file not found: {arabic_font_path}")
+                pdfmetrics.registerFont(TTFont('Arabic', arabic_font_path))
+                pdfmetrics.registerFont(TTFont('Arabic-Bold', arabic_font_path))  # For bold text
+            except Exception as e:
+                print(f"Error loading Arabic font: {e}")
+                # Fallback to a default font if Arabic font fails to load
+                pdfmetrics.registerFont(TTFont('Arabic', 'Arial'))
+                pdfmetrics.registerFont(TTFont('Arabic-Bold', 'Arial-Bold'))
+
+            # دالة معالجة النصوص العربية
+            def format_arabic(text):
+                reshaped_text = arabic_reshaper.reshape(str(text))
+                return get_display(reshaped_text)
+
+            # Create save path
+            desktop = os.path.join(os.path.expanduser('~'), 'Desktop')
+            invoice_folder = os.path.join(desktop, "sale_invoice")
+
+            # Create folder if it doesn't exist
+            if not os.path.exists(invoice_folder):
+                os.makedirs(invoice_folder)
+
+            # Generate file name
+            invoice_number = str(invoice_data['Receipt_Number']).replace("INV-", "").strip()
+            file_name = f"فاتورة بيع_{invoice_number}.pdf"
+
+            # Full PDF path
+            pdf_path = os.path.join(invoice_folder, file_name)
+
+            # إعداد مستند PDF
+            c = canvas.Canvas(pdf_path, pagesize=A5)
+            width, height = A5
+            c.setFont("Arabic", 12)
+
+            # إضافة الشعار
+            logo_path = os.path.join(BASE_DIR, "Static", "images", "Logo.jpg")
+            if os.path.exists(logo_path):
+                logo = ImageReader(logo_path)
+                c.drawImage(logo, 0.5*cm, height-3.5*cm, width=4*cm, height=2.5*cm, preserveAspectRatio=True)
+
+            # ========== العنوان المركزي ==========
+            invoice_number = str(invoice_data['Receipt_Number']).replace("INV-", "").strip()
+            invoice_title = f"فاتورة بيع رقم {invoice_number}"
+            
+            # رسم الإطار حول العنوان
+            frame_width = 4*cm
+            frame_height = 1*cm
+            frame_x = (width - frame_width) / 2  # مركز أفقي
+            frame_y = height - 2.5*cm
+            c.setLineWidth(1)
+            c.rect(frame_x, frame_y, frame_width, frame_height, stroke=1)
+        
+            # كتابة العنوان المركزي
+            c.setFont("Arabic-Bold", 12)
+            title_x = width / 2
+            title_y = height - 2.2*cm
+            c.drawCentredString(title_x, title_y, format_arabic(invoice_title))
+
+            # ========== معلومات الشركة ==========
+            company_info = [
+                "      حسن سليم",
+                "للمنتجات البلاستيكية"
+            ]
+            
+            y_position = height - 2*cm
+            c.setFont("Arabic-Bold", 12)
+            for line in company_info:
+                c.drawRightString(width - 1.75*cm, y_position, format_arabic(line))
+                y_position -= 0.8*cm
+
+            # ========== معلومات العميل ==========
+            customer_y = height - 3.8*cm
+            c.setFont("Arabic", 12)
+            customer_fields = [
+                f"التاريخ:       {invoice_data['Date']}",            
+                f"اسم العميل:    {invoice_data['Customer_info']['name']}",
+                f"الكود:         {invoice_data['Customer_info']['code']}",
+                f"العنوان:       {invoice_data['Customer_info']['address']}",
+                f"التليفون:      {invoice_data['Customer_info']['phone1']}"
+            ]
+            
+            for line in customer_fields:
+                c.drawRightString(width - 0.4*cm, customer_y, format_arabic(line))
+                customer_y -= 0.8*cm
+
+            # ========== جدول العناصر ==========
+            headers = ["كود الصنف", "     الصنف", "العدد", "الوحدة", "سعر الوحدة", "الكمية", "الإجمالي"]
+            col_positions = [
+                width - 0.4*cm,    # كود الصنف
+                width - 2*cm,       # الصنف
+                width - 6*cm,     # العدد
+                width - 7.5*cm,     # الوحدة
+                width - 9.5*cm,     # السعر
+                width - 11.5*cm,    # الكمية
+                width - 13*cm       # الإجمالي
+            ]
+            
+            # رأس الجدول مع لون خلفية
+            table_y = customer_y - 0.25*cm
+            
+            # رسم خلفية ملونة للرأس
+            header_height = 0.65*cm
+            c.setFillColor(colors.lightblue)  # لون خلفية الرأس
+            c.rect(
+                col_positions[-1] - 2.0*cm,  # أقصى يسار
+                table_y - header_height + 0.2*cm,  # أسفل
+                col_positions[0] - col_positions[-1] + 5.0*cm,  # العرض
+                header_height,  # الارتفاع
+                fill=1,
+                stroke=0
+            )
+            
+            c.setFont("Arabic-Bold", 10)
+            c.setFillColor(colors.black)  # لون النص الأسود
+            for i, header in enumerate(headers):
+                c.drawRightString(col_positions[i], table_y - 0.3*cm, format_arabic(header))
+
+            # بيانات الجدول مع دعم الأسطر المتعددة
+            c.setFont("Arabic", 8)
+            row_height = 0.7*cm
+            max_product_width = 3.5*cm  # أقصى عرض لعمود "الصنف"
+            
+            # تحديد موضع الصف الأول للبيانات
+            table_y -= row_height
+            
+            for item in invoice_data["Items"]:
+                # التحقق مما إذا كان اسم المنتج يتجاوز المساحة المتاحة
+                product_name = item.get("product_name", "")
+                product_code = item.get("Product_code", "")
+                
+                # تقسيم اسم المنتج إلى أسطر متعددة إذا كان طويلاً
+                product_lines = []
+                current_line = ""
+                
+                # دالة لتقسيم النص إلى أسطر بناءً على المساحة المتاحة
+                def split_text(text, max_width):
+                    lines = []
+                    current = ""
+                    for char in text:
+                        test_line = current + char
+                        if c.stringWidth(format_arabic(test_line), "Arabic", 8) < max_width:
+                            current = test_line
+                        else:
+                            lines.append(current)
+                            current = char
+                    if current:
+                        lines.append(current)
+                    return lines
+                
+                # تقسيم اسم المنتج إذا كان طويلاً
+                product_width = c.stringWidth(format_arabic(product_name), "Arabic", 8)
+                if product_width > max_product_width:
+                    product_lines = split_text(product_name, max_product_width)
+                else:
+                    product_lines = [product_name]
+                
+                # حساب ارتفاع الصف بناءً على عدد الأسطر
+                item_height = row_height * len(product_lines)
+                
+                # رسم خلفية بيضاء للصف (اختياري)
+                c.setFillColor(colors.white)
+                c.rect(
+                    col_positions[-1] - 0.5*cm,
+                    table_y - item_height + 0.1*cm,
+                    col_positions[0] - col_positions[-1] + 1.0*cm,
+                    item_height - 0.2*cm,
+                    fill=1,
+                    stroke=0
+                )
+                c.setFillColor(colors.black)  # إعادة لون النص إلى الأسود
+                
+                # رسم كل سطر من أسطر المنتج
+                for i, line in enumerate(product_lines):
+                    line_y = table_y - (i * row_height)
+                    
+                    # رسم محتويات الصف
+                    columns = [
+                        product_code if i == 0 else "",  # عرض الكود في السطر الأول فقط
+                        line,
+                        str(item.get("numbering", "")) if i == 0 else "",
+                        item.get("Unit", "") if i == 0 else "",
+                        f"{item.get('Unit_price', 0):.2f}" if i == 0 else "",
+                        str(item.get('QTY', 0)) if i == 0 else "",
+                        f"{item.get('Final_Price', 0):.2f}" if i == 0 else ""
+                    ]
+                    
+                    for col_index, value in enumerate(columns):
+                        c.drawRightString(col_positions[col_index], line_y, format_arabic(value))
+                
+                # تحديث موضع y للصف التالي
+                table_y -= item_height
+
+            # ========== الإجماليات ==========
+            totals_y = table_y - 1*cm
+            totals = [
+                ("صافي الفاتورة:", invoice_data['Financials']['Net_total']),
+                ("حساب سابق:", invoice_data['Financials']['Previous_balance']),
+                ("إجمالي الفاتورة:", invoice_data['Financials']['Total_balance']),
+                ("المدفوع:", invoice_data['Financials']['Payed_cash']),
+                ("الباقي:", invoice_data['Financials']['Remaining_balance'])
+            ]
+            
+            c.setFont("Arabic-Bold", 12)
+            for label, value in totals:
+                text = f"{format_arabic(f'{value:,.2f}')} {format_arabic(label)}"
+                c.drawRightString(width - 0.3*cm, totals_y, text)
+                totals_y -= 0.8*cm
+
+            # ========== التوقيعات ==========
+            c.setFont("Arabic", 10)
+            c.drawRightString(width - 2.2*cm, totals_y - 0.25*cm, format_arabic("____________________"))
+            c.drawString(1.5*cm, totals_y - 0.25*cm, format_arabic("____________________"))
+            
+            c.save()
+            pdf_path = self.upload_pdf_to_cloudinary(pdf_path)
+            return pdf_path
+
+        except Exception as e:
+            messagebox.showerror("خطأ PDF", f"فشل في توليد الملف: {str(e)}")
+            return None
+    def generate_pdf_old_purchase(self, invoice_data):
         """توليد ملف PDF بحجم A5 بتنسيق عربي مطابق للنموذج"""
         """توليد ملف PDF بحجم A5 بتنسيق عربي مطابق للنموذج"""
         try:
@@ -6144,26 +6382,17 @@ class SalesSystemApp:
             import arabic_reshaper
             from reportlab.lib.utils import ImageReader
 
-            # Load Arabic font
             try:
                 arabic_font_path = resource_path(os.path.join("Static", "Fonts", "Amiri-Regular.ttf"))
                 if not os.path.exists(arabic_font_path):
                     raise FileNotFoundError(f"Font file not found: {arabic_font_path}")
                 pdfmetrics.registerFont(TTFont('Arabic', arabic_font_path))
+                pdfmetrics.registerFont(TTFont('Arabic-Bold', arabic_font_path))  # For bold text
             except Exception as e:
                 print(f"Error loading Arabic font: {e}")
                 # Fallback to a default font if Arabic font fails to load
                 pdfmetrics.registerFont(TTFont('Arabic', 'Arial'))
-            # Load Arabic font
-            try:
-                arabic_font_path = resource_path(os.path.join("Static", "Fonts", "Amiri-Regular.ttf"))
-                if not os.path.exists(arabic_font_path):
-                    raise FileNotFoundError(f"Font file not found: {arabic_font_path}")
-                pdfmetrics.registerFont(TTFont('Arabic', arabic_font_path))
-            except Exception as e:
-                print(f"Error loading Arabic font: {e}")
-                # Fallback to a default font if Arabic font fails to load
-                pdfmetrics.registerFont(TTFont('Arabic', 'Arial'))
+                pdfmetrics.registerFont(TTFont('Arabic-Bold', 'Arial-Bold'))
 
             # دالة معالجة النصوص العربية
             def format_arabic(text):
@@ -6191,7 +6420,7 @@ class SalesSystemApp:
             c.setFont("Arabic", 12)
 
             # إضافة الشعار
-            logo_path = os.path.join("Static", "images", "Logo.jpg")
+            logo_path = os.path.join(BASE_DIR, "Static", "images", "Logo.jpg")
             if os.path.exists(logo_path):
                 logo = ImageReader(logo_path)
                 c.drawImage(logo, 0.5*cm, height-3.5*cm, width=4*cm, height=2.5*cm, preserveAspectRatio=True)
@@ -6209,7 +6438,7 @@ class SalesSystemApp:
             c.rect(frame_x, frame_y, frame_width, frame_height)
             
             # كتابة العنوان المركزي
-            c.setFont("Arabic", 12)  # تأكد من وجود خط عريض
+            c.setFont("Arabic-Bold", 12)  # تأكد من وجود خط عريض
             title_x = width / 2
             title_y = height - 2.2*cm
             c.drawCentredString(title_x, title_y, format_arabic(invoice_title))
@@ -6221,7 +6450,7 @@ class SalesSystemApp:
             ]
             
             y_position = height - 2*cm
-            c.setFont("Arabic", 12)
+            c.setFont("Arabic-Bold", 12)
             for line in company_info:
                 c.drawRightString(width - 1.75*cm, y_position, format_arabic(line))
                 y_position -= 0.8*cm
@@ -6247,7 +6476,7 @@ class SalesSystemApp:
             col_positions = [
                 width - 0.4*cm,    # كود الصنف
                 width - 2*cm,    # الصنف
-                width - 5.5*cm,    # العدد
+                width - 6*cm,    # العدد
                 width - 7.5*cm,    # الوحدة
                 width - 9.5*cm,    # السعر
                 width - 11.5*cm,     # الكمية
@@ -6305,7 +6534,238 @@ class SalesSystemApp:
         except Exception as e:
             messagebox.showerror("خطأ PDF", f"فشل في توليد الملف: {str(e)}")
             return None
-        
+    def generate_pdf_purchase(self, invoice_data):
+        """توليد ملف PDF بحجم A5 بتنسيق عربي مطابق للنموذج"""
+        try:
+            from reportlab.lib.pagesizes import A5
+            from reportlab.pdfgen import canvas
+            from reportlab.lib.units import cm
+            from reportlab.pdfbase import pdfmetrics
+            from reportlab.pdfbase.ttfonts import TTFont
+            import os
+            from bidi.algorithm import get_display
+            import arabic_reshaper
+            from reportlab.lib.utils import ImageReader
+            from reportlab.lib import colors  # Added for colors
+
+            # Load Arabic font
+            try:
+                arabic_font_path = resource_path(os.path.join("Static", "Fonts", "Amiri-Regular.ttf"))
+                if not os.path.exists(arabic_font_path):
+                    raise FileNotFoundError(f"Font file not found: {arabic_font_path}")
+                pdfmetrics.registerFont(TTFont('Arabic', arabic_font_path))
+                pdfmetrics.registerFont(TTFont('Arabic-Bold', arabic_font_path))  # For bold text
+            except Exception as e:
+                print(f"Error loading Arabic font: {e}")
+                # Fallback to a default font if Arabic font fails to load
+                pdfmetrics.registerFont(TTFont('Arabic', 'Arial'))
+                pdfmetrics.registerFont(TTFont('Arabic-Bold', 'Arial-Bold'))
+
+            # دالة معالجة النصوص العربية
+            def format_arabic(text):
+                reshaped_text = arabic_reshaper.reshape(str(text))
+                return get_display(reshaped_text)
+
+            # Create save path
+            desktop = os.path.join(os.path.expanduser('~'), 'Desktop')
+            invoice_folder = os.path.join(desktop, "purchase_invoice")
+
+            # Create folder if it doesn't exist
+            if not os.path.exists(invoice_folder):
+                os.makedirs(invoice_folder)
+
+            # Generate file name
+            invoice_number = str(invoice_data['Receipt_Number']).replace("INV-", "").strip()
+            file_name = f"فاتورة شراء_{invoice_number}.pdf"
+
+            # Full PDF path
+            pdf_path = os.path.join(invoice_folder, file_name)
+
+            # إعداد مستند PDF
+            c = canvas.Canvas(pdf_path, pagesize=A5)
+            width, height = A5
+            c.setFont("Arabic", 12)
+
+            # إضافة الشعار
+            logo_path = os.path.join("Static", "images", "Logo.jpg")
+            if os.path.exists(logo_path):
+                logo = ImageReader(logo_path)
+                c.drawImage(logo, 0.5*cm, height-3.5*cm, width=4*cm, height=2.5*cm, preserveAspectRatio=True)
+
+            # ========== العنوان المركزي ==========
+            invoice_title = f"فاتورة شراء رقم {invoice_number}"
+            
+            # رسم الإطار حول العنوان
+            frame_width = 4*cm
+            frame_height = 1*cm
+            frame_x = (width - frame_width) / 2  # مركز أفقي
+            frame_y = height - 2.5*cm
+            c.setLineWidth(1)
+            c.rect(frame_x, frame_y, frame_width, frame_height, stroke=1)
+            
+            # كتابة العنوان المركزي
+            c.setFont("Arabic-Bold", 12)
+            title_x = width / 2
+            title_y = height - 2.2*cm
+            c.drawCentredString(title_x, title_y, format_arabic(invoice_title))
+
+            # ========== معلومات الشركة ==========
+            company_info = [
+                "      حسن سليم",
+                "للمنتجات البلاستيكية"
+            ]
+            
+            y_position = height - 2*cm
+            c.setFont("Arabic-Bold", 12)
+            for line in company_info:
+                c.drawRightString(width - 1.75*cm, y_position, format_arabic(line))
+                y_position -= 0.8*cm
+
+            # ========== معلومات العميل ==========
+            customer_y = height - 3.8*cm
+            c.setFont("Arabic", 12)
+            customer_fields = [
+                f"التاريخ:       {invoice_data['Date']}",            
+                f"اسم المورد:    {invoice_data['supplier_info']['name']}",
+                f"الكود:         {invoice_data['supplier_info']['code']}",
+                f"العنوان:       {invoice_data['supplier_info']['address']}",
+                f"التليفون:      {invoice_data['supplier_info']['phone1']}"
+            ]
+            
+            for line in customer_fields:
+                c.drawRightString(width - 0.4*cm, customer_y, format_arabic(line))
+                customer_y -= 0.8*cm
+
+            # ========== جدول العناصر ==========
+            headers = ["كود الصنف", "     الصنف", "العدد", "الوحدة", "سعر الوحدة", "الكمية", "الإجمالي"]
+            col_positions = [
+                width - 0.4*cm,    # كود الصنف
+                width - 2*cm,       # الصنف
+                width - 6*cm,       # العدد
+                width - 7.5*cm,     # الوحدة
+                width - 9.5*cm,     # السعر
+                width - 11.5*cm,    # الكمية
+                width - 13*cm       # الإجمالي
+            ]
+            
+            # رأس الجدول مع لون خلفية
+            table_y = customer_y - 0.25*cm
+            
+            # رسم خلفية ملونة للرأس
+            header_height = 0.65*cm
+            c.setFillColor(colors.lightblue)
+            c.rect(
+                col_positions[-1] - 2.0*cm,
+                table_y - header_height + 0.2*cm,
+                col_positions[0] - col_positions[-1] + 5.0*cm,
+                header_height,
+                fill=1,
+                stroke=0
+            )
+            
+            c.setFont("Arabic-Bold", 10)
+            c.setFillColor(colors.black)
+            for i, header in enumerate(headers):
+                c.drawRightString(col_positions[i], table_y - 0.3*cm, format_arabic(header))
+
+            # بيانات الجدول مع دعم الأسطر المتعددة
+            c.setFont("Arabic", 8)
+            row_height = 0.7*cm
+            max_product_width = 3.5*cm  # أقصى عرض لعمود "الصنف"
+            
+            # تحديد موضع الصف الأول للبيانات
+            table_y -= row_height
+            
+            # دالة لتقسيم النص الطويل
+            def split_text(text, max_width):
+                lines = []
+                current = ""
+                for char in text:
+                    test_line = current + char
+                    if c.stringWidth(format_arabic(test_line), "Arabic", 8) < max_width:
+                        current = test_line
+                    else:
+                        lines.append(current)
+                        current = char
+                if current:
+                    lines.append(current)
+                return lines
+            
+            for item in invoice_data["Items"]:
+                material_name = item.get("material_name", "")
+                material_code = item.get("material_code", "")
+                
+                # تقسيم اسم المادة إذا كان طويلاً
+                product_width = c.stringWidth(format_arabic(material_name), "Arabic", 8)
+                if product_width > max_product_width:
+                    product_lines = split_text(material_name, max_product_width)
+                else:
+                    product_lines = [material_name]
+                
+                # حساب ارتفاع الصف بناءً على عدد الأسطر
+                item_height = row_height * len(product_lines)
+                
+                # رسم خلفية بيضاء للصف
+                c.setFillColor(colors.white)
+                c.rect(
+                    col_positions[-1] - 0.5*cm,
+                    table_y - item_height + 0.1*cm,
+                    col_positions[0] - col_positions[-1] + 1.0*cm,
+                    item_height - 0.2*cm,
+                    fill=1,
+                    stroke=0
+                )
+                c.setFillColor(colors.black)
+                
+                # رسم كل سطر من أسطر المادة
+                for i, line in enumerate(product_lines):
+                    line_y = table_y - (i * row_height)
+                    
+                    # رسم محتويات الصف
+                    columns = [
+                        material_code if i == 0 else "",  # عرض الكود في السطر الأول فقط
+                        line,
+                        str(item.get("numbering", "")) if i == 0 else "",
+                        item.get("Unit", "") if i == 0 else "",
+                        f"{item.get('Unit_price', 0):.2f}" if i == 0 else "",
+                        str(item.get('QTY', 0)) if i == 0 else "",
+                        f"{item.get('Final_Price', 0):.2f}" if i == 0 else ""
+                    ]
+                    
+                    for col_index, value in enumerate(columns):
+                        c.drawRightString(col_positions[col_index], line_y, format_arabic(value))
+                
+                # تحديث موضع y للصف التالي
+                table_y -= item_height
+
+            # ========== الإجماليات ==========
+            totals_y = table_y - 1*cm
+            totals = [
+                ("صافي الفاتورة:", invoice_data['Financials']['Net_total']),
+                ("حساب سابق:", invoice_data['Financials']['Previous_balance']),
+                ("إجمالي الفاتورة:", invoice_data['Financials']['Total_balance']),
+                ("المدفوع:", invoice_data['Financials']['Payed_cash']),
+                ("الباقي:", invoice_data['Financials']['Remaining_balance'])
+            ]
+            
+            c.setFont("Arabic-Bold", 12)
+            for label, value in totals:
+                text = f"{format_arabic(f'{value:,.2f}')} {format_arabic(label)}"
+                c.drawRightString(width - 0.3*cm, totals_y, text)
+                totals_y -= 0.8*cm
+
+            # ========== التوقيعات ==========
+            c.setFont("Arabic", 10)
+            c.drawRightString(width - 2.2*cm, totals_y - 0.5*cm, format_arabic("____________________"))
+            c.drawString(1.5*cm, totals_y - 0.5*cm, format_arabic("____________________"))
+            
+            c.save()
+            pdf_path = self.upload_pdf_to_cloudinary(pdf_path)
+            return pdf_path
+
+        except Exception as e:
+            messagebox.showerror("خطأ PDF", f"فشل في توليد الملف: {str(e)}")
+            return None        
 
     def upload_pdf_to_cloudinary(self,file_path_param):
         # import cloudinary.uploader
@@ -6804,18 +7264,7 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 
-
-def resource_path(relative_path):
-    """ Get absolute path to resource, works for dev and PyInstaller """
-    try:
-        # PyInstaller creates a temp folder and stores path in _MEIPASS
-        base_path = sys._MEIPASS
-    except Exception:
-        base_path = os.path.abspath(".")
-
-    return os.path.join(base_path, relative_path)
-
-######################### Main #########################################################
+################################################################################## Main #########################################################
 #
 if __name__ == "__main__":
     root = tk.Tk()
