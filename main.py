@@ -4029,19 +4029,6 @@ class SalesSystemApp:
             if 'supplier_name' not in ordered_fields:
                 ordered_fields.append('supplier_name')
 
-        if 'Customer_info' in ordered_fields:
-            ordered_fields.remove('Customer_info')
-            if 'customer_code' not in ordered_fields:
-                ordered_fields.append('customer_code')
-            if 'customer_name' not in ordered_fields:
-                ordered_fields.append('customer_name')
-        if 'supplier_info' in ordered_fields:
-            ordered_fields.remove('supplier_info')
-            if 'supplier_code' not in ordered_fields:
-                ordered_fields.append('supplier_code')
-            if 'supplier_name' not in ordered_fields:
-                ordered_fields.append('supplier_name')
-
         self.entries = {}
         for i, label in enumerate(ordered_fields):
             # if label in ["Id", "Operation_Number", "Customer_info", "supplier_info", "Time"]:
@@ -4335,6 +4322,12 @@ class SalesSystemApp:
         fields = self.get_fields_by_name(collection_name)
 
         new_entry = {}
+
+        if collection_name in ["Sales","Purchases"] :
+            # Customer_info:
+            # Items:
+            # Financials:
+            x=1
 
         # Handle customer/supplier info
         if collection_name in ["Customer_Payments", "Supplier_Payments"]:
@@ -5013,10 +5006,14 @@ class SalesSystemApp:
             return ["deal_id", "deal_date", "customer_id", "product_id", "deal_value"]
         
         elif collection_name == "Sales":
-            return ["Receipt_Number", "Date", "customer_code", "customer_name", "customer_phone1","customer_phone2","customer_address","Product_code","product_name","QTY","numbering","Total_QTY", "Unit_price", "Discount_Type", "Discount_Value", "Final_Price", "Net_total", "Previous_balance", "Total balance", "Payed_cash", "Remaining_balance", "Payment_method", "PDF_Path"]
+            return ["Receipt_Number", "Date", "customer_code", "customer_name", "customer_phone1","customer_phone2","customer_address",
+                    "Product_code","product_name","Unit", "QTY","numbering","Total_QTY", "Unit_price", "Discount_Type", "Discount_Value",
+                    "Final_Price","Net_total", "Previous_balance", "Total balance", "Payed_cash", "Remaining_balance", "Payment_method", "PDF_Path"]
         
         elif collection_name == "Purchases":
-            return ["Receipt_Number", "Date", "supplier_code", "supplier_name", "supplier_phone1","supplier_phone2","supplier_address","material_code","material_name","Unit","QTY", "numbering","Total_QTY", "Unit_price", "Discount_Type", "Discount_Value", "Final_Price", "Net_total", "Previous_balance", "Total balance", "Payed_cash", "Remaining_balance", "Payment_method", "PDF_Path"]
+            return ["Receipt_Number", "Date", "supplier_code", "supplier_name", "supplier_phone1","supplier_phone2","supplier_address",
+                    "material_code","material_name","Unit","QTY", "numbering","Total_QTY", "Unit_price", "Discount_Type", "Discount_Value",
+                    "Final_Price", "Net_total", "Previous_balance", "Total balance", "Payed_cash", "Remaining_balance", "Payment_method", "PDF_Path"]
         
         elif collection_name == "Customer_Payments":
             return ["Operation_Number", "Time", "Credit", "Debit","Payment_method", "Customer_info"]
@@ -6682,16 +6679,67 @@ def open_calculator():
     special_btn_config = {
         "=": {"bg": "#4caf50", "activebackground": "#45a049"},
         "C": {"bg": "#f44336", "activebackground": "#e53935"},
-        "/": {"bg": "#ff9800"},
-        "*": {"bg": "#ff9800"},
+        "÷": {"bg": "#ff9800"},
+        "x": {"bg": "#ff9800"},
         "-": {"bg": "#ff9800"},
         "+": {"bg": "#ff9800"},
+        "()": {"bg": "#ff9800"},
+        "%": {"bg": "#ff9800"},
     }
 
+    def calculate(expression):
+        """Safely evaluate a mathematical expression with percentage support"""
+        try:
+            # Replace symbols with Python operators
+            expression = expression.replace('x', '*').replace('÷', '/')
+            
+            # Handle percentages by replacing them with their decimal equivalents
+            # This needs to handle cases where % follows a number in an expression
+            tokens = []
+            current_token = ''
+            
+            for char in expression:
+                if char.isdigit() or char == '.':
+                    current_token += char
+                else:
+                    if current_token:
+                        tokens.append(current_token)
+                        current_token = ''
+                    tokens.append(char)
+            
+            if current_token:
+                tokens.append(current_token)
+            
+            # Process the tokens to handle percentages
+            processed_tokens = []
+            i = 0
+            while i < len(tokens):
+                token = tokens[i]
+                if token == '%':
+                    if i > 0 and tokens[i-1].replace('.', '').isdigit():
+                        # Convert the previous number to percentage (divide by 100)
+                        num = float(tokens[i-1]) / 100
+                        processed_tokens[-1] = str(num)
+                    else:
+                        processed_tokens.append(token)
+                else:
+                    processed_tokens.append(token)
+                i += 1
+            
+            # Rebuild the expression
+            processed_expr = ''.join(processed_tokens)
+            
+            # Evaluate the expression
+            return str(eval(processed_expr))
+        except:
+            return "Error"
+
     def on_click(value):
+        current = entry.get()
+        
         if value == '=':
             try:
-                result = eval(entry.get())
+                result = calculate(current)
                 entry.delete(0, tk.END)
                 entry.insert(tk.END, result)
             except:
@@ -6699,14 +6747,29 @@ def open_calculator():
                 entry.insert(tk.END, "Error")
         elif value == 'C':
             entry.delete(0, tk.END)
+        elif value == '()':
+            if '(' not in current:
+                entry.insert(tk.END, '(')
+            elif ')' not in current[current.index('('):]:
+                entry.insert(tk.END, ')')
+            else:
+                entry.insert(tk.END, 'x(')
+        elif value == '+/-':
+            if current.startswith('-'):
+                entry.delete(0)
+            else:
+                entry.insert(0, '-')
+        elif value == '%':
+            entry.insert(tk.END, '%')
         else:
             entry.insert(tk.END, value)
 
     buttons = [
-        '7', '8', '9', '/',
-        '4', '5', '6', '*',
-        '1', '2', '3', '-',
-        'C', '0', '=', '+'
+        'C'  , '()', '%', '÷',
+        '7'  , '8' , '9', 'x',
+        '4'  , '5' , '6', '-',
+        '1'  , '2' , '3', '+',
+        '+/-', '0' , '.', '='
     ]
 
     row, col = 1, 0
@@ -6716,7 +6779,7 @@ def open_calculator():
             style.update(special_btn_config[btn])
 
         pady_val = 5
-        if row == 4:
+        if row == 5:
             pady_val = 20  
 
         tk.Button(calc_win, text=btn, command=lambda b=btn: on_click(b), **style).grid(
@@ -6724,7 +6787,7 @@ def open_calculator():
         )
 
         col += 1
-        if col > 3:
+        if col >3:
             col = 0
             row += 1
 
