@@ -312,10 +312,11 @@ class SalesSystemApp:
         self.user_role = ""  # Placeholder for user role
         self.all_customers = None  # Will be loaded on first search
         self._after_id = None
-        self.logout_icon_path = os.path.join(BASE_DIR, "Static", "images", "Logout.png")  # Path to logout icon
-        self.exit_icon_path   = os.path.join(BASE_DIR, "Static", "images", "Exit.png")  # Path to exit icon
-        self.calc_icon_path   = os.path.join(BASE_DIR, "Static", "images", "calculator.png")  # Path to exit icon
-        self.back_icon_path   = os.path.join(BASE_DIR, "Static", "images", "Back.png")  # Path to back icon
+        self.logout_icon_path   = os.path.join(BASE_DIR, "Static", "images", "Logout.png")  # Path to logout icon
+        self.exit_icon_path     = os.path.join(BASE_DIR, "Static", "images", "Exit.png")  # Path to exit icon
+        self.calc_icon_path     = os.path.join(BASE_DIR, "Static", "images", "calculator.png")  # Path to exit icon
+        self.minimize_icon_path = os.path.join(BASE_DIR, "Static", "images", "minimize.png")  # Path to exit icon
+        self.back_icon_path     = os.path.join(BASE_DIR, "Static", "images", "Back.png")  # Path to back icon
         # self.customer_name_var = None
         # Get the correct path for the icon
         # if hasattr(sys, "_MEIPASS"):
@@ -5987,16 +5988,6 @@ class SalesSystemApp:
                 print(f"Error loading Arabic font: {e}")
                 # Fallback to a default font if Arabic font fails to load
                 pdfmetrics.registerFont(TTFont('Arabic', 'Arial'))
-            # Load Arabic font
-            try:
-                arabic_font_path = resource_path(os.path.join("Static", "Fonts", "Amiri-Regular.ttf"))
-                if not os.path.exists(arabic_font_path):
-                    raise FileNotFoundError(f"Font file not found: {arabic_font_path}")
-                pdfmetrics.registerFont(TTFont('Arabic', arabic_font_path))
-            except Exception as e:
-                print(f"Error loading Arabic font: {e}")
-                # Fallback to a default font if Arabic font fails to load
-                pdfmetrics.registerFont(TTFont('Arabic', 'Arial'))
 
             # دالة معالجة النصوص العربية
             def format_arabic(text):
@@ -6024,7 +6015,7 @@ class SalesSystemApp:
             c.setFont("Arabic", 12)
 
             # إضافة الشعار
-            logo_path = os.path.join("Static", "images", "Logo.jpg")
+            logo_path = os.path.join(BASE_DIR,"Static", "images", "Logo.jpg")
             if os.path.exists(logo_path):
                 logo = ImageReader(logo_path)
                 c.drawImage(logo, 0.5*cm, height-3.5*cm, width=4*cm, height=2.5*cm, preserveAspectRatio=True)
@@ -6401,6 +6392,15 @@ class SalesSystemApp:
             logout_icon.pack(side="right", padx=10)
         except Exception as e:
             self.silent_popup("Error", "Error loading Logout icon: {e}", self.play_Error)
+        # Minimize icon
+        try:
+            minimze_image = Image.open(self.minimize_icon_path)
+            minimze_image = minimze_image.resize((40, 40), Image.LANCZOS)
+            self.minimize_photo = ImageTk.PhotoImage(minimze_image)
+            minimize_icon = tk.Button(top_bar, image=self.minimize_photo, bg="#dbb40f", bd=0, command=root.iconify)
+            minimize_icon.pack(side="right", padx=10)
+        except Exception as e:
+            self.silent_popup("Error", "Error loading Minimize icon: {e}", self.play_Error)
 
 
         if show_back_button:
