@@ -374,6 +374,7 @@ class SalesSystemApp:
         self.production_collection            = db['Production']
         self.customer_payments                = db["Customer_Payments"]
         self.supplier_payments                = db["Supplier_Payments"]
+        self.general_exp_rev_collection       = db["general_exp_rev"]
         
 
         field_to_convert1 = 'Customer_info.code'  # Change this to your actual field name
@@ -521,6 +522,8 @@ class SalesSystemApp:
             "command": lambda: self.manage_Employees_window()},
             {"text": self.t("Treasury"), "image": "Treasury.png", 
             "command": lambda: self.Treasury_window(self.user_role)},
+            {"text": self.t("General Expe. & Rev."), "image": "EXP & REV.png", 
+            "command": lambda: self.general_exp_rev(self.user_role)},
             {"text": self.t("Reports"), "image": "Reports.png", 
             "command": lambda: self.trash(self.user_role)},
         ]
@@ -1947,6 +1950,157 @@ class SalesSystemApp:
         tk.Button(self.root, text="Delete Record", command=self.delete_entry).place(width=120, height=40, x=400, y=550)
 
         self.display_table()
+
+
+    def general_exp_rev(self, user_role):
+        # Clear current window
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        self.topbar(show_back_button=True)
+        
+        # Create main container frame
+        main_frame = tk.Frame(self.root)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        
+        # Create paned window for resizable split
+        paned_window = tk.PanedWindow(main_frame, orient=tk.HORIZONTAL, sashrelief=tk.RAISED, sashwidth=4)
+        paned_window.pack(fill=tk.BOTH, expand=True)
+        
+        # Expense Frame (left side)
+        expense_frame = tk.LabelFrame(paned_window, text=" Expenses ", font=("Arial", 12, "bold"), padx=10, pady=10)
+        # Revenue Frame (right side)
+        revenue_frame = tk.LabelFrame(paned_window, text=" Revenues ", font=("Arial", 12, "bold"), padx=10, pady=10)
+        
+        paned_window.add(expense_frame)
+        paned_window.add(revenue_frame)
+        
+        # Force Tkinter to calculate window dimensions
+        self.root.update_idletasks()
+        
+        # Set separator to half of the screen immediately
+        width = main_frame.winfo_width()
+        if width > 100:  # Ensure we have a reasonable width
+            paned_window.sash_place(0, width // 2, 0)
+        
+        # Common payment methods
+        payment_methods = ["Cash", "Instapay", "Bank Account", "E Wallet"]
+        
+        # ======================
+        # EXPENSE SECTION
+        # ======================
+        expense_frame.columnconfigure(1, weight=1)
+        for i in range(4):
+            expense_frame.rowconfigure(i, weight=1)
+        
+        tk.Label(expense_frame, text="Amount Paid:", font=("Arial", 10)).grid(row=0, column=0, sticky='e', pady=5)
+        self.expense_amount = tk.DoubleVar()
+        expense_entry = tk.Entry(expense_frame, textvariable=self.expense_amount)
+        expense_entry.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
+        
+        tk.Label(expense_frame, text="Payment Method:", font=("Arial", 10)).grid(row=1, column=0, sticky='e', pady=5)
+        self.expense_payment = tk.StringVar()
+        expense_payment_cb = ttk.Combobox(expense_frame, textvariable=self.expense_payment, 
+                                        values=payment_methods, state="readonly")
+        expense_payment_cb.grid(row=1, column=1, padx=5, pady=5, sticky='ew')
+        expense_payment_cb.current(0)  # Default to Cash
+        
+        tk.Label(expense_frame, text="Description:", font=("Arial", 10)).grid(row=2, column=0, sticky='e', pady=5)
+        self.expense_desc = tk.StringVar()
+        expense_desc_entry = tk.Entry(expense_frame, textvariable=self.expense_desc)
+        expense_desc_entry.grid(row=2, column=1, padx=5, pady=5, sticky='ew')
+        
+        expense_submit = tk.Button(expense_frame, 
+                            text=self.t("💾 Record Expense"), 
+                            font=('Helvetica', 12, 'bold'),
+                            width=20,
+                            command=lambda: self.save_transaction("Expense"),
+                            bg='#2196F3', fg='white')
+        expense_submit.grid(row=3, column=0, columnspan=2, pady=10, sticky='ew')
+        
+        # ======================
+        # REVENUE SECTION
+        # ======================
+        revenue_frame.columnconfigure(1, weight=1)
+        for i in range(4):
+            revenue_frame.rowconfigure(i, weight=1)
+        
+        tk.Label(revenue_frame, text="Amount Received:", font=("Arial", 10)).grid(row=0, column=0, sticky='e', pady=5)
+        self.revenue_amount = tk.DoubleVar()
+        revenue_entry = tk.Entry(revenue_frame, textvariable=self.revenue_amount)
+        revenue_entry.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
+        
+        tk.Label(revenue_frame, text="Payment Method:", font=("Arial", 10)).grid(row=1, column=0, sticky='e', pady=5)
+        self.revenue_payment = tk.StringVar()
+        revenue_payment_cb = ttk.Combobox(revenue_frame, textvariable=self.revenue_payment, 
+                                        values=payment_methods, state="readonly")
+        revenue_payment_cb.grid(row=1, column=1, padx=5, pady=5, sticky='ew')
+        revenue_payment_cb.current(0)  # Default to Cash
+        
+        tk.Label(revenue_frame, text="Description:", font=("Arial", 10)).grid(row=2, column=0, sticky='e', pady=5)
+        self.revenue_desc = tk.StringVar()
+        revenue_desc_entry = tk.Entry(revenue_frame, textvariable=self.revenue_desc)
+        revenue_desc_entry.grid(row=2, column=1, padx=5, pady=5, sticky='ew')
+        
+        revenue_submit = tk.Button(revenue_frame, 
+                            text=self.t("💾 Record Revenue"), 
+                            font=('Helvetica', 12, 'bold'),
+                            width=20,
+                            command=lambda: self.save_transaction("Revenue"),
+                            bg="#21F35D", fg='white')
+        revenue_submit.grid(row=3, column=0, columnspan=2, pady=10, sticky='ew')        
+        # Configure grid weights
+        for frame in [expense_frame, revenue_frame]:
+            frame.grid_columnconfigure(1, weight=1)
+            for i in range(4):
+                frame.grid_rowconfigure(i, weight=1)
+
+    # New method to save transactions to MongoDB
+    def save_transaction(self, transaction_type):
+        if transaction_type == "Expense":
+            amount = self.expense_amount.get()
+            payment = self.expense_payment.get()
+            desc = self.expense_desc.get()
+        else:  # Revenue
+            amount = self.revenue_amount.get()
+            payment = self.revenue_payment.get()
+            desc = self.revenue_desc.get()
+        
+        if amount <= 0:
+            messagebox.showerror("Error", "Amount must be greater than zero")
+            return
+            
+        if not payment:
+            messagebox.showerror("Error", "Please select a payment method")
+            return
+            
+        # Create document for MongoDB
+        transaction = {
+            "type": transaction_type,
+            "amount": amount,
+            "payment_method": payment,
+            "description": desc,
+            "date": datetime.now()
+        }
+        
+        # Save to MongoDB
+        try:
+            collection = self.general_exp_rev_collection
+            collection.insert_one(transaction)
+            messagebox.showinfo("Success", f"{transaction_type} recorded successfully!")
+            
+            # Clear fields
+            if transaction_type == "Expense":
+                self.expense_amount.set(0)
+                self.expense_payment.set("Cash")
+                self.expense_desc.set("")
+            else:
+                self.revenue_amount.set(0)
+                self.revenue_payment.set("Cash")
+                self.revenue_desc.set("")
+                
+        except Exception as e:
+            messagebox.showerror("Database Error", f"Failed to save transaction: {str(e)}")
 
     def Treasury_window(self, user_role):
         # Clear current window
