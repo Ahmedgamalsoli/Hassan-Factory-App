@@ -296,6 +296,9 @@ class SalesSystemApp:
             "Employee Appointments":{"Arabic":"مواعيد الموظفين","English":"Employee Appointments"},
             "Employee Withdrawals":{"Arabic":"مسحوبات الموظفين","English":"Employee Withdrawals"},
             "Produnction":{"Arabic":"الانتاج","English":"Produnction"},
+            "Transport":{"Arabic":"مصاريف النقل","English":"Transport"},
+            # "Delay":{"Arabic":"","English":"Delay"},
+            # "Delay":{"Arabic":"","English":"Delay"},
             # "Delay":{"Arabic":"","English":"Delay"},
             "Still checked in":{"Arabic":"لا يزال قيد التسجيل","English":"Still checked in"},
             "Customer & Supplier Overview":{"Arabic":"نظرة عامة على العملاء والموردين","English":"Customer & Supplier Overview"},
@@ -522,11 +525,11 @@ class SalesSystemApp:
             "command": lambda: self.trash(self.user_role)},
         ]
 
-        if self.user_role == "admin":
-            buttons.extend([
-                {"text": self.t("Database"), "image": "database.png", 
-                "command": lambda: self.check_access_and_open(self.user_role)}
-            ])
+        # if self.user_role == "admin":
+        buttons.extend([
+            {"text": self.t("Database"), "image": "database.png", 
+            "command": lambda: self.check_access_and_open(self.user_role)}
+        ])
         
         # Create button container with centered alignment
         button_container = tk.Frame(button_frame, bg=COLORS["card"])
@@ -1944,6 +1947,7 @@ class SalesSystemApp:
         tk.Button(self.root, text="Delete Record", command=self.delete_entry).place(width=120, height=40, x=400, y=550)
 
         self.display_table()
+
     def Treasury_window(self, user_role):
         # Clear current window
         for widget in self.root.winfo_children():
@@ -2214,18 +2218,18 @@ class SalesSystemApp:
         form_frame = tk.Frame(self.root)
         form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
         
-        # Configure columns - 10 columns with equal weight
+        # Configure columns - 12 columns with equal weight (increased from 10 to make space)
         for i in range(10):
             form_frame.columnconfigure(i, weight=1)
         form_frame.grid_rowconfigure(3, weight=1)  # Make items grid expandable
 
         # Customer Selection Frame - responsive layout
         customer_frame = tk.Frame(form_frame, bd=1, relief=tk.SOLID, padx=5, pady=5)
-        customer_frame.grid(row=0, column=0, columnspan=10, sticky='ew', pady=5)
+        customer_frame.grid(row=0, column=0, columnspan=12, sticky='ew', pady=5)
         
         # Configure customer frame columns with weights
-        for i in range(10):
-            customer_frame.columnconfigure(i, weight=1 if i in [1, 3, 5, 7, 9] else 0)
+        for i in range(12):
+            customer_frame.columnconfigure(i, weight=1 if i % 2 == 1 else 0)
         
         # Create bidirectional customer mappings
         self.customer_code_map = {}  # name -> code
@@ -2264,34 +2268,45 @@ class SalesSystemApp:
                                             values=sorted(all_codes))
         self.customer_code_cb.grid(row=0, column=3, padx=5, sticky='ew')
 
-        # Balance and Payment Fields
-        tk.Label(customer_frame, text=self.t("Previous Balance"), 
+        # Previous Balance Field
+        tk.Label(customer_frame, text=self.t("Balance"), 
                 font=("Arial", 10, "bold")).grid(row=0, column=4, sticky='e')
         self.previous_balance_var = tk.StringVar()
         self.previous_balance_entry = tk.Entry(customer_frame, 
                                             textvariable=self.previous_balance_var, 
-                                            state='readonly')
+                                            state='readonly', width=10)
         self.previous_balance_entry.grid(row=0, column=5, sticky='ew', padx=5)
 
+        # Paid Money Field
         tk.Label(customer_frame, text=self.t("Paid Money"), 
                 font=("Arial", 10, "bold")).grid(row=0, column=6, sticky='e')
         self.payed_cash_var = tk.DoubleVar()
         self.payed_cash_entry = tk.Entry(customer_frame, 
-                                        textvariable=self.payed_cash_var)
+                                        textvariable=self.payed_cash_var,
+                                        width=10)
         self.payed_cash_entry.grid(row=0, column=7, sticky='ew', padx=5)
+
+        # Transportation Fees Field
+        tk.Label(customer_frame, text=self.t("Transport"), 
+                font=("Arial", 10, "bold")).grid(row=0, column=10, sticky='e')
+        self.transport_fees_var = tk.DoubleVar(value=0.0)
+        self.transport_fees_entry = tk.Entry(customer_frame, 
+                                           textvariable=self.transport_fees_var,
+                                           width=8)
+        self.transport_fees_entry.grid(row=0, column=11, sticky='ew', padx=5)
 
         # Payment Method Dropdown
         tk.Label(customer_frame, text=self.t("Payment Method"), 
                 font=("Arial", 10, "bold")).grid(row=0, column=8, sticky='e')
         self.payment_method_var = tk.StringVar()
-        payment_methods = ['Cash', 'E_Wallet', 'Bank_account', 'Instapay']
+        payment_methods = ['Cash', 'E_Wallet', 'Bank', 'Instapay']
         payment_cb = ttk.Combobox(customer_frame, 
                                 textvariable=self.payment_method_var, 
                                 values=payment_methods, 
-                                state='readonly')
+                                state='readonly',
+                                width=8)
         payment_cb.grid(row=0, column=9, sticky='ew', padx=5)
         payment_cb.current(0)  # Set default to Cash
-
         # Synchronization functions
         def sync_from_name(event=None):
             name = self.customer_name_var.get()
@@ -5199,10 +5214,11 @@ class SalesSystemApp:
 
             # التحقق من المبلغ المدفوع
             payed_cash = float(self.payed_cash_var.get() or 0)
+            transportation_fees = float(self.transport_fees_var.get() or 0)
 
             # جمع بيانات العناصر والتحقق من المخزون
             items = []
-            total_amount = 0.0
+            total_amount = transportation_fees
             stock_updates = {}
             
             for row_idx, row in enumerate(self.entries):
@@ -5290,6 +5306,7 @@ class SalesSystemApp:
                     "Previous_balance": customer.get("Balance", 0),
                     "Total_balance": total_amount + customer.get("Balance", 0),
                     "Payed_cash": payed_cash,
+                    "transportation_fees": transportation_fees,
                     "Remaining_balance": (total_amount + customer.get("Balance", 0)) - payed_cash,
                     "Payment_method": self.payment_method_var.get()
                 },
@@ -5423,6 +5440,7 @@ class SalesSystemApp:
             ("صافي الفاتورة:", f"{invoice_data['Financials']['Net_total']:,.2f} ج"),
             ("رصيد سابق:", f"{invoice_data['Financials']['Previous_balance']:,.2f} ج"),
             ("إجمالي المستحق:", f"{invoice_data['Financials']['Total_balance']:,.2f} ج"),
+            ("مصاريف النقل :", f"{invoice_data['Financials']['transportation_fees']:,.2f} ج"),
             ("المدفوع:", f"{invoice_data['Financials']['Payed_cash']:,.2f} ج"),
             ("الباقي:", f"{invoice_data['Financials']['Remaining_balance']:,.2f} ج"),
             ("طريقة الدفع:", invoice_data['Financials']['Payment_method'])
@@ -5488,6 +5506,7 @@ class SalesSystemApp:
             invoice_data = self.pending_invoice_data
             total_amount = invoice_data['Financials']['Net_total']
             payed_cash = invoice_data['Financials']['Payed_cash']
+            # transportation_fees = invoice_data['Financials']['transportation_fees']
             
             # 1. Update stock
             for code, new_stock in self.pending_stock_updates.items():
@@ -5911,8 +5930,8 @@ class SalesSystemApp:
                         entry.delete(0, tk.END)
             
             # تنظيف الحقول المالية
-            self.payed_cash_var.set('0.0')
-            self.payment_method_var.set('نقدي')
+            # self.payed_cash_var.set('0.0')
+            # self.payment_method_var.set('نقدي')
             
             # إعادة تعيين القائمة
             self.entries = []
@@ -6347,7 +6366,9 @@ class SalesSystemApp:
                 ("حساب سابق:", invoice_data['Financials']['Previous_balance']),
                 ("إجمالي الفاتورة:", invoice_data['Financials']['Total_balance']),
                 ("المدفوع:", invoice_data['Financials']['Payed_cash']),
-                ("الباقي:", invoice_data['Financials']['Remaining_balance'])
+                ("الباقي:", invoice_data['Financials']['Remaining_balance']),
+                # ("طريقة الدفع:", invoice_data['Financials']['Payment_method']),
+                ("مصاريف النقل:", invoice_data['Financials']['transportation_fees'])
             ]
             
             c.setFont("Arabic-Bold", 12)
@@ -7264,13 +7285,14 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 
-################################################################################## Main #########################################################
-#
+##################################################################### Main #########################################################
+
 if __name__ == "__main__":
     root = tk.Tk()
     app = SalesSystemApp(root)
     
-    app.open_login_window()  # Start with the login window
+    # app.open_login_window()  # Start with the login window
+    app.main_menu()
     try:
         root.mainloop()
     except Exception as e:
