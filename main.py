@@ -297,7 +297,7 @@ class SalesSystemApp:
             "Employee Withdrawals":{"Arabic":"مسحوبات الموظفين","English":"Employee Withdrawals"},
             "Produnction":{"Arabic":"الانتاج","English":"Produnction"},
             "Transport":{"Arabic":"مصاريف النقل","English":"Transport"},
-            # "Delay":{"Arabic":"","English":"Delay"},
+            "NOT SUPPORTED YET":{"Arabic":"غير مدعوم حتى الآن","English":"NOT SUPPORTED YET"},
             # "Delay":{"Arabic":"","English":"Delay"},
             # "Delay":{"Arabic":"","English":"Delay"},
             "Still checked in":{"Arabic":"لا يزال قيد التسجيل","English":"Still checked in"},
@@ -525,11 +525,11 @@ class SalesSystemApp:
             "command": lambda: self.trash(self.user_role)},
         ]
 
-        # if self.user_role == "admin":
-        buttons.extend([
-            {"text": self.t("Database"), "image": "database.png", 
-            "command": lambda: self.check_access_and_open(self.user_role)}
-        ])
+        if self.user_role == "admin":
+            buttons.extend([
+                {"text": self.t("Database"), "image": "database.png", 
+                "command": lambda: self.check_access_and_open(self.user_role)}
+            ])
         
         # Create button container with centered alignment
         button_container = tk.Frame(button_frame, bg=COLORS["card"])
@@ -6927,13 +6927,27 @@ class SalesSystemApp:
         username_label = tk.Label(user_frame, text=self.user_name, font=("Arial", 14), fg="black", bg="#dbb40f")
         username_label.pack(side="left")
     
-    def trash(self,user_role):
+    def trash(self, user_role):
         # Clear current window
         for widget in self.root.winfo_children():
             widget.destroy()
 
         # make the top bar with change language button
         self.topbar(show_back_button=True)
+        
+        # Create a main frame to center the message
+        main_frame = tk.Frame(self.root)
+        main_frame.pack(expand=True, fill='both')
+        
+        # Add big "Not Supported Yet" text
+        not_supported_label = tk.Label(
+            main_frame,
+            text=self.t("NOT SUPPORTED YET"),
+            font=("Arial", 32, "bold"),
+            fg="red",
+            pady=50
+        )
+        not_supported_label.pack(expand=True)
 
 
     def play_Error(self):
@@ -7292,7 +7306,9 @@ if __name__ == "__main__":
     app = SalesSystemApp(root)
     
     # app.open_login_window()  # Start with the login window
+    app.user_role="admin"
     app.main_menu()
+
     try:
         root.mainloop()
     except Exception as e:
