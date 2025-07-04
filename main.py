@@ -1984,7 +1984,7 @@ class SalesSystemApp:
             paned_window.sash_place(0, width // 2, 0)
         
         # Common payment methods
-        payment_methods = ["Cash", "Instapay", "Bank Account", "E Wallet"]
+        payment_methods = ["cash", "instapay", "bank_account", "e_wallet"]
         
         # ======================
         # EXPENSE SECTION
@@ -2092,11 +2092,11 @@ class SalesSystemApp:
             # Clear fields
             if transaction_type == "Expense":
                 self.expense_amount.set(0)
-                self.expense_payment.set("Cash")
+                self.expense_payment.set("cash")
                 self.expense_desc.set("")
             else:
                 self.revenue_amount.set(0)
-                self.revenue_payment.set("Cash")
+                self.revenue_payment.set("cash")
                 self.revenue_desc.set("")
                 
         except Exception as e:
@@ -2252,7 +2252,7 @@ class SalesSystemApp:
         transactions = []
 
         # 1. Customer Payments (Credit) done
-        customer_payments = self.customer_payments.find({"Time": {"$gte": start_date_str, "$lte": end_date_str}})
+        customer_payments = self.customer_payments.find({"Time": {"$gte": start_date, "$lte": end_date}})
         # print(customer_payments)
         for doc in customer_payments:
             transactions.append({
@@ -2288,7 +2288,7 @@ class SalesSystemApp:
             })
         # print(transactions)
         # 4. Purchases (Debit)
-        purchases = self.purchases_collection.find({"Date": {"$gte": start_date_str, "$lte": end_date_str}})
+        purchases = self.purchases_collection.find({"Date": {"$gte": start_date, "$lte": end_date}})
         for doc in purchases:
             financials = doc.get("Financials", {})  # Safely get the nested Financials object
             transactions.append({
@@ -2300,7 +2300,7 @@ class SalesSystemApp:
             })
         # # print(transactions)
         # 5. Sales (Credit)
-        sales = self.sales_collection.find({"Date": {"$gte": start_date_str, "$lte": end_date_str}})
+        sales = self.sales_collection.find({"Date": {"$gte": start_date, "$lte": end_date}})
         for doc in sales:
             financials = doc.get("Financials", {})  # Safely get the nested Financials object
             transactions.append({
@@ -2312,7 +2312,7 @@ class SalesSystemApp:
             })
         # # print(transactions)
         # 6. Supplier Payments (Debit)
-        supplier_payments = self.supplier_payments.find({"Time": {"$gte": start_date_str, "$lte": end_date_str}})
+        supplier_payments = self.supplier_payments.find({"Time": {"$gte": start_date, "$lte": end_date}})
         for doc in supplier_payments:
             transactions.append({
                 "date": self.parse_date(doc.get("Time", "")),
@@ -2321,6 +2321,26 @@ class SalesSystemApp:
                 "debit": float(doc.get("Debit", 0)),
                 "payment_method": doc.get("Payment_method", "").lower().replace(" ", "_")
             })
+        # 7 general exp. and rev.(depit)--> Expense , (credit) --> Revenue
+        general_exp_rev = self.general_exp_rev_collection.find({"date": {"$gte": start_date, "$lte": end_date}})
+        for doc in general_exp_rev:
+            if doc.get("type","")=="Expense":
+                transactions.append({
+                    "date": self.parse_date(doc.get("date", "")),
+                    # "date": self.parse_date(doc.get("timestamp", "")),
+                    "description": doc.get("description", ""),
+                    "credit": 0.0,
+                    "debit": float(doc.get("amount", 0)),
+                    "payment_method": doc.get("payment_method", "").lower().replace(" ", "_")
+                })
+            if doc.get("type","")=="Revenue":
+                transactions.append({
+                    "date": self.parse_date(doc.get("date", "")),
+                    "description": doc.get("description", ""),
+                    "credit": float(doc.get("amount", 0)),
+                    "debit": 0.0,
+                    "payment_method": doc.get("payment_method", "").lower().replace(" ", "_")
+                })
         # print(transactions)
         # Filter transactions
         allowed_methods = ["cash", "instapay", "bank_account", "e_wallet"]
