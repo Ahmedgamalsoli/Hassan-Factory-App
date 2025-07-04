@@ -162,7 +162,11 @@ class SalesSystemApp:
             "Database": {"Arabic": "قاعدة البيانات", "English": "Database"},
             "Change Language": {"Arabic": "تغيير اللغة", "English": "Change Language"},
             "New Sales Invoice": {"Arabic": "فاتورة مبيعات جديدة", "English": "New Sales Invoice"},
+            "Sales Invoice": {"Arabic": "فاتورة مبيعات", "English": "Sales Invoice"},
+            "Update Sales Invoice": {"Arabic": "تعديل فاتورة مبيعات", "English": "Update Sales Invoice"},
             "New Purchase Invoice": {"Arabic": "فاتورة مشتريات جديدة", "English": "New Purchase Invoice"},
+            "Purchase Invoice": {"Arabic": "فاتورة مشتريات", "English": "Purchase Invoice"},
+            "Update Purchase Invoice": {"Arabic": "تعديل فاتورة مشتريات", "English": "Update Purchase Invoice"},
             "Receive Payment": {"Arabic": "حسابات وتوريدات العملاء", "English": "Customer Supply Hub"},
             "Treasury": {"Arabic": "الخزينة", "English": "Treasury"},
             "Make Payment": {"Arabic": "حسابات وتوريدات الموردين", "English": "Supplier Supply Hub"},
@@ -508,10 +512,14 @@ class SalesSystemApp:
         
         # Define buttons with images, text, and commands
         buttons = [
-            {"text": self.t("New Sales Invoice"), "image": "Sales.png",
-            "command": lambda: self.new_sales_invoice(self.user_role)},
-            {"text": self.t("New Purchase Invoice"), "image": "Purchase.png", 
-            "command": lambda: self.new_Purchase_invoice(self.user_role)},
+            # {"text": self.t("New Sales Invoice"), "image": "Sales.png",
+            # "command": lambda: self.new_sales_invoice(self.user_role)},
+            {"text": self.t("Sales Invoice"), "image": "sales_invoice.png",
+            "command": lambda: self.manage_sales_invoices_window()},
+            # {"text": self.t("New Purchase Invoice"), "image": "Purchase.png", 
+            # "command": lambda: self.new_Purchase_invoice(self.user_role)},
+            {"text": self.t("Purchase Invoice"), "image": "purchases_invoice.png", 
+            "command": lambda: self.manage_purchases_invoices_window()},
             {"text": self.t("Receive Payment"), "image": "Recieve.png", 
             "command": lambda: self.customer_interactions(self.user_role)},
             {"text": self.t("Make Payment"), "image": "payment.png", 
@@ -970,6 +978,141 @@ class SalesSystemApp:
         except Exception as e:
             print(f"Error generating visualizations: {e}")
             tk.messagebox.showerror("Error", f"Failed to load reports: {str(e)}")           
+
+
+            
+    def manage_sales_invoices_window(self):
+                # Clear current window
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        # Create the top bar
+        self.topbar(show_back_button=True)
+
+        # Main button frame
+        button_frame = tk.Frame(self.root, bg=COLORS["background"])
+        button_frame.pack(pady=30)
+
+        # Define buttons with images, text, and commands
+        buttons = [
+            {"text": self.t("New Sales Invoice"), "image": "Sales.png",
+            "command": lambda: self.sales_invoice(self.user_role,"add")},
+            {"text": self.t("Update Sales Invoice"), "image": "update_sales.png",
+            "command": lambda: self.sales_invoice(self.user_role,"update")}
+        ]
+        images = []  # Keep references to prevent garbage collection
+        columns_per_row = 3  # Number of buttons per row
+
+        try:
+            for index, btn_info in enumerate(buttons):
+                # Load and resize image
+                img_path = os.path.join(BASE_DIR, "Static", "images", btn_info["image"])
+                img = Image.open(img_path).resize((70, 70), Image.LANCZOS)
+                photo_img = ImageTk.PhotoImage(img)
+                images.append(photo_img)
+
+                # Calculate grid position
+                row = index // columns_per_row
+                column = index % columns_per_row
+
+                # Create sub-frame for each button
+                sub_frame = tk.Frame(button_frame, bg=COLORS["background"])
+                sub_frame.grid(row=row, column=column, padx=20, pady=20)
+
+                # Image button
+                btn = tk.Button(sub_frame, image=photo_img, bd=0, 
+                            compound=tk.TOP,
+                            bg=COLORS["background"],
+                            fg=COLORS["text"],
+                            activebackground=COLORS["highlight"],
+                            command=btn_info["command"])
+                btn.image = photo_img  # Keep reference
+                btn.pack()
+                
+                btn.bind("<Enter>", lambda e, b=btn: b.config(bg=COLORS["primary"]))
+                btn.bind("<Leave>", lambda e, b=btn: b.config(bg=COLORS["background"]))
+
+                # Text label
+                lbl = tk.Label(sub_frame, text=btn_info["text"], 
+                            font=("Arial", 15, "bold"), bg=COLORS["background"], fg="#003366")
+                lbl.pack(pady=5)
+
+        except Exception as e:
+            print(f"Error loading images: {e}")
+            # Fallback to text buttons if images fail
+            fallback_frame = tk.Frame(self.root, bg=COLORS["background"])
+            fallback_frame.pack(pady=20)
+            for btn_info in buttons:
+                tk.Button(fallback_frame, text=btn_info["text"], 
+                        command=btn_info["command"]).pack(side="left", padx=10)
+                
+    def manage_purchases_invoices_window(self):
+                # Clear current window
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        # Create the top bar
+        self.topbar(show_back_button=True)
+
+        # Main button frame
+        button_frame = tk.Frame(self.root, bg=COLORS["background"])
+        button_frame.pack(pady=30)
+
+        # Define buttons with images, text, and commands
+        buttons = [
+            {"text": self.t("New Purchase Invoice"), "image": "Purchase.png", 
+            "command": lambda: self.new_Purchase_invoice(self.user_role)},
+            {"text": self.t("Update Purchase Invoice"), "image": "update_sales.png",
+            "command": lambda: self.trash(self.user_role)}
+        ]
+        
+        images = []  # Keep references to prevent garbage collection
+        columns_per_row = 3  # Number of buttons per row
+
+        try:
+            for index, btn_info in enumerate(buttons):
+                # Load and resize image
+                img_path = os.path.join(BASE_DIR, "Static", "images", btn_info["image"])
+                img = Image.open(img_path).resize((70, 70), Image.LANCZOS)
+                photo_img = ImageTk.PhotoImage(img)
+                images.append(photo_img)
+
+                # Calculate grid position
+                row = index // columns_per_row
+                column = index % columns_per_row
+
+                # Create sub-frame for each button
+                sub_frame = tk.Frame(button_frame, bg=COLORS["background"])
+                sub_frame.grid(row=row, column=column, padx=20, pady=20)
+
+                # Image button
+                btn = tk.Button(sub_frame, image=photo_img, bd=0, 
+                            compound=tk.TOP,
+                            bg=COLORS["background"],
+                            fg=COLORS["text"],
+                            activebackground=COLORS["highlight"],
+                            command=btn_info["command"])
+                btn.image = photo_img  # Keep reference
+                btn.pack()
+                
+                btn.bind("<Enter>", lambda e, b=btn: b.config(bg=COLORS["primary"]))
+                btn.bind("<Leave>", lambda e, b=btn: b.config(bg=COLORS["background"]))
+
+                # Text label
+                lbl = tk.Label(sub_frame, text=btn_info["text"], 
+                            font=("Arial", 15, "bold"), bg=COLORS["background"], fg="#003366")
+                lbl.pack(pady=5)
+
+        except Exception as e:
+            print(f"Error loading images: {e}")
+            # Fallback to text buttons if images fail
+            fallback_frame = tk.Frame(self.root, bg=COLORS["background"])
+            fallback_frame.pack(pady=20)
+            for btn_info in buttons:
+                tk.Button(fallback_frame, text=btn_info["text"], 
+                        command=btn_info["command"]).pack(side="left", padx=10)
+                
+
     def manage_database_window(self):
                 # Clear current window
         for widget in self.root.winfo_children():
@@ -1056,6 +1199,8 @@ class SalesSystemApp:
             for btn_info in buttons:
                 tk.Button(fallback_frame, text=btn_info["text"], 
                         command=btn_info["command"]).pack(side="left", padx=10)
+                
+
     def manage_Employees_window(self):
                 # Clear current window
         for widget in self.root.winfo_children():
@@ -2371,7 +2516,7 @@ class SalesSystemApp:
         balance = self.totals['credit'] - self.totals['debit']
         self.balance_var.set(f"${balance:,.2f}")
 
-    def new_sales_invoice(self, user_role):
+    def sales_invoice(self, user_role ,add_or_update):
         # Clear current window
         for widget in self.root.winfo_children():
             widget.destroy()
@@ -2381,7 +2526,7 @@ class SalesSystemApp:
         self.name_to_code = {}
         
         # Create top bar
-        self.topbar(show_back_button=True)
+        self.topbar(show_back_button=True,Back_to_Sales_Window=True)
 
         # MongoDB collections
         customers_col = self.get_collection_by_name("Customers")
@@ -2706,7 +2851,7 @@ class SalesSystemApp:
         self.name_to_code = {}
         
         # Create top bar
-        self.topbar(show_back_button=True)
+        self.topbar(show_back_button=True,Back_to_Purchases_Window=True)
 
         # MongoDB collections
         suppliers_col = self.get_collection_by_name("Suppliers")
@@ -6111,7 +6256,8 @@ class SalesSystemApp:
             self.entries = []
             # إعادة إنشاء الصفوف الأساسية
             # إذا كنت تستخدم دالة لإضافة الصفوف
-            self.new_purchase_invoice(self.user_role)
+            self.new_Purchase_invoice(self.user_role)
+
         except Exception as e:
             messagebox.showerror("خطأ", f"فشل في تنظيف الحقول: {str(e)}")
 
@@ -6133,7 +6279,7 @@ class SalesSystemApp:
                 self.entries = []
                 # إعادة إنشاء الصفوف الأساسية
                 # إذا كنت تستخدم دالة لإضافة الصفوف
-                self.new_sales_invoice(self.user_role)
+                self.sales_invoice(self.user_role,"add")
             except Exception as e:
                 messagebox.showerror("خطأ", f"فشل في تنظيف الحقول: {str(e)}")
     def clear_invoice_form_purchase(self):
@@ -7024,7 +7170,14 @@ class SalesSystemApp:
 
 
     # Function to make the top bar part
-    def topbar(self, show_back_button=False, Back_to_Database_Window = False, Back_to_Employee_Window = False):
+    def topbar(
+            self,
+            show_back_button=False, 
+            Back_to_Database_Window = False, 
+            Back_to_Employee_Window = False, 
+            Back_to_Sales_Window = False,
+            Back_to_Purchases_Window = False
+            ):
         # Top Bar
         top_bar = tk.Frame(self.root, bg="#dbb40f", height=60)
         top_bar.pack(fill="x")
@@ -7068,6 +7221,10 @@ class SalesSystemApp:
                     back_icon = tk.Button(top_bar, image=self.back_photo, bg="#dbb40f", bd=0, command=self.manage_database_window)
                 elif Back_to_Employee_Window:
                     back_icon = tk.Button(top_bar, image=self.back_photo, bg="#dbb40f", bd=0, command=self.manage_Employees_window)
+                elif Back_to_Sales_Window:
+                    back_icon = tk.Button(top_bar, image=self.back_photo, bg="#dbb40f", bd=0, command=self.manage_sales_invoices_window)
+                elif Back_to_Purchases_Window:
+                    back_icon = tk.Button(top_bar, image=self.back_photo, bg="#dbb40f", bd=0, command=self.manage_purchases_invoices_window)
                 else:
                     back_icon = tk.Button(top_bar, image=self.back_photo, bg="#dbb40f", bd=0, command=self.main_menu)
                 back_icon.pack(side="left", padx=10)
