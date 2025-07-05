@@ -40,7 +40,7 @@ from collections import defaultdict
 dialog_width = 300  # Same width as AlwaysOnTopInputDialog
 dialog_height = 150 # Same height as AlwaysOnTopInputDialog
 
-ARRAY_FIELDS = ['Units'] #Must be lower case
+ARRAY_FIELDS = ['Units', 'Items'] #Must be lower case
 ######################################################### Access Data Base ##############################################################################
 COLORS = {
     "background": "#F5F7FA",       # Light grey background
@@ -64,6 +64,37 @@ if getattr(sys, "frozen", False):
 else:
     # Running as a script
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+field_mapping = {
+    # Customer_info
+    'customer_code': ('Customer_info', 'code'),
+    'customer_name': ('Customer_info', 'name'),
+    'customer_phone1': ('Customer_info', 'phone1'),
+    'customer_phone2': ('Customer_info', 'phone2'),
+    'customer_address': ('Customer_info', 'address'),
+    
+    # Financials
+    'Net_total': ('Financials', 'Net_total'),
+    'Previous_balance': ('Financials', 'Previous_balance'),
+    'Total_balance': ('Financials', 'Total_balance'),
+    'Payed_cash': ('Financials', 'Payed_cash'),
+    'Remaining_balance': ('Financials', 'Remaining_balance'),
+    'Payment_method': ('Financials', 'Payment_method'),
+    
+    # Supplier_info
+    'supplier_code': ('supplier_info', 'code'),
+    'supplier_name': ('supplier_info', 'name'),
+    'supplier_phone1': ('supplier_info', 'phone1'),
+    'supplier_phone2': ('supplier_info', 'phone2'),
+    'supplier_address': ('supplier_info', 'address'),
+}
+
+LOCKED_FIELDS = {
+    "root": [ "Operation_Number","Code","employee_code", "material_code", "product_code", "Receipt_Number", "Operation_Number"],
+    "Customer_info": ["code"],
+    "supplier_info": ["code"],
+    "Items": ["material_code","product_code"]
+}
 
 class SalesSystemApp:
     fields = {
@@ -162,11 +193,7 @@ class SalesSystemApp:
             "Database": {"Arabic": "قاعدة البيانات", "English": "Database"},
             "Change Language": {"Arabic": "تغيير اللغة", "English": "Change Language"},
             "New Sales Invoice": {"Arabic": "فاتورة مبيعات جديدة", "English": "New Sales Invoice"},
-            "Sales Invoice": {"Arabic": "فاتورة مبيعات", "English": "Sales Invoice"},
-            "Update Sales Invoice": {"Arabic": "تعديل فاتورة مبيعات", "English": "Update Sales Invoice"},
             "New Purchase Invoice": {"Arabic": "فاتورة مشتريات جديدة", "English": "New Purchase Invoice"},
-            "Purchase Invoice": {"Arabic": "فاتورة مشتريات", "English": "Purchase Invoice"},
-            "Update Purchase Invoice": {"Arabic": "تعديل فاتورة مشتريات", "English": "Update Purchase Invoice"},
             "Receive Payment": {"Arabic": "حسابات وتوريدات العملاء", "English": "Customer Supply Hub"},
             "Treasury": {"Arabic": "الخزينة", "English": "Treasury"},
             "Make Payment": {"Arabic": "حسابات وتوريدات الموردين", "English": "Supplier Supply Hub"},
@@ -300,9 +327,6 @@ class SalesSystemApp:
             "Employee Appointments":{"Arabic":"مواعيد الموظفين","English":"Employee Appointments"},
             "Employee Withdrawals":{"Arabic":"مسحوبات الموظفين","English":"Employee Withdrawals"},
             "Produnction":{"Arabic":"الانتاج","English":"Produnction"},
-            "Transport":{"Arabic":"مصاريف النقل","English":"Transport"},
-            "NOT SUPPORTED YET":{"Arabic":"غير مدعوم حتى الآن","English":"NOT SUPPORTED YET"},
-            # "Delay":{"Arabic":"","English":"Delay"},
             # "Delay":{"Arabic":"","English":"Delay"},
             "Still checked in":{"Arabic":"لا يزال قيد التسجيل","English":"Still checked in"},
             "Customer & Supplier Overview":{"Arabic":"نظرة عامة على العملاء والموردين","English":"Customer & Supplier Overview"},
@@ -319,11 +343,10 @@ class SalesSystemApp:
         self.user_role = ""  # Placeholder for user role
         self.all_customers = None  # Will be loaded on first search
         self._after_id = None
-        self.logout_icon_path   = os.path.join(BASE_DIR, "Static", "images", "Logout.png")  # Path to logout icon
-        self.exit_icon_path     = os.path.join(BASE_DIR, "Static", "images", "Exit.png")  # Path to exit icon
-        self.calc_icon_path     = os.path.join(BASE_DIR, "Static", "images", "calculator.png")  # Path to exit icon
-        self.minimize_icon_path = os.path.join(BASE_DIR, "Static", "images", "minimize.png")  # Path to exit icon
-        self.back_icon_path     = os.path.join(BASE_DIR, "Static", "images", "Back.png")  # Path to back icon
+        self.logout_icon_path = os.path.join(BASE_DIR, "Static", "images", "Logout.png")  # Path to logout icon
+        self.exit_icon_path   = os.path.join(BASE_DIR, "Static", "images", "Exit.png")  # Path to exit icon
+        self.calc_icon_path   = os.path.join(BASE_DIR, "Static", "images", "calculator.png")  # Path to exit icon
+        self.back_icon_path   = os.path.join(BASE_DIR, "Static", "images", "Back.png")  # Path to back icon
         # self.customer_name_var = None
         # Get the correct path for the icon
         # if hasattr(sys, "_MEIPASS"):
@@ -378,7 +401,6 @@ class SalesSystemApp:
         self.production_collection            = db['Production']
         self.customer_payments                = db["Customer_Payments"]
         self.supplier_payments                = db["Supplier_Payments"]
-        self.general_exp_rev_collection       = db["general_exp_rev"]
         
 
         field_to_convert1 = 'Customer_info.code'  # Change this to your actual field name
@@ -438,7 +460,7 @@ class SalesSystemApp:
         password_entry.place(x=150, y=190, width=200)
 
         username_entry.bind("<Return>", lambda event: validate_login()) # Bind Enter key to trigger add_todo from name_entry
-        password_entry.bind("<Return>", lambda event: validate_login()) # Bind Enter key to trigger add_todo from name_entry
+        password_entry.bind("<Return>", lambda event: validate_login()) 
         
         # Login Button
         def validate_login():
@@ -512,14 +534,10 @@ class SalesSystemApp:
         
         # Define buttons with images, text, and commands
         buttons = [
-            # {"text": self.t("New Sales Invoice"), "image": "Sales.png",
-            # "command": lambda: self.new_sales_invoice(self.user_role)},
-            {"text": self.t("Sales Invoice"), "image": "sales_invoice.png",
-            "command": lambda: self.manage_sales_invoices_window()},
-            # {"text": self.t("New Purchase Invoice"), "image": "Purchase.png", 
-            # "command": lambda: self.new_Purchase_invoice(self.user_role)},
-            {"text": self.t("Purchase Invoice"), "image": "purchases_invoice.png", 
-            "command": lambda: self.manage_purchases_invoices_window()},
+            {"text": self.t("New Sales Invoice"), "image": "Sales.png",
+            "command": lambda: self.new_sales_invoice(self.user_role)},
+            {"text": self.t("New Purchase Invoice"), "image": "Purchase.png", 
+            "command": lambda: self.new_Purchase_invoice(self.user_role)},
             {"text": self.t("Receive Payment"), "image": "Recieve.png", 
             "command": lambda: self.customer_interactions(self.user_role)},
             {"text": self.t("Make Payment"), "image": "payment.png", 
@@ -530,8 +548,6 @@ class SalesSystemApp:
             "command": lambda: self.manage_Employees_window()},
             {"text": self.t("Treasury"), "image": "Treasury.png", 
             "command": lambda: self.Treasury_window(self.user_role)},
-            {"text": self.t("General Expe. & Rev."), "image": "EXP & REV.png", 
-            "command": lambda: self.general_exp_rev(self.user_role)},
             {"text": self.t("Reports"), "image": "Reports.png", 
             "command": lambda: self.trash(self.user_role)},
         ]
@@ -978,141 +994,6 @@ class SalesSystemApp:
         except Exception as e:
             print(f"Error generating visualizations: {e}")
             tk.messagebox.showerror("Error", f"Failed to load reports: {str(e)}")           
-
-
-            
-    def manage_sales_invoices_window(self):
-                # Clear current window
-        for widget in self.root.winfo_children():
-            widget.destroy()
-
-        # Create the top bar
-        self.topbar(show_back_button=True)
-
-        # Main button frame
-        button_frame = tk.Frame(self.root, bg=COLORS["background"])
-        button_frame.pack(pady=30)
-
-        # Define buttons with images, text, and commands
-        buttons = [
-            {"text": self.t("New Sales Invoice"), "image": "Sales.png",
-            "command": lambda: self.sales_invoice(self.user_role,"add")},
-            {"text": self.t("Update Sales Invoice"), "image": "update_sales.png",
-            "command": lambda: self.sales_invoice(self.user_role,"update")}
-        ]
-        images = []  # Keep references to prevent garbage collection
-        columns_per_row = 3  # Number of buttons per row
-
-        try:
-            for index, btn_info in enumerate(buttons):
-                # Load and resize image
-                img_path = os.path.join(BASE_DIR, "Static", "images", btn_info["image"])
-                img = Image.open(img_path).resize((70, 70), Image.LANCZOS)
-                photo_img = ImageTk.PhotoImage(img)
-                images.append(photo_img)
-
-                # Calculate grid position
-                row = index // columns_per_row
-                column = index % columns_per_row
-
-                # Create sub-frame for each button
-                sub_frame = tk.Frame(button_frame, bg=COLORS["background"])
-                sub_frame.grid(row=row, column=column, padx=20, pady=20)
-
-                # Image button
-                btn = tk.Button(sub_frame, image=photo_img, bd=0, 
-                            compound=tk.TOP,
-                            bg=COLORS["background"],
-                            fg=COLORS["text"],
-                            activebackground=COLORS["highlight"],
-                            command=btn_info["command"])
-                btn.image = photo_img  # Keep reference
-                btn.pack()
-                
-                btn.bind("<Enter>", lambda e, b=btn: b.config(bg=COLORS["primary"]))
-                btn.bind("<Leave>", lambda e, b=btn: b.config(bg=COLORS["background"]))
-
-                # Text label
-                lbl = tk.Label(sub_frame, text=btn_info["text"], 
-                            font=("Arial", 15, "bold"), bg=COLORS["background"], fg="#003366")
-                lbl.pack(pady=5)
-
-        except Exception as e:
-            print(f"Error loading images: {e}")
-            # Fallback to text buttons if images fail
-            fallback_frame = tk.Frame(self.root, bg=COLORS["background"])
-            fallback_frame.pack(pady=20)
-            for btn_info in buttons:
-                tk.Button(fallback_frame, text=btn_info["text"], 
-                        command=btn_info["command"]).pack(side="left", padx=10)
-                
-    def manage_purchases_invoices_window(self):
-                # Clear current window
-        for widget in self.root.winfo_children():
-            widget.destroy()
-
-        # Create the top bar
-        self.topbar(show_back_button=True)
-
-        # Main button frame
-        button_frame = tk.Frame(self.root, bg=COLORS["background"])
-        button_frame.pack(pady=30)
-
-        # Define buttons with images, text, and commands
-        buttons = [
-            {"text": self.t("New Purchase Invoice"), "image": "Purchase.png", 
-            "command": lambda: self.new_Purchase_invoice(self.user_role)},
-            {"text": self.t("Update Purchase Invoice"), "image": "update_sales.png",
-            "command": lambda: self.trash(self.user_role)}
-        ]
-        
-        images = []  # Keep references to prevent garbage collection
-        columns_per_row = 3  # Number of buttons per row
-
-        try:
-            for index, btn_info in enumerate(buttons):
-                # Load and resize image
-                img_path = os.path.join(BASE_DIR, "Static", "images", btn_info["image"])
-                img = Image.open(img_path).resize((70, 70), Image.LANCZOS)
-                photo_img = ImageTk.PhotoImage(img)
-                images.append(photo_img)
-
-                # Calculate grid position
-                row = index // columns_per_row
-                column = index % columns_per_row
-
-                # Create sub-frame for each button
-                sub_frame = tk.Frame(button_frame, bg=COLORS["background"])
-                sub_frame.grid(row=row, column=column, padx=20, pady=20)
-
-                # Image button
-                btn = tk.Button(sub_frame, image=photo_img, bd=0, 
-                            compound=tk.TOP,
-                            bg=COLORS["background"],
-                            fg=COLORS["text"],
-                            activebackground=COLORS["highlight"],
-                            command=btn_info["command"])
-                btn.image = photo_img  # Keep reference
-                btn.pack()
-                
-                btn.bind("<Enter>", lambda e, b=btn: b.config(bg=COLORS["primary"]))
-                btn.bind("<Leave>", lambda e, b=btn: b.config(bg=COLORS["background"]))
-
-                # Text label
-                lbl = tk.Label(sub_frame, text=btn_info["text"], 
-                            font=("Arial", 15, "bold"), bg=COLORS["background"], fg="#003366")
-                lbl.pack(pady=5)
-
-        except Exception as e:
-            print(f"Error loading images: {e}")
-            # Fallback to text buttons if images fail
-            fallback_frame = tk.Frame(self.root, bg=COLORS["background"])
-            fallback_frame.pack(pady=20)
-            for btn_info in buttons:
-                tk.Button(fallback_frame, text=btn_info["text"], 
-                        command=btn_info["command"]).pack(side="left", padx=10)
-                
-
     def manage_database_window(self):
                 # Clear current window
         for widget in self.root.winfo_children():
@@ -1199,8 +1080,6 @@ class SalesSystemApp:
             for btn_info in buttons:
                 tk.Button(fallback_frame, text=btn_info["text"], 
                         command=btn_info["command"]).pack(side="left", padx=10)
-                
-
     def manage_Employees_window(self):
                 # Clear current window
         for widget in self.root.winfo_children():
@@ -2095,158 +1974,6 @@ class SalesSystemApp:
         tk.Button(self.root, text="Delete Record", command=self.delete_entry).place(width=120, height=40, x=400, y=550)
 
         self.display_table()
-
-
-    def general_exp_rev(self, user_role):
-        # Clear current window
-        for widget in self.root.winfo_children():
-            widget.destroy()
-
-        self.topbar(show_back_button=True)
-        
-        # Create main container frame
-        main_frame = tk.Frame(self.root)
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
-        
-        # Create paned window for resizable split
-        paned_window = tk.PanedWindow(main_frame, orient=tk.HORIZONTAL, sashrelief=tk.RAISED, sashwidth=4)
-        paned_window.pack(fill=tk.BOTH, expand=True)
-        
-        # Expense Frame (left side)
-        expense_frame = tk.LabelFrame(paned_window, text=" Expenses ", font=("Arial", 12, "bold"), padx=10, pady=10)
-        # Revenue Frame (right side)
-        revenue_frame = tk.LabelFrame(paned_window, text=" Revenues ", font=("Arial", 12, "bold"), padx=10, pady=10)
-        
-        paned_window.add(expense_frame)
-        paned_window.add(revenue_frame)
-        
-        # Force Tkinter to calculate window dimensions
-        self.root.update_idletasks()
-        
-        # Set separator to half of the screen immediately
-        width = main_frame.winfo_width()
-        if width > 100:  # Ensure we have a reasonable width
-            paned_window.sash_place(0, width // 2, 0)
-        
-        # Common payment methods
-        payment_methods = ["cash", "instapay", "bank_account", "e_wallet"]
-        
-        # ======================
-        # EXPENSE SECTION
-        # ======================
-        expense_frame.columnconfigure(1, weight=1)
-        for i in range(4):
-            expense_frame.rowconfigure(i, weight=1)
-        
-        tk.Label(expense_frame, text="Amount Paid:", font=("Arial", 10)).grid(row=0, column=0, sticky='e', pady=5)
-        self.expense_amount = tk.DoubleVar()
-        expense_entry = tk.Entry(expense_frame, textvariable=self.expense_amount)
-        expense_entry.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
-        
-        tk.Label(expense_frame, text="Payment Method:", font=("Arial", 10)).grid(row=1, column=0, sticky='e', pady=5)
-        self.expense_payment = tk.StringVar()
-        expense_payment_cb = ttk.Combobox(expense_frame, textvariable=self.expense_payment, 
-                                        values=payment_methods, state="readonly")
-        expense_payment_cb.grid(row=1, column=1, padx=5, pady=5, sticky='ew')
-        expense_payment_cb.current(0)  # Default to Cash
-        
-        tk.Label(expense_frame, text="Description:", font=("Arial", 10)).grid(row=2, column=0, sticky='e', pady=5)
-        self.expense_desc = tk.StringVar()
-        expense_desc_entry = tk.Entry(expense_frame, textvariable=self.expense_desc)
-        expense_desc_entry.grid(row=2, column=1, padx=5, pady=5, sticky='ew')
-        
-        expense_submit = tk.Button(expense_frame, 
-                            text=self.t("💾 Record Expense"), 
-                            font=('Helvetica', 12, 'bold'),
-                            width=20,
-                            command=lambda: self.save_transaction("Expense"),
-                            bg='#2196F3', fg='white')
-        expense_submit.grid(row=3, column=0, columnspan=2, pady=10, sticky='ew')
-        
-        # ======================
-        # REVENUE SECTION
-        # ======================
-        revenue_frame.columnconfigure(1, weight=1)
-        for i in range(4):
-            revenue_frame.rowconfigure(i, weight=1)
-        
-        tk.Label(revenue_frame, text="Amount Received:", font=("Arial", 10)).grid(row=0, column=0, sticky='e', pady=5)
-        self.revenue_amount = tk.DoubleVar()
-        revenue_entry = tk.Entry(revenue_frame, textvariable=self.revenue_amount)
-        revenue_entry.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
-        
-        tk.Label(revenue_frame, text="Payment Method:", font=("Arial", 10)).grid(row=1, column=0, sticky='e', pady=5)
-        self.revenue_payment = tk.StringVar()
-        revenue_payment_cb = ttk.Combobox(revenue_frame, textvariable=self.revenue_payment, 
-                                        values=payment_methods, state="readonly")
-        revenue_payment_cb.grid(row=1, column=1, padx=5, pady=5, sticky='ew')
-        revenue_payment_cb.current(0)  # Default to Cash
-        
-        tk.Label(revenue_frame, text="Description:", font=("Arial", 10)).grid(row=2, column=0, sticky='e', pady=5)
-        self.revenue_desc = tk.StringVar()
-        revenue_desc_entry = tk.Entry(revenue_frame, textvariable=self.revenue_desc)
-        revenue_desc_entry.grid(row=2, column=1, padx=5, pady=5, sticky='ew')
-        
-        revenue_submit = tk.Button(revenue_frame, 
-                            text=self.t("💾 Record Revenue"), 
-                            font=('Helvetica', 12, 'bold'),
-                            width=20,
-                            command=lambda: self.save_transaction("Revenue"),
-                            bg="#21F35D", fg='white')
-        revenue_submit.grid(row=3, column=0, columnspan=2, pady=10, sticky='ew')        
-        # Configure grid weights
-        for frame in [expense_frame, revenue_frame]:
-            frame.grid_columnconfigure(1, weight=1)
-            for i in range(4):
-                frame.grid_rowconfigure(i, weight=1)
-
-    # New method to save transactions to MongoDB
-    def save_transaction(self, transaction_type):
-        if transaction_type == "Expense":
-            amount = self.expense_amount.get()
-            payment = self.expense_payment.get()
-            desc = self.expense_desc.get()
-        else:  # Revenue
-            amount = self.revenue_amount.get()
-            payment = self.revenue_payment.get()
-            desc = self.revenue_desc.get()
-        
-        if amount <= 0:
-            messagebox.showerror("Error", "Amount must be greater than zero")
-            return
-            
-        if not payment:
-            messagebox.showerror("Error", "Please select a payment method")
-            return
-            
-        # Create document for MongoDB
-        transaction = {
-            "type": transaction_type,
-            "amount": amount,
-            "payment_method": payment,
-            "description": desc,
-            "date": datetime.now()
-        }
-        
-        # Save to MongoDB
-        try:
-            collection = self.general_exp_rev_collection
-            collection.insert_one(transaction)
-            messagebox.showinfo("Success", f"{transaction_type} recorded successfully!")
-            
-            # Clear fields
-            if transaction_type == "Expense":
-                self.expense_amount.set(0)
-                self.expense_payment.set("cash")
-                self.expense_desc.set("")
-            else:
-                self.revenue_amount.set(0)
-                self.revenue_payment.set("cash")
-                self.revenue_desc.set("")
-                
-        except Exception as e:
-            messagebox.showerror("Database Error", f"Failed to save transaction: {str(e)}")
-
     def Treasury_window(self, user_role):
         # Clear current window
         for widget in self.root.winfo_children():
@@ -2397,7 +2124,7 @@ class SalesSystemApp:
         transactions = []
 
         # 1. Customer Payments (Credit) done
-        customer_payments = self.customer_payments.find({"Time": {"$gte": start_date, "$lte": end_date}})
+        customer_payments = self.customer_payments.find({"Time": {"$gte": start_date_str, "$lte": end_date_str}})
         # print(customer_payments)
         for doc in customer_payments:
             transactions.append({
@@ -2433,7 +2160,7 @@ class SalesSystemApp:
             })
         # print(transactions)
         # 4. Purchases (Debit)
-        purchases = self.purchases_collection.find({"Date": {"$gte": start_date, "$lte": end_date}})
+        purchases = self.purchases_collection.find({"Date": {"$gte": start_date_str, "$lte": end_date_str}})
         for doc in purchases:
             financials = doc.get("Financials", {})  # Safely get the nested Financials object
             transactions.append({
@@ -2445,7 +2172,7 @@ class SalesSystemApp:
             })
         # # print(transactions)
         # 5. Sales (Credit)
-        sales = self.sales_collection.find({"Date": {"$gte": start_date, "$lte": end_date}})
+        sales = self.sales_collection.find({"Date": {"$gte": start_date_str, "$lte": end_date_str}})
         for doc in sales:
             financials = doc.get("Financials", {})  # Safely get the nested Financials object
             transactions.append({
@@ -2457,7 +2184,7 @@ class SalesSystemApp:
             })
         # # print(transactions)
         # 6. Supplier Payments (Debit)
-        supplier_payments = self.supplier_payments.find({"Time": {"$gte": start_date, "$lte": end_date}})
+        supplier_payments = self.supplier_payments.find({"Time": {"$gte": start_date_str, "$lte": end_date_str}})
         for doc in supplier_payments:
             transactions.append({
                 "date": self.parse_date(doc.get("Time", "")),
@@ -2466,26 +2193,6 @@ class SalesSystemApp:
                 "debit": float(doc.get("Debit", 0)),
                 "payment_method": doc.get("Payment_method", "").lower().replace(" ", "_")
             })
-        # 7 general exp. and rev.(depit)--> Expense , (credit) --> Revenue
-        general_exp_rev = self.general_exp_rev_collection.find({"date": {"$gte": start_date, "$lte": end_date}})
-        for doc in general_exp_rev:
-            if doc.get("type","")=="Expense":
-                transactions.append({
-                    "date": self.parse_date(doc.get("date", "")),
-                    # "date": self.parse_date(doc.get("timestamp", "")),
-                    "description": doc.get("description", ""),
-                    "credit": 0.0,
-                    "debit": float(doc.get("amount", 0)),
-                    "payment_method": doc.get("payment_method", "").lower().replace(" ", "_")
-                })
-            if doc.get("type","")=="Revenue":
-                transactions.append({
-                    "date": self.parse_date(doc.get("date", "")),
-                    "description": doc.get("description", ""),
-                    "credit": float(doc.get("amount", 0)),
-                    "debit": 0.0,
-                    "payment_method": doc.get("payment_method", "").lower().replace(" ", "_")
-                })
         # print(transactions)
         # Filter transactions
         allowed_methods = ["cash", "instapay", "bank_account", "e_wallet"]
@@ -2516,7 +2223,7 @@ class SalesSystemApp:
         balance = self.totals['credit'] - self.totals['debit']
         self.balance_var.set(f"${balance:,.2f}")
 
-    def sales_invoice(self, user_role ,add_or_update):
+    def new_sales_invoice(self, user_role):
         # Clear current window
         for widget in self.root.winfo_children():
             widget.destroy()
@@ -2526,7 +2233,7 @@ class SalesSystemApp:
         self.name_to_code = {}
         
         # Create top bar
-        self.topbar(show_back_button=True,Back_to_Sales_Window=True)
+        self.topbar(show_back_button=True)
 
         # MongoDB collections
         customers_col = self.get_collection_by_name("Customers")
@@ -2537,18 +2244,18 @@ class SalesSystemApp:
         form_frame = tk.Frame(self.root)
         form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
         
-        # Configure columns - 12 columns with equal weight (increased from 10 to make space)
+        # Configure columns - 10 columns with equal weight
         for i in range(10):
             form_frame.columnconfigure(i, weight=1)
         form_frame.grid_rowconfigure(3, weight=1)  # Make items grid expandable
 
         # Customer Selection Frame - responsive layout
         customer_frame = tk.Frame(form_frame, bd=1, relief=tk.SOLID, padx=5, pady=5)
-        customer_frame.grid(row=0, column=0, columnspan=12, sticky='ew', pady=5)
+        customer_frame.grid(row=0, column=0, columnspan=10, sticky='ew', pady=5)
         
         # Configure customer frame columns with weights
-        for i in range(12):
-            customer_frame.columnconfigure(i, weight=1 if i % 2 == 1 else 0)
+        for i in range(10):
+            customer_frame.columnconfigure(i, weight=1 if i in [1, 3, 5, 7, 9] else 0)
         
         # Create bidirectional customer mappings
         self.customer_code_map = {}  # name -> code
@@ -2587,45 +2294,34 @@ class SalesSystemApp:
                                             values=sorted(all_codes))
         self.customer_code_cb.grid(row=0, column=3, padx=5, sticky='ew')
 
-        # Previous Balance Field
-        tk.Label(customer_frame, text=self.t("Balance"), 
+        # Balance and Payment Fields
+        tk.Label(customer_frame, text=self.t("Previous Balance"), 
                 font=("Arial", 10, "bold")).grid(row=0, column=4, sticky='e')
         self.previous_balance_var = tk.StringVar()
         self.previous_balance_entry = tk.Entry(customer_frame, 
                                             textvariable=self.previous_balance_var, 
-                                            state='readonly', width=10)
+                                            state='readonly')
         self.previous_balance_entry.grid(row=0, column=5, sticky='ew', padx=5)
 
-        # Paid Money Field
         tk.Label(customer_frame, text=self.t("Paid Money"), 
                 font=("Arial", 10, "bold")).grid(row=0, column=6, sticky='e')
         self.payed_cash_var = tk.DoubleVar()
         self.payed_cash_entry = tk.Entry(customer_frame, 
-                                        textvariable=self.payed_cash_var,
-                                        width=10)
+                                        textvariable=self.payed_cash_var)
         self.payed_cash_entry.grid(row=0, column=7, sticky='ew', padx=5)
-
-        # Transportation Fees Field
-        tk.Label(customer_frame, text=self.t("Transport"), 
-                font=("Arial", 10, "bold")).grid(row=0, column=10, sticky='e')
-        self.transport_fees_var = tk.DoubleVar(value=0.0)
-        self.transport_fees_entry = tk.Entry(customer_frame, 
-                                           textvariable=self.transport_fees_var,
-                                           width=8)
-        self.transport_fees_entry.grid(row=0, column=11, sticky='ew', padx=5)
 
         # Payment Method Dropdown
         tk.Label(customer_frame, text=self.t("Payment Method"), 
                 font=("Arial", 10, "bold")).grid(row=0, column=8, sticky='e')
         self.payment_method_var = tk.StringVar()
-        payment_methods = ['Cash', 'E_Wallet', 'Bank', 'Instapay']
+        payment_methods = ['Cash', 'E_Wallet', 'Bank_account', 'Instapay']
         payment_cb = ttk.Combobox(customer_frame, 
                                 textvariable=self.payment_method_var, 
                                 values=payment_methods, 
-                                state='readonly',
-                                width=8)
+                                state='readonly')
         payment_cb.grid(row=0, column=9, sticky='ew', padx=5)
         payment_cb.current(0)  # Set default to Cash
+
         # Synchronization functions
         def sync_from_name(event=None):
             name = self.customer_name_var.get()
@@ -2851,7 +2547,7 @@ class SalesSystemApp:
         self.name_to_code = {}
         
         # Create top bar
-        self.topbar(show_back_button=True,Back_to_Purchases_Window=True)
+        self.topbar(show_back_button=True)
 
         # MongoDB collections
         suppliers_col = self.get_collection_by_name("Suppliers")
@@ -3898,7 +3594,8 @@ class SalesSystemApp:
             return
 
         operation_number = self.get_next_operation_number(supplier_payment_collection)
-        current_time = datetime.now().strftime("%d/%m/%Y %H:%M")
+        current_time = datetime.now()
+        # current_time = datetime.now().strftime("%d/%m/%Y %H:%M")
 
         doc = {
             "Operation_Number": operation_number,
@@ -3956,7 +3653,8 @@ class SalesSystemApp:
             return
 
         operation_number = self.get_next_operation_number(customer_payment_collection)
-        current_time = datetime.now().strftime("%d/%m/%Y %H:%M")
+        current_time = datetime.now()
+        # current_time = datetime.now().strftime("%d/%m/%Y %H:%M")
 
         doc = {
             "Operation_Number": operation_number,
@@ -3971,30 +3669,41 @@ class SalesSystemApp:
         }
 
         customer_payment_collection.insert_one(doc)
-        tree.insert("", tk.END, values=(current_time, operation_number, 0.0, credit_val))
+        tree.insert("", tk.END, values=(current_time, operation_number, 0.0, credit_val,payment_method))
 
-
-        self.update_totals(
-            sales_collection,
-            customer_payment_collection,
-            {
-                "Customer_info.code": customer_code,
-                "Customer_info.name": customer_name
-            },
-            tree
+        self.on_code_selected(
+            event=None,
+            code_cb=self.customer_code_cb,
+            name_cb=self.customer_name_cb,
+            collection=self.get_collection_by_name("Customers"),
+            invoices_collection=sales_collection,
+            payment_collection=customer_payment_collection,
+            field_path="Customer_info.code",
+            tree=tree
         )
+
+        # self.update_totals(
+        #     sales_collection,
+        #     customer_payment_collection,
+        #     {
+        #         "Customer_info.code": customer_code,
+        #         "Customer_info.name": customer_name
+        #     },
+        #     tree
+        # )
         messagebox.showinfo("Success", f"Entry {operation_number} added.")
+        #TODO Block of code to preview invoice to be generated + generate invoice as pdf
 
     def on_code_selected(self, event, code_cb, name_cb, collection, invoices_collection, payment_collection, field_path, tree):
         selected_code = code_cb.get().strip()
         if not selected_code:
             return
 
-        start_date = self.start_date_entry.get_date()  # These should be instance variables
-        end_date = self.end_date_entry.get_date()
-        start_date_str = start_date.strftime("%d/%m/%Y")
-        end_date_str = end_date.strftime("%d/%m/%Y")
-    
+        start_date_raw = self.start_date_entry.get_date()  # These should be instance variables
+        end_date_raw = self.end_date_entry.get_date()
+        start_date = datetime.combine(start_date_raw, time.min)          # 00:00:00
+        end_date = datetime.combine(end_date_raw, time.max)              # 23:59:59.999999
+        
         try:
             person = collection.find_one({"Code": selected_code}, {"Name": 1, "_id": 0})
             if not person:
@@ -4007,25 +3716,20 @@ class SalesSystemApp:
 
             if person:
                 name_cb.set(person["Name"])
-                query = {field_path: selected_code}
-                time_query = {
-                    "$expr": {
-                        "$and": [
-                            {"$gte": [{"$substr": ["$Time", 0, 10]}, start_date_str]},
-                            {"$lte": [{"$substr": ["$Time", 0, 10]}, end_date_str]}
-                        ]
-                    }
+                # query = {field_path: selected_code}
+                payment_query = { #time_query (it also compares dates but from payment db)
+                    "$and": [
+                        {field_path: selected_code},
+                        {"Time": { "$gte": start_date,"$lte": end_date } }
+                    ]
                 }
-                date_query = {
-                    "$expr": {
-                        "$and": [
-                            {"$gte": [{"$substr": ["$Date", 0, 10]}, start_date_str]},
-                            {"$lte": [{"$substr": ["$Date", 0, 10]}, end_date_str]}
-                        ]
-                    }
+
+                invoice_query = { #date_query
+                    "$and": [
+                        {field_path: selected_code},
+                        {"Date": { "$gte": start_date, "$lte": end_date} }
+                    ]
                 }
-                payment_query = {"$and": [query, time_query]} if start_date and end_date else query
-                invoice_query = {"$and": [query, date_query]} if start_date and end_date else query
 
             self.update_totals(invoices_collection, payment_collection, payment_query, invoice_query, tree)
         except Exception as e:
@@ -4038,34 +3742,28 @@ class SalesSystemApp:
         
         start_date = self.start_date_entry.get_date()  # These should be instance variables
         end_date = self.end_date_entry.get_date()
-        start_date_str = start_date.strftime("%d/%m/%Y")
-        end_date_str = end_date.strftime("%d/%m/%Y")
+        # start_date_str = start_date.strftime("%d/%m/%Y")
+        # end_date_str = end_date.strftime("%d/%m/%Y")
 
         try:
             person = collection.find_one({"Name": selected_name}, {"Code": 1, "_id": 0})
             if person:
                 code = person["Code"]
                 code_cb.set(code)
-                query = {field_path: code}
-                time_query = {
-                    "$expr": {
-                        "$and": [
-                            {"$gte": [{"$substr": ["$Time", 0, 10]}, start_date_str]},
-                            {"$lte": [{"$substr": ["$Time", 0, 10]}, end_date_str]}
-                        ]
-                    }
-                }
-                date_query = {
-                    "$expr": {
-                        "$and": [
-                            {"$gte": [{"$substr": ["$Date", 0, 10]}, start_date_str]},
-                            {"$lte": [{"$substr": ["$Date", 0, 10]}, end_date_str]}
-                        ]
-                    }
+                
+                payment_query = { #time_query (it also compares dates but from payment db)
+                    "$and": [
+                        {field_path: code},
+                        {"Time": { "$gte": start_date,"$lte": end_date } }
+                    ]
                 }
 
-                payment_query = {"$and": [query, time_query]} if start_date and end_date else query
-                invoice_query = {"$and": [query, date_query]} if start_date and end_date else query
+                invoice_query = { #date_query
+                    "$and": [
+                        {field_path: code},
+                        {"Date": { "$gte": start_date,"$lte": end_date } }
+                    ]
+                }
 
                 self.update_totals(invoices_collection, payment_collection, payment_query, invoice_query, tree)
             else:
@@ -4082,7 +3780,8 @@ class SalesSystemApp:
 
         invoices = invoices_collection.find(invoice_query)
         payments = payment_collection.find(payment_query)
-
+        invoice_count = invoices_collection.count_documents(invoice_query)
+        payment_count = payment_collection.count_documents(payment_query)
         total_debit = 0.0
         total_credit = 0.0
         balance = 0.0
@@ -4095,8 +3794,9 @@ class SalesSystemApp:
                 total_credit += float(financials.get("Net_total", 0))
                 
                 # Add to sample_data for tree
-                raw_date = inv.get("Date", "").split()[0]
-                date = "-".join(reversed(raw_date.split("/"))) if raw_date else ""
+                # raw_date = inv.get("Date", "").split()[0]
+                # date = "-".join(reversed(raw_date.split("/"))) if raw_date else ""
+                date = inv.get("Date", "")
                 invoice_no = inv.get("Receipt_Number", "")
                 payment_method = financials.get("Payment_method", "Cash") #if it doesn't exist then by default = "Cash"
                 sample_data.append((date, invoice_no, str(financials.get("Payed_cash", 0.0)), str(financials.get("Net_total", 0.0)), payment_method))
@@ -4108,8 +3808,10 @@ class SalesSystemApp:
                 total_credit += float(financials.get("Payed_cash", 0))
                 
                 # Add to sample_data for tree
-                raw_date = inv.get("Date", "").split()[0]
-                date = "-".join(reversed(raw_date.split("/"))) if raw_date else ""
+                # raw_date = inv.get("Date", "").split()[0] #check123
+                # date = "-".join(reversed(raw_date.split("/"))) if raw_date else "" #check123
+                date = inv.get("Date", "")
+                
                 invoice_no = inv.get("Receipt_Number", "")
                 payment_method = financials.get("Payment_method", "Cash")
                 sample_data.append((date, invoice_no, str(financials.get("Net_total", 0.0)), str(financials.get("Payed_cash", 0.0)), payment_method))
@@ -4119,8 +3821,9 @@ class SalesSystemApp:
             total_credit += float(payment.get("Credit", 0.0))
             
             # Add to sample_data for tree
-            raw_date = payment.get("Time", "").split()[0]
-            date = "-".join(reversed(raw_date.split("/"))) if raw_date else ""
+            # raw_date = payment.get("Time", "").split()[0]
+            # date = "-".join(reversed(raw_date.split("/"))) if raw_date else ""
+            date = payment.get("Time", "")
             payment_no = payment.get("Operation_Number", "")
             payment_method = payment.get("Payment_method", "Cash")
             sample_data.append((date, payment_no, str(payment.get("Debit", 0.0)), str(payment.get("Credit", 0.0)), payment_method))
@@ -4207,6 +3910,8 @@ class SalesSystemApp:
         tk.Label(right_frame, text="End Date").grid(padx=(10,20), row=0, column=10)
         self.end_date_entry = DateEntry(right_frame, font=("Arial", 12), date_pattern='dd-MM-yyyy', width=14)
         self.end_date_entry.grid(padx=(10,20), row=1, column=10)
+        # self.end_date_entry.set_date(date(2025, 7, 7))
+        self.end_date_entry.set_date(date.today())
 
         # ==== Table Section ====
         columns = ("date", "invoice_no", "debit", "credit", "Payment_method")
@@ -4371,7 +4076,6 @@ class SalesSystemApp:
             if label in ["Id", "Operation_Number", "Customer_info", "supplier_info", "Time"]:
                 continue
 
-
             tk.Label(form_frame, text=self.t(label), font=("Arial", 12), anchor="w").grid(row=i, column=0, sticky="w", pady=5)
 
             if "date" in label.lower():
@@ -4404,6 +4108,27 @@ class SalesSystemApp:
                 browse_btn = tk.Button(frame, text="Browse",width=10, command=lambda e=entry: browse_file(e))
                 browse_btn.pack(side="left", padx=5)
                 self.entries[label] = img_label
+            elif "pdf_path" in label.lower():
+                frame = tk.Frame(form_frame)
+                frame.grid(row=i, column=1, pady=5)
+                
+                # Image Label in a *new row* below the current field
+                file_label = tk.Label(form_frame, text="No file selected", anchor="w")
+                file_label.grid(row=i + 1, column=0, columnspan=3, pady=5)
+
+                def browse_file(e=entry, img_lbl=img_label):  # Pass the current entry as argument
+                    filepath = filedialog.askopenfilename(
+                        title="Select a file",
+                        filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")]
+                    )
+                    if filepath:
+                        filename = filepath.split("/")[-1]  # Get just the file name
+                        file_label.config(text=f"Selected: {filename}")
+                        file_label.filepath = filepath 
+
+                browse_btn = tk.Button(frame, text="Browse",width=10, command=lambda e=entry: browse_file(e))
+                browse_btn.pack(side="left", padx=5)
+                self.entries[label] = file_label
             else:
                 entry = tk.Entry(form_frame, font=("Arial", 12), width=20)
                 entry.grid(row=i, column=1, pady=5)
@@ -4473,11 +4198,13 @@ class SalesSystemApp:
         id_index = 0
         selected_item = tree.selection()
         if not selected_item:
-            for entry in self.entries.values():
+            for field, entry in self.entries.items():
                 if isinstance(entry, ttk.Combobox):
                     entry.set('')
                 elif isinstance(entry, DateEntry):
                     entry.set_date(datetime.now())
+                elif "pdf_path" in field.lower():
+                    entry.config(text="")
                 elif hasattr(entry, 'image') and img_label:
                     img_label.config(image='')
                     img_label.image = None
@@ -4492,9 +4219,9 @@ class SalesSystemApp:
             lower_columns = [col.lower() for col in columns]
             if "id" in lower_columns:
                 id_index = columns.index("Id")  # Dynamically get the index of "Id" #TODO need something different to loop on
-            elif any('code' in col for col in lower_columns):
+            elif any(('code' in col) or ('receipt_number' in col) for col in lower_columns):
                 for idx, col in enumerate(lower_columns):
-                    if 'code' in col:
+                    if 'code' in col or 'receipt_number' in col:
                         id_index = idx
                         break
             unique_id = tree.item(selected_item)['values'][id_index]
@@ -4516,19 +4243,16 @@ class SalesSystemApp:
 
         except IndexError:
             return
-
+        
         for field, entry in self.entries.items():
-            if field == 'supplier_code':
-                value = first_document.get('supplier_info', {}).get('code', "")
-            elif field == 'supplier_name':
-                value = first_document.get('supplier_info', {}).get('name', "")
-            elif field == 'customer_code':
-                value = first_document.get('Customer_info', {}).get('code', "")
-            elif field == 'customer_name':
-                value = first_document.get('Customer_info', {}).get('name', "")
+            if field in field_mapping: 
+                parent, child = field_mapping[field]
+                value = first_document.get(parent, {}).get(child, "")
             else:
                 value = first_document.get(field, "")
-
+            
+            items = first_document.get("Items", [])
+            
             if isinstance(entry, ttk.Combobox):
                 entry.set(value)
 
@@ -4536,14 +4260,38 @@ class SalesSystemApp:
                 value = value.strftime('%d-%m-%Y')
                 entry.delete(0, tk.END)
                 entry.insert(0, value)
+            elif field in ['product_name', 'Product_code', 'Unit', 'QTY', 'numbering',
+                    'Total_QTY', 'Unit_price', 'Discount_Type', 'Discount_Value', 'Final_Price'] \
+                    and collection_name == "Sales":
+
+                if isinstance(items, list):
+                    values = [str(item.get(field, '')) for item in items]
+                    value = ', '.join(values)
+                else:
+                    value = ''
+                entry.delete(0, tk.END)
+                entry.insert(0, value)
+            elif field in ['material_name', 'material_code', 'Unit', 'QTY', 'numbering',
+                    'Total_QTY', 'Unit_price', 'Discount_Type', 'Discount_Value', 'Final_Price'] \
+                    and collection_name == "Purchases":
+
+                if isinstance(items, list):
+                    values = [str(item.get(field, '')) for item in items]
+                    value = ', '.join(values)
+                else:
+                    value = ''
+                entry.delete(0, tk.END)
+                entry.insert(0, value)
             elif field == "Units" and isinstance(value, list):
-                value_str = ','.join(map(str, value))
+                value_str = ' , '.join(map(str, value))
                 entry.delete(0, tk.END)
                 entry.insert(0, value_str)
             # If it's a pic field, load preview
             elif "pic" in field.lower():
                 if img_label and value:
                     load_image_preview_from_url(value, img_label)
+            elif "pdf_path" in field.lower():
+                empty = 0 #dummy code
             else:
                 entry.delete(0, tk.END)
                 entry.insert(0, value)
@@ -4566,6 +4314,7 @@ class SalesSystemApp:
             else:
                 data = list(current_collection.find().sort("Id", 1))
 
+
             if data:
                 columns = self.get_fields_by_name(collection_name)
                 if '_id' in columns:
@@ -4583,44 +4332,52 @@ class SalesSystemApp:
                     if 'supplier_name' not in columns:
                         columns.append('supplier_name')
                         
-                    if 'customer_code' not in columns:
-                        columns.append('customer_code')
-                    if 'customer_name' not in columns:
-                        columns.append('customer_name')
-                if 'supplier_info' in columns:
-                    columns.remove('supplier_info')
-                    if 'supplier_code' not in columns:
-                        columns.append('supplier_code')
-                    if 'supplier_name' not in columns:
-                        columns.append('supplier_name')
-                        
                 tree["columns"] = columns
+
                 for col in columns:
                     tree.heading(col, text=col)
                     tree.column(col, width=152, anchor="center", stretch=False)
 
+                
                 for row_data in data:
                     units = row_data.get('Units', [])
+                    items = row_data.get('Items', {})
+                    
                     if(collection_name == "Customer_Payments"):
                         customer_info = row_data.get('Customer_info', {})
                         row_data['customer_code'] = customer_info.get('code', '')
                         row_data['customer_name'] = customer_info.get('name', '')
-                    if(collection_name == "Supplier_Payments"):
+                    
+                    elif(collection_name == "Supplier_Payments"):
                         customer_info = row_data.get('supplier_info', {})
                         row_data['supplier_code'] = customer_info.get('code', '')
                         row_data['supplier_name'] = customer_info.get('name', '')
-                    if(collection_name == "Customer_Payments"):
-                        customer_info = row_data.get('Customer_info', {})
-                        row_data['customer_code'] = customer_info.get('code', '')
-                        row_data['customer_name'] = customer_info.get('name', '')
-                    if(collection_name == "Supplier_Payments"):
-                        customer_info = row_data.get('supplier_info', {})
-                        row_data['supplier_code'] = customer_info.get('code', '')
-                        row_data['supplier_name'] = customer_info.get('name', '')
+                    
+                    elif(collection_name in ["Sales", "Purchases"] ):
+                        prefix = "Customer" if collection_name == "Sales" else "supplier"
+                        info_obj = row_data.get(f'{prefix}_info', {})
+                        financials = row_data.get('Financials', {})
+                        
+                        #start extracting Data from these objects
+                        # cust_info
+                        row_data[f'{prefix.lower()}_code']    = info_obj.get('code', '')
+                        row_data[f'{prefix.lower()}_name']    = info_obj.get('name', '')
+                        row_data[f'{prefix.lower()}_phone1']  = info_obj.get('phone1', '')
+                        row_data[f'{prefix.lower()}_phone2']  = info_obj.get('phone2', '')
+                        row_data[f'{prefix.lower()}_address'] = info_obj.get('address', '')
+                        #financials
+                        row_data['Net_total'] = financials.get('Net_total', '')
+                        row_data['Previous_balance'] = financials.get('Previous_balance', '')
+                        row_data['Total_balance'] = financials.get('Total_balance', '')
+                        row_data['Payed_cash'] = financials.get('Payed_cash', '')
+                        row_data['Remaining_balance'] = financials.get('Remaining_balance', '')
+                        row_data['Payment_method'] = financials.get('Payment_method', '')
+
                     # If Units is a non-empty list
                     if isinstance(units, list) and len(units) > 0:
                         for unit_value in units:
                             values = []
+
                             for col in columns:
                                 value = row_data.get(col, '')
                                 
@@ -4633,7 +4390,27 @@ class SalesSystemApp:
                                 values.append(value)
                             
                             tree.insert("", "end", values=values)
-                    
+                    elif isinstance(items, list) and len(items) > 0 and collection_name in ["Sales", "Purchases"]:
+                        prefix = "Customer" if collection_name == "Sales" else "supplier"
+                        keys = []
+                        if prefix == "Customer":
+                            keys = ['Product_code', 'product_name', 'Unit', 'QTY', 'numbering', \
+                                    'Total_QTY', 'Unit_price', 'Discount_Type', 'Discount_Value', 'Final_Price'] 
+                        else:
+                            keys = ['material_code', 'material_name', 'Unit', 'QTY', 'numbering', \
+                                    'Total_QTY', 'Unit_price', 'Discount_Type', 'Discount_Value', 'Final_Price'] 
+                        for item in items:
+                            values = []
+    
+                            for key in keys:
+                                row_data[key] = item.get(key, '')
+
+                            for col in columns:
+                                value = row_data.get(col,'')
+                                
+                                values.append(value)
+
+                            tree.insert("", "end", values=values)
                     else:
                         # Fallback to insert normally if Units is not a list or is empty
                         values = []
@@ -4658,13 +4435,7 @@ class SalesSystemApp:
         fields = self.get_fields_by_name(collection_name)
 
         new_entry = {}
-
-        if collection_name in ["Sales","Purchases"] :
-            # Customer_info:
-            # Items:
-            # Financials:
-            x=1
-
+        
         # Handle customer/supplier info
         if collection_name in ["Customer_Payments", "Supplier_Payments"]:
             prefix = "Customer" if collection_name == "Customer_Payments" else "supplier"
@@ -4672,7 +4443,7 @@ class SalesSystemApp:
             operation_number = self.get_next_operation_number(current_collection)
             
             new_entry["Operation_Number"] = operation_number
-            current_time = datetime.now().strftime("%d/%m/%Y %H:%M")
+            current_time = datetime.now() #check123
             new_entry["Time"] = current_time
 
             # Get the code and name from entries
@@ -4695,11 +4466,132 @@ class SalesSystemApp:
                 "name": name_value
             }
             new_entry[f"{prefix}_info"] = info_object
+        
+        if collection_name in ["Sales","Purchases"]:
+            prefix = "Customer" if collection_name == "Sales" else "supplier"
+            
+            code = self.entries.get(f"{prefix.lower()}_code")
+            name = self.entries.get(f"{prefix.lower()}_name")
+            phone1 = self.entries.get(f"{prefix.lower()}_phone1")
+            phone2 = self.entries.get(f"{prefix.lower()}_phone2")
+            address = self.entries.get(f"{prefix.lower()}_address")
+
+            info_obj = {
+                "code": code.get().strip() if code else "",
+                "name": name.get().strip() if name else "",
+                "phone1": phone1.get().strip() if phone1 else "",
+                "phone2": phone2.get().strip() if phone2 else "",
+                "address": address.get().strip() if address else "",
+            }
+
+            # --- Financials ---
+            def safe_float(entry):
+                try:
+                    return float(entry.get().strip()) if entry and entry.get().strip() else 0.0
+                except ValueError:
+                    return 0.0
+
+            def safe_str(entry):
+                return entry.get().strip() if entry else ""
+
+            net_total = safe_float(self.entries.get("Net_total"))
+            prev_balance = safe_float(self.entries.get("Previous_balance"))
+            total_balance = safe_float(self.entries.get("Total_balance"))
+            payed_cash = safe_float(self.entries.get("Payed_cash"))
+            remaining_balance = safe_float(self.entries.get("Remaining_balance"))
+            payment_method = safe_str(self.entries.get("Payment_method"))
+
+            financials_obj = {
+                "Net_total": net_total,
+                "Previous_balance": prev_balance,
+                "Total_balance": total_balance,
+                "Payed_cash": payed_cash,
+                "Remaining_balance": remaining_balance,
+                "Payment_method": payment_method
+            }
+
+            def split_entry(name):
+                entry = self.entries.get(name)
+                return entry.get().strip().split(",") if entry and entry.get().strip() else []
+            
+            var = None
+            if prefix.lower() == "customer":
+                Product_codes     = split_entry("Product_code")
+                product_names     = split_entry("product_name")
+                var=product_names
+            else :
+                material_codes     = split_entry("material_code")
+                material_names     = split_entry("material_name")
+                var=material_names
+            Units             = split_entry("Unit")
+            QTYs              = split_entry("QTY")
+            Total_QTYs        = split_entry("Total_QTY")
+            Unit_prices       = split_entry("Unit_price")
+            numberings        = split_entry("numbering")
+            Discount_Types    = split_entry("Discount_Type")
+            Discount_Values   = split_entry("Discount_Value")
+            Final_Prices      = split_entry("Final_Price")
+
+            items = []
+            for i in range(len(var)):
+                try:
+                    item = {}
+                    # Add product/material info depending on prefix
+                    item = { 
+                        "Unit": Units[i].strip(),
+                        "QTY": float(QTYs[i].strip()),
+                        "numbering": float(numberings[i].strip()),
+                        "Total_QTY": float(Total_QTYs[i].strip()),
+                        "Unit_price": float(Unit_prices[i].strip()),
+                        "Discount_Type": Discount_Types[i].strip(),
+                        "Discount_Value": float(Discount_Values[i].strip()),
+                        "Final_Price": float(Final_Prices[i].strip())
+                    }
+                    
+                    if prefix.lower() == "customer":
+                        item["Product_code"] = Product_codes[i].strip()
+                        item["product_name"] = product_names[i].strip()
+                    else:
+                        item["material_code"] = material_codes[i].strip()
+                        item["material_name"] = material_names[i].strip()
+                    
+
+                    items.append(item)
+                except (IndexError, ValueError) as e:
+                    messagebox.showerror("Upload Error", f"All Data fields must be filled: {e}")
+                    return
+                
+            # new_entry["Date"] = datetime.now().strftime("%d/%m/%Y %H:%M") #check123
+            temp = datetime.now()
+            # value_date = datetime.strptime(temp, '%d-%m-%Y').date()
+            # new_entry["Date"] = datetime.combine(value_date, time.min)
+            new_entry["Date"] = temp
+
+            new_entry[f"{prefix}_info"] = info_obj
+            new_entry["Items"] = items
+            new_entry["Financials"] = financials_obj
 
         for field, widget in self.entries.items():
-            if field in ["customer_code", "customer_name", "supplier_code", "supplier_name", "Id"]:
-                continue  # Skip Id
-
+            #add fields not added when using add entry here
+            # if field in ["product_name","product_code"] and collection_name == "Products":
+            # if (field in ["product_name","product_code","material_code","material_name"] and (collection_name == "Sales" or collection_name == "Purchases")):
+            #     dummy=0
+            if field == "Date" and collection_name in ["Sales","Purchases"]:
+                continue
+            elif field in [
+                "customer_code", "customer_name", "customer_phone1", "customer_phone2", "customer_address",
+                "Net_total", "Previous_balance", "Total_balance", "Payed_cash", "Remaining_balance", "Payment_method",
+                "Product_code", "product_name", "Unit", "QTY", "Total_QTY", "Unit_price", "numbering",
+                "Discount_Type", "Discount_Value", "Final_Price",
+                "supplier_code", "supplier_name", "Id",
+                "supplier_phone1","supplier_phone2","supplier_address","material_code","material_name"
+            ]:
+                value = widget.get()
+                if not str(value).strip():
+                    messagebox.showerror("Validation Error", f"Field '{field}' cannot be empty.")
+                    return  # stop processing if any critical field is empty
+                continue  # Skip these fields
+            
             if "date" in field.lower():
                 value = widget.get()
                 if value:
@@ -4715,12 +4607,31 @@ class SalesSystemApp:
             elif "pic" in field.lower():
                 local_image_path = getattr(widget, 'image_path', None)
                 if not local_image_path:
-                    return  # User cancelled
+                    messagebox.showerror("Invalid Input", f"No img was selected")
+                    return
                 try:
                     value = upload_file_to_cloudinary(local_image_path)
                 except Exception as e:
                     messagebox.showerror("Upload Error", f"Failed to upload image: {e}")
                     return
+            elif "pdf_path" in field.lower():
+                local_pdf_path = getattr(widget, 'filepath', None)
+
+                if not local_pdf_path:
+                    messagebox.showerror("Invalid Input", "No PDF was selected.")
+                    return
+
+                try:
+                    value = self.upload_pdf_to_cloudinary(local_pdf_path)
+
+                    # ✅ Clear filepath attribute and display text after successful upload
+                    if hasattr(widget, 'filepath'):
+                        widget.filepath = None
+                    widget.config(text="")  # Clear displayed filename or label
+                except Exception as e:
+                    messagebox.showerror("Upload Error", f"Failed to upload PDF: {e}")
+                    return
+
             elif any(word in field.lower() for word in ["stock_quantity","instapay","bank_account","e-wallet"]) or (current_collection.name == "Customers" and field=="Sales") :
                 value = widget.get()
                 try: 
@@ -4762,6 +4673,7 @@ class SalesSystemApp:
                 # Ensure the new ID is stored as an integer
                 new_entry["Id"] = new_id
 
+            #TODO this line is never reached on adding
             current_collection.insert_one(new_entry)
             self.refresh_generic_table(tree, current_collection, collection_name, search_text="")
             messagebox.showinfo("Success", "Record added successfully")
@@ -4773,6 +4685,8 @@ class SalesSystemApp:
                 elif "pic" in field.lower():
                     widget.config(image='')
                     widget.image = None
+                elif "pdf_path" in field.lower():
+                    widget.config(text="")
                 else:
                     widget.delete(0, tk.END)
 
@@ -4781,8 +4695,7 @@ class SalesSystemApp:
   
     def edit_generic_entry(self, tree, current_collection, collection_name):
         selected_item = tree.selection()
-        unique_id = 0
-        first_document = None
+
         if not selected_item:
             messagebox.showwarning("Warning", "Please select a record to edit")
             return
@@ -4795,7 +4708,7 @@ class SalesSystemApp:
         columns = tree["columns"]  # This returns a tuple/list of column names
         try:
             lower_columns = [col.lower() for col in columns]
-            if current_collection.name in ["Customer_Payments","Supplier_Payments"]:
+            if current_collection.name in ["Customer_Payments","Supplier_Payments","Sales", "Purchases"]:
                 id_index = 0
             elif "id" in lower_columns:
                 id_index = columns.index("Id")  # Dynamically get the index of "Id" #TODO need something different to loop on
@@ -4818,11 +4731,12 @@ class SalesSystemApp:
             except ValueError:
                 pass
 
-        if not existing_record:
+        if not existing_record: #recheck existing record after potential update
             messagebox.showerror("Error", "Could not find record in database")
             return
 
         updated_entry = {}
+        prefix = ""
         # Handle special cases for Customer_Payments and Supplier_Payments
         if collection_name in ["Customer_Payments", "Supplier_Payments"]:
             prefix = "Customer" if collection_name == "Customer_Payments" else "supplier"
@@ -4831,7 +4745,7 @@ class SalesSystemApp:
             # Update info object if code/name fields were modified
             code_field = f"{prefix.lower()}_code"
             name_field = f"{prefix.lower()}_name"
-            
+
             if code_field in self.entries:
                 code_value = self.entries[code_field].get()
                 if code_value:
@@ -4844,15 +4758,80 @@ class SalesSystemApp:
             
             updated_entry[f"{prefix}_info"] = info_object
 
+        if collection_name in ['Sales','Purchases']:
+            prefix = "Customer" if collection_name == "Sales" else "supplier"
+
+            financials_obj = existing_record.get("Financials",{})
+            info_obj = existing_record.get(f"{prefix}_info",{})
+            items = existing_record.get("Items",{})
+            big_obj = {
+                "Financials": financials_obj,
+                f"{prefix}_info": info_obj,
+                "Items": items
+            }
+
+            for field, widget in self.entries.items():  
+                if field in ["Product_code","material_code"] and isinstance(items,list):
+                    item_codes = None
+                    if field == "Product_code":
+                        item_codes = self.entries["Product_code"].get()
+                    else: 
+                        item_codes = self.entries["material_code"].get()
+
+                    split_item_codes = item_codes.split(',')
+                    num_items = len(split_item_codes)
+                    idx = 0
+                    
+                    while num_items > idx:
+                        item = items[idx] if idx < len(items) else {}
+                        for key in item.keys():
+                            value = self.entries[key].get() #check out this line
+                            if isinstance(value, str):
+                                split_values = value.split(',')
+                                if idx < len(split_values):
+                                    item[key] = split_values[idx].strip()
+                                else:
+                                    item[key] = ''
+                            else:
+                                item[key] = value  # or handle non-string cases differently
+                        if(len(items) < num_items):
+                            items.append(item)
+                        else:
+                            items[idx] = item
+                        idx += 1
+
+                    big_obj["Items"] = items
+   
+                elif field in ["product_name", "Unit", "QTY", "Total_QTY", "Unit_price", "numbering",
+                                "Discount_Type", "Discount_Value", "Final_Price", "material_name"]:
+                    continue
+
+                elif field in field_mapping:
+                    parent, child = field_mapping[field]
+                    value = widget.get()
+                    parent, child = field_mapping[field]
+                    if parent in big_obj:
+                        big_obj[parent][child] = value
+
+            updated_entry["Financials"]    = big_obj["Financials"]
+            updated_entry[f"{prefix}_info"] = big_obj[f"{prefix}_info"]
+            updated_entry["Items"]         = big_obj["Items"]
+
         for field, widget in self.entries.items():
-            if field in ["Id", "customer_code", "customer_name", "supplier_code", "supplier_name"]:
+            if collection_name in ['Sales', 'Purchases'] and field in ["customer_code", "customer_name", "customer_phone1", 
+                "customer_phone2", "customer_address", "Net_total", "Previous_balance", "Total_balance", "Payed_cash",
+                "Remaining_balance", "Payment_method", "Product_code", "product_name", "Unit", "QTY", "Total_QTY", 
+                "Unit_price", "numbering", "Discount_Type", "Discount_Value", "Final_Price", "supplier_code", "supplier_name",
+                "supplier_phone1","supplier_phone2","supplier_address","material_code","material_name"]  :
+                continue
+            elif field in ["Id", "Date"]:
                 continue  # Skip Id and special fields (handled above)
 
             existing_value = existing_record.get(field, None)
 
             if "date" in field.lower():
                 value = widget.get()
-                if value:
+                if value and collection_name != "Sales":
                     try:
                         value_date = datetime.strptime(value, '%d-%m-%Y').date()
                         value = datetime.combine(value_date, time.min)
@@ -4873,7 +4852,18 @@ class SalesSystemApp:
                         return
                 else:
                     value = existing_value  # Keep old image URL if no new selection
+            
+            elif "pdf_path" in field.lower():
+                local_pdf_path = getattr(widget, 'filepath', None)
 
+                if local_pdf_path:
+                    try:
+                        value = self.upload_pdf_to_cloudinary(local_pdf_path)
+                    except Exception as e:
+                        messagebox.showerror("Upload Error", f"Failed to upload PDF: {e}")
+                        return
+                else:
+                    value = existing_value  # Keep old PDF URL if no new selection
             else:
                 try:
                     value = widget.get()
@@ -4889,6 +4879,10 @@ class SalesSystemApp:
             updated_entry[field] = value
 
         try:
+            x = updated_entry
+            self.revert_locked_fields(existing_record, updated_entry)
+            y = updated_entry
+
             identifier_field = columns[id_index]
             result = current_collection.update_one({identifier_field: record_id}, {"$set": updated_entry})
             
@@ -4898,13 +4892,14 @@ class SalesSystemApp:
                 messagebox.showinfo("Info", "No changes were made (record was identical)")
 
             # Refresh table
-            # collection_name = self.table_name.get()
             self.refresh_generic_table(tree, current_collection, collection_name, search_text="")
 
             # Clear form fields after update
             for field, widget in self.entries.items():
                 if "date" in field.lower():
                     widget.set_date(datetime.now())
+                elif "pdf_path" in field.lower():
+                    widget.config(text="")
                 elif "pic" in field.lower():
                     widget.config(image='')
                     widget.image = None
@@ -4915,7 +4910,35 @@ class SalesSystemApp:
         except Exception as e:
             messagebox.showerror("Error", f"Error updating record: {e}")
     
-    #
+    def revert_locked_fields(self, existing, updated):
+        for key, locked_fields in LOCKED_FIELDS.items():
+            if key == "root":
+                for field in locked_fields:
+                    if field in updated:
+                        updated[field] = existing.get(field)
+
+            elif key == "Items":
+                # Handle list of objects
+                existing_items = existing.get("Items", [])
+                updated_items = updated.get("Items", [])
+
+                for idx, item in enumerate(updated_items):
+                    if idx < len(existing_items):
+                        for field in locked_fields:
+                            if field in item:
+                                item[field] = existing_items[idx].get(field)
+                    updated_items[idx] = item
+                updated["Items"] = updated_items
+
+            else:
+                # Handle normal nested dicts like Financials, Customer_info, etc.
+                nested_existing = existing.get(key, {})
+                nested_updated = updated.get(key, {})
+                for field in locked_fields:
+                    if field in nested_updated:
+                        nested_updated[field] = nested_existing.get(field)
+                updated[key] = nested_updated
+    
     def delete_generic_entry(self, tree, current_collection):   
         selected_item = tree.selection()
         id_index = None
@@ -4928,7 +4951,7 @@ class SalesSystemApp:
             lower_columns = [col.lower() for col in columns]
 
             # Find which column is used as identifier (id / code)
-            if current_collection.name in ["Customer_Payments","Supplier_Payments"]:
+            if current_collection.name in ["Customer_Payments","Supplier_Payments", "Sales", "Purchases"]:
                 id_index = 0
             elif "id" in lower_columns:
                 id_index = columns.index("Id")
@@ -4955,7 +4978,6 @@ class SalesSystemApp:
         try:
             # ARRAY_FIELDS = ['units']  # Fields you want to treat as arrays (custom handling)
 
-            # Step 1: Find the document based on the selected field (id/code)
             query = {field_name: unique_id}
             document = current_collection.find_one(query)
             
@@ -4974,42 +4996,77 @@ class SalesSystemApp:
             handled = False
             values = tree.item(selected_item)["values"]
             
+            prefix = None
+            item_code = None
+            unit_value = None
+            
             if("Units" in columns):
                 index = columns.index('Units')
                 unit_value = values[index]
 
-            for array_field in ARRAY_FIELDS:
-                units_list = document.get(array_field, None)
-                print(f"units_list: {isinstance(units_list, list)} , unique_id {unique_id}")
-                if isinstance(units_list, list):
-                    # Found Units array and unique_id is inside → handle it
-                    handled = True
-                    if len(units_list) > 1:
-                        update_result = current_collection.update_one(
-                            {"_id": document["_id"]},
-                            {"$pull": {array_field: unit_value}}
-                        )
-                        if update_result.modified_count > 0:
-                            self.deselect_entry(tree)
-                            self.refresh_generic_table(tree, current_collection, self.table_name.get(), search_text="")
-                            messagebox.showinfo("Success", f"Unit '{unique_id}' removed from record.")
-                        else:
-                            messagebox.showwarning("Warning", "No changes were made to the document.")
+            if("Product_code" in columns or "material_code" in columns):
+                prefix = "Product" if current_collection.name == "Sales" else "material"
+                idx1 = columns.index(f'{prefix}_code')
+                idx2 = columns.index('Unit')
+                item_code = values[idx1]
+                unit_value = values[idx2]
+
+            # for array_field in ARRAY_FIELDS:
+            units_list = document.get('Units', None)
+            items_list = document.get('Items', None)
+            print(f"units_list: {isinstance(units_list, list)} , unique_id {unique_id}")
+            if isinstance(units_list, list):
+                # Found Units array and unique_id is inside → handle it
+                handled = True
+                if len(units_list) > 1:
+                    update_result = current_collection.update_one(
+                        {"_id": document["_id"]},
+                        {"$pull": {'Units': unit_value}}
+                    )
+                    if update_result.modified_count > 0:
+                        self.deselect_entry(tree)
+                        self.refresh_generic_table(tree, current_collection, self.table_name.get(), search_text="")
+                        messagebox.showinfo("Success", f"Unit '{unique_id}' removed from record.")
                     else:
-                        delete_result = current_collection.delete_one({"_id": document["_id"]})
-                        if delete_result.deleted_count > 0:
-                            self.deselect_entry(tree)
-                            self.refresh_generic_table(tree, current_collection, self.table_name.get(), search_text="")
-                            messagebox.showinfo("Success", "Record deleted successfully.")
-                        else:
-                            messagebox.showwarning("Warning", "No matching record found to delete.")
-                    return  # After handling Units logic, exit
+                        messagebox.showwarning("Warning", "No changes were made to the document.")
+
+            if isinstance(items_list,list):
+                if len(items_list) > 1 and current_collection.name in ['Sales','Purchases']:
+                    update_result = current_collection.update_one(
+                        {"_id": document["_id"]},
+                        {
+                            "$pull": {
+                                "Items": {
+                                    "$and": [
+                                        {f"{prefix}_code": item_code},
+                                        {"Unit": str(unit_value)}
+                                    ]
+                                }
+                            }
+                        }
+                    )                  
+                    if update_result.modified_count > 0:
+                        self.deselect_entry(tree)
+                        self.refresh_generic_table(tree, current_collection, self.table_name.get(), search_text="")
+                        messagebox.showinfo("Success", f"Unit '{unique_id}' removed from record.")
+                    else:
+                        messagebox.showwarning("Warning", "No changes were made to the document.")
+
+                else:
+                    delete_result = current_collection.delete_one({"_id": document["_id"]})
+                    if delete_result.deleted_count > 0:
+                        self.deselect_entry(tree)
+                        self.refresh_generic_table(tree, current_collection, self.table_name.get(), search_text="")
+                        messagebox.showinfo("Success", "Record deleted successfully.")
+                    else:
+                        messagebox.showwarning("Warning", "No matching record found to delete.")
+                return  # After handling Units logic, exit
 
             # Step 3: If no ARRAY_FIELDS handling triggered → do standard delete
             if not handled:
                 delete_result = current_collection.delete_one(query)
                 if delete_result.deleted_count > 0:
-                    self.deselect_entry(tree)
+                    self.deselect_entry(tree) 
                     self.refresh_generic_table(tree, current_collection, self.table_name.get(), search_text="")
                     messagebox.showinfo("Success", "Record deleted successfully.")
                 else:
@@ -5113,7 +5170,6 @@ class SalesSystemApp:
             messagebox.showwarning("Warning", "Please select a record to edit")
             return
 
-        #TODO fix this ID no longer available in tree
         try:
             unique_id = self.tree.item(selected_item)['values'][2]  # Assuming this holds the custom unique ID
         except IndexError:
@@ -5344,12 +5400,12 @@ class SalesSystemApp:
         elif collection_name == "Sales":
             return ["Receipt_Number", "Date", "customer_code", "customer_name", "customer_phone1","customer_phone2","customer_address",
                     "Product_code","product_name","Unit", "QTY","numbering","Total_QTY", "Unit_price", "Discount_Type", "Discount_Value",
-                    "Final_Price","Net_total", "Previous_balance", "Total balance", "Payed_cash", "Remaining_balance", "Payment_method", "PDF_Path"]
+                    "Final_Price","Net_total", "Previous_balance", "Total_balance", "Payed_cash", "Remaining_balance", "Payment_method", "PDF_Path"]
         
         elif collection_name == "Purchases":
             return ["Receipt_Number", "Date", "supplier_code", "supplier_name", "supplier_phone1","supplier_phone2","supplier_address",
                     "material_code","material_name","Unit","QTY", "numbering","Total_QTY", "Unit_price", "Discount_Type", "Discount_Value",
-                    "Final_Price", "Net_total", "Previous_balance", "Total balance", "Payed_cash", "Remaining_balance", "Payment_method", "PDF_Path"]
+                    "Final_Price", "Net_total", "Previous_balance", "Total_balance", "Payed_cash", "Remaining_balance", "Payment_method", "PDF_Path"]
         
         elif collection_name == "Customer_Payments":
             return ["Operation_Number", "Time", "Credit", "Debit","Payment_method", "Customer_info"]
@@ -5533,11 +5589,10 @@ class SalesSystemApp:
 
             # التحقق من المبلغ المدفوع
             payed_cash = float(self.payed_cash_var.get() or 0)
-            transportation_fees = float(self.transport_fees_var.get() or 0)
 
             # جمع بيانات العناصر والتحقق من المخزون
             items = []
-            total_amount = transportation_fees
+            total_amount = 0.0
             stock_updates = {}
             
             for row_idx, row in enumerate(self.entries):
@@ -5625,7 +5680,6 @@ class SalesSystemApp:
                     "Previous_balance": customer.get("Balance", 0),
                     "Total_balance": total_amount + customer.get("Balance", 0),
                     "Payed_cash": payed_cash,
-                    "transportation_fees": transportation_fees,
                     "Remaining_balance": (total_amount + customer.get("Balance", 0)) - payed_cash,
                     "Payment_method": self.payment_method_var.get()
                 },
@@ -5759,7 +5813,6 @@ class SalesSystemApp:
             ("صافي الفاتورة:", f"{invoice_data['Financials']['Net_total']:,.2f} ج"),
             ("رصيد سابق:", f"{invoice_data['Financials']['Previous_balance']:,.2f} ج"),
             ("إجمالي المستحق:", f"{invoice_data['Financials']['Total_balance']:,.2f} ج"),
-            ("مصاريف النقل :", f"{invoice_data['Financials']['transportation_fees']:,.2f} ج"),
             ("المدفوع:", f"{invoice_data['Financials']['Payed_cash']:,.2f} ج"),
             ("الباقي:", f"{invoice_data['Financials']['Remaining_balance']:,.2f} ج"),
             ("طريقة الدفع:", invoice_data['Financials']['Payment_method'])
@@ -5825,7 +5878,6 @@ class SalesSystemApp:
             invoice_data = self.pending_invoice_data
             total_amount = invoice_data['Financials']['Net_total']
             payed_cash = invoice_data['Financials']['Payed_cash']
-            # transportation_fees = invoice_data['Financials']['transportation_fees']
             
             # 1. Update stock
             for code, new_stock in self.pending_stock_updates.items():
@@ -6199,7 +6251,6 @@ class SalesSystemApp:
                         "Last_purchase": datetime.now(),
                         "Balance": new_balance
                     },
-                    
                     "$inc": {
                         "Purchases": 1,
                         "Debit": payed_cash,
@@ -6249,15 +6300,14 @@ class SalesSystemApp:
                         entry.delete(0, tk.END)
             
             # تنظيف الحقول المالية
-            # self.payed_cash_var.set('0.0')
-            # self.payment_method_var.set('نقدي')
+            self.payed_cash_var.set('0.0')
+            self.payment_method_var.set('نقدي')
             
             # إعادة تعيين القائمة
             self.entries = []
             # إعادة إنشاء الصفوف الأساسية
             # إذا كنت تستخدم دالة لإضافة الصفوف
-            self.new_Purchase_invoice(self.user_role)
-
+            self.new_purchase_invoice(self.user_role)
         except Exception as e:
             messagebox.showerror("خطأ", f"فشل في تنظيف الحقول: {str(e)}")
 
@@ -6279,7 +6329,7 @@ class SalesSystemApp:
                 self.entries = []
                 # إعادة إنشاء الصفوف الأساسية
                 # إذا كنت تستخدم دالة لإضافة الصفوف
-                self.sales_invoice(self.user_role,"add")
+                self.new_sales_invoice(self.user_role)
             except Exception as e:
                 messagebox.showerror("خطأ", f"فشل في تنظيف الحقول: {str(e)}")
     def clear_invoice_form_purchase(self):
@@ -6304,7 +6354,7 @@ class SalesSystemApp:
             except Exception as e:
                 messagebox.showerror("خطأ", f"فشل في تنظيف الحقول: {str(e)}")
                 
-    def generate_old_pdf(self, invoice_data):
+    def generate_pdf(self, invoice_data):
         """توليد ملف PDF بحجم A5 بتنسيق عربي مطابق للنموذج"""
         """توليد ملف PDF بحجم A5 بتنسيق عربي مطابق للنموذج"""
         try:
@@ -6318,6 +6368,16 @@ class SalesSystemApp:
             import arabic_reshaper
             from reportlab.lib.utils import ImageReader
 
+            # Load Arabic font
+            try:
+                arabic_font_path = resource_path(os.path.join("Static", "Fonts", "Amiri-Regular.ttf"))
+                if not os.path.exists(arabic_font_path):
+                    raise FileNotFoundError(f"Font file not found: {arabic_font_path}")
+                pdfmetrics.registerFont(TTFont('Arabic', arabic_font_path))
+            except Exception as e:
+                print(f"Error loading Arabic font: {e}")
+                # Fallback to a default font if Arabic font fails to load
+                pdfmetrics.registerFont(TTFont('Arabic', 'Arial'))
             # Load Arabic font
             try:
                 arabic_font_path = resource_path(os.path.join("Static", "Fonts", "Amiri-Regular.ttf"))
@@ -6355,7 +6415,7 @@ class SalesSystemApp:
             c.setFont("Arabic", 12)
 
             # إضافة الشعار
-            logo_path = os.path.join(BASE_DIR,"Static", "images", "Logo.jpg")
+            logo_path = os.path.join("Static", "images", "Logo.jpg")
             if os.path.exists(logo_path):
                 logo = ImageReader(logo_path)
                 c.drawImage(logo, 0.5*cm, height-3.5*cm, width=4*cm, height=2.5*cm, preserveAspectRatio=True)
@@ -6469,7 +6529,9 @@ class SalesSystemApp:
         except Exception as e:
             messagebox.showerror("خطأ PDF", f"فشل في توليد الملف: {str(e)}")
             return None
-    def generate_pdf(self, invoice_data):
+    
+    def generate_pdf_purchase(self, invoice_data):
+        """توليد ملف PDF بحجم A5 بتنسيق عربي مطابق للنموذج"""
         """توليد ملف PDF بحجم A5 بتنسيق عربي مطابق للنموذج"""
         try:
             from reportlab.lib.pagesizes import A5
@@ -6481,7 +6543,6 @@ class SalesSystemApp:
             from bidi.algorithm import get_display
             import arabic_reshaper
             from reportlab.lib.utils import ImageReader
-            from reportlab.lib import colors
 
             # Load Arabic font
             try:
@@ -6489,251 +6550,20 @@ class SalesSystemApp:
                 if not os.path.exists(arabic_font_path):
                     raise FileNotFoundError(f"Font file not found: {arabic_font_path}")
                 pdfmetrics.registerFont(TTFont('Arabic', arabic_font_path))
-                pdfmetrics.registerFont(TTFont('Arabic-Bold', arabic_font_path))  # For bold text
             except Exception as e:
                 print(f"Error loading Arabic font: {e}")
                 # Fallback to a default font if Arabic font fails to load
                 pdfmetrics.registerFont(TTFont('Arabic', 'Arial'))
-                pdfmetrics.registerFont(TTFont('Arabic-Bold', 'Arial-Bold'))
-
-            # دالة معالجة النصوص العربية
-            def format_arabic(text):
-                reshaped_text = arabic_reshaper.reshape(str(text))
-                return get_display(reshaped_text)
-
-            # Create save path
-            desktop = os.path.join(os.path.expanduser('~'), 'Desktop')
-            invoice_folder = os.path.join(desktop, "sale_invoice")
-
-            # Create folder if it doesn't exist
-            if not os.path.exists(invoice_folder):
-                os.makedirs(invoice_folder)
-
-            # Generate file name
-            invoice_number = str(invoice_data['Receipt_Number']).replace("INV-", "").strip()
-            file_name = f"فاتورة بيع_{invoice_number}.pdf"
-
-            # Full PDF path
-            pdf_path = os.path.join(invoice_folder, file_name)
-
-            # إعداد مستند PDF
-            c = canvas.Canvas(pdf_path, pagesize=A5)
-            width, height = A5
-            c.setFont("Arabic", 12)
-
-            # إضافة الشعار
-            logo_path = os.path.join(BASE_DIR, "Static", "images", "Logo.jpg")
-            if os.path.exists(logo_path):
-                logo = ImageReader(logo_path)
-                c.drawImage(logo, 0.5*cm, height-3.5*cm, width=4*cm, height=2.5*cm, preserveAspectRatio=True)
-
-            # ========== العنوان المركزي ==========
-            invoice_number = str(invoice_data['Receipt_Number']).replace("INV-", "").strip()
-            invoice_title = f"فاتورة بيع رقم {invoice_number}"
-            
-            # رسم الإطار حول العنوان
-            frame_width = 4*cm
-            frame_height = 1*cm
-            frame_x = (width - frame_width) / 2  # مركز أفقي
-            frame_y = height - 2.5*cm
-            c.setLineWidth(1)
-            c.rect(frame_x, frame_y, frame_width, frame_height, stroke=1)
-        
-            # كتابة العنوان المركزي
-            c.setFont("Arabic-Bold", 12)
-            title_x = width / 2
-            title_y = height - 2.2*cm
-            c.drawCentredString(title_x, title_y, format_arabic(invoice_title))
-
-            # ========== معلومات الشركة ==========
-            company_info = [
-                "      حسن سليم",
-                "للمنتجات البلاستيكية"
-            ]
-            
-            y_position = height - 2*cm
-            c.setFont("Arabic-Bold", 12)
-            for line in company_info:
-                c.drawRightString(width - 1.75*cm, y_position, format_arabic(line))
-                y_position -= 0.8*cm
-
-            # ========== معلومات العميل ==========
-            customer_y = height - 3.8*cm
-            c.setFont("Arabic", 12)
-            customer_fields = [
-                f"التاريخ:       {invoice_data['Date']}",            
-                f"اسم العميل:    {invoice_data['Customer_info']['name']}",
-                f"الكود:         {invoice_data['Customer_info']['code']}",
-                f"العنوان:       {invoice_data['Customer_info']['address']}",
-                f"التليفون:      {invoice_data['Customer_info']['phone1']}"
-            ]
-            
-            for line in customer_fields:
-                c.drawRightString(width - 0.4*cm, customer_y, format_arabic(line))
-                customer_y -= 0.8*cm
-
-            # ========== جدول العناصر ==========
-            headers = ["كود الصنف", "     الصنف", "العدد", "الوحدة", "سعر الوحدة", "الكمية", "الإجمالي"]
-            col_positions = [
-                width - 0.4*cm,    # كود الصنف
-                width - 2*cm,       # الصنف
-                width - 6*cm,     # العدد
-                width - 7.5*cm,     # الوحدة
-                width - 9.5*cm,     # السعر
-                width - 11.5*cm,    # الكمية
-                width - 13*cm       # الإجمالي
-            ]
-            
-            # رأس الجدول مع لون خلفية
-            table_y = customer_y - 0.25*cm
-            
-            # رسم خلفية ملونة للرأس
-            header_height = 0.65*cm
-            c.setFillColor(colors.lightblue)  # لون خلفية الرأس
-            c.rect(
-                col_positions[-1] - 2.0*cm,  # أقصى يسار
-                table_y - header_height + 0.2*cm,  # أسفل
-                col_positions[0] - col_positions[-1] + 5.0*cm,  # العرض
-                header_height,  # الارتفاع
-                fill=1,
-                stroke=0
-            )
-            
-            c.setFont("Arabic-Bold", 10)
-            c.setFillColor(colors.black)  # لون النص الأسود
-            for i, header in enumerate(headers):
-                c.drawRightString(col_positions[i], table_y - 0.3*cm, format_arabic(header))
-
-            # بيانات الجدول مع دعم الأسطر المتعددة
-            c.setFont("Arabic", 8)
-            row_height = 0.7*cm
-            max_product_width = 3.5*cm  # أقصى عرض لعمود "الصنف"
-            
-            # تحديد موضع الصف الأول للبيانات
-            table_y -= row_height
-            
-            for item in invoice_data["Items"]:
-                # التحقق مما إذا كان اسم المنتج يتجاوز المساحة المتاحة
-                product_name = item.get("product_name", "")
-                product_code = item.get("Product_code", "")
-                
-                # تقسيم اسم المنتج إلى أسطر متعددة إذا كان طويلاً
-                product_lines = []
-                current_line = ""
-                
-                # دالة لتقسيم النص إلى أسطر بناءً على المساحة المتاحة
-                def split_text(text, max_width):
-                    lines = []
-                    current = ""
-                    for char in text:
-                        test_line = current + char
-                        if c.stringWidth(format_arabic(test_line), "Arabic", 8) < max_width:
-                            current = test_line
-                        else:
-                            lines.append(current)
-                            current = char
-                    if current:
-                        lines.append(current)
-                    return lines
-                
-                # تقسيم اسم المنتج إذا كان طويلاً
-                product_width = c.stringWidth(format_arabic(product_name), "Arabic", 8)
-                if product_width > max_product_width:
-                    product_lines = split_text(product_name, max_product_width)
-                else:
-                    product_lines = [product_name]
-                
-                # حساب ارتفاع الصف بناءً على عدد الأسطر
-                item_height = row_height * len(product_lines)
-                
-                # رسم خلفية بيضاء للصف (اختياري)
-                c.setFillColor(colors.white)
-                c.rect(
-                    col_positions[-1] - 0.5*cm,
-                    table_y - item_height + 0.1*cm,
-                    col_positions[0] - col_positions[-1] + 1.0*cm,
-                    item_height - 0.2*cm,
-                    fill=1,
-                    stroke=0
-                )
-                c.setFillColor(colors.black)  # إعادة لون النص إلى الأسود
-                
-                # رسم كل سطر من أسطر المنتج
-                for i, line in enumerate(product_lines):
-                    line_y = table_y - (i * row_height)
-                    
-                    # رسم محتويات الصف
-                    columns = [
-                        product_code if i == 0 else "",  # عرض الكود في السطر الأول فقط
-                        line,
-                        str(item.get("numbering", "")) if i == 0 else "",
-                        item.get("Unit", "") if i == 0 else "",
-                        f"{item.get('Unit_price', 0):.2f}" if i == 0 else "",
-                        str(item.get('QTY', 0)) if i == 0 else "",
-                        f"{item.get('Final_Price', 0):.2f}" if i == 0 else ""
-                    ]
-                    
-                    for col_index, value in enumerate(columns):
-                        c.drawRightString(col_positions[col_index], line_y, format_arabic(value))
-                
-                # تحديث موضع y للصف التالي
-                table_y -= item_height
-
-            # ========== الإجماليات ==========
-            totals_y = table_y - 1*cm
-            totals = [
-                ("صافي الفاتورة:", invoice_data['Financials']['Net_total']),
-                ("حساب سابق:", invoice_data['Financials']['Previous_balance']),
-                ("إجمالي الفاتورة:", invoice_data['Financials']['Total_balance']),
-                ("المدفوع:", invoice_data['Financials']['Payed_cash']),
-                ("الباقي:", invoice_data['Financials']['Remaining_balance']),
-                # ("طريقة الدفع:", invoice_data['Financials']['Payment_method']),
-                ("مصاريف النقل:", invoice_data['Financials']['transportation_fees'])
-            ]
-            
-            c.setFont("Arabic-Bold", 12)
-            for label, value in totals:
-                text = f"{format_arabic(f'{value:,.2f}')} {format_arabic(label)}"
-                c.drawRightString(width - 0.3*cm, totals_y, text)
-                totals_y -= 0.8*cm
-
-            # ========== التوقيعات ==========
-            c.setFont("Arabic", 10)
-            c.drawRightString(width - 2.2*cm, totals_y - 0.25*cm, format_arabic("____________________"))
-            c.drawString(1.5*cm, totals_y - 0.25*cm, format_arabic("____________________"))
-            
-            c.save()
-            pdf_path = self.upload_pdf_to_cloudinary(pdf_path)
-            return pdf_path
-
-        except Exception as e:
-            messagebox.showerror("خطأ PDF", f"فشل في توليد الملف: {str(e)}")
-            return None
-    def generate_pdf_old_purchase(self, invoice_data):
-        """توليد ملف PDF بحجم A5 بتنسيق عربي مطابق للنموذج"""
-        """توليد ملف PDF بحجم A5 بتنسيق عربي مطابق للنموذج"""
-        try:
-            from reportlab.lib.pagesizes import A5
-            from reportlab.pdfgen import canvas
-            from reportlab.lib.units import cm
-            from reportlab.pdfbase import pdfmetrics
-            from reportlab.pdfbase.ttfonts import TTFont
-            import os
-            from bidi.algorithm import get_display
-            import arabic_reshaper
-            from reportlab.lib.utils import ImageReader
-
+            # Load Arabic font
             try:
                 arabic_font_path = resource_path(os.path.join("Static", "Fonts", "Amiri-Regular.ttf"))
                 if not os.path.exists(arabic_font_path):
                     raise FileNotFoundError(f"Font file not found: {arabic_font_path}")
                 pdfmetrics.registerFont(TTFont('Arabic', arabic_font_path))
-                pdfmetrics.registerFont(TTFont('Arabic-Bold', arabic_font_path))  # For bold text
             except Exception as e:
                 print(f"Error loading Arabic font: {e}")
                 # Fallback to a default font if Arabic font fails to load
                 pdfmetrics.registerFont(TTFont('Arabic', 'Arial'))
-                pdfmetrics.registerFont(TTFont('Arabic-Bold', 'Arial-Bold'))
 
             # دالة معالجة النصوص العربية
             def format_arabic(text):
@@ -6761,7 +6591,7 @@ class SalesSystemApp:
             c.setFont("Arabic", 12)
 
             # إضافة الشعار
-            logo_path = os.path.join(BASE_DIR, "Static", "images", "Logo.jpg")
+            logo_path = os.path.join("Static", "images", "Logo.jpg")
             if os.path.exists(logo_path):
                 logo = ImageReader(logo_path)
                 c.drawImage(logo, 0.5*cm, height-3.5*cm, width=4*cm, height=2.5*cm, preserveAspectRatio=True)
@@ -6779,7 +6609,7 @@ class SalesSystemApp:
             c.rect(frame_x, frame_y, frame_width, frame_height)
             
             # كتابة العنوان المركزي
-            c.setFont("Arabic-Bold", 12)  # تأكد من وجود خط عريض
+            c.setFont("Arabic", 12)  # تأكد من وجود خط عريض
             title_x = width / 2
             title_y = height - 2.2*cm
             c.drawCentredString(title_x, title_y, format_arabic(invoice_title))
@@ -6791,7 +6621,7 @@ class SalesSystemApp:
             ]
             
             y_position = height - 2*cm
-            c.setFont("Arabic-Bold", 12)
+            c.setFont("Arabic", 12)
             for line in company_info:
                 c.drawRightString(width - 1.75*cm, y_position, format_arabic(line))
                 y_position -= 0.8*cm
@@ -6817,7 +6647,7 @@ class SalesSystemApp:
             col_positions = [
                 width - 0.4*cm,    # كود الصنف
                 width - 2*cm,    # الصنف
-                width - 6*cm,    # العدد
+                width - 5.5*cm,    # العدد
                 width - 7.5*cm,    # الوحدة
                 width - 9.5*cm,    # السعر
                 width - 11.5*cm,     # الكمية
@@ -6875,238 +6705,7 @@ class SalesSystemApp:
         except Exception as e:
             messagebox.showerror("خطأ PDF", f"فشل في توليد الملف: {str(e)}")
             return None
-    def generate_pdf_purchase(self, invoice_data):
-        """توليد ملف PDF بحجم A5 بتنسيق عربي مطابق للنموذج"""
-        try:
-            from reportlab.lib.pagesizes import A5
-            from reportlab.pdfgen import canvas
-            from reportlab.lib.units import cm
-            from reportlab.pdfbase import pdfmetrics
-            from reportlab.pdfbase.ttfonts import TTFont
-            import os
-            from bidi.algorithm import get_display
-            import arabic_reshaper
-            from reportlab.lib.utils import ImageReader
-            from reportlab.lib import colors  # Added for colors
-
-            # Load Arabic font
-            try:
-                arabic_font_path = resource_path(os.path.join("Static", "Fonts", "Amiri-Regular.ttf"))
-                if not os.path.exists(arabic_font_path):
-                    raise FileNotFoundError(f"Font file not found: {arabic_font_path}")
-                pdfmetrics.registerFont(TTFont('Arabic', arabic_font_path))
-                pdfmetrics.registerFont(TTFont('Arabic-Bold', arabic_font_path))  # For bold text
-            except Exception as e:
-                print(f"Error loading Arabic font: {e}")
-                # Fallback to a default font if Arabic font fails to load
-                pdfmetrics.registerFont(TTFont('Arabic', 'Arial'))
-                pdfmetrics.registerFont(TTFont('Arabic-Bold', 'Arial-Bold'))
-
-            # دالة معالجة النصوص العربية
-            def format_arabic(text):
-                reshaped_text = arabic_reshaper.reshape(str(text))
-                return get_display(reshaped_text)
-
-            # Create save path
-            desktop = os.path.join(os.path.expanduser('~'), 'Desktop')
-            invoice_folder = os.path.join(desktop, "purchase_invoice")
-
-            # Create folder if it doesn't exist
-            if not os.path.exists(invoice_folder):
-                os.makedirs(invoice_folder)
-
-            # Generate file name
-            invoice_number = str(invoice_data['Receipt_Number']).replace("INV-", "").strip()
-            file_name = f"فاتورة شراء_{invoice_number}.pdf"
-
-            # Full PDF path
-            pdf_path = os.path.join(invoice_folder, file_name)
-
-            # إعداد مستند PDF
-            c = canvas.Canvas(pdf_path, pagesize=A5)
-            width, height = A5
-            c.setFont("Arabic", 12)
-
-            # إضافة الشعار
-            logo_path = os.path.join("Static", "images", "Logo.jpg")
-            if os.path.exists(logo_path):
-                logo = ImageReader(logo_path)
-                c.drawImage(logo, 0.5*cm, height-3.5*cm, width=4*cm, height=2.5*cm, preserveAspectRatio=True)
-
-            # ========== العنوان المركزي ==========
-            invoice_title = f"فاتورة شراء رقم {invoice_number}"
-            
-            # رسم الإطار حول العنوان
-            frame_width = 4*cm
-            frame_height = 1*cm
-            frame_x = (width - frame_width) / 2  # مركز أفقي
-            frame_y = height - 2.5*cm
-            c.setLineWidth(1)
-            c.rect(frame_x, frame_y, frame_width, frame_height, stroke=1)
-            
-            # كتابة العنوان المركزي
-            c.setFont("Arabic-Bold", 12)
-            title_x = width / 2
-            title_y = height - 2.2*cm
-            c.drawCentredString(title_x, title_y, format_arabic(invoice_title))
-
-            # ========== معلومات الشركة ==========
-            company_info = [
-                "      حسن سليم",
-                "للمنتجات البلاستيكية"
-            ]
-            
-            y_position = height - 2*cm
-            c.setFont("Arabic-Bold", 12)
-            for line in company_info:
-                c.drawRightString(width - 1.75*cm, y_position, format_arabic(line))
-                y_position -= 0.8*cm
-
-            # ========== معلومات العميل ==========
-            customer_y = height - 3.8*cm
-            c.setFont("Arabic", 12)
-            customer_fields = [
-                f"التاريخ:       {invoice_data['Date']}",            
-                f"اسم المورد:    {invoice_data['supplier_info']['name']}",
-                f"الكود:         {invoice_data['supplier_info']['code']}",
-                f"العنوان:       {invoice_data['supplier_info']['address']}",
-                f"التليفون:      {invoice_data['supplier_info']['phone1']}"
-            ]
-            
-            for line in customer_fields:
-                c.drawRightString(width - 0.4*cm, customer_y, format_arabic(line))
-                customer_y -= 0.8*cm
-
-            # ========== جدول العناصر ==========
-            headers = ["كود الصنف", "     الصنف", "العدد", "الوحدة", "سعر الوحدة", "الكمية", "الإجمالي"]
-            col_positions = [
-                width - 0.4*cm,    # كود الصنف
-                width - 2*cm,       # الصنف
-                width - 6*cm,       # العدد
-                width - 7.5*cm,     # الوحدة
-                width - 9.5*cm,     # السعر
-                width - 11.5*cm,    # الكمية
-                width - 13*cm       # الإجمالي
-            ]
-            
-            # رأس الجدول مع لون خلفية
-            table_y = customer_y - 0.25*cm
-            
-            # رسم خلفية ملونة للرأس
-            header_height = 0.65*cm
-            c.setFillColor(colors.lightblue)
-            c.rect(
-                col_positions[-1] - 2.0*cm,
-                table_y - header_height + 0.2*cm,
-                col_positions[0] - col_positions[-1] + 5.0*cm,
-                header_height,
-                fill=1,
-                stroke=0
-            )
-            
-            c.setFont("Arabic-Bold", 10)
-            c.setFillColor(colors.black)
-            for i, header in enumerate(headers):
-                c.drawRightString(col_positions[i], table_y - 0.3*cm, format_arabic(header))
-
-            # بيانات الجدول مع دعم الأسطر المتعددة
-            c.setFont("Arabic", 8)
-            row_height = 0.7*cm
-            max_product_width = 3.5*cm  # أقصى عرض لعمود "الصنف"
-            
-            # تحديد موضع الصف الأول للبيانات
-            table_y -= row_height
-            
-            # دالة لتقسيم النص الطويل
-            def split_text(text, max_width):
-                lines = []
-                current = ""
-                for char in text:
-                    test_line = current + char
-                    if c.stringWidth(format_arabic(test_line), "Arabic", 8) < max_width:
-                        current = test_line
-                    else:
-                        lines.append(current)
-                        current = char
-                if current:
-                    lines.append(current)
-                return lines
-            
-            for item in invoice_data["Items"]:
-                material_name = item.get("material_name", "")
-                material_code = item.get("material_code", "")
-                
-                # تقسيم اسم المادة إذا كان طويلاً
-                product_width = c.stringWidth(format_arabic(material_name), "Arabic", 8)
-                if product_width > max_product_width:
-                    product_lines = split_text(material_name, max_product_width)
-                else:
-                    product_lines = [material_name]
-                
-                # حساب ارتفاع الصف بناءً على عدد الأسطر
-                item_height = row_height * len(product_lines)
-                
-                # رسم خلفية بيضاء للصف
-                c.setFillColor(colors.white)
-                c.rect(
-                    col_positions[-1] - 0.5*cm,
-                    table_y - item_height + 0.1*cm,
-                    col_positions[0] - col_positions[-1] + 1.0*cm,
-                    item_height - 0.2*cm,
-                    fill=1,
-                    stroke=0
-                )
-                c.setFillColor(colors.black)
-                
-                # رسم كل سطر من أسطر المادة
-                for i, line in enumerate(product_lines):
-                    line_y = table_y - (i * row_height)
-                    
-                    # رسم محتويات الصف
-                    columns = [
-                        material_code if i == 0 else "",  # عرض الكود في السطر الأول فقط
-                        line,
-                        str(item.get("numbering", "")) if i == 0 else "",
-                        item.get("Unit", "") if i == 0 else "",
-                        f"{item.get('Unit_price', 0):.2f}" if i == 0 else "",
-                        str(item.get('QTY', 0)) if i == 0 else "",
-                        f"{item.get('Final_Price', 0):.2f}" if i == 0 else ""
-                    ]
-                    
-                    for col_index, value in enumerate(columns):
-                        c.drawRightString(col_positions[col_index], line_y, format_arabic(value))
-                
-                # تحديث موضع y للصف التالي
-                table_y -= item_height
-
-            # ========== الإجماليات ==========
-            totals_y = table_y - 1*cm
-            totals = [
-                ("صافي الفاتورة:", invoice_data['Financials']['Net_total']),
-                ("حساب سابق:", invoice_data['Financials']['Previous_balance']),
-                ("إجمالي الفاتورة:", invoice_data['Financials']['Total_balance']),
-                ("المدفوع:", invoice_data['Financials']['Payed_cash']),
-                ("الباقي:", invoice_data['Financials']['Remaining_balance'])
-            ]
-            
-            c.setFont("Arabic-Bold", 12)
-            for label, value in totals:
-                text = f"{format_arabic(f'{value:,.2f}')} {format_arabic(label)}"
-                c.drawRightString(width - 0.3*cm, totals_y, text)
-                totals_y -= 0.8*cm
-
-            # ========== التوقيعات ==========
-            c.setFont("Arabic", 10)
-            c.drawRightString(width - 2.2*cm, totals_y - 0.5*cm, format_arabic("____________________"))
-            c.drawString(1.5*cm, totals_y - 0.5*cm, format_arabic("____________________"))
-            
-            c.save()
-            pdf_path = self.upload_pdf_to_cloudinary(pdf_path)
-            return pdf_path
-
-        except Exception as e:
-            messagebox.showerror("خطأ PDF", f"فشل في توليد الملف: {str(e)}")
-            return None        
+        
 
     def upload_pdf_to_cloudinary(self,file_path_param):
         # import cloudinary.uploader
@@ -7123,6 +6722,8 @@ class SalesSystemApp:
         for field, widget in self.entries.items():
             if "date" in field.lower():
                 widget.set_date(datetime.now())
+            elif "pdf_path" in field.lower():
+                widget.config(text="")
             elif "pic" in field.lower():
                 widget.config(image='')
                 widget.image = None
@@ -7170,14 +6771,7 @@ class SalesSystemApp:
 
 
     # Function to make the top bar part
-    def topbar(
-            self,
-            show_back_button=False, 
-            Back_to_Database_Window = False, 
-            Back_to_Employee_Window = False, 
-            Back_to_Sales_Window = False,
-            Back_to_Purchases_Window = False
-            ):
+    def topbar(self, show_back_button=False, Back_to_Database_Window = False, Back_to_Employee_Window = False):
         # Top Bar
         top_bar = tk.Frame(self.root, bg="#dbb40f", height=60)
         top_bar.pack(fill="x")
@@ -7201,15 +6795,6 @@ class SalesSystemApp:
             logout_icon.pack(side="right", padx=10)
         except Exception as e:
             self.silent_popup("Error", "Error loading Logout icon: {e}", self.play_Error)
-        # Minimize icon
-        try:
-            minimze_image = Image.open(self.minimize_icon_path)
-            minimze_image = minimze_image.resize((40, 40), Image.LANCZOS)
-            self.minimize_photo = ImageTk.PhotoImage(minimze_image)
-            minimize_icon = tk.Button(top_bar, image=self.minimize_photo, bg="#dbb40f", bd=0, command=root.iconify)
-            minimize_icon.pack(side="right", padx=10)
-        except Exception as e:
-            self.silent_popup("Error", "Error loading Minimize icon: {e}", self.play_Error)
 
 
         if show_back_button:
@@ -7221,10 +6806,6 @@ class SalesSystemApp:
                     back_icon = tk.Button(top_bar, image=self.back_photo, bg="#dbb40f", bd=0, command=self.manage_database_window)
                 elif Back_to_Employee_Window:
                     back_icon = tk.Button(top_bar, image=self.back_photo, bg="#dbb40f", bd=0, command=self.manage_Employees_window)
-                elif Back_to_Sales_Window:
-                    back_icon = tk.Button(top_bar, image=self.back_photo, bg="#dbb40f", bd=0, command=self.manage_sales_invoices_window)
-                elif Back_to_Purchases_Window:
-                    back_icon = tk.Button(top_bar, image=self.back_photo, bg="#dbb40f", bd=0, command=self.manage_purchases_invoices_window)
                 else:
                     back_icon = tk.Button(top_bar, image=self.back_photo, bg="#dbb40f", bd=0, command=self.main_menu)
                 back_icon.pack(side="left", padx=10)
@@ -7258,27 +6839,13 @@ class SalesSystemApp:
         username_label = tk.Label(user_frame, text=self.user_name, font=("Arial", 14), fg="black", bg="#dbb40f")
         username_label.pack(side="left")
     
-    def trash(self, user_role):
+    def trash(self,user_role):
         # Clear current window
         for widget in self.root.winfo_children():
             widget.destroy()
 
         # make the top bar with change language button
         self.topbar(show_back_button=True)
-        
-        # Create a main frame to center the message
-        main_frame = tk.Frame(self.root)
-        main_frame.pack(expand=True, fill='both')
-        
-        # Add big "Not Supported Yet" text
-        not_supported_label = tk.Label(
-            main_frame,
-            text=self.t("NOT SUPPORTED YET"),
-            font=("Arial", 32, "bold"),
-            fg="red",
-            pady=50
-        )
-        not_supported_label.pack(expand=True)
 
 
     def play_Error(self):
@@ -7400,6 +6967,7 @@ def upload_file_to_cloudinary(file_path_param):
     except Exception as e:
         print(f"[Cloudinary Upload Error]: {e}")
         return None
+    
 def load_image_preview(filepath, img_label):
     try:
         img = Image.open(filepath)
@@ -7408,7 +6976,7 @@ def load_image_preview(filepath, img_label):
         
         img_label.config(image=img_tk)
         img_label.image = img_tk
-        img_label.image_path = filepath   # <== DID YOU ADD THIS LINE? 👈👈👈
+        img_label.image_path = filepath   
     except Exception as e:
         print(f"Error loading image preview: {e}")
 
@@ -7629,17 +7197,13 @@ def resource_path(relative_path):
 
     return os.path.join(base_path, relative_path)
 
-
-##################################################################### Main #########################################################
-
+######################### Main #########################################################
+#
 if __name__ == "__main__":
     root = tk.Tk()
     app = SalesSystemApp(root)
     
-    # app.open_login_window()  # Start with the login window
-    app.user_role="admin"
-    app.main_menu()
-
+    app.open_login_window()  # Start with the login window
     try:
         root.mainloop()
     except Exception as e:
