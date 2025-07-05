@@ -40,7 +40,7 @@ from collections import defaultdict
 dialog_width = 300  # Same width as AlwaysOnTopInputDialog
 dialog_height = 150 # Same height as AlwaysOnTopInputDialog
 
-ARRAY_FIELDS = ['Units'] #Must be lower case
+ARRAY_FIELDS = ['Units', 'Items'] #Must be lower case
 ######################################################### Access Data Base ##############################################################################
 COLORS = {
     "background": "#F5F7FA",       # Light grey background
@@ -64,6 +64,37 @@ if getattr(sys, "frozen", False):
 else:
     # Running as a script
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+field_mapping = {
+    # Customer_info
+    'customer_code': ('Customer_info', 'code'),
+    'customer_name': ('Customer_info', 'name'),
+    'customer_phone1': ('Customer_info', 'phone1'),
+    'customer_phone2': ('Customer_info', 'phone2'),
+    'customer_address': ('Customer_info', 'address'),
+    
+    # Financials
+    'Net_total': ('Financials', 'Net_total'),
+    'Previous_balance': ('Financials', 'Previous_balance'),
+    'Total_balance': ('Financials', 'Total_balance'),
+    'Payed_cash': ('Financials', 'Payed_cash'),
+    'Remaining_balance': ('Financials', 'Remaining_balance'),
+    'Payment_method': ('Financials', 'Payment_method'),
+    
+    # Supplier_info
+    'supplier_code': ('supplier_info', 'code'),
+    'supplier_name': ('supplier_info', 'name'),
+    'supplier_phone1': ('supplier_info', 'phone1'),
+    'supplier_phone2': ('supplier_info', 'phone2'),
+    'supplier_address': ('supplier_info', 'address'),
+}
+
+LOCKED_FIELDS = {
+    "root": [ "Operation_Number","Code","employee_code", "material_code", "product_code", "Receipt_Number", "Operation_Number"],
+    "Customer_info": ["code"],
+    "supplier_info": ["code"],
+    "Items": ["material_code","product_code"]
+}
 
 class SalesSystemApp:
     fields = {
