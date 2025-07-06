@@ -412,22 +412,6 @@ class SalesSystemApp:
         self.general_exp_rev_collection       = db["general_exp_rev"]
         
 
-        field_to_convert1 = 'Customer_info.code'  # Change this to your actual field name
-        field_to_convert2 = 'Customer_info.name'  # Change this to your actual field name
-        docs_to_update = self.sales_collection.find({field_to_convert1: "1212"})
-
-        for doc in docs_to_update:
-            original_value = doc['Customer_info']['code']
-            new_value = original_value + "1"
-            self.sales_collection.update_one(
-                {"_id": doc["_id"]},
-                {"$set": {
-                    field_to_convert1: new_value,
-                    field_to_convert2: "mohsen1"
-                }}
-            )
-            print("updated")
-
 ############################################ Windows ########################################### 
     
     def open_login_window(self):
@@ -1185,7 +1169,7 @@ class SalesSystemApp:
             {"text": self.t("Produnction"), "image": "manufacture.png", 
             "command": lambda: self.new_production(self.user_role)},
             {"text": self.t("General_Exp_And_Rev"), "image": "exp_rev.png", 
-            "command": lambda: self.trash(self.user_role)},
+            "command": lambda: self.new_general_exp(self.user_role)},
         ]
         images = []  # Keep references to prevent garbage collection
         columns_per_row = 4  # Number of buttons per row
@@ -3798,7 +3782,15 @@ class SalesSystemApp:
 
         self.topbar(show_back_button=True,Back_to_Database_Window=True)
         self.display_general_table(self.production_collection, "Production")
-        
+
+    def new_general_exp(self,user_role):
+        self.table_name.set("general_exp_rev")
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        self.topbar(show_back_button=True,Back_to_Database_Window=True)
+        self.display_general_table(self.general_exp_rev_collection, "general_exp_rev")
+
     def supplier_interactions(self, user_role):
         for widget in self.root.winfo_children():
             widget.destroy()
@@ -3853,6 +3845,17 @@ class SalesSystemApp:
         self.supplier_name_cb = ttk.Combobox(right_frame, values=supplier_names)
         self.supplier_name_cb.grid(row=1, column=6)
 
+        # Bind combobox events with tree parameter
+        self.supplier_code_cb.bind("<<ComboboxSelected>>", lambda event: self.on_code_selected(
+                                      event, self.supplier_code_cb, self.supplier_name_cb, 
+                                      self.supplier_collection, self.purchases_collection, self.supplier_payment_collection, 
+                                      "supplier_info.code", tree))
+                                      
+        self.supplier_name_cb.bind("<<ComboboxSelected>>", lambda event: self.on_name_selected(
+                                      event, self.supplier_code_cb, self.supplier_name_cb, 
+                                      self.supplier_collection, self.purchases_collection, self.supplier_payment_collection, 
+                                      "supplier_info.code", tree))
+
         tk.Label(right_frame, text="Start Date").grid(padx=(10,20), row=0, column=8)
         self.start_date_entry = DateEntry(right_frame, font=("Arial", 12), date_pattern='dd-MM-yyyy', width=14)
         self.start_date_entry.grid(padx=(10,20), row=1, column=8)
@@ -3863,6 +3866,24 @@ class SalesSystemApp:
         self.end_date_entry.grid(padx=(10,20), row=1, column=10)
         # self.end_date_entry.set_date(date(2025, 7, 7))
         self.end_date_entry.set_date(date.today())
+
+        search_btn = tk.Button(
+            right_frame,
+            text="Search",
+            font=("Arial", 11),
+            width=12,
+            command=lambda: self.on_code_selected(
+                None,
+                self.supplier_code_cb,
+                self.supplier_name_cb,
+                self.supplier_collection,
+                self.purchases_collection,
+                self.supplier_payment_collection,
+                "supplier_info.code",
+                tree
+            )
+        )
+        search_btn.grid(row=1, column=11, padx=(5, 0), pady=5)
 
         # ==== Table Section ====
         columns = ("date", "invoice_no", "debit", "credit", "Payment_method")
@@ -3880,7 +3901,7 @@ class SalesSystemApp:
 
         # Configure scrollbar
         scrollbar.config(command=tree.yview)
-        
+
         for col in columns:
             tree.heading(col, text=col.capitalize())
             tree.column(col, width=150)
@@ -3897,19 +3918,6 @@ class SalesSystemApp:
         tk.Label(right_frame, text="Balance").grid(row=13, column=7, sticky="e")
         self.balance_entry = tk.Entry(right_frame)
         self.balance_entry.grid(row=13, column=8, sticky="w")
-
-        # Bind combobox events with tree parameter
-        self.supplier_code_cb.bind("<<ComboboxSelected>>", 
-                                  lambda event: self.on_code_selected(
-                                      event, self.supplier_code_cb, self.supplier_name_cb, 
-                                      self.supplier_collection, self.purchases_collection, self.supplier_payment_collection, 
-                                      "supplier_info.code", tree))
-                                      
-        self.supplier_name_cb.bind("<<ComboboxSelected>>", 
-                                  lambda event: self.on_name_selected(
-                                      event, self.supplier_code_cb, self.supplier_name_cb, 
-                                      self.supplier_collection, self.purchases_collection, self.supplier_payment_collection, 
-                                      "supplier_info.code", tree))
 
         # Initial update with empty query
         self.update_totals(self.purchases_collection, self.supplier_payment_collection, tree=tree)
@@ -3972,6 +3980,15 @@ class SalesSystemApp:
             last_num = int(last_entry["Operation_Number"].split("-")[1])
             return f"PM-{last_num+1:04d}"
         return "PM-0001"
+
+    def get_next_code(self, payment_collection):
+        last_entry = payment_collection.find_one(
+            sort=[("code", -1)]
+        )
+        if last_entry and "code" in last_entry:
+            last_num = int(last_entry["code"].split("-")[1])
+            return f"gen-{last_num+1:05d}"
+        return "gen-0001"
 
     def add_customer_payment(self, tree):
         credit = self.cash_entry.get().strip()
@@ -4047,7 +4064,6 @@ class SalesSystemApp:
 
             if person:
                 name_cb.set(person["Name"])
-                # query = {field_path: selected_code}
                 payment_query = { #time_query (it also compares dates but from payment db)
                     "$and": [
                         {field_path: selected_code},
@@ -4108,8 +4124,12 @@ class SalesSystemApp:
 
         invoices = invoices_collection.find(invoice_query)
         payments = payment_collection.find(payment_query)
-        invoice_count = invoices_collection.count_documents(invoice_query)
-        payment_count = payment_collection.count_documents(payment_query)
+        # x = invoices_collection.find({ "supplier_info.code": "A00" })
+        # y = payment_collection.find({ "supplier_info.code": "A00" })
+        invoice_count = invoices_collection.count_documents({ "supplier_info.code": "A00" })
+        payment_count = payment_collection.count_documents({ "supplier_info.code": "A00" })
+        print(invoices_collection.find_one())
+        print(payment_collection.find_one())
 
         total_debit = 0.0
         total_credit = 0.0
@@ -4234,6 +4254,24 @@ class SalesSystemApp:
         self.end_date_entry.grid(padx=(10,20), row=1, column=10)
         # self.end_date_entry.set_date(date(2025, 7, 7))
         self.end_date_entry.set_date(date.today())
+        
+        search_btn = tk.Button(
+            right_frame,
+            text="Search",
+            font=("Arial", 11),
+            width=12,
+            command=lambda: self.on_code_selected(
+                None,
+                self.customer_code_cb,
+                self.customer_name_cb,
+                self.customer_collection,
+                self.sales_collection,
+                self.customer_payment_collection,
+                "Customer_info.code",
+                tree
+            )
+        )
+        search_btn.grid(row=1, column=11, padx=(5, 0), pady=5)
 
         # ==== Table Section ====
         columns = ("date", "invoice_no", "debit", "credit", "Payment_method")
@@ -4342,7 +4380,6 @@ class SalesSystemApp:
         main_frame = tk.Frame(root)
         main_frame.pack(fill="both", expand=True, padx=20, pady=50)
 
-
         # ==== 1. Create scrollable form frame ====
         form_container = tk.Frame(main_frame)
         form_container.pack(side="left", fill="y", padx=10, pady=10)
@@ -4393,69 +4430,58 @@ class SalesSystemApp:
                 ordered_fields.append('supplier_name')
 
         self.entries = {}
-        for i, label in enumerate(ordered_fields):
-            # if label in ["Id", "Operation_Number", "Customer_info", "supplier_info", "Time"]:
+        row_index = 0
+
+        for label in ordered_fields:
             if label in ["Id", "Operation_Number", "Customer_info", "supplier_info", "Time"]:
                 continue
+            elif label in ["code"] and collection_name == "general_exp_rev":
+                continue
 
-
-            tk.Label(form_frame, text=self.t(label), font=("Arial", 12), anchor="w").grid(row=i, column=0, sticky="w", pady=5)
+            tk.Label(form_frame, text=self.t(label), font=("Arial", 12), anchor="w").grid(row=row_index, column=0, sticky="w", pady=5)
 
             if "date" in label.lower():
                 entry = DateEntry(form_frame, font=("Arial", 12), date_pattern='dd-MM-yyyy', width=18)
-                entry.grid(row=i, column=1, pady=5)
+                entry.grid(row=row_index, column=1, pady=5)
                 self.entries[label] = entry
+                row_index += 1
+
             elif "payment_method" in label.lower():
                 selected_method = tk.StringVar()
                 dropdown = ttk.Combobox(form_frame, textvariable=selected_method, values=['Cash', 'E_Wallet', 'Bank_account', 'Instapay'], state="readonly", width=18)
-                dropdown.grid(row=i, column=1, pady=5)
-                dropdown.set("Cash")  
-                self.entries[label] = dropdown  
-                
-            elif "pic" in label.lower():
-                frame = tk.Frame(form_frame)
-                frame.grid(row=i, column=1, pady=5)
-                
-                # Image Label in a *new row* below the current field
-                img_label = tk.Label(form_frame)
-                img_label.grid(row=i + 1, column=0, columnspan=3, pady=5)
+                dropdown.grid(row=row_index, column=1, pady=5)
+                dropdown.set("Cash")
+                self.entries[label] = dropdown
+                row_index += 1
 
-                def browse_file(e=entry, img_lbl=img_label):  # Pass the current entry as argument
-                    filepath = filedialog.askopenfilename(
-                        title="Select a file",
-                        filetypes=[("Image files", "*.jpg *.jpeg *.png *.bmp *.gif"), ("All files", "*.*")]
-                    )
-                    if filepath:
-                        load_image_preview(filepath, img_lbl)
-
-                browse_btn = tk.Button(frame, text="Browse",width=10, command=lambda e=entry: browse_file(e))
-                browse_btn.pack(side="left", padx=5)
-                self.entries[label] = img_label
             elif "pdf_path" in label.lower():
                 frame = tk.Frame(form_frame)
-                frame.grid(row=i, column=1, pady=5)
-                
-                # Image Label in a *new row* below the current field
-                file_label = tk.Label(form_frame, text="No file selected", anchor="w")
-                file_label.grid(row=i + 1, column=0, columnspan=3, pady=5)
+                frame.grid(row=row_index, column=1, pady=5)
 
-                def browse_file(e=entry, img_lbl=img_label):  # Pass the current entry as argument
+                file_label = tk.Label(form_frame, text="No file selected", anchor="w")
+                file_label.grid(row=row_index + 1, column=0, columnspan=3, pady=5)
+
+                def browse_file(lbl=file_label):
                     filepath = filedialog.askopenfilename(
                         title="Select a file",
                         filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")]
                     )
                     if filepath:
-                        filename = filepath.split("/")[-1]  # Get just the file name
-                        file_label.config(text=f"Selected: {filename}")
-                        file_label.filepath = filepath 
+                        filename = filepath.split("/")[-1]
+                        lbl.config(text=f"Selected: {filename}")
+                        lbl.filepath = filepath
 
-                browse_btn = tk.Button(frame, text="Browse",width=10, command=lambda e=entry: browse_file(e))
+                browse_btn = tk.Button(frame, text="Browse", width=10, command=browse_file)
                 browse_btn.pack(side="left", padx=5)
+
                 self.entries[label] = file_label
+                row_index += 2  # Skip a row for the file label
+
             else:
                 entry = tk.Entry(form_frame, font=("Arial", 12), width=20)
-                entry.grid(row=i, column=1, pady=5)
+                entry.grid(row=row_index, column=1, pady=5)
                 self.entries[label] = entry
+                row_index += 1
 
 
         right_frame = tk.Frame(main_frame)
@@ -4754,11 +4780,13 @@ class SalesSystemApp:
             messagebox.showerror("Error", f"Error displaying data: {e}")    
 
     def add_generic_entry(self, tree, current_collection, collection_name):
-        # collection_name = self.table_name.get()
         fields = self.get_fields_by_name(collection_name)
 
         new_entry = {}
-        
+        if collection_name in ["general_exp_rev"]:
+            code = self.get_next_code(current_collection)
+            new_entry["code"] = code
+
         # Handle customer/supplier info
         if collection_name in ["Customer_Payments", "Supplier_Payments"]:
             prefix = "Customer" if collection_name == "Customer_Payments" else "supplier"
@@ -4988,12 +5016,8 @@ class SalesSystemApp:
             if "Id" in fields:
                 # Convert string IDs to integers and find the maximum
                 existing_ids = [int(doc["Id"]) for doc in current_collection.find({}, {"Id": 1})]
-                print(f"existing_ids: {existing_ids}")
                 
-                # Get the new ID (default to 0 if no IDs exist)
                 new_id = max(existing_ids, default=0) + 1
-                
-                # Ensure the new ID is stored as an integer
                 new_entry["Id"] = new_id
 
             #TODO this line is never reached on adding
@@ -5654,6 +5678,8 @@ class SalesSystemApp:
             return self.supplier_payments
         elif collection_name == "TEX_Calculations":
             return self.TEX_Calculations_collection
+        elif collection_name == "general_exp_rev":
+            return self.general_exp_rev_collection
         else:
             print(f"Warning: Collection name '{collection_name}' not recognized.")
             return None
@@ -5749,6 +5775,9 @@ class SalesSystemApp:
         elif collection_name == "Employee_withdrawls":
             return ["employee_code", "employee_name", "previous_withdrawls", "amount_withdrawls", "payment_method", "timestamp"]
 
+        elif collection_name == "general_exp_rev":
+            return ["code", "type", "amount", "payment_method", "description", "date"]
+        
         else:
             print(f"Warning: Collection name '{collection_name}' not recognized.")
             return []
