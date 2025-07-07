@@ -6288,7 +6288,7 @@ class SalesSystemApp:
             if not pdf_path:
                 preview_window.destroy()
                 return
-                
+
             # 4. Save invoice with PDF path
             invoice_data["PDF_Path"] = pdf_path
             sales_col.insert_one(invoice_data)
@@ -6895,6 +6895,7 @@ class SalesSystemApp:
             c.drawString(1.5*cm, totals_y - 0.25*cm, format_arabic("____________________"))
             
             c.save()
+
             pdf_path = self.upload_pdf_to_cloudinary(pdf_path)
             return pdf_path
 
@@ -7135,6 +7136,12 @@ class SalesSystemApp:
             c.drawString(1.5*cm, totals_y - 0.25*cm, format_arabic("____________________"))
             
             c.save()
+            
+            try:
+                os.startfile(pdf_path, "print")
+            except OSError as e:
+                messagebox.showerror("Print Error", f"Failed to print PDF:\n{e}")
+
             pdf_path = self.upload_pdf_to_cloudinary(pdf_path)
             return pdf_path
 
