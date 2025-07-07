@@ -96,6 +96,12 @@ LOCKED_FIELDS = {
     "Items": ["material_code","product_code"]
 }
 
+
+MANDATORTY_FIELDS = { # list all mandatory fields (fields that can't be empty)
+    "Name", "Phone_number1", "Code", "Company_address", "Name", "Password", "Role", "Phone_number", "Address", "Salary"
+}
+
+
 class SalesSystemApp:
     fields = {
         "Employees": [],  # array of strings
@@ -258,7 +264,7 @@ class SalesSystemApp:
             "Password":{"Arabic": "الباسورد", "English": "Password"},
             "Role":{"Arabic": "الوظيفة", "English": "Role"},
             "Join_Date":{"Arabic": "تاريخ الالتحاق", "English": "Join Date"},
-            "National_id_pic":{"Arabic": "", "English": "National ID Picture"},
+            "National_id_pic":{"Arabic": "صورة الباطاقة", "English": "National ID Picture"},
             "Phone_number":{"Arabic": "رقم التليفون", "English": "Phone Number"},
             "Address":{"Arabic": "العنوان", "English": "Address"},
             "Salary":{"Arabic": "المرتب", "English": "Salary"},
@@ -4454,6 +4460,26 @@ class SalesSystemApp:
                 self.entries[label] = dropdown
                 row_index += 1
 
+            elif "pic" in label.lower():
+                frame = tk.Frame(form_frame)
+                frame.grid(row=row_index, column=1, pady=5)
+                
+                # Image Label in a *new row* below the current field
+                img_label = tk.Label(form_frame)
+                img_label.grid(row=row_index + 1, column=0, columnspan=3, pady=5)
+
+                def browse_file(e=entry, img_lbl=img_label):  # Pass the current entry as argument
+                    filepath = filedialog.askopenfilename(
+                        title="Select a file",
+                        filetypes=[("Image files", "*.jpg *.jpeg *.png *.bmp *.gif"), ("All files", "*.*")]
+                    )
+                    if filepath:
+                        load_image_preview(filepath, img_lbl)
+
+                browse_btn = tk.Button(frame, text="Browse",width=10, command=lambda e=entry: browse_file(e))
+                browse_btn.pack(side="left", padx=5)
+                self.entries[label] = img_label
+
             elif "pdf_path" in label.lower():
                 frame = tk.Frame(form_frame)
                 frame.grid(row=row_index, column=1, pady=5)
@@ -5002,7 +5028,7 @@ class SalesSystemApp:
                     return
             else:
                 value = widget.get()
-                if not value:
+                if not value and value in MANDATORTY_FIELDS:
                     messagebox.showwarning("Warning", f"Please enter a value for {field}")
                     return
                 if any(word in field.lower() for word in ["units"]):
