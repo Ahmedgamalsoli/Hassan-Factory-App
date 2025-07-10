@@ -2241,14 +2241,15 @@ class SalesSystemApp:
         if not payment:
             messagebox.showerror("Error", "Please select a payment method")
             return
-            
+        code = self.get_next_code(self.general_exp_rev_collection)    
         # Create document for MongoDB
         transaction = {
             "type": transaction_type,
             "amount": amount,
             "payment_method": payment,
             "description": desc,
-            "date": datetime.now()
+            "date": datetime.now(),
+            "code":code
         }
         
         # Save to MongoDB
@@ -2540,7 +2541,7 @@ class SalesSystemApp:
         balance = self.totals['credit'] - self.totals['debit']
         self.balance_var.set(f"${balance:,.2f}")
 
-    def sales_invoice(self, user_role ,add_or_update):
+    def sales_invoice(self, user_role, add_or_update):
         # Clear current window
         for widget in self.root.winfo_children():
             widget.destroy()
@@ -2550,7 +2551,7 @@ class SalesSystemApp:
         self.name_to_code = {}
         
         # Create top bar
-        self.topbar(show_back_button=True,Back_to_Sales_Window=True)
+        self.topbar(show_back_button=True, Back_to_Sales_Window=True)
 
         # MongoDB collections
         customers_col = self.get_collection_by_name("Customers")
@@ -2561,16 +2562,53 @@ class SalesSystemApp:
         form_frame = tk.Frame(self.root)
         form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
         
-        # Configure columns - 12 columns with equal weight (increased from 10 to make space)
+        # Configure columns - 12 columns with equal weight
         for i in range(10):
             form_frame.columnconfigure(i, weight=1)
-        form_frame.grid_rowconfigure(3, weight=1)  # Make items grid expandable
 
-        # Customer Selection Frame - responsive layout
-        customer_frame = tk.Frame(form_frame, bd=1, relief=tk.SOLID, padx=5, pady=5)
-        customer_frame.grid(row=0, column=0, columnspan=12, sticky='ew', pady=5)
+        # ===== INVOICE SELECTION FOR UPDATE MODE =====
+        current_row = 0
+        self.selected_invoice_id = None
         
-        # Configure customer frame columns with weights
+        if add_or_update == "update":
+            # Create invoice selection frame
+            invoice_frame = tk.Frame(form_frame, bd=1, relief=tk.SOLID, padx=5, pady=5)
+            invoice_frame.grid(row=current_row, column=0, columnspan=12, sticky='ew', pady=5)
+            current_row += 1
+            
+            # Configure invoice frame columns
+            for i in range(12):
+                invoice_frame.columnconfigure(i, weight=1 if i % 2 == 1 else 0)
+            
+            # Fetch invoice numbers
+            invoice_numbers = [str(doc["Receipt_Number"]) for doc in sales_col.find({}, {"Receipt_Number": 1})]
+            
+            # Invoice selection
+            tk.Label(invoice_frame, text=self.t("Select Invoice"), 
+                    font=("Arial", 10, "bold")).grid(row=0, column=0, sticky='w')
+            self.invoice_var = tk.StringVar()
+            invoice_cb = ttk.Combobox(invoice_frame, textvariable=self.invoice_var, values=invoice_numbers)
+            invoice_cb.grid(row=0, column=1, padx=5, sticky='ew', columnspan=3)
+            
+            # Load button
+            load_btn = tk.Button(invoice_frame, text=self.t("Load Invoice"), 
+                                command=lambda: self.load_invoice_data(sales_col),
+                                bg='#2196F3', fg='white')
+            load_btn.grid(row=0, column=4, padx=5, sticky='ew')
+            
+            # Delete button
+            delete_btn = tk.Button(invoice_frame, text=self.t("Delete Invoice"), 
+                                command=lambda: self.delete_invoice(sales_col, customers_col),
+                                bg='red', fg='white')
+            delete_btn.grid(row=0, column=5, padx=5, sticky='ew')
+
+        # ===== CUSTOMER SECTION =====
+        # Create customer frame
+        customer_frame = tk.Frame(form_frame, bd=1, relief=tk.SOLID, padx=5, pady=5)
+        customer_frame.grid(row=current_row, column=0, columnspan=12, sticky='ew', pady=5)
+        current_row += 1
+        
+        # Configure customer frame columns
         for i in range(12):
             customer_frame.columnconfigure(i, weight=1 if i % 2 == 1 else 0)
         
@@ -2634,8 +2672,8 @@ class SalesSystemApp:
                 font=("Arial", 10, "bold")).grid(row=0, column=10, sticky='e')
         self.transport_fees_var = tk.DoubleVar(value=0.0)
         self.transport_fees_entry = tk.Entry(customer_frame, 
-                                           textvariable=self.transport_fees_var,
-                                           width=8)
+                                        textvariable=self.transport_fees_var,
+                                        width=8)
         self.transport_fees_entry.grid(row=0, column=11, sticky='ew', padx=5)
 
         # Payment Method Dropdown
@@ -2650,6 +2688,7 @@ class SalesSystemApp:
                                 width=8)
         payment_cb.grid(row=0, column=9, sticky='ew', padx=5)
         payment_cb.current(0)  # Set default to Cash
+        
         # Synchronization functions
         def sync_from_name(event=None):
             name = self.customer_name_var.get()
@@ -2677,6 +2716,7 @@ class SalesSystemApp:
             sync_from_code()
         ])
 
+        # ===== PRODUCTS SECTION =====
         # Load product data
         try:
             products = list(products_col.find())
@@ -2728,143 +2768,293 @@ class SalesSystemApp:
             messagebox.showerror("Database Error", f"Failed to load products: {str(e)}")
             return
 
-        # Invoice Items Grid - Responsive Configuration
+        # ===== ITEMS GRID SECTION =====
+        # Make items grid expandable
+        form_frame.grid_rowconfigure(current_row + 1, weight=1)
+        
+        # Invoice Items Grid
         columns = self.get_fields_by_name("Sales_Header")
         num_columns = len(columns)
         
-        # Create header frame with uniform columns
+        # Create header frame
         header_frame = tk.Frame(form_frame, bg='#f0f0f0')
-        header_frame.grid(row=2, column=0, columnspan=10, sticky='ew', pady=(20, 0))
+        header_frame.grid(row=current_row, column=0, columnspan=10, sticky='ew', pady=(20, 0))
+        current_row += 1
         
-        # Configure header columns with uniform weights
+        # Configure header columns
         for col_idx in range(num_columns):
             header_frame.columnconfigure(col_idx, weight=1, uniform='cols')
             tk.Label(header_frame, text=self.t(columns[col_idx]), relief='ridge', 
                     bg='#f0f0f0', anchor='w', padx=5).grid(row=0, column=col_idx, sticky='ew')
 
-        # Scrollable Canvas with responsive sizing - FIXED SOLUTION
-        # Create a container frame for canvas and scrollbar
+        # Scrollable Canvas
         canvas_container = tk.Frame(form_frame)
-        canvas_container.grid(row=3, column=0, columnspan=10, sticky='nsew')
+        canvas_container.grid(row=current_row, column=0, columnspan=10, sticky='nsew')
         canvas_container.grid_rowconfigure(0, weight=1)
         canvas_container.grid_columnconfigure(0, weight=1)
+        current_row += 1
         
-        # Create canvas and scrollbar
         canvas = tk.Canvas(canvas_container, highlightthickness=0)
         scrollbar = tk.Scrollbar(canvas_container, orient="vertical", command=canvas.yview)
-        
-        # Create a frame inside the canvas for the rows
         self.rows_frame = tk.Frame(canvas)
         canvas.create_window((0, 0), window=self.rows_frame, anchor="nw", tags="inner_frame")
         
-        # Grid layout for canvas and scrollbar
         canvas.grid(row=0, column=0, sticky="nsew")
         scrollbar.grid(row=0, column=1, sticky="ns")
         
-        # Configure scroll region
         def configure_scroll_region(event):
             canvas.configure(scrollregion=canvas.bbox("all"))
         
-        # Configure canvas width
         def configure_canvas(event):
             canvas_width = event.width
             canvas.itemconfig("inner_frame", width=canvas_width)
         
-        # Bind events
         self.rows_frame.bind("<Configure>", configure_scroll_region)
         canvas.bind("<Configure>", configure_canvas)
 
-        # Set initial width
-        canvas.update_idletasks()
-        canvas_width = canvas.winfo_width()
-        if canvas_width > 1:
-            canvas.itemconfig("inner_frame", width=canvas_width)
-
         self.entries = []
 
-        # Modified create_row function with responsive widgets
-        def create_row(parent, row_number, bg_color):
-            row_frame = tk.Frame(parent, bg=bg_color)
-            row_frame.pack(fill=tk.X)  # Use pack with fill to ensure full width
-            
-            # Configure columns with uniform weights (same as header)
-            for col_idx in range(num_columns):
-                row_frame.columnconfigure(col_idx, weight=1, uniform='cols')
-            
-            row_entries = []
-            for col_idx, col in enumerate(columns):
-                if col == "Product_code":
-                    var = tk.StringVar()
-                    cb = ttk.Combobox(row_frame, textvariable=var, values=product_codes)
-                    cb.bind('<<ComboboxSelected>>', lambda e, r=row_number: self.update_product_info(r, "code"))
-                    cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_combobox_change(e, r, "code"))
-                    cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
-                    row_entries.append(cb)
-                elif col == "product_name":
-                    var = tk.StringVar()
-                    cb = ttk.Combobox(row_frame, textvariable=var, values=product_names)
-                    cb.bind('<<ComboboxSelected>>', lambda e, r=row_number: self.update_product_info(r, "name"))
-                    cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_combobox_change(e, r, "name"))
-                    cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
-                    row_entries.append(cb)
-                elif col == "unit":
-                    var = tk.StringVar()
-                    cb = ttk.Combobox(row_frame, textvariable=var, values=[])
-                    cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_unit_change(e, r))
-                    cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
-                    row_entries.append(cb)
-                elif col == "Discount Type":
-                    var = tk.StringVar()
-                    cb = ttk.Combobox(row_frame, textvariable=var, 
-                                    values=["Percentage", "Value"], 
-                                    state="readonly")
-                    cb.current(0)
-                    cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
-                    row_entries.append(cb)
-                elif col == "Discount Value":
-                    var = tk.StringVar()
-                    entry = tk.Entry(row_frame, textvariable=var)
-                    entry.bind('<KeyRelease>', lambda e, r=row_number: self.calculate_totals(r))
-                    entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
-                    row_entries.append(entry)
-                elif col in ["Unit_Price", "Total_QTY", "Total_Price"]:
-                    entry = tk.Entry(row_frame, relief='flat', state='readonly')
-                    entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
-                    row_entries.append(entry)
-                else:
-                    entry = tk.Entry(row_frame, relief='sunken')
-                    entry.bind('<KeyRelease>', lambda e, r=row_number: self.calculate_totals(r))
-                    entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
-                    row_entries.append(entry)
-            
-            return row_entries
+        # Add initial rows
+        if add_or_update == "add":
+            self.add_three_rows()
+        else:
+            # Start with empty rows - will be populated when invoice is loaded
+            self.add_three_rows()
 
-        def add_three_rows():
-            current_row_count = len(self.entries)
-            for i in range(3):
-                bg_color = 'white' if (current_row_count + i) % 2 == 0 else '#f0f0f0'
-                row_entries = create_row(self.rows_frame, current_row_count + i, bg_color)
-                self.entries.append(row_entries)
-
-        add_three_rows()
-
-        # Buttons Frame
+        # ===== BUTTONS SECTION =====
         button_frame = tk.Frame(form_frame)
-        button_frame.grid(row=4, column=0, columnspan=10, pady=10, sticky='ew')
+        button_frame.grid(row=current_row, column=0, columnspan=10, pady=10, sticky='ew')
         
         # Configure button frame columns
         button_frame.columnconfigure(0, weight=1)
         button_frame.columnconfigure(1, weight=1)
         
         add_btn = tk.Button(button_frame, text=self.t("➕ Add 3 More Rows"), 
-                        command=add_three_rows, bg='#4CAF50', fg='white')
+                        command=self.add_three_rows, bg='#4CAF50', fg='white')
         add_btn.grid(row=0, column=0, padx=5, sticky='w')
         
-        save_btn = tk.Button(button_frame, text=self.t("💾 Save Invoice"), 
-                            command=lambda: self.save_invoice(sales_col, customers_col, products_col),
-                            bg='#2196F3', fg='white')
-        save_btn.grid(row=0, column=1, padx=5, sticky='e')
+        if add_or_update == "add":
+            save_btn = tk.Button(button_frame, text=self.t("💾 Save Invoice"), 
+                                command=lambda: self.save_invoice(sales_col, customers_col, products_col),
+                                bg='#2196F3', fg='white')
+            save_btn.grid(row=0, column=1, padx=5, sticky='e')
+        else:
+            update_btn = tk.Button(button_frame, text=self.t("🔄 Update Invoice"), 
+                                command=lambda: self.update_invoice(sales_col, customers_col, products_col),
+                                bg='#FF9800', fg='white')
+            update_btn.grid(row=0, column=1, padx=5, sticky='e')
+        # Modified create_row function to accept initial values
 
+    def load_invoice_data(self, sales_col):
+        """Load selected invoice data into the form"""
+        invoice_number = self.invoice_var.get()
+        if not invoice_number:
+            messagebox.showwarning("Selection Needed", "Please select an invoice first")
+            return
+        
+        # Fetch invoice data from MongoDB
+        invoice_data = sales_col.find_one({"Receipt_Number": invoice_number})
+        if not invoice_data:
+            messagebox.showerror("Not Found", "Invoice not found in database")
+            return
+        
+        # Store invoice ID for later reference
+        self.selected_invoice_id = str(invoice_data["_id"])
+        
+        # Extract nested dictionaries
+        customer_info = invoice_data.get("Customer_info", {})
+        financials = invoice_data.get("Financials", {})
+        items = invoice_data.get("Items", [])
+        
+        # Populate customer information
+        self.customer_name_var.set(customer_info.get("name", ""))
+        self.customer_code_var.set(customer_info.get("code", ""))
+        self.previous_balance_var.set(str(financials.get("Previous_balance", 0)))
+        
+        # Populate financial fields
+        self.payed_cash_var.set(str(financials.get("Payed_cash", 0)))  # Ensure string conversion
+        self.transport_fees_var.set(str(financials.get("transport_fees", 0)))  # Ensure string conversion
+        
+        # Set payment method
+        payment_method = financials.get("payment_method", "Cash")
+        if payment_method in ["Cash", "E_Wallet", "Bank", "Instapay"]:
+            self.payment_method_var.set(payment_method)
+        
+        # Clear existing items
+        self.entries.clear()
+        for widget in self.rows_frame.winfo_children():
+            widget.destroy()
+        
+        # Add rows with invoice items
+        # Calculate the number of sets needed (each set contains 3 rows)
+        num_sets = (len(items) + 2) // 3  # Round up to nearest multiple of 3
+        
+        # Process each set of items
+        for set_index in range(num_sets):
+            start_index = set_index * 3
+            end_index = start_index + 3
+            item_set = items[start_index:end_index]  # Get next 3 items (or remaining)
+            self.add_three_rows(initial_data=item_set)  # Pass items to populate
+
+    def update_invoice(self, sales_col, customers_col, products_col):
+        """Update existing invoice in the database"""
+        if not self.selected_invoice_id:
+            messagebox.showwarning("No Invoice", "Please load an invoice first")
+            return
+        
+        # Collect data from the form (same as save_invoice)
+        invoice_data = self.collect_invoice_data()
+        
+        # Update MongoDB document
+        sales_col.update_one(
+            {"_id": ObjectId(self.selected_invoice_id)},
+            {"$set": invoice_data}
+        )
+        
+        # Update customer balance
+        self.update_customer_balance(customers_col, invoice_data)
+        
+        messagebox.showinfo("Success", "Invoice updated successfully")
+
+    def delete_invoice(self, sales_col, customers_col):
+        """Delete selected invoice from the database"""
+        invoice_number = self.invoice_var.get()
+        if not invoice_number:
+            messagebox.showwarning("Selection Needed", "Please select an invoice first")
+            return
+        
+        # Confirm deletion
+        if not messagebox.askyesno("Confirm Delete", f"Delete invoice {invoice_number} permanently?"):
+            return
+        
+        # Fetch invoice to get customer and amount details
+        invoice_data = sales_col.find_one({"Receipt_Number": invoice_number})
+        if not invoice_data:
+            messagebox.showerror("Not Found", "Invoice not found")
+            return
+        
+        # Delete from MongoDB
+        sales_col.delete_one({"Receipt_Number": invoice_number})
+        
+        # Revert customer balance
+        self.revert_customer_balance(customers_col, invoice_data)
+        
+        messagebox.showinfo("Success", "Invoice deleted successfully")
+        # Clear the form or reset UI as needed
+        self.invoice_var.set("")
+        self.selected_invoice_id = None
+    def create_row(self, parent, row_number, bg_color, initial_values=None):
+        columns = self.get_fields_by_name("Sales_Header")
+        num_columns = len(columns)
+        row_frame = tk.Frame(parent, bg=bg_color)
+        row_frame.pack(fill=tk.X)
+        
+        for col_idx in range(num_columns):
+            row_frame.columnconfigure(col_idx, weight=1, uniform='cols')
+        
+        row_entries = []
+        for col_idx, col in enumerate(columns):
+            # Get value from initial data if available
+            value = ""
+            if initial_values:
+                # Standardize key names to match MongoDB
+                key_map = {
+                    "Product_code": "Product_code",
+                    "product_name": "product_name",
+                    "unit": "Unit",
+                    "Unit_Price": "Unit_price",
+                    "QTY": "QTY",
+                    "Discount Type": "Discount_Type",
+                    "Discount Value": "Discount_Value",
+                    "Total_QTY": "Total_QTY",
+                    "Numbering": "numbering",
+                    "Total_Price": "Final_Price"
+                }
+                
+                # Get the standardized key name
+                db_key = key_map.get(col, col)
+                value = initial_values.get(db_key, "")
+                
+                # Handle special cases
+                if col == "Discount Type" and not value:
+                    value = "Value"
+                elif col == "Discount Value" and not value:
+                    value = 0
+                
+            if col == "Product_code":
+                var = tk.StringVar(value=value)
+                cb = ttk.Combobox(row_frame, textvariable=var, values=self.product_codes)
+                cb.bind('<<ComboboxSelected>>', lambda e, r=row_number: self.update_product_info(r, "code"))
+                cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_combobox_change(e, r, "code"))
+                cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
+                row_entries.append(cb)
+            elif col == "product_name":
+                var = tk.StringVar(value=value)
+                cb = ttk.Combobox(row_frame, textvariable=var, values=self.product_names)
+                cb.bind('<<ComboboxSelected>>', lambda e, r=row_number: self.update_product_info(r, "name"))
+                cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_combobox_change(e, r, "name"))
+                cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
+                row_entries.append(cb)
+            elif col == "unit":
+                var = tk.StringVar(value=value)
+                cb = ttk.Combobox(row_frame, textvariable=var, values=[])
+                cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_unit_change(e, r))
+                cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
+                row_entries.append(cb)
+            elif col == "Discount Type":
+                var = tk.StringVar(value=value)
+                cb = ttk.Combobox(row_frame, textvariable=var, 
+                                values=["Percentage", "Value"], 
+                                state="readonly")
+                cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
+                cb.set(value)  # This will automatically set to value if it exists
+                row_entries.append(cb)
+            elif col == "Discount Value":
+                var = tk.StringVar(value=value)
+                entry = tk.Entry(row_frame, textvariable=var)
+                entry.bind('<KeyRelease>', lambda e, r=row_number: self.calculate_totals(r))
+                entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
+                row_entries.append(entry)
+            elif col in ["Unit_Price", "Total_QTY", "Total_Price"]:
+                var = tk.StringVar(value=value)
+                entry = tk.Entry(row_frame, textvariable=var, relief='flat', state='readonly')
+                entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
+                row_entries.append(entry)
+            else:
+                var = tk.StringVar(value=value)
+                entry = tk.Entry(row_frame, textvariable=var)
+                entry.bind('<KeyRelease>', lambda e, r=row_number: self.calculate_totals(r))
+                entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
+                row_entries.append(entry)
+        
+        return row_entries
+
+    def add_three_rows(self, initial_data=None):
+        current_row_count = len(self.entries)
+        for i in range(3):
+            bg_color = 'white' if (current_row_count + i) % 2 == 0 else '#f0f0f0'
+            row_data = initial_data[i] if initial_data and i < len(initial_data) else None
+            
+            # Add debug print to see what data is being passed to each row
+            print(f"Adding row {current_row_count + i} with data: {row_data}")
+            
+            row_entries = self.create_row(self.rows_frame, current_row_count + i, bg_color, row_data)
+            self.entries.append(row_entries)
+            
+            # If we have initial data, update product info
+            if row_data:
+                # First try to update by product code if available
+                if row_data.get("Product_code"):
+                    print(f"Updating row {current_row_count + i} by code: {row_data['Product_code']}")
+                    self.update_product_info(current_row_count + i, "code")
+                # Then try by product name
+                elif row_data.get("product_name"):
+                    print(f"Updating row {current_row_count + i} by name: {row_data['product_name']}")
+                    self.update_product_info(current_row_count + i, "name")
+                
+                # Calculate totals for this row
+                self.calculate_totals(current_row_count + i)
+                
     def new_Purchase_invoice(self, user_role):
         # Clear current window
         for widget in self.root.winfo_children():
@@ -6053,6 +6243,7 @@ class SalesSystemApp:
                 },
                 "Items": items,
                 "Financials": {
+                    "transport_fees":transportation_fees,
                     "Net_total": total_amount,
                     "Previous_balance": customer.get("Balance", 0),
                     "Total_balance": total_amount + customer.get("Balance", 0),
