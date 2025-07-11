@@ -221,7 +221,7 @@ class SalesSystemApp:
             "Payment Method":{"Arabic": "طريقة الدفع:", "English": "Payment Method:"},
             "Product_code":{"Arabic": "كود المنتج", "English": "Product Code"},
             "product_name":{"Arabic": "اسم المنتج", "English": "Product Name"},
-            "unit":{"Arabic": "الوحدة", "English": "Unit:"},
+            "unit":{"Arabic": "الوحدة", "English": "Unit"},
             "numbering":{"Arabic": "العدد", "English": "Numbering"},
             "QTY":{"Arabic": "الكمية", "English": "Quantity"},
             "Discount Type":{"Arabic": "نوع الخصم", "English": "Discount Type"},
@@ -271,7 +271,7 @@ class SalesSystemApp:
             "category":{"Arabic": "التصنيف", "English": "category"},
             "stock_quantity":{"Arabic": "كمية المخزون", "English": "stock Quantity"},
             "Specs":{"Arabic": "المواصفات", "English": "Specs"},
-            "product_code":{"Arabic": "كود المنتج", "English": "product Code"},
+            "product_code":{"Arabic": "كود المنتج", "English": "Product_code"},
             "Units":{"Arabic": "الوحدات", "English": "Units"},
             "prod_pic":{"Arabic": "صورة المنتج", "English": "product Picture"},
             "sales":{"Arabic": "المبيعات", "English": "Sales"},
@@ -2880,7 +2880,7 @@ class SalesSystemApp:
         if payment_method in ["Cash", "E_Wallet", "Bank", "Instapay"]:
             self.payment_method_var.set(payment_method)
         
-        # Clear existing items
+        # Clear existing items 
         self.entries.clear()
         for widget in self.rows_frame.winfo_children():
             widget.destroy()
@@ -2951,30 +2951,33 @@ class SalesSystemApp:
         
         for col_idx in range(num_columns):
             row_frame.columnconfigure(col_idx, weight=1, uniform='cols')
-        
+
+        # Standardize key names to match MongoDB
+        key_map = {
+            "Product_code": "Product_code",
+            "product_name": "product_name",
+            "unit": "Unit",
+            "Unit_Price": "Unit_price",
+            "QTY": "QTY",
+            "Discount Type": "Discount_Type",
+            "Discount Value": "Discount_Value",
+            "Total_QTY": "Total_QTY",
+            "Numbering": "numbering",
+            "Total_Price": "Final_Price"
+        }
         row_entries = []
+        row_entry_vars = []
+        
         for col_idx, col in enumerate(columns):
             # Get value from initial data if available
             value = ""
             if initial_values:
-                # Standardize key names to match MongoDB
-                key_map = {
-                    "Product_code": "Product_code",
-                    "product_name": "product_name",
-                    "unit": "Unit",
-                    "Unit_Price": "Unit_price",
-                    "QTY": "QTY",
-                    "Discount Type": "Discount_Type",
-                    "Discount Value": "Discount_Value",
-                    "Total_QTY": "Total_QTY",
-                    "Numbering": "numbering",
-                    "Total_Price": "Final_Price"
-                }
-                
                 # Get the standardized key name
                 db_key = key_map.get(col, col)
                 value = initial_values.get(db_key, "")
-                
+                value = value.strip()
+                if col == "Product_code" and (value not in self.product_codes):
+                    print(f"[WARN] '{value}' not in dropdown list!")
                 # Handle special cases
                 if col == "Discount Type" and not value:
                     value = "Value"
@@ -2982,18 +2985,23 @@ class SalesSystemApp:
                     value = 0
                 
             if col == "Product_code":
-                var = tk.StringVar(value=value)
-                cb = ttk.Combobox(row_frame, textvariable=var, values=self.product_codes)
+                vars = tk.StringVar(value=value)
+                row_entry_vars.append(vars)
+                cb = ttk.Combobox(row_frame, textvariable=vars, values=self.product_codes)
                 cb.bind('<<ComboboxSelected>>', lambda e, r=row_number: self.update_product_info(r, "code"))
                 cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_combobox_change(e, r, "code"))
                 cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
+                cb.set(vars.get())
                 row_entries.append(cb)
             elif col == "product_name":
                 var = tk.StringVar(value=value)
+                row_entry_vars.append(var)
                 cb = ttk.Combobox(row_frame, textvariable=var, values=self.product_names)
                 cb.bind('<<ComboboxSelected>>', lambda e, r=row_number: self.update_product_info(r, "name"))
                 cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_combobox_change(e, r, "name"))
                 cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
+                x = var.get()
+                cb.set(var.get())
                 row_entries.append(cb)
             elif col == "unit":
                 var = tk.StringVar(value=value)
@@ -3027,6 +3035,10 @@ class SalesSystemApp:
                 entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
                 row_entries.append(entry)
         
+        # self.entries[row_idx][7].config(state='normal')
+        # self.entries[row_idx][7].delete(0, tk.END)
+        # self.entries[row_idx][7].insert(0, f"{total_qty:.2f}")
+        # self.entries[row_idx][7].config(state='readonly')
         return row_entries
 
     def add_three_rows(self, initial_data=None):
@@ -3042,15 +3054,15 @@ class SalesSystemApp:
             self.entries.append(row_entries)
             
             # If we have initial data, update product info
-            if row_data:
+            if row_data: #Seif: row_data is always empty
                 # First try to update by product code if available
-                if row_data.get("Product_code"):
-                    print(f"Updating row {current_row_count + i} by code: {row_data['Product_code']}")
-                    self.update_product_info(current_row_count + i, "code")
-                # Then try by product name
-                elif row_data.get("product_name"):
-                    print(f"Updating row {current_row_count + i} by name: {row_data['product_name']}")
-                    self.update_product_info(current_row_count + i, "name")
+                # if row_data.get("Product_code"):
+                #     print(f"Updating row {current_row_count + i} by code: {row_data['Product_code']}")
+                #     self.update_product_info(current_row_count + i, "code") #Seif: This function ends up clearing the fields data
+                # # Then try by product name
+                # elif row_data.get("product_name"):
+                #     print(f"Updating row {current_row_count + i} by name: {row_data['product_name']}")
+                #     self.update_product_info(current_row_count + i, "name")
                 
                 # Calculate totals for this row
                 self.calculate_totals(current_row_count + i)
@@ -3830,6 +3842,8 @@ class SalesSystemApp:
             # Get values using correct column indices
             numbering = float(self.entries[row_idx][3].get() or 0)  # index 3
             qty = float(self.entries[row_idx][4].get() or 0)        # index 4
+            x = self.entries[row_idx][4]
+            y= float(self.entries[row_idx][4].get())
             unit_price = float(self.entries[row_idx][8].get() or 0)  # index 8
             discount_type = self.entries[row_idx][5].get()           # index 5
             discount_value = float(self.entries[row_idx][6].get() or 0)  # index 6
@@ -5010,7 +5024,7 @@ class SalesSystemApp:
             operation_number = self.get_next_operation_number(current_collection)
             
             new_entry["Operation_Number"] = operation_number
-            current_time = datetime.now() #check123
+            current_time = datetime.now()
             new_entry["Time"] = current_time
 
             # Get the code and name from entries
@@ -5128,7 +5142,7 @@ class SalesSystemApp:
                     messagebox.showerror("Upload Error", f"All Data fields must be filled: {e}")
                     return
                 
-            # new_entry["Date"] = datetime.now().strftime("%d/%m/%Y %H:%M") #check123
+            # new_entry["Date"] = datetime.now().strftime("%d/%m/%Y %H:%M")
             temp = datetime.now()
             # value_date = datetime.strptime(temp, '%d-%m-%Y').date()
             # new_entry["Date"] = datetime.combine(value_date, time.min)
@@ -5291,6 +5305,7 @@ class SalesSystemApp:
             try:
                 record_id = str(record_id)
                 existing_record = current_collection.find_one({columns[id_index]: record_id})
+                existing_record.pop("_id", None)
             except ValueError:
                 pass
 
@@ -5442,9 +5457,7 @@ class SalesSystemApp:
             updated_entry[field] = value
 
         try:
-            x = updated_entry
             self.revert_locked_fields(existing_record, updated_entry)
-            y = updated_entry
 
             identifier_field = columns[id_index]
             result = current_collection.update_one({identifier_field: record_id}, {"$set": updated_entry})
@@ -5479,6 +5492,7 @@ class SalesSystemApp:
                 for field in locked_fields:
                     if field in updated:
                         updated[field] = existing.get(field)
+                # break
 
             elif key == "Items":
                 # Handle list of objects
@@ -5491,16 +5505,19 @@ class SalesSystemApp:
                             if field in item:
                                 item[field] = existing_items[idx].get(field)
                     updated_items[idx] = item
-                updated["Items"] = updated_items
+                if len(updated_items) > 0:
+                    updated["Items"] = updated_items
+                # updated["Items"] = updated_items
 
-            else:
+            elif key in ["Customer_info", "supplier_info"]:
                 # Handle normal nested dicts like Financials, Customer_info, etc.
                 nested_existing = existing.get(key, {})
                 nested_updated = updated.get(key, {})
                 for field in locked_fields:
                     if field in nested_updated:
                         nested_updated[field] = nested_existing.get(field)
-                updated[key] = nested_updated
+                if len(nested_updated) > 0:
+                    updated[key] = nested_updated
     
     def delete_generic_entry(self, tree, current_collection):   
         selected_item = tree.selection()
