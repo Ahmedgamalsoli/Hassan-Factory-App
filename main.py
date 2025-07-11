@@ -2975,7 +2975,8 @@ class SalesSystemApp:
                 # Get the standardized key name
                 db_key = key_map.get(col, col)
                 value = initial_values.get(db_key, "")
-                value = value.strip()
+                if(col_idx < 3 or col_idx == 5):
+                    value = value.strip()
                 if col == "Product_code" and (value not in self.product_codes):
                     print(f"[WARN] '{value}' not in dropdown list!")
                 # Handle special cases
