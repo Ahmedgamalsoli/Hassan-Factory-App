@@ -212,22 +212,26 @@ class SalesSystemApp:
             "Products": {"Arabic": "المنتجات", "English": "Products"},
             "Materials": {"Arabic": "الخامات", "English": "Materials"},
             "Employees": {"Arabic": "الموظفين", "English": "Employees"},
-            "Customer Name":{"Arabic": "العميل:", "English": "Customer:"},
+            "Customer Name":{"Arabic": "اسم العميل", "English": "Customer:"},
             "Supplier Name":{"Arabic": "المورد:", "English": "Supplier:"},
             "Previous Balance":{"Arabic": "الحساب السابق:", "English": "Previous Balance:"},
             "Paid Money":{"Arabic": "المبلغ المدفوع:", "English": "Paid Money:"},
-            "Customer Code":{"Arabic": "كود العميل:", "English": "Customer Code:"},
-            "Supplier Code":{"Arabic": "كود المورد:", "English": "Supplier Code:"},
+            "Customer Code":{"Arabic": "كود العميل", "English": "Customer Code:"},
+            "Supplier Code":{"Arabic": "كود المورد", "English": "Supplier Code:"},
             "Payment Method":{"Arabic": "طريقة الدفع:", "English": "Payment Method:"},
             "Product_code":{"Arabic": "كود المنتج", "English": "Product Code"},
             "product_name":{"Arabic": "اسم المنتج", "English": "Product Name"},
             "unit":{"Arabic": "الوحدة", "English": "Unit"},
+            "Unit":{"Arabic": "الوحدة", "English": "Unit"},
             "numbering":{"Arabic": "العدد", "English": "Numbering"},
             "QTY":{"Arabic": "الكمية", "English": "Quantity"},
             "Discount Type":{"Arabic": "نوع الخصم", "English": "Discount Type"},
+            "Discount_Type":{"Arabic": "نوع الخصم", "English": "Discount Type"},
             "Discount Value":{"Arabic": "قيمة الخصم", "English": "Discount Value"},
+            "Discount_Value":{"Arabic": "قيمة الخصم", "English": "Discount Value"},
             "Total_QTY":{"Arabic": "إجمالي الكمية", "English": "Total Quantity"},
             "Unit_Price":{"Arabic": "سعر الوحدة", "English": "Unit Price"},
+            "Unit_price":{"Arabic": "سعر الوحدة", "English": "Unit Price"},
             "Total_Price":{"Arabic": "إجمالي السعر", "English": "Total Price"},
             "Material_code":{"Arabic": "كود الخام", "English": "Material Code"},
             "Material_name":{"Arabic": "اسم الخام", "English": "Material Name"},
@@ -235,15 +239,15 @@ class SalesSystemApp:
             "➕ Add Row":{"Arabic": "➕ أضف صف", "English": "➕ Add Row"},
             "💾 Save Invoice":{"Arabic": "💾 حفظ الفاتورة", "English": "💾 Save Invoice"},
             "💾 Save Order":{"Arabic": "💾 حفظ الطلب", "English": "💾 Save Order"},
-            "Search":{"Arabic": "ابحث", "English": "Search"},
+            "Search":{"Arabic": "بحث", "English": "Search"},
             "Name":{"Arabic": "الاسم", "English": "Name"},
             "Phone_number1":{"Arabic": "رقم التليفون 1", "English": "Phone Number 1"},
             "Phone_number2":{"Arabic": "رقم التليفون 2", "English": "Phone Number 2"},
             "Code":{"Arabic": "كوود", "English": "Code"},
-            "Purchase_mgr_number":{"Arabic": "رقم مدير المشتريات", "English": "Purchase Manager Number"},
-            "Financial_mgr_number":{"Arabic": "رقم مدير المالية", "English": "Financial Manager Number"},
-            "Purchase_mgr_name":{"Arabic": "اسم مديرالمشتريات", "English": "Purchase Manager Name"},
-            "Financial_mgr_name":{"Arabic": "اسم مدير المالية", "English": "Financial Manager Name"},
+            "Purchase_mgr_number":{"Arabic": "رقم مدير المشتريات", "English": "Purchase Mgr Number"},
+            "Financial_mgr_number":{"Arabic": "رقم مدير المالية", "English": "Financial Mgr Number"},
+            "Purchase_mgr_name":{"Arabic": "اسم مديرالمشتريات", "English": "Purchase Mgr Name"},
+            "Financial_mgr_name":{"Arabic": "اسم مدير المالية", "English": "Financial Mgr Name"},
             "Email":{"Arabic": "الايميل", "English": "Email"},
             "Company_address":{"Arabic": "عنوان الشركة", "English": "Company Address"},
             "Extra_address":{"Arabic": "عنوان اضافي", "English": "Extra Address"},
@@ -268,8 +272,10 @@ class SalesSystemApp:
             "Phone_number":{"Arabic": "رقم التليفون", "English": "Phone Number"},
             "Address":{"Arabic": "العنوان", "English": "Address"},
             "Salary":{"Arabic": "المرتب", "English": "Salary"},
+            "Salary:":{"Arabic": "المرتب:", "English": "Salary:"},
             "category":{"Arabic": "التصنيف", "English": "category"},
             "stock_quantity":{"Arabic": "كمية المخزون", "English": "stock Quantity"},
+            "specs":{"Arabic": "المواصفات", "English": "Specs"},
             "Specs":{"Arabic": "المواصفات", "English": "Specs"},
             "product_code":{"Arabic": "كود المنتج", "English": "Product_code"},
             "Units":{"Arabic": "الوحدات", "English": "Units"},
@@ -280,7 +286,10 @@ class SalesSystemApp:
             "Employee hours":{"Arabic": "مواعيد الموظفين", "English": "Employees hours"},
             "Employee Withdrawals":{"Arabic": "مسحوبات الموظفين", "English": "Employees Withdrawals"},
             "Material Code":{"Arabic":"كود الخامة","English":"Material Code"},
+            "material_code":{"Arabic":"كود الخامة","English":"Material Code"},
+            "material_name":{"Arabic":"كود الخامة","English":"Material Code"},
             "Material Name":{"Arabic":"اسم الخامة","English":"Material Name"},
+            "material_pic":{"Arabic":"صورة الخامة","English":"Material Pic"},
             "Material Available Qty":{"Arabic":"الكمية المتاحة","English":"Material Ava qty"},
             "Material Qty":{"Arabic":"الكمية المستخدمة","English":"Material_Qty"},
             "Product Code":{"Arabic":"كود المنتج","English":"Product Code"},
@@ -323,6 +332,7 @@ class SalesSystemApp:
             "From Date:":{"Arabic":"من تاريخ:","English":"From Date:"},
             "To Date:":{"Arabic":"الي تاريخ:","English":"To Date:"},
             "Description":{"Arabic":"الوصف","English":"Description"},
+            "description":{"Arabic":"الوصف","English":"Description"},
             "Payment_Method":{"Arabic":"طريقة الدفع","English":"Payment Method"},
             "Total Credit:":{"Arabic":"مجموع الدائن:","English":"Total Credit:"},
             "Total Debit:":{"Arabic":"مجموع المدين:","English":"Total Debit:"},
@@ -344,6 +354,83 @@ class SalesSystemApp:
             "Still checked in":{"Arabic":"لا يزال قيد التسجيل","English":"Still checked in"},
             "Customer & Supplier Overview":{"Arabic":"نظرة عامة على العملاء والموردين","English":"Customer & Supplier Overview"},
             
+            ####################### DATABASES ##############################
+            #Purchases DB
+            "Receipt_Number":{"Arabic":"رقم الفاتورة","English":"Receipt Number"},
+            "supplier_code":{"Arabic":"كود المورد","English":"Supplier Code"},
+            "supplier_name":{"Arabic":"اسم المورد","English":"Supplier Name"},
+            "supplier_phone1":{"Arabic":"هاتف المورد 1","English":"Supplier Phone 1"},
+            "supplier_phone2":{"Arabic":"هاتف المورد 2","English":"Supplier Phone 2"},
+            "supplier_address":{"Arabic":"عنوان المورد","English":"Supplier Address"},
+            "Final_Price":{"Arabic":"السعر النهائي","English":"Final Price"},
+            "Net_total":{"Arabic":"الإجمالي الصافي","English":"Net Total"},
+            "Previous_balance":{"Arabic":"الرصيد السابق","English":"Previous Balance"},
+            "Total_balance":{"Arabic":"الرصيد الكلي","English":"Total Balance"},
+            "Payed_cash":{"Arabic":"المبلغ المدفوع","English":"Payed Cash"},
+            "Remaining_balance":{"Arabic":"باقي المبلغ","English":"Remaining Balance"},
+            "Payment_method":{"Arabic":"طريقة الدفع","English":"Payment Method"},
+            "PDF_Path":{"Arabic":"ملف ال PDF","English":"PDF Path"},
+
+            #Sales DB
+            "customer_code":{"Arabic":"كود المورد","English":"Customer Code"},
+            "customer_name":{"Arabic":"اسم المورد","English":"Customer Name"},
+            "customer_phone1":{"Arabic":"هاتف المورد 1","English":"Customer Phone 1"},
+            "customer_phone2":{"Arabic":"هاتف المورد 2","English":"Customer Phone 2"},
+            "customer_address":{"Arabic":"عنوان المورد","English":"Customer Address"},
+
+            #Employee Salary DB
+            "employee_code":{"Arabic":"كود الموظف","English":"Employee Code"},
+            "employee_name":{"Arabic":"اسم الموظف","English":"Employee Name"},
+            "month_year":{"Arabic":"الشهر-السنة","English":"Month-Year"},
+            "base_salary":{"Arabic":"المرتب الأساسي","English":"Base Salary"},
+            "total_withdrawls":{"Arabic":"مجموع المسحوبات","English":"Total Withdrawals"},
+            "delay_penalty":{"Arabic":"غرامات تأخير","English":"Delay Penalty"}, #alternative: Salary Deduction
+            "overtime_bonus":{"Arabic":"أجر العمل الإضافي","English":"Overtime Bonus"},
+            "net_salary":{"Arabic":"المرتب الكلي","English":"Net Salary"},
+            "payment_method":{"Arabic":"طريقة الدفع","English":"Payment Method"},
+            "timestamp":{"Arabic":"وقت التسجيل","English":"Timestamp"},
+            
+            #Employee Appointments DB
+            "check_in":{"Arabic":"وقت التسجيل","English":"Check-In Time"},
+            "check_out":{"Arabic":"وقت الخروج","English":"Check-Out Time"},
+            "duration":{"Arabic":"المدة الزمنية","English":"Duration"},
+
+            #Employee withdrawals DB
+            "previous_withdrawls":{"Arabic":"مسحوبات سابقة","English":"Previous Withdrawls"},
+            "amount_withdrawls":{"Arabic":"مسحوبات حالية","English":"Amount Withdrawls"},
+            
+            #Production DB
+            "material_qty":{"Arabic":"كمية الخامة","English":"Material Qty"},
+            "product_qty":{"Arabic":"كمية المنتج","English":"Product Qty"},
+            "waste":{"Arabic":"هادر","English":"Waste"},
+            #General_Exp_And_Rev DB
+            "type":{"Arabic":"نوع","English":"Type"},
+            "amount":{"Arabic":"المبلغ","English":"Amount"},
+            "date":{"Arabic":"تاريخ","English":"Date"},    
+
+
+            ####################### General Expenses & Rev ##############################
+            "Amount Paid:":{"Arabic":"القيمة المدفوعة:","English":"Amount Paid:"},
+            "Amount Received:":{"Arabic":"القيمة المستلمة:","English":"Amount Received:"},
+            "Description:":{"Arabic":"الوصف:","English":"Description:"},
+            "💾 Record Expense":{"Arabic":"💾 تسجيل مصروف","English":"💾 Record Expense"},
+            "💾 Record Revenue":{"Arabic":"💾 تسجيل إيراد","English":"💾 Record Revenue"},
+
+            
+            ####################### Treasury ##############################
+            "From Date:":{"Arabic":"من","English":"From Date:"},
+            "To Date:":{"Arabic":"إلى","English":"To Date:"},
+            "Payment Method:":{"Arabic":"طريقة الدفع","English":"Payment Method"},
+            "Search:":{"Arabic":"بحث","English":"Search:"},
+
+            ####################### Customer Interactions (supply hub) ##############################
+            "Cash":{"Arabic":"المبلغ:","English":"Cash:"},
+            "Start Date":{"Arabic":"تاريخ بداية","English":"Start Date"},
+            "End Date":{"Arabic":"تاريخ انتهاء","English":"End Date"},
+            "Add Entry":{"Arabic":"أضف خانة","English":"Add Entry"},
+
+            "Total Debit":{"Arabic":"إجمالي الدائن","English":"Total Debit"},
+            "Total Credit":{"Arabic":"إجمالي المدين","English":"Total Credit"},            
         }        
         
         self.db = None
@@ -637,7 +724,6 @@ class SalesSystemApp:
                             font=("Segoe UI", 10))
                 btn.grid(row=row, column=column, padx=5, pady=5)
                 
-
     def create_left_visualization(self, parent):
         try:
         
@@ -913,7 +999,8 @@ class SalesSystemApp:
         except PyMongoError as e:
             print(f"Database error: {e}")
             return ("Error", 0)
-        # Modify your show_visualizations method:
+        
+    # Modify your show_visualizations method:
     def show_visualizations(self,user_role):
         # Clear current window
         for widget in self.root.winfo_children():
@@ -2136,9 +2223,9 @@ class SalesSystemApp:
         paned_window.pack(fill=tk.BOTH, expand=True)
         
         # Expense Frame (left side)
-        expense_frame = tk.LabelFrame(paned_window, text=" Expenses ", font=("Arial", 12, "bold"), padx=10, pady=10)
+        expense_frame = tk.LabelFrame(paned_window, text=self.t("Expenses"), font=("Arial", 12, "bold"), padx=10, pady=10)
         # Revenue Frame (right side)
-        revenue_frame = tk.LabelFrame(paned_window, text=" Revenues ", font=("Arial", 12, "bold"), padx=10, pady=10)
+        revenue_frame = tk.LabelFrame(paned_window, text=self.t("Revenues"), font=("Arial", 12, "bold"), padx=10, pady=10)
         
         paned_window.add(expense_frame)
         paned_window.add(revenue_frame)
@@ -2161,19 +2248,19 @@ class SalesSystemApp:
         for i in range(4):
             expense_frame.rowconfigure(i, weight=1)
         
-        tk.Label(expense_frame, text="Amount Paid:", font=("Arial", 10)).grid(row=0, column=0, sticky='e', pady=5)
+        tk.Label(expense_frame, text=self.t("Amount Paid:"), font=("Arial", 10)).grid(row=0, column=0, sticky='e', pady=5)
         self.expense_amount = tk.DoubleVar()
         expense_entry = tk.Entry(expense_frame, textvariable=self.expense_amount)
         expense_entry.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
         
-        tk.Label(expense_frame, text="Payment Method:", font=("Arial", 10)).grid(row=1, column=0, sticky='e', pady=5)
+        tk.Label(expense_frame, text=self.t("Payment Method:"), font=("Arial", 10)).grid(row=1, column=0, sticky='e', pady=5)
         self.expense_payment = tk.StringVar()
         expense_payment_cb = ttk.Combobox(expense_frame, textvariable=self.expense_payment, 
                                         values=payment_methods, state="readonly")
         expense_payment_cb.grid(row=1, column=1, padx=5, pady=5, sticky='ew')
         expense_payment_cb.current(0)  # Default to Cash
         
-        tk.Label(expense_frame, text="Description:", font=("Arial", 10)).grid(row=2, column=0, sticky='e', pady=5)
+        tk.Label(expense_frame, text=self.t("Description:"), font=("Arial", 10)).grid(row=2, column=0, sticky='e', pady=5)
         self.expense_desc = tk.StringVar()
         expense_desc_entry = tk.Entry(expense_frame, textvariable=self.expense_desc)
         expense_desc_entry.grid(row=2, column=1, padx=5, pady=5, sticky='ew')
@@ -2193,19 +2280,19 @@ class SalesSystemApp:
         for i in range(4):
             revenue_frame.rowconfigure(i, weight=1)
         
-        tk.Label(revenue_frame, text="Amount Received:", font=("Arial", 10)).grid(row=0, column=0, sticky='e', pady=5)
+        tk.Label(revenue_frame, text=self.t("Amount Received:"), font=("Arial", 10)).grid(row=0, column=0, sticky='e', pady=5)
         self.revenue_amount = tk.DoubleVar()
         revenue_entry = tk.Entry(revenue_frame, textvariable=self.revenue_amount)
         revenue_entry.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
         
-        tk.Label(revenue_frame, text="Payment Method:", font=("Arial", 10)).grid(row=1, column=0, sticky='e', pady=5)
+        tk.Label(revenue_frame, text=self.t("Payment Method:"), font=("Arial", 10)).grid(row=1, column=0, sticky='e', pady=5)
         self.revenue_payment = tk.StringVar()
         revenue_payment_cb = ttk.Combobox(revenue_frame, textvariable=self.revenue_payment, 
                                         values=payment_methods, state="readonly")
         revenue_payment_cb.grid(row=1, column=1, padx=5, pady=5, sticky='ew')
         revenue_payment_cb.current(0)  # Default to Cash
         
-        tk.Label(revenue_frame, text="Description:", font=("Arial", 10)).grid(row=2, column=0, sticky='e', pady=5)
+        tk.Label(revenue_frame, text=self.t("Description:"), font=("Arial", 10)).grid(row=2, column=0, sticky='e', pady=5)
         self.revenue_desc = tk.StringVar()
         revenue_desc_entry = tk.Entry(revenue_frame, textvariable=self.revenue_desc)
         revenue_desc_entry.grid(row=2, column=1, padx=5, pady=5, sticky='ew')
@@ -4027,11 +4114,11 @@ class SalesSystemApp:
         left_frame.pack_propagate(False)  # Prevent auto-resizing
 
         # Left half
-        tk.Label(left_frame, text="Cash", font=("Arial", 12)).pack(pady=10, anchor="w", padx=10)
+        tk.Label(left_frame, text=self.t("Cash"), font=("Arial", 12)).pack(pady=10, anchor="w", padx=10)
         self.cash_entry = tk.Entry(left_frame, font=("Arial", 12))
         self.cash_entry.pack(pady=5, padx=10, fill="x")
 
-        tk.Label(left_frame, text="Payment Method", font=("Arial", 12)).pack(pady=10, anchor="w", padx=10)
+        tk.Label(left_frame, text=self.t("Payment Method"), font=("Arial", 12)).pack(pady=10, anchor="w", padx=10)
         selected_method = tk.StringVar()
         self.payment_entry = ttk.Combobox(left_frame, textvariable=selected_method, 
                                         values=['Cash', 'E_Wallet', 'Bank_account', 'Instapay'], 
@@ -4039,7 +4126,7 @@ class SalesSystemApp:
         self.payment_entry.pack(pady=5, padx=10, fill="x")
         self.payment_entry.set("Cash")  
 
-        add_btn = tk.Button(left_frame, text="Add Entry", width=20, 
+        add_btn = tk.Button(left_frame, text=self.t("Add Entry"), width=20, 
                            command=lambda: self.add_supplier_payment(tree))
         add_btn.pack(pady=20, padx=10)
 
@@ -4048,11 +4135,11 @@ class SalesSystemApp:
         right_frame.pack(side="left", fill="both", expand=True)
 
         # ==== Drop-down Section ====
-        tk.Label(right_frame, text="Supplier Code").grid(row=0, column=4)
+        tk.Label(right_frame, text=self.t("Supplier Code")).grid(row=0, column=4)
         self.supplier_code_cb = ttk.Combobox(right_frame, values=supplier_codes)
         self.supplier_code_cb.grid(row=1, column=4)
 
-        tk.Label(right_frame, text="Supplier Name").grid(padx=(10,20), row=0, column=6)
+        tk.Label(right_frame, text=self.t("Supplier Name")).grid(padx=(10,20), row=0, column=6)
         self.supplier_name_cb = ttk.Combobox(right_frame, values=supplier_names)
         self.supplier_name_cb.grid(row=1, column=6)
 
@@ -4067,12 +4154,12 @@ class SalesSystemApp:
                                       self.supplier_collection, self.purchases_collection, self.supplier_payment_collection, 
                                       "supplier_info.code", tree))
 
-        tk.Label(right_frame, text="Start Date").grid(padx=(10,20), row=0, column=8)
+        tk.Label(right_frame, text=self.t("Start Date")).grid(padx=(10,20), row=0, column=8)
         self.start_date_entry = DateEntry(right_frame, font=("Arial", 12), date_pattern='dd-MM-yyyy', width=14)
         self.start_date_entry.grid(padx=(10,20), row=1, column=8)
         self.start_date_entry.set_date(date(2022, 1, 1))
 
-        tk.Label(right_frame, text="End Date").grid(padx=(10,20), row=0, column=10)
+        tk.Label(right_frame, text=self.t("End Date")).grid(padx=(10,20), row=0, column=10)
         self.end_date_entry = DateEntry(right_frame, font=("Arial", 12), date_pattern='dd-MM-yyyy', width=14)
         self.end_date_entry.grid(padx=(10,20), row=1, column=10)
         # self.end_date_entry.set_date(date(2025, 7, 7))
@@ -4080,7 +4167,7 @@ class SalesSystemApp:
 
         search_btn = tk.Button(
             right_frame,
-            text="Search",
+            text=self.t("Search"),
             font=("Arial", 11),
             width=12,
             command=lambda: self.on_code_selected(
@@ -4118,15 +4205,15 @@ class SalesSystemApp:
             tree.column(col, width=150)
 
         # ==== Footer Totals ====
-        tk.Label(right_frame, text="Total Debit").grid(row=13, column=3, sticky="e")
+        tk.Label(right_frame, text=self.t("Total Debit")).grid(row=13, column=3, sticky="e")
         self.total_debit_entry = tk.Entry(right_frame)
         self.total_debit_entry.grid(row=13, column=4, sticky="w")
 
-        tk.Label(right_frame, text="Total Credit").grid(row=13, column=5, sticky="e")
+        tk.Label(right_frame, text=self.t("Total Credit")).grid(row=13, column=5, sticky="e")
         self.total_credit_entry = tk.Entry(right_frame)
         self.total_credit_entry.grid(row=13, column=6, sticky="w")
 
-        tk.Label(right_frame, text="Balance").grid(row=13, column=7, sticky="e")
+        tk.Label(right_frame, text=self.t("Balance")).grid(row=13, column=7, sticky="e")
         self.balance_entry = tk.Entry(right_frame)
         self.balance_entry.grid(row=13, column=8, sticky="w")
 
@@ -4426,17 +4513,17 @@ class SalesSystemApp:
         left_frame.pack_propagate(False)  # Prevent auto-resizing
 
         # Left half
-        tk.Label(left_frame, text="Cash", font=("Arial", 12)).pack(pady=10, anchor="w", padx=10)
+        tk.Label(left_frame, text=self.t("Cash"), font=("Arial", 12)).pack(pady=10, anchor="w", padx=10)
         self.cash_entry = tk.Entry(left_frame, font=("Arial", 12))
         self.cash_entry.pack(pady=5, padx=10, fill="x")
 
-        tk.Label(left_frame, text="Payment Method", font=("Arial", 12)).pack(pady=10, anchor="w", padx=10)
+        tk.Label(left_frame, text=self.t("Payment Method"), font=("Arial", 12)).pack(pady=10, anchor="w", padx=10)
         selected_method = tk.StringVar()
         self.payment_entry = ttk.Combobox(left_frame, textvariable=selected_method, values=['Cash', 'E_Wallet', 'Bank_account', 'Instapay'], state="readonly", width=18)
         self.payment_entry.pack(pady=5, padx=10, fill="x")
-        self.payment_entry.set("Cash")  
+        self.payment_entry.set(self.t("Cash"))  
 
-        add_btn = tk.Button(left_frame, text="Add Entry", width=20, command=lambda: self.add_customer_payment(tree))
+        add_btn = tk.Button(left_frame, text=self.t("Add Entry"), width=20, command=lambda: self.add_customer_payment(tree))
         add_btn.pack(pady=20 , padx=10)
 
         #Right part (table)
@@ -4444,23 +4531,23 @@ class SalesSystemApp:
         right_frame.pack(side="left", fill="both", expand=True)
 
         # ==== Drop-down Section ====
-        tk.Label(right_frame, text="Customer Code").grid(row=0, column=4)
+        tk.Label(right_frame, text=self.t("Customer Code")).grid(row=0, column=4)
         self.customer_code_cb = ttk.Combobox(right_frame, values=customer_codes)
         self.customer_code_cb.grid(row=1, column=4)
 
-        tk.Label(right_frame, text="Customer Name").grid(padx=(10,20), row=0, column=6)
+        tk.Label(right_frame, text=self.t("Customer Name")).grid(padx=(10,20), row=0, column=6)
         self.customer_name_cb = ttk.Combobox(right_frame, values=customer_names)
         self.customer_name_cb.grid(row=1, column=6)
 
         self.customer_code_cb.bind("<<ComboboxSelected>>", lambda event: self.on_code_selected(event, self.customer_code_cb, self.customer_name_cb, self.customer_collection, self.sales_collection, self.customer_payment_collection, "Customer_info.code", tree))
         self.customer_name_cb.bind("<<ComboboxSelected>>", lambda event: self.on_name_selected(event, self.customer_code_cb, self.customer_name_cb, self.customer_collection, self.sales_collection, self.customer_payment_collection, "Customer_info.code", tree))
         
-        tk.Label(right_frame, text="Start Date").grid(padx=(10,20), row=0, column=8)
+        tk.Label(right_frame, text=self.t("Start Date")).grid(padx=(10,20), row=0, column=8)
         self.start_date_entry = DateEntry(right_frame, font=("Arial", 12), date_pattern='dd-MM-yyyy', width=14)
         self.start_date_entry.grid(padx=(10,20), row=1, column=8)
         self.start_date_entry.set_date(date(2022, 1, 1))
 
-        tk.Label(right_frame, text="End Date").grid(padx=(10,20), row=0, column=10)
+        tk.Label(right_frame, text=self.t("End Date")).grid(padx=(10,20), row=0, column=10)
         self.end_date_entry = DateEntry(right_frame, font=("Arial", 12), date_pattern='dd-MM-yyyy', width=14)
         self.end_date_entry.grid(padx=(10,20), row=1, column=10)
         # self.end_date_entry.set_date(date(2025, 7, 7))
@@ -4468,7 +4555,7 @@ class SalesSystemApp:
         
         search_btn = tk.Button(
             right_frame,
-            text="Search",
+            text=self.t("Search"),
             font=("Arial", 11),
             width=12,
             command=lambda: self.on_code_selected(
@@ -4494,7 +4581,7 @@ class SalesSystemApp:
         scrollbar.pack(side="right", fill="y")
 
         # Treeview
-        tree = ttk.Treeview(tree_container, columns=columns, show="headings", height=8, yscrollcommand=scrollbar.set)
+        tree = ttk.Treeview(tree_container, columns=self.t(columns), show="headings", height=8, yscrollcommand=scrollbar.set)
         tree.pack(side="left", fill="both", expand=True)
 
         # Configure scrollbar to control tree
@@ -4505,15 +4592,15 @@ class SalesSystemApp:
             tree.column(col, width=150)
 
         # ==== Footer Totals ====
-        tk.Label(right_frame, text="Total Debit").grid(row=13, column=3, sticky="e")
+        tk.Label(right_frame, text=self.t("Total Debit")).grid(row=13, column=3, sticky="e")
         self.total_debit_entry = tk.Entry(right_frame)
         self.total_debit_entry.grid(row=13, column=4, sticky="w")
 
-        tk.Label(right_frame, text="Total Credit").grid(row=13, column=5, sticky="e")
+        tk.Label(right_frame, text=self.t("Total Credit")).grid(row=13, column=5, sticky="e")
         self.total_credit_entry = tk.Entry(right_frame)
         self.total_credit_entry.grid(row=13, column=6, sticky="w")
 
-        tk.Label(right_frame, text="Balance").grid(row=13, column=7, sticky="e")
+        tk.Label(right_frame, text=self.t("Balance")).grid(row=13, column=7, sticky="e")
         self.balance_entry = tk.Entry(right_frame)
         self.balance_entry.grid(row=13, column=8, sticky="w")
 
@@ -4581,6 +4668,18 @@ class SalesSystemApp:
             messagebox.showerror("Error", f"Error displaying data:\n{e}")
 
     def display_general_table(self, current_collection, collection_name):
+        
+        if self.language == "Arabic":
+            alignment = "e"
+            label_col = 1
+            entry_col = 0
+        else:
+            alignment = "w"
+            label_col = 0
+            entry_col = 1
+        # label_col = 1 if self.language == "Arabic" else 0
+        # entry_col = 0 if self.language == "Arabic" else 1
+        
         img_label= None
         columns = self.get_fields_by_name(collection_name)
         
@@ -4648,26 +4747,30 @@ class SalesSystemApp:
                 continue
             elif label in ["code"] and collection_name == "general_exp_rev":
                 continue
+            
 
-            tk.Label(form_frame, text=self.t(label), font=("Arial", 12), anchor="w").grid(row=row_index, column=0, sticky="w", pady=5)
+            #anchor="e" → aligns text to the right within the label ... "w" alternative
+            # justify="right" → right-justifies multi-line text
+            # sticky="e" → aligns the label to the right of the grid cell
+            tk.Label(form_frame, text=self.t(label), font=("Arial", 12), anchor=alignment).grid(row=row_index, column=label_col, sticky=alignment, pady=5, padx=2)
 
             if "date" in label.lower():
                 entry = DateEntry(form_frame, font=("Arial", 12), date_pattern='dd-MM-yyyy', width=18)
-                entry.grid(row=row_index, column=1, pady=5)
+                entry.grid(row=row_index, column=entry_col, pady=5)
                 self.entries[label] = entry
                 row_index += 1
 
             elif "payment_method" in label.lower():
                 selected_method = tk.StringVar()
-                dropdown = ttk.Combobox(form_frame, textvariable=selected_method, values=['Cash', 'E_Wallet', 'Bank_account', 'Instapay'], state="readonly", width=18)
-                dropdown.grid(row=row_index, column=1, pady=5)
+                dropdown = ttk.Combobox(form_frame, textvariable=selected_method, values=['Cash', 'E_Wallet', 'Bank_account', 'Instapay'], state="readonly", width=27)
+                dropdown.grid(row=row_index, column=entry_col, pady=5)
                 dropdown.set("Cash")
                 self.entries[label] = dropdown
                 row_index += 1
 
             elif "pic" in label.lower():
                 frame = tk.Frame(form_frame)
-                frame.grid(row=row_index, column=1, pady=5)
+                frame.grid(row=row_index, column=entry_col, pady=5)
                 
                 # Image Label in a *new row* below the current field
                 img_label = tk.Label(form_frame)
@@ -4681,13 +4784,13 @@ class SalesSystemApp:
                     if filepath:
                         load_image_preview(filepath, img_lbl)
 
-                browse_btn = tk.Button(frame, text="Browse",width=10, command=lambda e=entry: browse_file(e))
+                browse_btn = tk.Button(frame, text="Browse",width=25, command=lambda e=entry: browse_file(e))
                 browse_btn.pack(side="left", padx=5)
                 self.entries[label] = img_label
 
             elif "pdf_path" in label.lower():
                 frame = tk.Frame(form_frame)
-                frame.grid(row=row_index, column=1, pady=5)
+                frame.grid(row=row_index, column=entry_col, pady=5)
 
                 file_label = tk.Label(form_frame, text="No file selected", anchor="w")
                 file_label.grid(row=row_index + 1, column=0, columnspan=3, pady=5)
@@ -4702,7 +4805,7 @@ class SalesSystemApp:
                         lbl.config(text=f"Selected: {filename}")
                         lbl.filepath = filepath
 
-                browse_btn = tk.Button(frame, text="Browse", width=10, command=browse_file)
+                browse_btn = tk.Button(frame, text="Browse", width=25, command=browse_file)
                 browse_btn.pack(side="left", padx=5)
 
                 self.entries[label] = file_label
@@ -4710,7 +4813,7 @@ class SalesSystemApp:
 
             else:
                 entry = tk.Entry(form_frame, font=("Arial", 12), width=20)
-                entry.grid(row=row_index, column=1, pady=5)
+                entry.grid(row=row_index, column=entry_col, pady=5)
                 self.entries[label] = entry
                 row_index += 1
 
@@ -6010,7 +6113,7 @@ class SalesSystemApp:
             return ["employee_code", "employee_name", "previous_withdrawls", "amount_withdrawls", "payment_method", "timestamp"]
 
         elif collection_name == "general_exp_rev":
-            return ["code", "type", "amount", "payment_method", "description", "date"]
+            return ["code", "type", "amount", "payment_method", self.t("description"), "date"]
         
         else:
             print(f"Warning: Collection name '{collection_name}' not recognized.")
