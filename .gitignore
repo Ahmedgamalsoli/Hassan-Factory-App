@@ -3,3 +3,55 @@ test.py
 Tut_3 - Copy.pdf
 invoiceA5.pdf
 invoiceA4.pdf
+new/calculator.py
+new/config.py
+new/database.py
+new/Login.py
+new/main_menu.py
+new/main.py
+new/PopupHelper.py
+new/sound.py
+new/__pycache__/calculator.cpython-313.pyc
+new/__pycache__/config.cpython-313.pyc
+new/__pycache__/database.cpython-313.pyc
+new/__pycache__/Login.cpython-313.pyc
+new/__pycache__/main_menu.cpython-313.pyc
+new/__pycache__/PopupHelper.cpython-313.pyc
+new/Static/Fonts/Amiri-Regular.ttf
+new/Static/images/Back.png
+new/Static/images/calculator.png
+new/Static/images/compensation (1).png
+new/Static/images/customers.png
+new/Static/images/database.png
+new/Static/images/Emp_hours.png
+new/Static/images/Emp_Withdraw.png
+new/Static/images/employee time statistics.png
+new/Static/images/employee-benefit.png
+new/Static/images/employee.png
+new/Static/images/Employees.png
+new/Static/images/Exit.png
+new/Static/images/EXP & REV.png
+new/Static/images/exp_rev.png
+new/Static/images/Login.png
+new/Static/images/Logo.jpg
+new/Static/images/Logout.png
+new/Static/images/manufacture.png
+new/Static/images/Materials.png
+new/Static/images/minimize.png
+new/Static/images/payment.png
+new/Static/images/Production Order.png
+new/Static/images/Products.png
+new/Static/images/Purchase.png
+new/Static/images/Purchases_DB.png
+new/Static/images/purchases_invoice.png
+new/Static/images/Recieve.png
+new/Static/images/Reports.png
+new/Static/images/Sales_DB.png
+new/Static/images/sales_invoice.png
+new/Static/images/Sales.png
+new/Static/images/suppliers.png
+new/Static/images/Treasury.png
+new/Static/images/update_sales.png
+new/Static/sounds/Error.mp3
+new/Static/sounds/Success.mp3
+new/Static/sounds/Test.mp3
