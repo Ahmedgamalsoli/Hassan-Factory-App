@@ -143,6 +143,9 @@ MANDATORTY_FIELDS = { # list all mandatory fields (fields that can't be empty)
     "product_name","category","stock_quantity","Unit_Price","product_code","Units",
     "material_name","material_code"
 }
+MANDATORY_DBS = {
+    "Customers", "Employees", "Materials", "Products", "Suppliers" 
+}
 
 ZEROED_FIELDS = {
     "Sales_grade", "Growth_grade", "Frequency_grade", "Credit", "Debit", "Balance", "Sales"
@@ -2762,14 +2765,14 @@ class SalesSystemApp:
             self.tree.insert("", "end", values=(
                 t["date"].strftime("%d/%m/%Y %H:%M"),
                 t["description"],
-                f"${t['credit']:,.2f}",
-                f"${t['debit']:,.2f}",
+                f"{t['credit']:,.2f} ج.م",
+                f"{t['debit']:,.2f}  ج.م",
                 t["payment_method"].replace("_", " ").title()
             ))
 
         # Update totals display
         self.total_credit_var.set(f"{self.totals['credit']:,.2f} ج.م")
-        self.total_debit_var.set(f"{self.totals['debit']:,.2f} ج.م")
+        self.total_debit_var.set (f"{self.totals['debit']:,.2f}  ج.م")
         # self.total_debit_var.set(f"${self.totals['debit']:,.2f}")
         balance = self.totals['credit'] - self.totals['debit']
         self.balance_var.set(f"{balance:,.2f} ج.م")
@@ -5188,7 +5191,13 @@ class SalesSystemApp:
             #anchor="e" → aligns text to the right within the label ... "w" alternative
             # justify="right" → right-justifies multi-line text
             # sticky="e" → aligns the label to the right of the grid cell
-            tk.Label(form_frame, text=self.t(label), font=("Arial", 12), anchor=alignment).grid(row=row_index, column=label_col, sticky=alignment, pady=5, padx=2)
+            if label in MANDATORTY_FIELDS and collection_name in MANDATORY_DBS:
+                if self.language == "English":
+                    tk.Label(form_frame, text=f"{self.t(label)}⭐", font=("Arial", 12), anchor=alignment).grid(row=row_index, column=label_col, sticky=alignment, pady=5, padx=2)
+                else:
+                    tk.Label(form_frame, text=f"⭐{self.t(label)}", font=("Arial", 12), anchor=alignment).grid(row=row_index, column=label_col, sticky=alignment, pady=5, padx=2)
+            else:
+                tk.Label(form_frame, text=f"{self.t(label)}", font=("Arial", 12), anchor=alignment).grid(row=row_index, column=label_col, sticky=alignment, pady=5, padx=2)
 
             if "date" in label.lower():
                 entry = DateEntry(form_frame, font=("Arial", 12), date_pattern='dd-MM-yyyy', width=18)
