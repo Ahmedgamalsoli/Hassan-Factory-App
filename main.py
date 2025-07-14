@@ -89,6 +89,47 @@ field_mapping = {
     'supplier_address': ('supplier_info', 'address'),
 }
 
+search_field_mapping = {
+    # Customer_info
+    'customer_code': ('Customer_info', 'code'),
+    'customer_name': ('Customer_info', 'name'),
+    'customer_phone1': ('Customer_info', 'phone1'),
+    'customer_phone2': ('Customer_info', 'phone2'),
+    'customer_address': ('Customer_info', 'address'),
+    
+    # Financials
+    'Net_total': ('Financials', 'Net_total'),
+    'Previous_balance': ('Financials', 'Previous_balance'),
+    'Total_balance': ('Financials', 'Total_balance'),
+    'Payed_cash': ('Financials', 'Payed_cash'),
+    'Remaining_balance': ('Financials', 'Remaining_balance'),
+    'Payment_method': ('Financials', 'Payment_method'),
+    'transport_fees' : ('Financials', 'transport_fees'),
+
+    # Supplier_info
+    'supplier_code': ('supplier_info', 'code'),
+    'supplier_name': ('supplier_info', 'name'),
+    'supplier_phone1': ('supplier_info', 'phone1'),
+    'supplier_phone2': ('supplier_info', 'phone2'),
+    'supplier_address': ('supplier_info', 'address'),
+    
+
+    #Items
+    'Product_code': ('Items', 'Product_code'),
+    'product_name': ('Items', 'product_name'),
+    'material_code': ('Items', 'material_code'),
+    'material_name': ('Items', 'material_name'),
+    'Unit': ('Items', 'Unit'),
+    'QTY': ('Items', 'QTY'),
+    'numbering': ('Items', 'numbering'),
+    'Total_QTY': ('Items', 'Total_QTY'),
+    'Unit_price': ('Items', 'Unit_price'),
+    'Discount_Type': ('Items', 'Discount_Type'),
+    'Discount_Value': ('Items', 'Discount_Value'),
+    'Final_Price': ('Items', 'Final_Price'),
+}
+
+
 LOCKED_FIELDS = {
     "root": [ "Operation_Number","Code","employee_code", "material_code", "product_code", "Receipt_Number", "Operation_Number"],
     "Customer_info": ["code"],
@@ -213,15 +254,15 @@ class SalesSystemApp:
             "Materials": {"Arabic": "الخامات", "English": "Materials"},
             "Employees": {"Arabic": "الموظفين", "English": "Employees"},
             "Customer Name":{"Arabic": "اسم العميل", "English": "Customer:"},
-            "Supplier Name":{"Arabic": "المورد:", "English": "Supplier:"},
+            "Supplier Name":{"Arabic": "اسم المورد :", "English": "Supplier:"},
             "Previous Balance":{"Arabic": "الحساب السابق:", "English": "Previous Balance:"},
             "Paid Money":{"Arabic": "المبلغ المدفوع:", "English": "Paid Money:"},
-            "Customer Code":{"Arabic": "كود العميل", "English": "Customer Code:"},
-            "Supplier Code":{"Arabic": "كود المورد", "English": "Supplier Code:"},
+            "Customer Code":{"Arabic": "كوود العميل", "English": "Customer Code:"},
+            "Supplier Code":{"Arabic": "كوود المورد", "English": "Supplier Code:"},
             "Payment Method":{"Arabic": "طريقة الدفع:", "English": "Payment Method:"},
             "Product_code":{"Arabic": "كود المنتج", "English": "Product Code"},
             "product_name":{"Arabic": "اسم المنتج", "English": "Product Name"},
-            "unit":{"Arabic": "الوحدة", "English": "Unit"},
+            "unit":{"Arabic": "وحدة", "English": "Unit"},
             "Unit":{"Arabic": "الوحدة", "English": "Unit"},
             "numbering":{"Arabic": "العدد", "English": "Numbering"},
             "QTY":{"Arabic": "الكمية", "English": "Quantity"},
@@ -310,6 +351,7 @@ class SalesSystemApp:
             "💾 Save Withdrawal":{"Arabic":"💾 حفظ السحب","English":"💾 Save Withdrawal"},
             "Name:":{"Arabic":"الاسم:","English":"Name:"},
             "Code:":{"Arabic":"الكود:","English":"Code:"},
+            "code":{"Arabic":"الكود","English":"code"},
             "Month/Year Selection":{"Arabic":"اختيار الشهر/السنة","English":"Month/Year Selection"},
             "Month:":{"Arabic":"الشهر:","English":"Month:"},
             "Year:":{"Arabic":"السنة:","English":"Year:"},
@@ -372,11 +414,11 @@ class SalesSystemApp:
             "PDF_Path":{"Arabic":"ملف ال PDF","English":"PDF Path"},
 
             #Sales DB
-            "customer_code":{"Arabic":"كود المورد","English":"Customer Code"},
-            "customer_name":{"Arabic":"اسم المورد","English":"Customer Name"},
-            "customer_phone1":{"Arabic":"هاتف المورد 1","English":"Customer Phone 1"},
-            "customer_phone2":{"Arabic":"هاتف المورد 2","English":"Customer Phone 2"},
-            "customer_address":{"Arabic":"عنوان المورد","English":"Customer Address"},
+            "customer_code":{"Arabic":"كود العميل","English":"Customer Code"},
+            "customer_name":{"Arabic":"اسم العميل","English":"Customer Name"},
+            "customer_phone1":{"Arabic":"هاتف العميل 1","English":"Customer Phone 1"},
+            "customer_phone2":{"Arabic":"هاتف العميل 2","English":"Customer Phone 2"},
+            "customer_address":{"Arabic":"عنوان العميل","English":"Customer Address"},
 
             #Employee Salary DB
             "employee_code":{"Arabic":"كود الموظف","English":"Employee Code"},
@@ -429,9 +471,50 @@ class SalesSystemApp:
             "End Date":{"Arabic":"تاريخ انتهاء","English":"End Date"},
             "Add Entry":{"Arabic":"أضف خانة","English":"Add Entry"},
 
+            "Operation_Number":{"Arabic":"رقم العملية","English":"Operation Number"},
+
             "Total Debit":{"Arabic":"إجمالي الدائن","English":"Total Debit"},
             "Total Credit":{"Arabic":"إجمالي المدين","English":"Total Credit"},            
+
+            # "Add Entry":{"Arabic":"الوقت","English":"Add Entry"},
+            "Update Entry":{"Arabic":"تحديث خانة","English":"Update Entry"},
+            "Delete Entry":{"Arabic":"حذف خانة","English":"Delete Entry"},
+            "Deselect Entry":{"Arabic":"إلغاء التحديد","English":"Deselect Entry"},
+            "Browse":{"Arabic":"استعرض ملفات","English":"Browse"},
+            "Time":{"Arabic":"الوقت","English":"Time"},
+
+            "invoice_no":{"Arabic":"رقم الفاتورة","English":"Invoice Number"},
+            "credit":{"Arabic": "دائن", "English": "Credit"},
+            "debit":{"Arabic": "مدين", "English": "Debit"},
+
+            "Expenses":{"Arabic": "مصروفات", "English": "Expenses"},
+            "Revenues":{"Arabic": "إيرادات", "English": "Revenues"},
         }        
+        
+        self.keys = [
+        
+            "Name", "Password", "Role", "Join_Date", "National_id_pic", "Phone_number", "Address", "Salary",
+            "product_name", "category", "stock_quantity", "Specs", "Unit_Price", "product_code", "Units", "prod_pic",
+            "Product_code", "unit", "numbering", "QTY", "Discount_Type", "Discount Value", "Total_QTY", "Total_Price",
+            "Material_code", "Material_name", "material_name", "specs", "material_code", "material_pic",
+            "Phone_number1", "Phone_number2", "Code", "Last_purchase_date", "Purchase_mgr_number", "Financial_mgr_number",
+            "Purchase_mgr_name", "Financial_mgr_name", "Email", "Company_address", "Extra_address", "Maps_link",
+            "Bank_account", "Instapay", "E_wallet", "Accountant_name", "Accountant_number", "Sales_grade", "Growth_grade",
+            "Frequency_grade", "Credit", "Debit", "Balance", "Sales",
+            "amount", "date", "description",
+            "employee_code", "employee_name", "check_in", "check_out", "duration",
+            "Receipt_Number", "Date", "customer_code", "customer_name", "customer_phone1", "customer_phone2",
+            "customer_address", "Unit", "Unit_price", "Discount_Value", "Final_Price", "Net_total",
+            "Previous_balance", "Total_balance", "Payed_cash", "Remaining_balance", "Payment_method", "PDF_Path",
+            "supplier_code", "supplier_name", "supplier_phone1", "supplier_phone2", "supplier_address",
+            "Operation_Number", "Time",
+            "material_qty", "product_qty", "timestamp", "waste",
+            "month_year", "base_salary", "total_withdrawls", "delay_penalty", "overtime_bonus", "net_salary",
+            "payment_method", "previous_withdrawls", "amount_withdrawls",
+            "code", "type"
+        ]
+
+        self.reverse_translations = {self.t(k): k for k in self.keys}
         
         self.db = None
         self.db_name = tk.StringVar()
@@ -473,6 +556,7 @@ class SalesSystemApp:
         )
 
         client = MongoClient(uri,serverSelectionTimeoutMS=5000)
+        print(client.server_info()["version"])
         try:
             client.admin.command('ping')
             print("✅ Connected to MongoDB")
@@ -503,7 +587,26 @@ class SalesSystemApp:
         self.customer_payments                = db["Customer_Payments"]
         self.supplier_payments                = db["Supplier_Payments"]
         self.general_exp_rev_collection       = db["general_exp_rev"]
-        
+
+
+
+        # date_format = "%d/%m/%Y %H:%M"
+        # # Find documents where Date is a string
+        # docs = self.purchases_collection.find({"Date": {"$type": "string"}})
+        # for doc in docs:
+        #     # Parse the string into a datetime object
+        #     date_str = doc["Date"]
+        #     parsed_date = datetime.strptime(date_str, date_format)
+
+        #     # Update the document with new date type
+        #     self.purchases_collection.update_one(
+        #         {"_id": doc["_id"]},
+        #         {"$set": {"Date": parsed_date}}
+        #     )
+
+        #     print(f"Updated _id={doc['_id']} with parsed date: {parsed_date}")
+
+        # print("Done")
 
 ############################################ Windows ########################################### 
     
@@ -4165,7 +4268,7 @@ class SalesSystemApp:
         self.payment_entry.pack(pady=5, padx=10, fill="x")
         self.payment_entry.set("Cash")  
 
-        add_btn = tk.Button(left_frame, text=self.t("Add Entry"), width=20, 
+        add_btn = tk.Button(left_frame, text=self.t("Add Entry"), width=35, 
                            command=lambda: self.add_supplier_payment(tree))
         add_btn.pack(pady=20, padx=10)
 
@@ -4176,11 +4279,11 @@ class SalesSystemApp:
         # ==== Drop-down Section ====
         tk.Label(right_frame, text=self.t("Supplier Code")).grid(row=0, column=4)
         self.supplier_code_cb = ttk.Combobox(right_frame, values=supplier_codes)
-        self.supplier_code_cb.grid(row=1, column=4)
+        self.supplier_code_cb.grid(padx=(10,20), row=1, column=4)
 
-        tk.Label(right_frame, text=self.t("Supplier Name")).grid(padx=(10,20), row=0, column=6)
+        tk.Label(right_frame, text=self.t("Supplier Name")).grid(padx=(10,20), row=0, column=5)
         self.supplier_name_cb = ttk.Combobox(right_frame, values=supplier_names)
-        self.supplier_name_cb.grid(row=1, column=6)
+        self.supplier_name_cb.grid(padx=(10,20), row=1, column=5)
 
         # Bind combobox events with tree parameter
         self.supplier_code_cb.bind("<<ComboboxSelected>>", lambda event: self.on_code_selected(
@@ -4193,14 +4296,14 @@ class SalesSystemApp:
                                       self.supplier_collection, self.purchases_collection, self.supplier_payment_collection, 
                                       "supplier_info.code", tree))
 
-        tk.Label(right_frame, text=self.t("Start Date")).grid(padx=(10,20), row=0, column=8)
+        tk.Label(right_frame, text=self.t("Start Date")).grid(padx=(10,20), row=0, column=7)
         self.start_date_entry = DateEntry(right_frame, font=("Arial", 12), date_pattern='dd-MM-yyyy', width=14)
-        self.start_date_entry.grid(padx=(10,20), row=1, column=8)
+        self.start_date_entry.grid(padx=(10,20), row=1, column=7)
         self.start_date_entry.set_date(date(2022, 1, 1))
 
-        tk.Label(right_frame, text=self.t("End Date")).grid(padx=(10,20), row=0, column=10)
+        tk.Label(right_frame, text=self.t("End Date")).grid(padx=(10,20), row=0, column=8)
         self.end_date_entry = DateEntry(right_frame, font=("Arial", 12), date_pattern='dd-MM-yyyy', width=14)
-        self.end_date_entry.grid(padx=(10,20), row=1, column=10)
+        self.end_date_entry.grid(padx=(10,20), row=1, column=8)
         # self.end_date_entry.set_date(date(2025, 7, 7))
         self.end_date_entry.set_date(date.today())
 
@@ -4220,7 +4323,7 @@ class SalesSystemApp:
                 tree
             )
         )
-        search_btn.grid(row=1, column=11, padx=(5, 0), pady=5)
+        search_btn.grid(row=1, column=10, padx=(5, 0), pady=5)
 
         # ==== Table Section ====
         columns = ("date", "invoice_no", "debit", "credit", "Payment_method")
@@ -4240,7 +4343,8 @@ class SalesSystemApp:
         scrollbar.config(command=tree.yview)
 
         for col in columns:
-            tree.heading(col, text=col.capitalize())
+            tree.heading(col, text=self.t(col))
+            # tree.heading(col, text=col.capitalize())
             tree.column(col, width=150)
 
         # ==== Footer Totals ====
@@ -4279,8 +4383,7 @@ class SalesSystemApp:
             return
 
         operation_number = self.get_next_operation_number(supplier_payment_collection)
-        # current_time = datetime.now().strftime("%d/%m/%Y %H:%M")
-        current_time = datetime.now()
+        current_time = datetime.now().strftime("%d/%m/%Y %H:%M")
 
         doc = {
             "Operation_Number": operation_number,
@@ -4293,9 +4396,11 @@ class SalesSystemApp:
                 "name": supplier_name
             }
         }
-
+        
+        formatted = current_time.strftime("%Y-%m-%d %H:%M")
+        
         supplier_payment_collection.insert_one(doc)
-        tree.insert("", tk.END, values=(current_time, operation_number, 0.0, debit_val))
+        tree.insert("", tk.END, values=(formatted, operation_number, 0.0, debit_val))
 
         self.update_totals(
             purchases_collection,
@@ -4461,12 +4566,9 @@ class SalesSystemApp:
 
         invoices = invoices_collection.find(invoice_query)
         payments = payment_collection.find(payment_query)
-        # x = invoices_collection.find({ "supplier_info.code": "A00" })
-        # y = payment_collection.find({ "supplier_info.code": "A00" })
+
         invoice_count = invoices_collection.count_documents({ "supplier_info.code": "A00" })
         payment_count = payment_collection.count_documents({ "supplier_info.code": "A00" })
-        print(invoices_collection.find_one())
-        print(payment_collection.find_one())
 
         total_debit = 0.0
         total_credit = 0.0
@@ -4481,9 +4583,10 @@ class SalesSystemApp:
                 
                 # Add to sample_data for tree
                 date = inv.get("Date", "")
+                formatted = date.strftime("%Y-%m-%d %H:%M")
                 invoice_no = inv.get("Receipt_Number", "")
                 payment_method = financials.get("Payment_method", "Cash") #if it doesn't exist then by default = "Cash"
-                sample_data.append((date, invoice_no, str(financials.get("Payed_cash", 0.0)), str(financials.get("Net_total", 0.0)), payment_method))
+                sample_data.append((formatted, invoice_no, str(financials.get("Payed_cash", 0.0)), str(financials.get("Net_total", 0.0)), payment_method))
                 
         else:
             for inv in invoices:
@@ -4493,9 +4596,10 @@ class SalesSystemApp:
                 
                 # Add to sample_data for tree
                 date = inv.get("Date", "")
+                formatted = date.strftime("%Y-%m-%d %H:%M")
                 invoice_no = inv.get("Receipt_Number", "")
                 payment_method = financials.get("Payment_method", "Cash")
-                sample_data.append((date, invoice_no, str(financials.get("Net_total", 0.0)), str(financials.get("Payed_cash", 0.0)), payment_method))
+                sample_data.append((formatted, invoice_no, str(financials.get("Net_total", 0.0)), str(financials.get("Payed_cash", 0.0)), payment_method))
                 
         for payment in payments:
             total_debit += float(payment.get("Debit", 0.0))
@@ -4503,9 +4607,10 @@ class SalesSystemApp:
             
             # Add to sample_data for tree
             date = payment.get("Time", "")
+            formatted = date.strftime("%Y-%m-%d %H:%M")
             payment_no = payment.get("Operation_Number", "")
             payment_method = payment.get("Payment_method", "Cash")
-            sample_data.append((date, payment_no, str(payment.get("Debit", 0.0)), str(payment.get("Credit", 0.0)), payment_method))
+            sample_data.append((formatted, payment_no, str(payment.get("Debit", 0.0)), str(payment.get("Credit", 0.0)), payment_method))
         
         if invoices_collection.name == "Purchases": #Case of Supplier/Purchases
             balance += float(total_credit - total_debit)
@@ -4562,7 +4667,7 @@ class SalesSystemApp:
         self.payment_entry.pack(pady=5, padx=10, fill="x")
         self.payment_entry.set(self.t("Cash"))  
 
-        add_btn = tk.Button(left_frame, text=self.t("Add Entry"), width=20, command=lambda: self.add_customer_payment(tree))
+        add_btn = tk.Button(left_frame, text=self.t("Add Entry"), width=35, command=lambda: self.add_customer_payment(tree))
         add_btn.pack(pady=20 , padx=10)
 
         #Right part (table)
@@ -4570,25 +4675,25 @@ class SalesSystemApp:
         right_frame.pack(side="left", fill="both", expand=True)
 
         # ==== Drop-down Section ====
-        tk.Label(right_frame, text=self.t("Customer Code")).grid(row=0, column=4)
+        tk.Label(right_frame, text=self.t("Customer Code")).grid(padx=(10,20), row=0, column=4)
         self.customer_code_cb = ttk.Combobox(right_frame, values=customer_codes)
-        self.customer_code_cb.grid(row=1, column=4)
+        self.customer_code_cb.grid(padx=(10,20), row=1, column=4)
 
-        tk.Label(right_frame, text=self.t("Customer Name")).grid(padx=(10,20), row=0, column=6)
+        tk.Label(right_frame, text=self.t("Customer Name")).grid(padx=(10,20), row=0, column=5)
         self.customer_name_cb = ttk.Combobox(right_frame, values=customer_names)
-        self.customer_name_cb.grid(row=1, column=6)
+        self.customer_name_cb.grid(padx=(10,20), row=1, column=5)
 
         self.customer_code_cb.bind("<<ComboboxSelected>>", lambda event: self.on_code_selected(event, self.customer_code_cb, self.customer_name_cb, self.customer_collection, self.sales_collection, self.customer_payment_collection, "Customer_info.code", tree))
         self.customer_name_cb.bind("<<ComboboxSelected>>", lambda event: self.on_name_selected(event, self.customer_code_cb, self.customer_name_cb, self.customer_collection, self.sales_collection, self.customer_payment_collection, "Customer_info.code", tree))
         
-        tk.Label(right_frame, text=self.t("Start Date")).grid(padx=(10,20), row=0, column=8)
+        tk.Label(right_frame, text=self.t("Start Date")).grid(padx=(10,20), row=0, column=7)
         self.start_date_entry = DateEntry(right_frame, font=("Arial", 12), date_pattern='dd-MM-yyyy', width=14)
-        self.start_date_entry.grid(padx=(10,20), row=1, column=8)
+        self.start_date_entry.grid(padx=(10,20), row=1, column=7)
         self.start_date_entry.set_date(date(2022, 1, 1))
 
-        tk.Label(right_frame, text=self.t("End Date")).grid(padx=(10,20), row=0, column=10)
+        tk.Label(right_frame, text=self.t("End Date")).grid(padx=(10,20), row=0, column=8)
         self.end_date_entry = DateEntry(right_frame, font=("Arial", 12), date_pattern='dd-MM-yyyy', width=14)
-        self.end_date_entry.grid(padx=(10,20), row=1, column=10)
+        self.end_date_entry.grid(padx=(10,20), row=1, column=8)
         # self.end_date_entry.set_date(date(2025, 7, 7))
         self.end_date_entry.set_date(date.today())
         
@@ -4608,7 +4713,7 @@ class SalesSystemApp:
                 tree
             )
         )
-        search_btn.grid(row=1, column=11, padx=(5, 0), pady=5)
+        search_btn.grid(row=1, column=10, padx=(5, 0), pady=5)
 
         # ==== Table Section ====
         columns = ("date", "invoice_no", "debit", "credit", "Payment_method")
@@ -4627,7 +4732,8 @@ class SalesSystemApp:
         scrollbar.config(command=tree.yview)
         
         for col in columns:
-            tree.heading(col, text=col.capitalize())
+            tree.heading(col, text=self.t(col))
+            # tree.heading(col, text=col.capitalize())
             tree.column(col, width=150)
 
         # ==== Footer Totals ====
@@ -4716,8 +4822,6 @@ class SalesSystemApp:
             alignment = "w"
             label_col = 0
             entry_col = 1
-        # label_col = 1 if self.language == "Arabic" else 0
-        # entry_col = 0 if self.language == "Arabic" else 1
         
         img_label= None
         columns = self.get_fields_by_name(collection_name)
@@ -4823,7 +4927,7 @@ class SalesSystemApp:
                     if filepath:
                         load_image_preview(filepath, img_lbl)
 
-                browse_btn = tk.Button(frame, text="Browse",width=25, command=lambda e=entry: browse_file(e))
+                browse_btn = tk.Button(frame, text=self.t("Browse"),width=25, command=lambda e=entry: browse_file(e))
                 browse_btn.pack(side="left", padx=5)
                 self.entries[label] = img_label
 
@@ -4844,7 +4948,7 @@ class SalesSystemApp:
                         lbl.config(text=f"Selected: {filename}")
                         lbl.filepath = filepath
 
-                browse_btn = tk.Button(frame, text="Browse", width=25, command=browse_file)
+                browse_btn = tk.Button(frame, text=self.t("Browse"), width=25, command=browse_file)
                 browse_btn.pack(side="left", padx=5)
 
                 self.entries[label] = file_label
@@ -4864,8 +4968,16 @@ class SalesSystemApp:
         search_frame.pack(fill="x", pady=(0, 10))
 
         self.selected_field = tk.StringVar()
-        self.selected_field.set(ordered_fields[0])
-        field_dropdown = ttk.Combobox(search_frame, textvariable=self.selected_field, values=columns, width=14)
+        
+
+        if self.language =="Arabic":
+            self.selected_field.set(self.t(ordered_fields[0]))
+            translated_columns = [self.t(col) for col in ordered_fields]
+        else: 
+            self.selected_field.set((ordered_fields[0]))
+            translated_columns = ordered_fields
+        
+        field_dropdown = ttk.Combobox(search_frame, textvariable=self.selected_field, values=translated_columns, width=20)
         field_dropdown.pack(side="left", padx=(0, 5))
 
         local_search_query = tk.StringVar()
@@ -4877,7 +4989,7 @@ class SalesSystemApp:
 
         tree = ttk.Treeview(table_frame, columns=ordered_fields, show="headings")
         for col in ordered_fields:
-            tree.heading(col, text=col)
+            tree.heading(col, text=self.t(col))
             tree.column(col, anchor="center", stretch=True)
         tree.pack(fill="both", expand=True)
         tree.bind("<<TreeviewSelect>>", lambda event: self.on_tree_selection(event, tree, columns, collection_name, img_label)) #Bind tree selection to an event handler
@@ -4894,6 +5006,7 @@ class SalesSystemApp:
         tk.Button(
             search_frame,
             text=self.t("Search"),
+            width=14,
             command=lambda: self.refresh_generic_table(tree, current_collection, collection_name, local_search_query.get())
         ).pack(side="left")
         
@@ -4901,10 +5014,10 @@ class SalesSystemApp:
         button_frame = tk.LabelFrame(root, text="Actions", padx=10, pady=10, font=("Arial", 12, 'bold'))
         button_frame.pack(pady=10)
 
-        btn_add = tk.Button(button_frame, text="Add Entry", font=("Arial", 12), width=15, command=lambda: self.add_generic_entry(tree, current_collection,collection_name))
-        btn_edit = tk.Button(button_frame, text="Update Entry", font=("Arial", 12), width=15, command=lambda: self.edit_generic_entry(tree, current_collection,collection_name))
-        btn_delete = tk.Button(button_frame, text="Delete Entry", font=("Arial", 12), width=15, command=lambda: self.delete_generic_entry(tree, current_collection))
-        btn_deselect = tk.Button(button_frame, text="Deselect Entry", font=("Arial", 12), width=15, command=lambda:self.deselect_entry(tree))
+        btn_add = tk.Button(button_frame, text=self.t("Add Entry"), font=("Arial", 12), width=15, command=lambda: self.add_generic_entry(tree, current_collection,collection_name))
+        btn_edit = tk.Button(button_frame, text=self.t("Update Entry"), font=("Arial", 12), width=15, command=lambda: self.edit_generic_entry(tree, current_collection,collection_name))
+        btn_delete = tk.Button(button_frame, text=self.t("Delete Entry"), font=("Arial", 12), width=15, command=lambda: self.delete_generic_entry(tree, current_collection))
+        btn_deselect = tk.Button(button_frame, text=self.t("Deselect Entry"), font=("Arial", 12), width=15, command=lambda:self.deselect_entry(tree))
 
         btn_add.grid(row=0, column=0, padx=10)
         btn_edit.grid(row=0, column=1, padx=10)
@@ -5025,12 +5138,51 @@ class SalesSystemApp:
                 tree.delete(row)
 
             if search_text:
-                selected_field = self.selected_field.get()
+                # raw_selected_field = self.selected_field.get()
+                if self.language == "Arabic":
+                    raw_selected_field = self.show_original()
+                else: 
+                    raw_selected_field = self.selected_field.get()
+                
+                mogno_selected_field = self.get_mongo_field_path(raw_selected_field)
                 first_document = current_collection.find_one()
+                
                 if first_document:
                     search_fields = self.get_fields_by_name(collection_name)
-                    or_conditions = [{"$expr": {"$regexMatch": {"input": {"$toString": f"${selected_field}"}, "regex": search_text, "options": "i"}}} for field in search_fields]
-                    data = list(current_collection.find({"$or": or_conditions}).sort("Id", 1))
+                    
+                    if "Items." in mogno_selected_field:
+                        field_inside_items = mogno_selected_field.split(".")[1]
+                        query = { "Items": { "$elemMatch": {} } }
+                        
+                        if field_inside_items in ['Net_total','Previous_balance','Total_balance','Payed_cash','Remaining_balance','Unit','QTY','numbering','Total_QTY','Unit_price','Discount_Type','Discount_Value','Final_Price']:
+                            query["Items"]["$elemMatch"][field_inside_items] = float(search_text)
+                        else: 
+                            query["Items"]["$elemMatch"][field_inside_items] = {
+                                "$regex": search_text,
+                                "$options": "i"
+                            }
+                        
+                        try:
+                            data = list(current_collection.find(query).sort("Id", 1))
+                            for doc in data:
+                                print(doc)
+                        except PyMongoError as e:
+                            print(f"An error occurred: {e}")
+                    else:
+                        or_conditions = [{"$expr": {"$regexMatch": {"input": {"$toString": f"${mogno_selected_field}"}, "regex": search_text, "options": "i"}}} for field in search_fields]
+                        data = list(current_collection.find({"$or": or_conditions}).sort("Id", 1))
+                        # or_conditions = {
+                        #     "$expr": {
+                        #         "$regexMatch": {
+                        #             "input": {"$toString": f"${mogno_selected_field}"},
+                        #             "regex": search_text,
+                        #             "options": "i"
+                        #         }
+                        #     }
+                        # }
+                        # data = list(current_collection.find({"$or": or_conditions}).sort("Id", 1))
+                    # or_conditions = [{"$expr": {"$regexMatch": {"input": {"$toString": f"${mogno_selected_field}"}, "regex": search_text, "options": "i"}}} for field in search_fields]
+                    # data = list(current_collection.find({"$or": or_conditions}).sort("Id", 1))
                 else:
                     data = []
             else:
@@ -5057,7 +5209,7 @@ class SalesSystemApp:
                 tree["columns"] = columns
 
                 for col in columns:
-                    tree.heading(col, text=col)
+                    tree.heading(col, text=self.t(col))
                     tree.column(col, width=152, anchor="center", stretch=False)
 
                 
@@ -6515,7 +6667,7 @@ class SalesSystemApp:
         # Define columns
         col_widths = [40, 150, 70, 60, 60, 80, 80, 80]
         for idx, col in enumerate(columns):
-            tree.heading(col, text=col)
+            tree.heading(col, text=self.t(col))
             tree.column(col, width=col_widths[idx], anchor="center")
         
         tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -6873,7 +7025,7 @@ class SalesSystemApp:
         # Define columns
         col_widths = [40, 150, 70, 60, 60, 80, 80, 80]
         for idx, col in enumerate(columns):
-            tree.heading(col, text=col)
+            tree.heading(col, text=self.t(col))
             tree.column(col, width=col_widths[idx], anchor="center")
         
         tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -7907,6 +8059,12 @@ class SalesSystemApp:
             print(f"[Cloudinary Upload Error]: {e}")
             return None
 
+    def get_mongo_field_path(self, key):
+        if key in search_field_mapping:
+            parts = search_field_mapping[key]
+            return ".".join(parts)
+        return key  # fallback: return as-is if not nested
+
     def deselect_entry(self,tree):
         tree.selection_remove(tree.selection())
         # Clear form fields
@@ -7948,6 +8106,12 @@ class SalesSystemApp:
     def t(self, text):
         return self.translations.get(text, {}).get(self.language, text)
     
+    def show_original(self):
+        """Print the English key for the selected translated value."""
+        selected_translated = self.selected_field.get()
+        original_key = self.reverse_translations.get(selected_translated, "Unknown")
+        return original_key
+
     # Function tot oggle from Arabic to English and Vicaverse
     def toggle_language(self):
         self.language = "English" if self.language == "Arabic" else "Arabic"
