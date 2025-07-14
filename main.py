@@ -392,7 +392,10 @@ class SalesSystemApp:
             "Transport":{"Arabic":"مصاريف النقل","English":"Transport"},
             "NOT SUPPORTED YET":{"Arabic":"غير مدعوم حتى الآن","English":"NOT SUPPORTED YET"},
             "General_Exp_And_Rev":{"Arabic":"ايرادات و مصروفات عامة","English":"General_Exp_And_Rev"},
-            # "Delay":{"Arabic":"","English":"Delay"},
+            "Select Invoice":{"Arabic":"حدد الفاتورة","English":"Select Invoice"},
+            "Load Invoice":{"Arabic":"تحميل الفاتورة","English":"Load Invoice"},
+            "Delete Invoice":{"Arabic":"حذف الفاتورة","English":"Delete Invoice"},
+            "🔄 Update Invoice":{"Arabic":"🔄 تحديث الفاتورة","English":"🔄 Update Invoice"},
             "Still checked in":{"Arabic":"لا يزال قيد التسجيل","English":"Still checked in"},
             "Customer & Supplier Overview":{"Arabic":"نظرة عامة على العملاء والموردين","English":"Customer & Supplier Overview"},
             
@@ -542,6 +545,8 @@ class SalesSystemApp:
         # self.root.iconbitmap(icon_path)
         # List to track selected products
         self.selected_products = []   
+        self.update =False
+        self.update_purchase =False
     
 
 ########################################## Tables on Data Base ########################################
@@ -1272,9 +1277,9 @@ class SalesSystemApp:
         # Define buttons with images, text, and commands
         buttons = [
             {"text": self.t("New Purchase Invoice"), "image": "Purchase.png", 
-            "command": lambda: self.new_Purchase_invoice(self.user_role)},
+            "command": lambda: self.new_Purchase_invoice(self.user_role,"add")},
             {"text": self.t("Update Purchase Invoice"), "image": "update_sales.png",
-            "command": lambda: self.trash(self.user_role)}
+            "command": lambda: self.new_Purchase_invoice(self.user_role,"update")}
         ]
         
         images = []  # Keep references to prevent garbage collection
@@ -2726,10 +2731,11 @@ class SalesSystemApp:
             ))
 
         # Update totals display
-        self.total_credit_var.set(f"${self.totals['credit']:,.2f}")
-        self.total_debit_var.set(f"${self.totals['debit']:,.2f}")
+        self.total_credit_var.set(f"{self.totals['credit']:,.2f} ج.م")
+        self.total_debit_var.set(f"{self.totals['debit']:,.2f} ج.م")
+        # self.total_debit_var.set(f"${self.totals['debit']:,.2f}")
         balance = self.totals['credit'] - self.totals['debit']
-        self.balance_var.set(f"${balance:,.2f}")
+        self.balance_var.set(f"{balance:,.2f} ج.م")
 
     def sales_invoice(self, user_role, add_or_update):
         # Clear current window
@@ -2737,6 +2743,7 @@ class SalesSystemApp:
             widget.destroy()
 
         # Initialize product mappings
+        self.update = False
         self.product_map = {}
         self.name_to_code = {}
         
@@ -2788,7 +2795,7 @@ class SalesSystemApp:
             
             # Delete button
             delete_btn = tk.Button(invoice_frame, text=self.t("Delete Invoice"), 
-                                command=lambda: self.delete_invoice(sales_col, customers_col),
+                                command=lambda: self.delete_invoice(sales_col, customers_col,"sales"),
                                 bg='red', fg='white')
             delete_btn.grid(row=0, column=5, padx=5, sticky='ew')
 
@@ -3005,11 +3012,7 @@ class SalesSystemApp:
         self.entries = []
 
         # Add initial rows
-        if add_or_update == "add":
-            self.add_three_rows()
-        else:
-            # Start with empty rows - will be populated when invoice is loaded
-            self.add_three_rows()
+        self.add_three_rows()
 
         # ===== BUTTONS SECTION =====
         button_frame = tk.Frame(form_frame)
@@ -3029,8 +3032,9 @@ class SalesSystemApp:
                                 bg='#2196F3', fg='white')
             save_btn.grid(row=0, column=1, padx=5, sticky='e')
         else:
+            self.update = True
             update_btn = tk.Button(button_frame, text=self.t("🔄 Update Invoice"), 
-                                command=lambda: self.update_invoice(sales_col, customers_col, products_col),
+                                command=lambda: self.save_invoice(sales_col, customers_col, products_col),
                                 bg='#FF9800', fg='white')
             update_btn.grid(row=0, column=1, padx=5, sticky='e')
         # Modified create_row function to accept initial values
@@ -3054,8 +3058,10 @@ class SalesSystemApp:
         # Extract nested dictionaries
         customer_info = invoice_data.get("Customer_info", {})
         financials = invoice_data.get("Financials", {})
-        items = invoice_data.get("Items", [])
-        
+        self.items = invoice_data.get("Items", [])
+        # self.products_set  = {item.get("Product_code") for item in self.items if "Product_code" in item}
+        # self.Total_Qty_set = {item.get("Total_QTY") for item in self.items if "Product_code" in item}
+
         # Populate customer information
         self.customer_name_var.set(customer_info.get("name", ""))
         self.customer_code_var.set(customer_info.get("code", ""))
@@ -3077,36 +3083,66 @@ class SalesSystemApp:
         
         # Add rows with invoice items
         # Calculate the number of sets needed (each set contains 3 rows)
-        num_sets = (len(items) + 2) // 3  # Round up to nearest multiple of 3
-        
+        num_sets = (len(self.items) + 2) // 3  # Round up to nearest multiple of 3
         # Process each set of items
         for set_index in range(num_sets):
             start_index = set_index * 3
             end_index = start_index + 3
-            item_set = items[start_index:end_index]  # Get next 3 items (or remaining)
+            item_set = self.items[start_index:end_index]  # Get next 3 items (or remaining)
             self.add_three_rows(initial_data=item_set)  # Pass items to populate
-
-    def update_invoice(self, sales_col, customers_col, products_col):
-        """Update existing invoice in the database"""
-        if not self.selected_invoice_id:
-            messagebox.showwarning("No Invoice", "Please load an invoice first")
+    def load_invoice_data_purchase(self, sales_col):
+        """Load selected invoice data into the form"""
+        invoice_number = self.invoice_var.get()
+        if not invoice_number:
+            messagebox.showwarning("Selection Needed", "Please select an invoice first")
             return
         
-        # Collect data from the form (same as save_invoice)
-        invoice_data = self.collect_invoice_data()
+        # Fetch invoice data from MongoDB
+        invoice_data = sales_col.find_one({"Receipt_Number": invoice_number})
+        if not invoice_data:
+            messagebox.showerror("Not Found", "Invoice not found in database")
+            return
         
-        # Update MongoDB document
-        sales_col.update_one(
-            {"_id": ObjectId(self.selected_invoice_id)},
-            {"$set": invoice_data}
-        )
+        # Store invoice ID for later reference
+        self.selected_invoice_id = str(invoice_data["_id"])
         
-        # Update customer balance
-        self.update_customer_balance(customers_col, invoice_data)
-        
-        messagebox.showinfo("Success", "Invoice updated successfully")
+        # Extract nested dictionaries
+        customer_info = invoice_data.get("supplier_info", {})
+        financials = invoice_data.get("Financials", {})
+        self.items_purchase = invoice_data.get("Items", [])
+        # self.products_set  = {item.get("Product_code") for item in self.items if "Product_code" in item}
+        # self.Total_Qty_set = {item.get("Total_QTY") for item in self.items if "Product_code" in item}
 
-    def delete_invoice(self, sales_col, customers_col):
+        # Populate customer information
+        self.supplier_name_var.set(customer_info.get("name", ""))
+        self.supplier_code_var.set(customer_info.get("code", ""))
+        self.previous_balance_var.set(str(financials.get("Previous_balance", 0)))
+        
+        # Populate financial fields
+        self.payed_cash_var.set(str(financials.get("Payed_cash", 0)))  # Ensure string conversion
+        # self.transport_fees_var.set(str(financials.get("transport_fees", 0)))  # Ensure string conversion
+        
+        # Set payment method
+        payment_method = financials.get("Payment_method", "Cash")   
+        if payment_method in ["Cash", "E_Wallet", "Bank", "Instapay"]:
+            self.payment_method_var.set(payment_method)
+        
+        # Clear existing items 
+        self.entries.clear()
+        for widget in self.rows_frame.winfo_children():
+            widget.destroy()
+        
+        # Add rows with invoice items
+        # Calculate the number of sets needed (each set contains 3 rows)
+        num_sets = (len(self.items_purchase) + 2) // 3  # Round up to nearest multiple of 3
+        # Process each set of items
+        for set_index in range(num_sets):
+            start_index = set_index * 3
+            end_index = start_index + 3
+            item_set = self.items_purchase[start_index:end_index]  # Get next 3 items (or remaining)
+            self.add_three_rows_purchase(initial_data=item_set)  # Pass items to populate
+
+    def delete_invoice(self, sales_col, customers_col,source):
         """Delete selected invoice from the database"""
         invoice_number = self.invoice_var.get()
         if not invoice_number:
@@ -3126,13 +3162,18 @@ class SalesSystemApp:
         # Delete from MongoDB
         sales_col.delete_one({"Receipt_Number": invoice_number})
         
-        # Revert customer balance
-        self.revert_customer_balance(customers_col, invoice_data)
+        # # Revert customer balance
+        # self.revert_customer_balance(customers_col, invoice_data)
         
         messagebox.showinfo("Success", "Invoice deleted successfully")
         # Clear the form or reset UI as needed
         self.invoice_var.set("")
         self.selected_invoice_id = None
+        if source == "sales":
+            self.sales_invoice(self.user_role,"update")
+        else:
+            self.new_Purchase_invoice(self.user_role,"update")
+
     def create_row(self, parent, row_number, bg_color, initial_values=None):
         columns = self.get_fields_by_name("Sales_Header")
         num_columns = len(columns)
@@ -3182,19 +3223,20 @@ class SalesSystemApp:
                 #    col =="product_name" or
                 #    col =="unit"
                 #    ):
-                value = str(value)
-                value = value.strip()
+                # value = str(value)
+                # value = value.strip()
                 # value = value.strip()
                 if col == "Product_code" and (value not in self.product_codes):
                     print(f"[WARN] '{value}' not in dropdown list!")
                 # Handle special cases
                 if col == "Discount_Type" and not value:
-                    value = "Value"
+                    value = "Percentage"
                 elif col == "Discount Value" and not value:
                     value = 0
                 
             if col == "Product_code":
                 vars = tk.StringVar(value=value)
+                # print(vars)
                 row_entry_vars.append(vars)
                 cb = ttk.Combobox(row_frame, textvariable=vars, values=self.product_codes)
                 cb.bind('<<ComboboxSelected>>', lambda e, r=row_number: self.update_product_info(r, "code"))
@@ -3202,21 +3244,27 @@ class SalesSystemApp:
                 cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
                 value = value.strip()
                 cb.set(value)
-                row_entries.append(cb)
+                row_entries.append(vars)
+                ###########################
+                # var = tk.StringVar(value=value)
+                # entry = tk.Entry(row_frame, textvariable=var)
+                # entry.bind('<KeyRelease>', lambda e, r=row_number: self.calculate_totals(r))
+                # entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
+                # row_entries.append(entry)
             elif col == "product_name":
                 var = tk.StringVar(value=value)
                 row_entry_vars.append(var)
                 cb = ttk.Combobox(row_frame, textvariable=var, values=self.product_names)
-                var = tk.StringVar(value=value)
+                # var = tk.StringVar(value=value)
                 cb.bind('<<ComboboxSelected>>', lambda e, r=row_number: self.update_product_info(r, "name"))
-                var = tk.StringVar(value=value)
+                # var = tk.StringVar(value=value)
                 cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_combobox_change(e, r, "name"))
-                var = tk.StringVar(value=value)
+                # var = tk.StringVar(value=value)
                 cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
                 # x = var.get()
                 value = value.strip()
                 cb.set(value)
-                row_entries.append(cb)
+                row_entries.append(var)
             elif col == "unit":
                 var = tk.StringVar(value=value)
                 cb = ttk.Combobox(row_frame, textvariable=var, values=[])
@@ -3229,24 +3277,12 @@ class SalesSystemApp:
                 var = tk.StringVar(value=value)
                 cb = ttk.Combobox(row_frame, textvariable=var, 
                                   values=["Percentage", "Value"], 
-                                  state="readonly")
-                # cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
-                # cb.set(value)  # This will automatically set to value if it exists
-                # row_entries.append(cb)
-                var = tk.StringVar(value=value)
-                # entry = tk.Entry(row_frame, textvariable=var)
-                # cb.bind('<KeyRelease>', lambda e, r=row_number: self.calculate_totals(r))
+                                  state="readonly")    
+                var = tk.StringVar(value=value)  
                 cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
                 cb.set(value)
                 row_entries.append(cb)
-            # elif col == "Discount Type":
-            #     var = tk.StringVar(value=value)
-            #     cb = ttk.Combobox(row_frame, textvariable=var, 
-            #                     values=["Percentage", "Value"], 
-            #                     state="readonly")
-            #     cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
-            #     cb.set(value)  # This will automatically set to value if it exists
-            #     row_entries.append(cb)
+
             elif col == "Discount Value":
                 var = tk.StringVar(value=value)
                 entry = tk.Entry(row_frame, textvariable=var)
@@ -3264,11 +3300,7 @@ class SalesSystemApp:
                 entry.bind('<KeyRelease>', lambda e, r=row_number: self.calculate_totals(r))
                 entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
                 row_entries.append(entry)
-        
-        # self.entries[row_idx][7].config(state='normal')
-        # self.entries[row_idx][7].delete(0, tk.END)
-        # self.entries[row_idx][7].insert(0, f"{total_qty:.2f}")
-        # self.entries[row_idx][7].config(state='readonly')
+
         return row_entries
 
     def add_three_rows(self, initial_data=None):
@@ -3276,10 +3308,6 @@ class SalesSystemApp:
         for i in range(3):
             bg_color = 'white' if (current_row_count + i) % 2 == 0 else '#f0f0f0'
             row_data = initial_data[i] if initial_data and i < len(initial_data) else None
-            
-            # Add debug print to see what data is being passed to each row
-            print(f"Adding row {current_row_count + i} with data: {row_data}")
-            
             row_entries = self.create_row(self.rows_frame, current_row_count + i, bg_color, row_data)
             self.entries.append(row_entries)
             
@@ -3296,13 +3324,36 @@ class SalesSystemApp:
                 
                 # Calculate totals for this row
                 self.calculate_totals(current_row_count + i)
+
+    def add_three_rows_purchase(self, initial_data=None):
+        current_row_count = len(self.entries)
+        for i in range(3):
+            bg_color = 'white' if (current_row_count + i) % 2 == 0 else '#f0f0f0'
+            row_data = initial_data[i] if initial_data and i < len(initial_data) else None
+            row_entries = self.create_row_purchase(self.rows_frame, current_row_count + i, bg_color, row_data)
+            self.entries.append(row_entries)
+            
+            # If we have initial data, update product info
+            if row_data: #Seif: row_data is always empty
+                # First try to update by product code if available
+                # if row_data.get("Product_code"):
+                #     print(f"Updating row {current_row_count + i} by code: {row_data['Product_code']}")
+                #     self.update_product_info(current_row_count + i, "code") #Seif: This function ends up clearing the fields data
+                # # Then try by product name
+                # elif row_data.get("product_name"):
+                #     print(f"Updating row {current_row_count + i} by name: {row_data['product_name']}")
+                #     self.update_product_info(current_row_count + i, "name")
                 
-    def new_Purchase_invoice(self, user_role):
+                # Calculate totals for this row
+                self.calculate_totals(current_row_count + i)
+                
+    def new_Purchase_invoice(self, user_role, add_or_update):
         # Clear current window
         for widget in self.root.winfo_children():
             widget.destroy()
 
         # Initialize product mappings
+        self.update_purchase = False
         self.material_map = {}
         self.name_to_code = {}
         
@@ -3321,16 +3372,53 @@ class SalesSystemApp:
         # Configure columns - 10 columns with equal weight
         for i in range(10):
             form_frame.columnconfigure(i, weight=1)
-        form_frame.grid_rowconfigure(3, weight=1)  # Make items grid expandable
 
-        # Supplier Selection Frame - responsive layout
+        # ===== INVOICE SELECTION FOR UPDATE MODE =====
+        current_row = 0
+        self.selected_invoice_id = None
+        
+        if add_or_update == "update":
+            # Create invoice selection frame
+            invoice_frame = tk.Frame(form_frame, bd=1, relief=tk.SOLID, padx=5, pady=5)
+            invoice_frame.grid(row=current_row, column=0, columnspan=12, sticky='ew', pady=5)
+            current_row += 1
+            
+            # Configure invoice frame columns
+            for i in range(12):
+                invoice_frame.columnconfigure(i, weight=1 if i % 2 == 1 else 0)
+            
+            # Fetch invoice numbers
+            invoice_numbers = [str(doc["Receipt_Number"]) for doc in purchases_col.find({}, {"Receipt_Number": 1})]
+            
+            # Invoice selection
+            tk.Label(invoice_frame, text=self.t("Select Invoice"), 
+                    font=("Arial", 10, "bold")).grid(row=0, column=0, sticky='w')
+            self.invoice_var = tk.StringVar()
+            invoice_cb = ttk.Combobox(invoice_frame, textvariable=self.invoice_var, values=invoice_numbers)
+            invoice_cb.grid(row=0, column=1, padx=5, sticky='ew', columnspan=3)
+            
+            # Load button
+            load_btn = tk.Button(invoice_frame, text=self.t("Load Invoice"), 
+                                command=lambda: self.load_invoice_data_purchase(purchases_col),
+                                bg='#2196F3', fg='white')
+            load_btn.grid(row=0, column=4, padx=5, sticky='ew')
+            
+            # Delete button
+            delete_btn = tk.Button(invoice_frame, text=self.t("Delete Invoice"), 
+                                command=lambda: self.delete_invoice(purchases_col, suppliers_col,"purchase"),
+                                bg='red', fg='white')
+            delete_btn.grid(row=0, column=5, padx=5, sticky='ew')
+
+        # ===== Supplier SECTION =====
+        # Create Supplier frame
         supplier_frame = tk.Frame(form_frame, bd=1, relief=tk.SOLID, padx=5, pady=5)
-        supplier_frame.grid(row=0, column=0, columnspan=10, sticky='ew', pady=5)
+        supplier_frame.grid(row=current_row, column=0, columnspan=12, sticky='ew', pady=5)
+        current_row += 1
         
-        # Configure supplier frame columns with weights
-        for i in range(10):
-            supplier_frame.columnconfigure(i, weight=1 if i in [1, 3, 5, 7, 9] else 0)
-        
+        # Configure Supplier frame columns
+        for i in range(12):
+            supplier_frame.columnconfigure(i, weight=1 if i % 2 == 1 else 0)        
+
         # Create bidirectional supplier mappings
         self.supplier_code_map = {}  # name -> code
         self.code_name_map = {}      # code -> name
@@ -3474,14 +3562,19 @@ class SalesSystemApp:
             messagebox.showerror("Database Error", f"Failed to load materials: {str(e)}")
             return
 
+        # ===== ITEMS GRID SECTION =====
+        # Make items grid expandable
+        form_frame.grid_rowconfigure(current_row + 1, weight=1)
+        
         # Invoice Items Grid - Responsive Configuration
         columns = self.get_fields_by_name("Materials_Header")
         num_columns = len(columns)
         
         # Create header frame with uniform columns
         header_frame = tk.Frame(form_frame, bg='#f0f0f0')
-        header_frame.grid(row=2, column=0, columnspan=10, sticky='ew', pady=(20, 0))
-        
+        header_frame.grid(row=current_row, column=0, columnspan=10, sticky='ew', pady=(20, 0))
+        current_row += 1
+
         # Configure header columns with uniform weights
         for col_idx in range(num_columns):
             header_frame.columnconfigure(col_idx, weight=1, uniform='cols')
@@ -3490,7 +3583,7 @@ class SalesSystemApp:
 
         # Scrollable Canvas with responsive sizing
         canvas_container = tk.Frame(form_frame)
-        canvas_container.grid(row=3, column=0, columnspan=10, sticky='nsew')
+        canvas_container.grid(row=current_row, column=0, columnspan=10, sticky='nsew')
         canvas_container.grid_rowconfigure(0, weight=1)
         canvas_container.grid_columnconfigure(0, weight=1)
         
@@ -3527,71 +3620,8 @@ class SalesSystemApp:
 
         self.entries = []
 
-        # Modified create_row function with responsive widgets
-        def create_row(parent, row_number, bg_color):
-            row_frame = tk.Frame(parent, bg=bg_color)
-            row_frame.pack(fill=tk.X)  # Use pack with fill to ensure full width
-            
-            # Configure columns with uniform weights (same as header)
-            for col_idx in range(num_columns):
-                row_frame.columnconfigure(col_idx, weight=1, uniform='cols')
-            
-            row_entries = []
-            for col_idx, col in enumerate(columns):
-                if col == "Material_code":
-                    var = tk.StringVar()
-                    cb = ttk.Combobox(row_frame, textvariable=var, values=material_codes)
-                    cb.bind('<<ComboboxSelected>>', lambda e, r=row_number: self.update_material_info(r, "code"))
-                    cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_combobox_change_purchase(e, r, "code"))
-                    cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
-                    row_entries.append(cb)
-                elif col == "Material_name":
-                    var = tk.StringVar()
-                    cb = ttk.Combobox(row_frame, textvariable=var, values=material_names)
-                    cb.bind('<<ComboboxSelected>>', lambda e, r=row_number: self.update_material_info(r, "name"))
-                    cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_combobox_change_purchase(e, r, "name"))
-                    cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
-                    row_entries.append(cb)
-                elif col == "unit":
-                    var = tk.StringVar()
-                    cb = ttk.Combobox(row_frame, textvariable=var, values=[])
-                    cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_unit_change(e, r))
-                    cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
-                    row_entries.append(cb)
-                elif col == "Discount Type":
-                    var = tk.StringVar()
-                    cb = ttk.Combobox(row_frame, textvariable=var, 
-                                    values=["Percentage", "Value"], 
-                                    state="readonly")
-                    cb.current(0)
-                    cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
-                    row_entries.append(cb)
-                elif col == "Discount Value":
-                    var = tk.StringVar()
-                    entry = tk.Entry(row_frame, textvariable=var)
-                    entry.bind('<KeyRelease>', lambda e, r=row_number: self.calculate_totals(r))
-                    entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
-                    row_entries.append(entry)
-                elif col in ["Unit_Price", "Total_QTY", "Total_Price"]:
-                    entry = tk.Entry(row_frame, relief='flat', state='readonly')
-                    entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
-                    row_entries.append(entry)
-                else:
-                    entry = tk.Entry(row_frame, relief='sunken')
-                    entry.bind('<KeyRelease>', lambda e, r=row_number: self.calculate_totals(r))
-                    entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
-                    row_entries.append(entry)
-            
-            return row_entries
 
-        def add_three_rows():
-            current_row_count = len(self.entries)
-            for i in range(3):
-                bg_color = 'white' if (current_row_count + i) % 2 == 0 else '#f0f0f0'
-                row_entries = create_row(self.rows_frame, current_row_count + i, bg_color)
-                self.entries.append(row_entries)
-
-        add_three_rows()
+        self.add_three_rows_purchase()
 
         # Buttons Frame
         button_frame = tk.Frame(form_frame)
@@ -3602,14 +3632,189 @@ class SalesSystemApp:
         button_frame.columnconfigure(1, weight=1)
         
         add_btn = tk.Button(button_frame, text=self.t("➕ Add 3 More Rows"), 
-                        command=add_three_rows, bg='#4CAF50', fg='white')
+                        command=self.add_three_rows_purchase, bg='#4CAF50', fg='white')
         add_btn.grid(row=0, column=0, padx=5, sticky='w')
-        
-        save_btn = tk.Button(button_frame, text=self.t("💾 Save Invoice"), 
-                            command=lambda: self.save_invoice_purchase(purchases_col, suppliers_col, materials_col),
-                            bg='#2196F3', fg='white')
-        save_btn.grid(row=0, column=1, padx=5, sticky='e')
+        if add_or_update == "add":
+            save_btn = tk.Button(button_frame, text=self.t("💾 Save Invoice"), 
+                                command=lambda: self.save_invoice_purchase(purchases_col, suppliers_col, materials_col),
+                                bg='#2196F3', fg='white')
+            save_btn.grid(row=0, column=1, padx=5, sticky='e')
+        else:
+            self.update_purchase = True
+            update_btn = tk.Button(button_frame, text=self.t("🔄 Update Invoice"), 
+                                command=lambda: self.save_invoice_purchase(purchases_col, suppliers_col, materials_col),
+                                bg='#FF9800', fg='white')
+            update_btn.grid(row=0, column=1, padx=5, sticky='e')        
+      
 
+    def create_row_purchase(self,parent, row_number, bg_color, initial_values=None):
+
+        # Invoice Items Grid - Responsive Configuration
+        columns = self.get_fields_by_name("Materials_Header")
+        num_columns = len(columns)       
+        row_frame = tk.Frame(parent, bg=bg_color)
+        row_frame.pack(fill=tk.X)  # Use pack with fill to ensure full width
+        
+        # Configure columns with uniform weights (same as header)
+        for col_idx in range(num_columns):
+            row_frame.columnconfigure(col_idx, weight=1, uniform='cols')
+        
+        row_entries = []
+        row_entry_vars = []
+        key_map = {
+            "Material_code": "material_code",
+            "Material_name": "material_name",
+            "unit": "Unit",
+            "Unit_Price": "Unit_price",
+            "QTY": "QTY",
+            "Discount_Type": "Discount_Type",
+            "Discount Value": "Discount_Value",
+            "Total_QTY": "Total_QTY",
+            "Numbering": "numbering",
+            "Total_Price": "Final_Price"
+        }
+        for col_idx, col in enumerate(columns):
+            value = ""
+            if initial_values:
+                db_key = key_map.get(col, col)
+                value = initial_values.get(db_key, "")
+                if col == "Material_code" and (value not in self.product_codes):
+                    print(f"[WARN] '{value}' not in dropdown list!")
+                # Handle special cases
+                if col == "Discount_Type" and not value:
+                    value = "Percentage"
+                elif col == "Discount Value" and not value:
+                    value = 0
+            if col == "Material_code":
+                value = value.strip()
+                var = tk.StringVar(value=value)
+                # row_entry_vars.append(var)
+                cb = ttk.Combobox(row_frame, textvariable=var, values=self.product_codes)
+                cb.bind('<<ComboboxSelected>>', lambda e, r=row_number: self.update_material_info(r, "code"))
+                cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_combobox_change_purchase(e, r, "code"))
+                cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
+                value = value.strip()
+                # print("\n")
+                # print(value)
+                # print("\n")
+                cb.set(value)
+                # row_entries.append(cb)
+                # row_entries.append(value)
+                row_entries.append(var)
+            elif col == "Material_name":
+                value = value.strip()
+                var = tk.StringVar(value=value)
+                # row_entry_vars.append(var)
+                cb = ttk.Combobox(row_frame, textvariable=var, values=self.product_names)
+                var = tk.StringVar(value=value)
+                cb.bind('<<ComboboxSelected>>', lambda e, r=row_number: self.update_material_info(r, "name"))
+                var = tk.StringVar(value=value)
+                cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_combobox_change_purchase(e, r, "name"))
+                var = tk.StringVar(value=value)
+                cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
+                value = value.strip()
+                cb.set(value)
+                row_entries.append(cb)
+                # row_entries.append(var)
+                # row_entries.append(value)
+            elif col == "unit":
+                var = tk.StringVar(value=value)
+                cb = ttk.Combobox(row_frame, textvariable=var, values=[])
+                var = tk.StringVar(value=value)
+                cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_unit_change(e, r))
+                cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
+                cb.set(value)
+                row_entries.append(cb)
+            elif col == "Discount_Type":
+                var = tk.StringVar(value=value)
+                cb = ttk.Combobox(row_frame, textvariable=var, 
+                                  values=["Percentage", "Value"], 
+                                  state="readonly")
+                
+                var = tk.StringVar(value=value)
+                cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
+                # cb.set(var)
+                if value == "":
+                    value = "Percentage"
+                cb.set(value)
+                row_entries.append(cb)
+                # row_entries.append(value)
+                # row_entries.append(var)
+            elif col == "Discount Value":
+                var = tk.StringVar(value=value)
+                entry = tk.Entry(row_frame, textvariable=var)
+                entry.bind('<KeyRelease>', lambda e, r=row_number: self.calculate_totals(r))
+                entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
+                row_entries.append(entry)
+            elif col in ["Unit_Price", "Total_QTY", "Total_Price"]:
+                var = tk.StringVar(value=value)
+                entry = tk.Entry(row_frame, textvariable=var, relief='flat', state='readonly')
+                entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
+                row_entries.append(entry)
+            else:
+                var = tk.StringVar(value=value)
+                entry = tk.Entry(row_frame, textvariable=var)
+                entry.bind('<KeyRelease>', lambda e, r=row_number: self.calculate_totals(r))
+                entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
+                row_entries.append(entry)
+        
+        return row_entries
+        #     if col == "Material_code":
+        #         var = tk.StringVar(value=value)
+        #         row_entry_vars.append(vars)
+        #         var = tk.StringVar(value=value)
+        #         print(1111111111111)
+        #         cb = ttk.Combobox(row_frame, textvariable=var, values=self.product_codes)
+        #         cb.bind('<<ComboboxSelected>>', lambda e, r=row_number: self.update_material_info(r, "code"))
+        #         cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_combobox_change_purchase(e, r, "code"))
+        #         cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
+        #         row_entries.append(cb)
+        #         value = value.strip()
+        #         cb.set(value)
+        #         row_entries.append(vars)
+        #     elif col == "Material_name":
+        #         var = tk.StringVar(value=value)
+        #         row_entry_vars.append(vars)
+        #         cb = ttk.Combobox(row_frame, textvariable=var, values=self.product_names)
+        #         cb.bind('<<ComboboxSelected>>', lambda e, r=row_number: self.update_material_info(r, "name"))
+        #         cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_combobox_change_purchase(e, r, "name"))
+        #         cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
+        #         row_entries.append(cb)
+        #         value = value.strip()
+        #         cb.set(value)
+        #         row_entries.append(var)
+        #     elif col == "unit":
+        #         var = tk.StringVar()
+        #         cb = ttk.Combobox(row_frame, textvariable=var, values=[])
+        #         cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_unit_change(e, r))
+        #         cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
+        #         row_entries.append(cb)
+        #     elif col == "Discount Type":
+        #         var = tk.StringVar()
+        #         cb = ttk.Combobox(row_frame, textvariable=var, 
+        #                         values=["Percentage", "Value"], 
+        #                         state="readonly")
+        #         cb.current(0)
+        #         cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
+        #         row_entries.append(cb)
+        #     elif col == "Discount Value":
+        #         var = tk.StringVar()
+        #         entry = tk.Entry(row_frame, textvariable=var)
+        #         entry.bind('<KeyRelease>', lambda e, r=row_number: self.calculate_totals(r))
+        #         entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
+        #         row_entries.append(entry)
+        #     elif col in ["Unit_Price", "Total_QTY", "Total_Price"]:
+        #         entry = tk.Entry(row_frame, relief='flat', state='readonly')
+        #         entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
+        #         row_entries.append(entry)
+        #     else:
+        #         entry = tk.Entry(row_frame, relief='sunken')
+        #         entry.bind('<KeyRelease>', lambda e, r=row_number: self.calculate_totals(r))
+        #         entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
+        #         row_entries.append(entry)
+        
+        # return row_entries
+    
     def new_production_order(self, user_role):
         # Clear current window
         for widget in self.root.winfo_children():
@@ -3950,7 +4155,7 @@ class SalesSystemApp:
         
         # Auto-update if exact match found
         if value in full_list:
-            self.update_product_info(row_idx, field_type)
+            self.update_material_info(row_idx, field_type)
 
     def handle_unit_change(self, event, row_idx):
         """Handle unit changes and clear price if unit changes"""
@@ -3992,10 +4197,16 @@ class SalesSystemApp:
         """Update fields based on code or name selection"""
         try:
             if source == "code":
-                product_code = self.entries[row_idx][0].get().strip()
+              
+                product_code = self.entries[row_idx][0]
+                print("\n")
+                print(product_code)
+                print("\n")
+                product_code = product_code.get().strip()
                 product_info = self.product_map.get(product_code, {})
                 product_name = product_info.get('name', '')
             else:
+                print(2)
                 product_name = self.entries[row_idx][1].get().strip()
                 product_code = self.name_to_code.get(product_name, '')
                 product_info = self.product_map.get(product_code, {})
@@ -4003,6 +4214,7 @@ class SalesSystemApp:
             # Clear fields if no product found
             if not product_code:
                 self.clear_row_fields(row_idx)
+                print(3)
                 return
 
             # Update both dropdowns
@@ -4029,9 +4241,29 @@ class SalesSystemApp:
     def update_material_info(self, row_idx, source):
         """Update fields based on code or name selection"""
         try:
+            material_code = self.entries[row_idx][0]
             print("1")
             if source == "code":
-                material_code = self.entries[row_idx][0].get().strip()
+                ########### Print the type:
+                print("\n")
+                print("material_code entry:", material_code)
+                print("type:", type(material_code))
+                print("\n")
+                
+                ######## Check for index error:
+                if row_idx >= len(self.entries):
+                    print("Invalid row index:", row_idx)
+                    return
+                ######### Ensure it's a valid widget:
+                if not hasattr(material_code, 'get'):
+                    print("Not a widget with .get() method!")
+                    return
+
+                
+                print("\n")
+                print(material_code)
+                print("\n")
+                material_code = material_code.get().strip()
                 material_info = self.material_map.get(material_code, {})
                 material_name = material_info.get('name', '')
                 print("2")
@@ -4048,7 +4280,9 @@ class SalesSystemApp:
 
             # Update both dropdowns
             self.entries[row_idx][0].set(material_code)
-            self.entries[row_idx][1].set(material_name)
+            self.entries[row_idx][1].delete(0, tk.END)
+            self.entries[row_idx][1].insert(0, material_name)
+
             
             # Update unit combobox values (index 2)
             unit_combobox = self.entries[row_idx][2]
@@ -4064,7 +4298,7 @@ class SalesSystemApp:
             
             self.calculate_totals(row_idx)
         except Exception as e:
-            messagebox.showerror("Update Error", f"Failed to update product info: {str(e)}")
+            messagebox.showerror("Update Error", f"Failed to update Material info: {str(e)}")
             self.clear_row_fields(row_idx)
 
     def calculate_totals(self, row_idx):
@@ -6236,7 +6470,7 @@ class SalesSystemApp:
             return ["material_name", "category","stock_quantity","specs","material_code","Units","material_pic","Unit_Price"]
 
         elif collection_name == "Materials_Header":
-            return ["Material_code", "Material_name", "unit","numbering","QTY","Discount Type","Discount Value","Total_QTY","Unit_Price","Total_Price"]
+            return ["Material_code", "Material_name", "unit","numbering","QTY","Discount_Type","Discount Value","Total_QTY","Unit_Price","Total_Price"]
        
         elif collection_name == "Customers":
             return ["Name", "Phone_number1", "Phone_number2", "Code", "Last_purchase_date" , "Purchase_mgr_number", "Financial_mgr_number", "Purchase_mgr_name", 
@@ -6511,7 +6745,14 @@ class SalesSystemApp:
                         messagebox.showerror("نقص في المخزون", 
                             f"الكمية المطلوبة ({total_qty}) تتجاوز المخزون ({stock}) للمنتج {product_code}")
                         return
-
+                    if self.update:
+                        for item in self.items:
+                            product_Code = item.get("Product_code")
+                            Product = products_col.find_one({"product_code": product_Code})
+                            total_Qty = item.get("Total_QTY")
+                            if product_Code is not None and total_Qty is not None:    
+                                Stock = Product.get("stock_quantity", 0)
+                                stock_updates[product_Code] = Stock + total_Qty    
                     stock_updates[product_code] = stock - total_qty
                     total_amount += final_price
 
@@ -6538,14 +6779,43 @@ class SalesSystemApp:
                 return
                 
             # توليد رقم الفاتورة
-            invoice_number = self.generate_invoice_number()
+            if self.update:
+                invoice_number = self.invoice_var.get()
+            else:
+                invoice_number = self.generate_invoice_number()
             if not invoice_number:
                 return
-                
+            # Extract nested dictionaries
+            # customer_info = invoice_data.get("Customer_info", {})
+            # financials = invoice_data.get("Financials", {})
+            # items = invoice_data.get("Items", [])
+            
+            # # Populate customer information
+            # self.customer_name_var.set(customer_info.get("name", ""))
+            # self.customer_code_var.set(customer_info.get("code", ""))
+            # self.previous_balance_var.set(str(financials.get("Previous_balance", 0)))
+            Previous_balance=0
+            for sales in self.sales_collection.find():
+                customer_info = sales.get("Customer_info", {})
+                name = customer_info.get("name", "Unknown")
+                if customer_name == name:
+                    financials = sales.get("Financials", {})
+                    prev_Net_total = float(financials.get("Net_total", 0))
+                    prev_Payed_cash = float(financials.get("Payed_cash", 0))  
+                    Previous_balance = Previous_balance + prev_Net_total - prev_Payed_cash
+                    print(f"Customer: {name}, Previous Balance: {Previous_balance}")
+            for payments in self.customer_payments.find():
+                customer_info = payments.get("Customer_info", {})
+                name = customer_info.get("name", "Unknown")
+                if customer_name == name:
+                    prev_payments = float(payments.get("Credit",0))
+                    Previous_balance = Previous_balance - prev_payments
+                    print(f"Customer: {name}, Previous Balance: {Previous_balance}")
+            print("\n###############################################################################################\n")
             # إنشاء بيانات الفاتورة الكاملة
             invoice_data = {
                 "Receipt_Number": invoice_number,
-                "Date": datetime.now().strftime("%d/%m/%Y %H:%M"),
+                "Date": datetime.now(),
                 "Customer_info": {
                     "code": customer.get("Code", "CUST-001"),
                     "name": customer.get("Name", "غير معروف"),
@@ -6557,11 +6827,11 @@ class SalesSystemApp:
                 "Financials": {
                     "transport_fees":transportation_fees,
                     "Net_total": total_amount,
-                    "Previous_balance": customer.get("Balance", 0),
-                    "Total_balance": total_amount + customer.get("Balance", 0),
+                    "Previous_balance": Previous_balance,
+                    "Total_balance": total_amount + Previous_balance,
                     "Payed_cash": payed_cash,
                     "transportation_fees": transportation_fees,
-                    "Remaining_balance": (total_amount + customer.get("Balance", 0)) - payed_cash,
+                    "Remaining_balance": (total_amount + Previous_balance) - payed_cash,
                     "Payment_method": self.payment_method_var.get()
                 },
                 "PDF_Path": "",
@@ -6794,7 +7064,10 @@ class SalesSystemApp:
 
             # 4. Save invoice with PDF path
             invoice_data["PDF_Path"] = pdf_path
+            if self.update:
+                sales_col.delete_one({"Receipt_Number":self.invoice_var.get()})
             sales_col.insert_one(invoice_data)
+            
             
             # 5. Show success and clean up
             messagebox.showinfo("نجاح", f"تم حفظ فاتورة البيع رقم {invoice_data['Receipt_Number']}")
@@ -6871,7 +7144,14 @@ class SalesSystemApp:
                     #     messagebox.showerror("نقص في المخزون", 
                     #         f"الكمية المطلوبة ({total_qty}) تتجاوز المخزون ({stock}) للمنتج {material_code}")
                     #     return
-
+                    if self.update_purchase:
+                        for item in self.items_purchase:
+                            Material_code =item.get("material_code")
+                            Material = materials_col.find_one({"material_code": Material_code})
+                            total_Qty = float(item.get("Total_QTY"))
+                            if Material_code is not None and total_Qty is not None:    
+                                Stock = Material.get("stock_quantity", 0)
+                                stock_updates[Material_code] = Stock - total_Qty    
                     stock_updates[material_code] = stock + total_qty
                     total_amount += final_price
 
@@ -6898,14 +7178,34 @@ class SalesSystemApp:
                 return
                 
             # توليد رقم الفاتورة
-            invoice_number = self.generate_invoice_number_purchase()
+            if self.update_purchase:
+                invoice_number = self.invoice_var.get()
+            else:
+                invoice_number = self.generate_invoice_number_purchase()
             if not invoice_number:
                 return
-                
+            Previous_balance=0
+            for purchases in self.purchases_collection.find():   
+                supplier_info = purchases.get("supplier_info", {})
+                name = supplier_info.get("name", "Unknown")
+                if supplier_name == name:
+                    financials = purchases.get("Financials", {})
+                    prev_Net_total = float(financials.get("Net_total", 0))
+                    prev_Payed_cash = float(financials.get("Payed_cash", 0))
+                    Previous_balance = Previous_balance + prev_Net_total - prev_Payed_cash
+                    print(f"Supplier: {name}, Previous Balance: {Previous_balance}")
+            for payments in self.supplier_payments.find():
+                supplier_info = payments.get("supplier_info", {})
+                name = supplier_info.get("name", "Unknown")
+                if supplier_name == name:
+                    prev_payments = float(payments.get("Debit",0))
+                    Previous_balance = Previous_balance - prev_payments
+                    print(f"Supplier: {name}, Previous Balance: {Previous_balance}")
+            print("\n###############################################################################################\n")
             # إنشاء بيانات الفاتورة الكاملة
             invoice_data = {
                 "Receipt_Number": invoice_number,
-                "Date": datetime.now().strftime("%d/%m/%Y %H:%M"),
+                "Date": datetime.now(),
                 "supplier_info": {
                     "code": supplier.get("Code", "SUP-001"),
                     "name": supplier.get("Name", "غير معروف"),
@@ -6916,10 +7216,10 @@ class SalesSystemApp:
                 "Items": items,
                 "Financials": {
                     "Net_total": total_amount,
-                    "Previous_balance": supplier.get("Balance", 0),
-                    "Total_balance": total_amount + supplier.get("Balance", 0),
+                    "Previous_balance": Previous_balance,
+                    "Total_balance": total_amount + Previous_balance,
                     "Payed_cash": payed_cash,
-                    "Remaining_balance": (total_amount + supplier.get("Balance", 0)) - payed_cash,
+                    "Remaining_balance": (total_amount + Previous_balance) - payed_cash,
                     "Payment_method": self.payment_method_var.get()
                 },
                 "PDF_Path": "",
@@ -7150,6 +7450,8 @@ class SalesSystemApp:
                 return
                 
             # 4. Save invoice with PDF path
+            if self.update_purchase:
+                purchase_col.delete_one({"Receipt_Number":self.invoice_var.get()})
             invoice_data["PDF_Path"] = pdf_path
             purchase_col.insert_one(invoice_data)
             
@@ -7191,8 +7493,11 @@ class SalesSystemApp:
             self.entries = []
             # إعادة إنشاء الصفوف الأساسية
             # إذا كنت تستخدم دالة لإضافة الصفوف
-            self.new_Purchase_invoice(self.user_role)
-
+            # self.new_Purchase_invoice(self.user_role)
+            if self.update_purchase:
+                self.new_Purchase_invoice(self.user_role,"update")
+            else:
+                self.new_Purchase_invoice(self.user_role,"add")
         except Exception as e:
             messagebox.showerror("خطأ", f"فشل في تنظيف الحقول: {str(e)}")
 
@@ -7214,7 +7519,10 @@ class SalesSystemApp:
                 self.entries = []
                 # إعادة إنشاء الصفوف الأساسية
                 # إذا كنت تستخدم دالة لإضافة الصفوف
-                self.sales_invoice(self.user_role,"add")
+                if self.update:
+                    self.sales_invoice(self.user_role,"update")
+                else:
+                    self.sales_invoice(self.user_role,"add")
             except Exception as e:
                 messagebox.showerror("خطأ", f"فشل في تنظيف الحقول: {str(e)}")
     def clear_invoice_form_purchase(self):
@@ -7235,7 +7543,10 @@ class SalesSystemApp:
                 self.entries = []
                 # إعادة إنشاء الصفوف الأساسية
                 # إذا كنت تستخدم دالة لإضافة الصفوف
-                self.new_Purchase_invoice(self.user_role)
+                if self.update_purchase:
+                    self.new_Purchase_invoice(self.user_role,"update")
+                else:
+                    self.new_Purchase_invoice(self.user_role,"add")
             except Exception as e:
                 messagebox.showerror("خطأ", f"فشل في تنظيف الحقول: {str(e)}")
                 
@@ -8043,6 +8354,12 @@ class SalesSystemApp:
             c.drawString(1.5*cm, totals_y - 0.5*cm, format_arabic("____________________"))
             
             c.save()
+
+            try:
+                os.startfile(pdf_path, "print")
+            except OSError as e:
+                messagebox.showerror("Print Error", f"Failed to print PDF:\n{e}")
+
             pdf_path = self.upload_pdf_to_cloudinary(pdf_path)
             return pdf_path
 
