@@ -139,9 +139,46 @@ LOCKED_FIELDS = {
 
 
 MANDATORTY_FIELDS = { # list all mandatory fields (fields that can't be empty)
-    "Name", "Phone_number1", "Code", "Company_address", "Name", "Password", "Role", "Phone_number", "Address", "Salary"
+    "Name", "Phone_number1", "Code", "Company_address", "Name", "Password", "Role", "Phone_number", "Address", "Salary",
+    "product_name","category","stock_quantity","Unit_Price","product_code","Units",
+    "material_name","material_code"
 }
 
+ZEROED_FIELDS = {
+    "Sales_grade", "Growth_grade", "Frequency_grade", "Credit", "Debit", "Balance", "Sales"
+}
+
+PRIMARY_KEYS = {
+    "Employees": "Id",
+    "Products": "product_code",
+    "Materials": "material_code",
+    "Customers": "Code",
+    "Suppliers": "Code",
+    "Employee_appointimets": "employee_code",
+    "Sales": "Receipt_Number",
+    "Purchases": "Receipt_Number",
+    "Customer_Payments": "Operation_Number",
+    "Supplier_Payments": "Operation_Number",
+    # "Production": "timestamp",
+    # "Employee_Salary": "timestamp",
+    # "Employee_withdrawls": "timestamp",
+    "general_exp_rev": "code",
+}
+
+PRIMARY_KEY_STARTERS = {
+    "Customers": "CU",
+    "Suppliers": "SU",
+    "Products": "PR",
+    "Employees": "EMP",
+    "Sales": "INV",
+    "Purchases": "INV",
+    "Customer_Payments": "PM",
+    "Supplier_Payments": "PM",
+    # "Production": "PRD",
+    # "Employee_Salary": "SAL",
+    # "Employee_withdrawls": "WD",
+    "general_exp_rev": "GEN",
+}
 
 class SalesSystemApp:
     fields = {
@@ -309,7 +346,7 @@ class SalesSystemApp:
             "Password":{"Arabic": "الباسورد", "English": "Password"},
             "Role":{"Arabic": "الوظيفة", "English": "Role"},
             "Join_Date":{"Arabic": "تاريخ الالتحاق", "English": "Join Date"},
-            "National_id_pic":{"Arabic": "صورة الباطاقة", "English": "National ID Picture"},
+            "National_id_pic":{"Arabic": "صورة البطاقة", "English": "National ID Picture"},
             "Phone_number":{"Arabic": "رقم التليفون", "English": "Phone Number"},
             "Address":{"Arabic": "العنوان", "English": "Address"},
             "Salary":{"Arabic": "المرتب", "English": "Salary"},
@@ -4650,21 +4687,44 @@ class SalesSystemApp:
 
     def get_next_operation_number(self, payment_collection):
         last_entry = payment_collection.find_one(
+            {"Operation_Number": {"$regex": r"^PM-?\d+"}},
             sort=[("Operation_Number", -1)]
         )
         if last_entry and "Operation_Number" in last_entry:
             last_num = int(last_entry["Operation_Number"].split("-")[1])
-            return f"PM-{last_num+1:04d}"
-        return "PM-0001"
+            return f"PM-{last_num+1:05d}"
+        return "PM-00001"
 
     def get_next_code(self, payment_collection):
         last_entry = payment_collection.find_one(
+            {"code": {"$regex": r"^GEN-?\d+"}},
             sort=[("code", -1)]
         )
         if last_entry and "code" in last_entry:
             last_num = int(last_entry["code"].split("-")[1])
-            return f"gen-{last_num+1:05d}"
-        return "gen-0001"
+            return f"GEN-{last_num+1:05d}"
+        return "GEN-00001"
+
+    def get_next_prim_key(self, collection, collection_name):
+        primary_key_field = PRIMARY_KEYS.get(collection_name)
+        prefix = PRIMARY_KEY_STARTERS.get(collection_name)
+
+        # Find the last document sorted by primary key descending
+        last_entry = collection.find_one(
+            {primary_key_field: {"$regex": rf"^{prefix}-?\d+"}},
+            sort=[(primary_key_field, -1)]
+        )
+
+        if last_entry and primary_key_field in last_entry:
+            raw_value = last_entry[primary_key_field]
+            number_part = ''.join(filter(str.isdigit, raw_value))
+            next_number = int(number_part) + 1 if number_part else 1
+        else:
+            next_number = 1
+
+        padded_number = f"{next_number:05d}" if prefix in ["PM", "GEN", "INV", "PR"] else f"{next_number:03d}"
+
+        return f"{prefix}-{padded_number}"
 
     def add_customer_payment(self, tree):
         credit = self.cash_entry.get().strip()
@@ -5125,7 +5185,6 @@ class SalesSystemApp:
             elif label in ["code"] and collection_name == "general_exp_rev":
                 continue
             
-
             #anchor="e" → aligns text to the right within the label ... "w" alternative
             # justify="right" → right-justifies multi-line text
             # sticky="e" → aligns the label to the right of the grid cell
@@ -5192,6 +5251,11 @@ class SalesSystemApp:
                 entry = tk.Entry(form_frame, font=("Arial", 12), width=20)
                 entry.grid(row=row_index, column=entry_col, pady=5)
                 self.entries[label] = entry
+                if label in ZEROED_FIELDS:
+                    entry.insert(0, "0")
+                elif label == PRIMARY_KEYS.get(collection_name):
+                    prim_key_val = self.get_next_prim_key(current_collection, collection_name)
+                    entry.insert(0,prim_key_val)
                 row_index += 1
 
 
@@ -5294,8 +5358,6 @@ class SalesSystemApp:
                         id_index = idx
                         break
             unique_id = tree.item(selected_item)['values'][id_index]
-            print(f"unique_id type: {get_type(unique_id)}")
-
 
             current_collection = self.get_collection_by_name(collection_name)
             first_document = current_collection.find_one({columns[id_index]: unique_id})
@@ -5388,7 +5450,7 @@ class SalesSystemApp:
                         field_inside_items = mogno_selected_field.split(".")[1]
                         query = { "Items": { "$elemMatch": {} } }
                         
-                        if field_inside_items in ['Net_total','Previous_balance','Total_balance','Payed_cash','Remaining_balance','Unit','QTY','numbering','Total_QTY','Unit_price','Discount_Type','Discount_Value','Final_Price']:
+                        if field_inside_items in ['Net_total','Previous_balance','Total_balance','Payed_cash','Remaining_balance','Unit','QTY','numbering','Total_QTY','Unit_price','Discount_Value','Final_Price']:
                             query["Items"]["$elemMatch"][field_inside_items] = float(search_text)
                         else: 
                             query["Items"]["$elemMatch"][field_inside_items] = {
@@ -5398,25 +5460,11 @@ class SalesSystemApp:
                         
                         try:
                             data = list(current_collection.find(query).sort("Id", 1))
-                            for doc in data:
-                                print(doc)
                         except PyMongoError as e:
                             print(f"An error occurred: {e}")
                     else:
                         or_conditions = [{"$expr": {"$regexMatch": {"input": {"$toString": f"${mogno_selected_field}"}, "regex": search_text, "options": "i"}}} for field in search_fields]
                         data = list(current_collection.find({"$or": or_conditions}).sort("Id", 1))
-                        # or_conditions = {
-                        #     "$expr": {
-                        #         "$regexMatch": {
-                        #             "input": {"$toString": f"${mogno_selected_field}"},
-                        #             "regex": search_text,
-                        #             "options": "i"
-                        #         }
-                        #     }
-                        # }
-                        # data = list(current_collection.find({"$or": or_conditions}).sort("Id", 1))
-                    # or_conditions = [{"$expr": {"$regexMatch": {"input": {"$toString": f"${mogno_selected_field}"}, "regex": search_text, "options": "i"}}} for field in search_fields]
-                    # data = list(current_collection.find({"$or": or_conditions}).sort("Id", 1))
                 else:
                     data = []
             else:
@@ -5540,6 +5588,10 @@ class SalesSystemApp:
 
     def add_generic_entry(self, tree, current_collection, collection_name):
         fields = self.get_fields_by_name(collection_name)
+        info_obj = {}
+        items = []
+        financials_obj = {}
+        temp = None
 
         new_entry = {}
         if collection_name in ["general_exp_rev"]:
@@ -5642,7 +5694,6 @@ class SalesSystemApp:
             Discount_Values   = split_entry("Discount_Value")
             Final_Prices      = split_entry("Final_Price")
 
-            items = []
             for i in range(len(var)):
                 try:
                     item = {}
@@ -5675,19 +5726,31 @@ class SalesSystemApp:
             temp = datetime.now()
             # value_date = datetime.strptime(temp, '%d-%m-%Y').date()
             # new_entry["Date"] = datetime.combine(value_date, time.min)
-            new_entry["Date"] = temp
 
-            new_entry[f"{prefix}_info"] = info_obj
-            new_entry["Items"] = items
-            new_entry["Financials"] = financials_obj
 
         for field, widget in self.entries.items():
             #add fields not added when using add entry here
             # if field in ["product_name","product_code"] and collection_name == "Products":
             # if (field in ["product_name","product_code","material_code","material_name"] and (collection_name == "Sales" or collection_name == "Purchases")):
             #     dummy=0
-            if field == "Date" and collection_name in ["Sales","Purchases"]:
+            
+            if field == PRIMARY_KEYS.get(collection_name):
+                prim_key_val = widget.get()
+                is_unique = self.is_primary_key_unique(current_collection, collection_name, prim_key_val)
+
+                if is_unique:
+                    value = prim_key_val
+                else:
+                    messagebox.showerror("Data Error", f"{prim_key_val} is not unique in field {field}")
+                    return
+                
+            elif field == "Date" and collection_name in ["Sales","Purchases"]:
                 continue
+            
+            elif field in ZEROED_FIELDS:
+                value = widget.get()
+                if not value:
+                    value = 0
             elif field in [
                 "customer_code", "customer_name", "customer_phone1", "customer_phone2", "customer_address",
                 "Net_total", "Previous_balance", "Total_balance", "Payed_cash", "Remaining_balance", "Payment_method",
@@ -5743,12 +5806,13 @@ class SalesSystemApp:
                     return
 
             elif any(word in field.lower() for word in ["stock_quantity","instapay","bank_account","e-wallet"]) or (current_collection.name == "Customers" and field=="Sales") :
-                value = widget.get()
-                try: 
-                    value = int(value)
-                except Exception as e:
-                    messagebox.showerror("Error", f"{field} should be a number")
-                    return
+                value = widget.get() 
+                if value:
+                    try: 
+                        value = int(value)
+                    except Exception as e:
+                        messagebox.showerror("Error", f"{field} should be a number")
+                        return
             elif any(word in field.lower() for word in ["salary", "credit", "debit", "balance", "stock_quantity"]):
                 value = widget.get()
                 if not value:
@@ -5761,8 +5825,8 @@ class SalesSystemApp:
                     return
             else:
                 value = widget.get()
-                if not value and value in MANDATORTY_FIELDS:
-                    messagebox.showwarning("Warning", f"Please enter a value for {field}")
+                if not value and (field in MANDATORTY_FIELDS) :
+                    messagebox.showwarning("Warning", f"Please enter a value for {self.t(field)}")
                     return
                 if any(word in field.lower() for word in ["units"]):
                     # Parse comma-separated input to list
@@ -5780,6 +5844,12 @@ class SalesSystemApp:
                 new_entry["Id"] = new_id
 
             #TODO this line is never reached on adding
+            if collection_name in ["Sales","Purchases"]:
+                new_entry["Date"] = temp
+                new_entry[f"{prefix}_info"] = info_obj
+                new_entry["Items"] = items
+                new_entry["Financials"] = financials_obj
+
             current_collection.insert_one(new_entry)
             self.refresh_generic_table(tree, current_collection, collection_name, search_text="")
             messagebox.showinfo("Success", "Record added successfully")
@@ -6058,17 +6128,24 @@ class SalesSystemApp:
         columns = tree["columns"]  # Tuple/list of column names
         try:
             lower_columns = [col.lower() for col in columns]
-
+            original_columns = [self.get_original_key(col) for col in columns]
+            
+            # Find which column is used as identifier (id / code)
+            primary_key_field = PRIMARY_KEYS.get(current_collection.name)
+            
             # Find which column is used as identifier (id / code)
             if current_collection.name in ["Customer_Payments","Supplier_Payments", "Sales", "Purchases"]:
                 id_index = 0
-            elif "id" in lower_columns:
+            elif "id" in [col.lower() for col in columns]:
                 id_index = columns.index("Id")
-            elif any('code' in col for col in lower_columns):
-                for idx, col in enumerate(lower_columns):
-                    if 'code' in col:
+            elif any('code' in col.lower() for col in columns):
+                for idx, col in enumerate(columns):
+                    if 'code' in col.lower():
                         id_index = idx
                         break
+            else:
+                messagebox.showerror("Error", "Unable to determine identifier column.")
+                return
 
             if id_index is None:
                 messagebox.showerror("Error", "Unable to determine identifier column.")
@@ -8388,6 +8465,8 @@ class SalesSystemApp:
         for field, widget in self.entries.items():
             if "date" in field.lower():
                 widget.set_date(datetime.now())
+            elif "pdf_path" in field.lower():
+                widget.config(text="")
             elif "pic" in field.lower():
                 widget.config(image='')
                 widget.image = None
@@ -8419,6 +8498,12 @@ class SalesSystemApp:
         circular_img.paste(img, (0, 0), mask)
         return ImageTk.PhotoImage(circular_img)
 
+    def is_primary_key_unique(self, collection, collection_name, new_prim_key):
+        primary_key_field = PRIMARY_KEYS.get(collection_name)
+
+        existing = collection.find_one({primary_key_field: new_prim_key})
+        return existing is None
+
     # To get the text button based on language
     def t(self, text):
         return self.translations.get(text, {}).get(self.language, text)
@@ -8428,6 +8513,10 @@ class SalesSystemApp:
         selected_translated = self.selected_field.get()
         original_key = self.reverse_translations.get(selected_translated, "Unknown")
         return original_key
+    
+    def get_original_key(self, translated_label):
+        """Return the original field key from a translated label."""
+        return self.reverse_translations.get(translated_label, translated_label)
 
     # Function tot oggle from Arabic to English and Vicaverse
     def toggle_language(self):
