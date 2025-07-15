@@ -7183,7 +7183,7 @@ class SalesSystemApp:
         
         # Add items to tree
         for i, item in enumerate(invoice_data["Items"], 1):
-            discount = f"{item['Discount_Value']}{'%' if item['Discount_Type'] == 'Percentage' else 'ج'}"
+            discount = f"{item['Discount_Value']}{'%' if item['Discount_Type'] == 'Percentage' else ' ج.م'}"
             tree.insert("", "end", values=(
                 i,
                 item["product_name"],
@@ -7200,13 +7200,13 @@ class SalesSystemApp:
         fin_frame.pack(fill=tk.X, pady=10, padx=20)
         
         fin_data = [
-            ("صافي الفاتورة:", f"{invoice_data['Financials']['Net_total']:,.2f} ج"),
-            ("رصيد سابق:", f"{invoice_data['Financials']['Previous_balance']:,.2f} ج"),
-            ("إجمالي المستحق:", f"{invoice_data['Financials']['Total_balance']:,.2f} ج"),
-            ("مصاريف النقل :", f"{invoice_data['Financials']['transportation_fees']:,.2f} ج"),
+            ("صافي الفاتورة:", f"{invoice_data['Financials']['Net_total']:,.2f}  ج.م"),
+            ("رصيد سابق:", f"{invoice_data['Financials']['Previous_balance']:,.2f}  ج.م"),
+            ("إجمالي المستحق:", f"{invoice_data['Financials']['Total_balance']:,.2f}  ج.م"),
+            ("مصاريف النقل :", f"{invoice_data['Financials']['transportation_fees']:,.2f}  ج.م"),
             ("المدفوع:", f"{invoice_data['Financials']['Payed_cash']:,.2f} ج"),
-            ("الباقي:", f"{invoice_data['Financials']['Remaining_balance']:,.2f} ج"),
-            ("طريقة الدفع:", invoice_data['Financials']['Payment_method'])
+            ("الباقي:", f"{invoice_data['Financials']['Remaining_balance']:,.2f}  ج.م"),
+            ("طريقة الدفع:", f"{invoice_data['Financials']['Payment_method']:,.2f}  ج.م")
         ]
         
         for i, (label, value) in enumerate(fin_data):
@@ -7622,7 +7622,7 @@ class SalesSystemApp:
         
         # Add items to tree
         for i, item in enumerate(invoice_data["Items"], 1):
-            discount = f"{item['Discount_Value']}{'%' if item['Discount_Type'] == 'Percentage' else 'ج'}"
+            discount = f"{item['Discount_Value']}{'%' if item['Discount_Type'] == 'Percentage' else ' ج.م'}"
             tree.insert("", "end", values=(
                 i,
                 item["material_name"],
@@ -7639,12 +7639,12 @@ class SalesSystemApp:
         fin_frame.pack(fill=tk.X, pady=10, padx=20)
         
         fin_data = [
-            ("صافي الفاتورة:", f"{invoice_data['Financials']['Net_total']:,.2f} ج"),
-            ("رصيد سابق:", f"{invoice_data['Financials']['Previous_balance']:,.2f} ج"),
-            ("إجمالي المستحق:", f"{invoice_data['Financials']['Total_balance']:,.2f} ج"),
-            ("المدفوع:", f"{invoice_data['Financials']['Payed_cash']:,.2f} ج"),
-            ("الباقي:", f"{invoice_data['Financials']['Remaining_balance']:,.2f} ج"),
-            ("طريقة الدفع:", invoice_data['Financials']['Payment_method'])
+            ("صافي الفاتورة:", f"{invoice_data['Financials']['Net_total']:,.2f}  ج.م"),
+            ("رصيد سابق:", f"{invoice_data['Financials']['Previous_balance']:,.2f}  ج.م"),
+            ("إجمالي المستحق:", f"{invoice_data['Financials']['Total_balance']:,.2f}  ج.م"),
+            ("المدفوع:", f"{invoice_data['Financials']['Payed_cash']:,.2f}  ج.م"),
+            ("الباقي:", f"{invoice_data['Financials']['Remaining_balance']:,.2f}  ج.م"),
+            ("طريقة الدفع:", f"{invoice_data['Financials']['Payment_method']:.2f}  ج.م")
         ]
         
         for i, (label, value) in enumerate(fin_data):
