@@ -35,6 +35,7 @@ from pymongo.errors import PyMongoError
 from bidi.algorithm import get_display
 from matplotlib import rcParams
 from collections import defaultdict
+import random
 
 ######################################################### Access Data Base ##############################################################################
 dialog_width = 300  # Same width as AlwaysOnTopInputDialog
@@ -157,7 +158,7 @@ PRIMARY_KEYS = {
     "Materials": "material_code",
     "Customers": "Code",
     "Suppliers": "Code",
-    "Employee_appointimets": "employee_code",
+    # "Employee_appointimets": "employee_code",
     "Sales": "Receipt_Number",
     "Purchases": "Receipt_Number",
     "Customer_Payments": "Operation_Number",
@@ -174,6 +175,7 @@ PRIMARY_KEY_STARTERS = {
     "Products": "PR",
     "Employees": "EMP",
     "Sales": "INV",
+    "Materials": "MAT",
     "Purchases": "INV",
     "Customer_Payments": "PM",
     "Supplier_Payments": "PM",
@@ -368,7 +370,7 @@ class SalesSystemApp:
             "Employee Withdrawals":{"Arabic": "مسحوبات الموظفين", "English": "Employees Withdrawals"},
             "Material Code":{"Arabic":"كود الخامة","English":"Material Code"},
             "material_code":{"Arabic":"كود الخامة","English":"Material Code"},
-            "material_name":{"Arabic":"كود الخامة","English":"Material Code"},
+            "material_name":{"Arabic":"اسم الخامة","English":"Material Name"},
             "Material Name":{"Arabic":"اسم الخامة","English":"Material Name"},
             "material_pic":{"Arabic":"صورة الخامة","English":"Material Pic"},
             "Material Available Qty":{"Arabic":"الكمية المتاحة","English":"Material Ava qty"},
@@ -5199,7 +5201,7 @@ class SalesSystemApp:
             else:
                 tk.Label(form_frame, text=f"{self.t(label)}", font=("Arial", 12), anchor=alignment).grid(row=row_index, column=label_col, sticky=alignment, pady=5, padx=2)
 
-            if "date" in label.lower():
+            if "date" in label.lower() or "timestamp" in label.lower() or "check_out" in label.lower() or "check_in" in label.lower():
                 entry = DateEntry(form_frame, font=("Arial", 12), date_pattern='dd-MM-yyyy', width=18)
                 entry.grid(row=row_index, column=entry_col, pady=5)
                 self.entries[label] = entry
@@ -5581,7 +5583,7 @@ class SalesSystemApp:
                         values = []
                         for col in columns:
                             value = row_data.get(col, '')
-                            if isinstance(value, datetime):
+                            if isinstance(value, datetime) and col != "timestamp":
                                 value = value.strftime('%d-%m-%Y')
                             values.append(value)
                         
@@ -5767,19 +5769,26 @@ class SalesSystemApp:
                 "Discount_Type", "Discount_Value", "Final_Price",
                 "supplier_code", "supplier_name", "Id",
                 "supplier_phone1","supplier_phone2","supplier_address","material_code","material_name"
-            ]:
+                ] and collection_name in ["Sales","Purchases","Customer_Payments", "Supplier_Payments"]:
                 value = widget.get()
                 if not str(value).strip():
                     messagebox.showerror("Validation Error", f"Field '{field}' cannot be empty.")
                     return  # stop processing if any critical field is empty
                 continue  # Skip these fields
             
-            if "date" in field.lower():
+            if "date" in field.lower() or "timestamp" in field.lower() or "check_out" in field.lower() or "check_in" in field.lower():
                 value = widget.get()
                 if value:
                     try:
                         value_date = datetime.strptime(value, '%d-%m-%Y').date()
                         value = datetime.combine(value_date, time.min)
+                        # Add this only for Employee_withdrawls
+                        if collection_name in ["Employee_withdrawls", "Employee_Salary", "Production"]:
+                            random_hours   = random.randint(0, 23)
+                            random_minutes = random.randint(0, 59)
+                            random_seconds = random.randint(0, 59)
+                            value += timedelta(hours=random_hours, minutes=random_minutes, seconds=random_seconds)
+
                     except Exception as e:
                         messagebox.showerror("Error", f"Invalid date format for {field}: {e}")
                         return
@@ -5814,7 +5823,7 @@ class SalesSystemApp:
                     messagebox.showerror("Upload Error", f"Failed to upload PDF: {e}")
                     return
 
-            elif any(word in field.lower() for word in ["stock_quantity","instapay","bank_account","e-wallet"]) or (current_collection.name == "Customers" and field=="Sales") :
+            elif any(word in field.lower() for word in ["instapay","bank_account","e-wallet"]) or (current_collection.name == "Customers" and field=="Sales") :
                 value = widget.get() 
                 if value:
                     try: 
@@ -5822,8 +5831,8 @@ class SalesSystemApp:
                     except Exception as e:
                         messagebox.showerror("Error", f"{field} should be a number")
                         return
-            elif any(word in field.lower() for word in ["salary", "credit", "debit", "balance", "stock_quantity"]):
-                value = widget.get()
+            elif any(word in field.lower() for word in ["stock_quantity", "salary", "credit", "debit", "balance", "Unit_Price", "duration", "net_total", "previous_balance", "payed_cash", "remaining_balance", "base_salary", "total_withdrawls", "delay_penalty", "overtime_bonus", "net_salary", "amount_withdrawls", "previous_withdrawls", "waste", "product_qty", "material_qty", "amount"]):
+                value = widget.get() 
                 if not value:
                     messagebox.showwarning("Warning", f"Please enter a value for {field}")
                     return
@@ -5975,11 +5984,18 @@ class SalesSystemApp:
                             if isinstance(value, str):
                                 split_values = value.split(',')
                                 if idx < len(split_values):
-                                    item[key] = split_values[idx].strip()
+                                    if key in ["QTY", "numbering", "Total_QTY", "Unit_price", "Discount_Value", "Final_Price"]:
+                                        item[key] = float(split_values[idx].strip())
+                                    else: 
+                                        item[key] = split_values[idx].strip()
                                 else:
                                     item[key] = ''
                             else:
-                                item[key] = value  # or handle non-string cases differently
+                                if key in ["QTY", "numbering", "Total_QTY", "Unit_price", "Discount_Value", "Final_Price"]:
+                                    item[key] = float(value)  # or handle non-string cases differently
+                                else:
+                                    item[key] = value
+                                    
                         if(len(items) < num_items):
                             items.append(item)
                         else:
@@ -5997,25 +6013,29 @@ class SalesSystemApp:
                     value = widget.get()
                     parent, child = field_mapping[field]
                     if parent in big_obj:
-                        big_obj[parent][child] = value
+                        if child in ["QTY", "numbering", "Total_QTY", "Unit_price", "Discount_Value", "Final_Price", "Net_total", "Previous_balance", "Total_balance", "Payed_cash", "Remaining_balance"]:
+                            big_obj[parent][child] = float(value)
+                        else:
+                            big_obj[parent][child] = value
 
             updated_entry["Financials"]    = big_obj["Financials"]
             updated_entry[f"{prefix}_info"] = big_obj[f"{prefix}_info"]
             updated_entry["Items"]         = big_obj["Items"]
 
         for field, widget in self.entries.items():
-            if collection_name in ['Sales', 'Purchases'] and field in ["customer_code", "customer_name", "customer_phone1", 
+            if collection_name in ['Sales', 'Purchases', 'Customer_Payments', 'Supplier_Payments'] and field in ["customer_code", "customer_name", "customer_phone1", 
                 "customer_phone2", "customer_address", "Net_total", "Previous_balance", "Total_balance", "Payed_cash",
                 "Remaining_balance", "Payment_method", "Product_code", "product_name", "Unit", "QTY", "Total_QTY", 
-                "Unit_price", "numbering", "Discount_Type", "Discount_Value", "Final_Price", "supplier_code", "supplier_name",
+                "Unit_price", "numbering", "Discount_Type", "Discount_Value", "Final_Price", "supplier_code", "supplier_name", "Id"
                 "supplier_phone1","supplier_phone2","supplier_address","material_code","material_name"]  :
                 continue
+
             elif field in ["Id", "Date"]:
                 continue  # Skip Id and special fields (handled above)
 
             existing_value = existing_record.get(field, None)
 
-            if "date" in field.lower():
+            if "date" in field.lower() or "timestamp" in field.lower() or "check_out" in field.lower() or "check_in" in field.lower():
                 value = widget.get()
                 if value and collection_name != "Sales":
                     try:
@@ -6050,6 +6070,28 @@ class SalesSystemApp:
                         return
                 else:
                     value = existing_value  # Keep old PDF URL if no new selection
+            elif any(word in field.lower() for word in ["instapay","bank_account","e-wallet"]) or (current_collection.name == "Customers" and field=="Sales") :
+                value = widget.get() 
+                if not value:
+                    value = existing_value  # Keep old text if no new input
+
+                try: 
+                    if value:
+                        value = int(value)
+                except Exception as e:
+                    messagebox.showerror("Error", f"{field} should be a number")
+                    return
+
+            elif any(word in field.lower() for word in ["stock_quantity", "salary", "credit", "debit", "balance", "Unit_Price", "duration", "net_total", "previous_balance", "payed_cash", "remaining_balance", "base_salary", "total_withdrawls", "delay_penalty", "overtime_bonus", "net_salary", "amount_withdrawls", "previous_withdrawls", "waste", "product_qty", "material_qty", "amount"]):
+                value = widget.get()
+                if not value:
+                    value = existing_value  # Keep old text if no new input
+                try: 
+                    if value:
+                        value = float(value)
+                except Exception as e:
+                    messagebox.showerror("Error", f"{field} should be a floating number")
+                    return
             else:
                 try:
                     value = widget.get()
@@ -6111,7 +6153,10 @@ class SalesSystemApp:
                     if idx < len(existing_items):
                         for field in locked_fields:
                             if field in item:
-                                item[field] = existing_items[idx].get(field)
+                                if field in ["QTY", "numbering", "Total_QTY", "Unit_price", "Discount_Value", "Final_Price"]:
+                                    item[field] = float(existing_items[idx].get(field))
+                                else: 
+                                    item[field] = existing_items[idx].get(field)
                     updated_items[idx] = item
                 if len(updated_items) > 0:
                     updated["Items"] = updated_items
@@ -6130,21 +6175,27 @@ class SalesSystemApp:
     def delete_generic_entry(self, tree, current_collection):   
         selected_item = tree.selection()
         id_index = None
+        field_name = None
+
         if not selected_item:
             messagebox.showwarning("Warning", "Please select a record to delete")
             return
-
         columns = tree["columns"]  # Tuple/list of column names
         try:
-            lower_columns = [col.lower() for col in columns]
-            original_columns = [self.get_original_key(col) for col in columns]
+            # lower_columns = [col.lower() for col in columns]
+            # original_columns = [self.get_original_key(col) for col in columns]
             
-            # Find which column is used as identifier (id / code)
-            primary_key_field = PRIMARY_KEYS.get(current_collection.name)
+            # # Find which column is used as identifier (id / code)
+            # primary_key_field = PRIMARY_KEYS.get(current_collection.name)
             
             # Find which column is used as identifier (id / code)
             if current_collection.name in ["Customer_Payments","Supplier_Payments", "Sales", "Purchases"]:
                 id_index = 0
+            elif current_collection.name in ["Production", "Employee_Salary", "Employee_withdrawls"]:
+                id_index = columns.index("timestamp")
+
+            elif current_collection.name in ["Employee_appointimets"]:
+                id_index = columns.index("duration")
             elif "id" in [col.lower() for col in columns]:
                 id_index = columns.index("Id")
             elif any('code' in col.lower() for col in columns):
@@ -6159,13 +6210,30 @@ class SalesSystemApp:
             if id_index is None:
                 messagebox.showerror("Error", "Unable to determine identifier column.")
                 return
-
+            
+            raw_unique_id = None
+            unique_id = None
+            
             field_name = columns[id_index]
-            unique_id = tree.item(selected_item)["values"][id_index]
+            if field_name == "timestamp":
+                #change to datetime obj
+                raw_unique_id = tree.item(selected_item)["values"][id_index]
+                unique_id = datetime.strptime(raw_unique_id, "%Y-%m-%d %H:%M:%S.%f")
+            elif field_name == "duration":
+                unique_id = float(tree.item(selected_item)["values"][id_index])
+            else:
+                unique_id = tree.item(selected_item)["values"][id_index]
 
         except (IndexError, ValueError):
-            messagebox.showerror("Error", "Unable to read selected row data.")
-            return
+            if field_name == "timestamp":
+                try:
+                    unique_id = datetime.strptime(raw_unique_id, "%Y-%m-%d %H:%M:%S")
+                except:
+                    messagebox.showerror("Error", "Unable to read selected row data.")
+                    return
+            else:
+                messagebox.showerror("Error", "Unable to read selected row data.")
+                return
 
         if not messagebox.askyesno("Confirm", "Are you sure you want to delete this record?"):
             return
@@ -6199,7 +6267,7 @@ class SalesSystemApp:
                 index = columns.index('Units')
                 unit_value = values[index]
 
-            if("Product_code" in columns or "material_code" in columns):
+            if("Product_code" in columns or "material_code" in columns) and current_collection.name in ["Sales","Purchases"]:
                 prefix = "Product" if current_collection.name == "Sales" else "material"
                 idx1 = columns.index(f'{prefix}_code')
                 idx2 = columns.index('Unit')
@@ -6212,8 +6280,8 @@ class SalesSystemApp:
             print(f"units_list: {isinstance(units_list, list)} , unique_id {unique_id}")
             if isinstance(units_list, list):
                 # Found Units array and unique_id is inside → handle it
-                handled = True
                 if len(units_list) > 1:
+                    handled = True
                     update_result = current_collection.update_one(
                         {"_id": document["_id"]},
                         {"$pull": {'Units': unit_value}}
