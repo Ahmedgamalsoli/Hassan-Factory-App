@@ -586,6 +586,7 @@ class SalesSystemApp:
         # List to track selected products
         self.selected_products = []   
         self.update =False
+        
         self.update_purchase =False
     
 
@@ -2835,7 +2836,7 @@ class SalesSystemApp:
             
             # Delete button
             delete_btn = tk.Button(invoice_frame, text=self.t("Delete Invoice"), 
-                                command=lambda: self.delete_invoice(sales_col, customers_col,"sales"),
+                                command=lambda: self.delete_invoice(products_col,sales_col, customers_col,"sales"),
                                 bg='red', fg='white')
             delete_btn.grid(row=0, column=5, padx=5, sticky='ew')
 
@@ -3097,7 +3098,7 @@ class SalesSystemApp:
         
         # Extract nested dictionaries
         customer_info = invoice_data.get("Customer_info", {})
-        financials = invoice_data.get("Financials", {})
+        self.financials = invoice_data.get("Financials", {})
         self.items = invoice_data.get("Items", [])
         # self.products_set  = {item.get("Product_code") for item in self.items if "Product_code" in item}
         # self.Total_Qty_set = {item.get("Total_QTY") for item in self.items if "Product_code" in item}
@@ -3105,14 +3106,14 @@ class SalesSystemApp:
         # Populate customer information
         self.customer_name_var.set(customer_info.get("name", ""))
         self.customer_code_var.set(customer_info.get("code", ""))
-        self.previous_balance_var.set(str(financials.get("Previous_balance", 0)))
+        self.previous_balance_var.set(str(self.financials.get("Previous_balance", 0)))
         
         # Populate financial fields
-        self.payed_cash_var.set(str(financials.get("Payed_cash", 0)))  # Ensure string conversion
-        self.transport_fees_var.set(str(financials.get("transport_fees", 0)))  # Ensure string conversion
+        self.payed_cash_var.set(str(self.financials.get("Payed_cash", 0)))  # Ensure string conversion
+        self.transport_fees_var.set(str(self.financials.get("transport_fees", 0)))  # Ensure string conversion
         
         # Set payment method
-        payment_method = financials.get("payment_method", "Cash")
+        payment_method = self.financials.get("payment_method", "Cash")
         if payment_method in ["Cash", "E_Wallet", "Bank", "Instapay"]:
             self.payment_method_var.set(payment_method)
         
@@ -3148,7 +3149,7 @@ class SalesSystemApp:
         
         # Extract nested dictionaries
         customer_info = invoice_data.get("supplier_info", {})
-        financials = invoice_data.get("Financials", {})
+        self.financials_purchases = invoice_data.get("Financials", {})
         self.items_purchase = invoice_data.get("Items", [])
         # self.products_set  = {item.get("Product_code") for item in self.items if "Product_code" in item}
         # self.Total_Qty_set = {item.get("Total_QTY") for item in self.items if "Product_code" in item}
@@ -3156,14 +3157,14 @@ class SalesSystemApp:
         # Populate customer information
         self.supplier_name_var.set(customer_info.get("name", ""))
         self.supplier_code_var.set(customer_info.get("code", ""))
-        self.previous_balance_var.set(str(financials.get("Previous_balance", 0)))
+        self.previous_balance_var.set(str(self.financials_purchases.get("Previous_balance", 0)))
         
         # Populate financial fields
-        self.payed_cash_var.set(str(financials.get("Payed_cash", 0)))  # Ensure string conversion
+        self.payed_cash_var.set(str(self.financials_purchases.get("Payed_cash", 0)))  # Ensure string conversion
         # self.transport_fees_var.set(str(financials.get("transport_fees", 0)))  # Ensure string conversion
         
         # Set payment method
-        payment_method = financials.get("Payment_method", "Cash")   
+        payment_method = self.financials_purchases.get("Payment_method", "Cash")   
         if payment_method in ["Cash", "E_Wallet", "Bank", "Instapay"]:
             self.payment_method_var.set(payment_method)
         
@@ -3182,7 +3183,7 @@ class SalesSystemApp:
             item_set = self.items_purchase[start_index:end_index]  # Get next 3 items (or remaining)
             self.add_three_rows_purchase(initial_data=item_set)  # Pass items to populate
 
-    def delete_invoice(self, sales_col, customers_col,source):
+    def delete_invoice(self,products_col, sales_col, customers_col,source):
         """Delete selected invoice from the database"""
         invoice_number = self.invoice_var.get()
         if not invoice_number:
@@ -3195,6 +3196,72 @@ class SalesSystemApp:
         
         # Fetch invoice to get customer and amount details
         invoice_data = sales_col.find_one({"Receipt_Number": invoice_number})
+        self.financials = invoice_data.get("Financials", {})
+
+        # product_qty_map = {}
+
+        if source == "sales":
+            Customer_info = invoice_data.get("Customer_info", {})
+            customer_name = Customer_info.get("name",{})
+            customer = customers_col.find_one({"Name": customer_name})
+            self.pending_customer_id = customer["_id"]
+            for item in invoice_data.get("Items",[]):
+                product_code = item.get("Product_code")
+                total_qty = item.get("Total_QTY", 0)
+                if product_code:
+                    # product_qty_map[product_code] = total_qty
+                    # Decrement the value in MongoDB
+                    products_col.update_one(
+                        {"product_code": product_code},
+                        {"$inc": {"stock_quantity": total_qty}}
+                    )
+
+        else:
+            supplier_info = invoice_data.get("supplier_info", {})
+            supplier_name = supplier_info.get("name",{})
+            supplier = customers_col.find_one({"Name": supplier_name})
+            self.pending_customer_id = supplier["_id"]   
+            for item in invoice_data.get("Items",[]):
+                material_code = item.get("material_code")
+                total_qty = item.get("Total_QTY", 0)
+                if material_code:
+                    products_col.update_one(
+                        {"material_code": material_code},
+                        {"$inc": {"stock_quantity": -total_qty}}
+                    )
+        prev_total_amount = self.financials.get("Net_total")
+        prev_payed_cash = self.financials.get("Payed_cash")
+        prev_added_balance = prev_total_amount - prev_payed_cash
+        if source == "sales":
+            customers_col.update_one(
+                {"_id": self.pending_customer_id},
+                {
+                    "$set": {
+                        "Last_purchase_date": datetime.now()
+                    },
+                    "$inc": {
+                        "Sales": -1,
+                        "Debit": -prev_total_amount,
+                        "Credit": -prev_payed_cash,
+                        "Balance": -prev_added_balance
+                    }
+                }
+            )  
+        else:
+            customers_col.update_one(
+                {"_id": self.pending_customer_id},
+                {
+                    "$set": {
+                        "Last_purchase_date": datetime.now()
+                    },
+                    "$inc": {
+                        "Sales": -1,
+                        "Debit": -prev_payed_cash,
+                        "Credit": -prev_total_amount,
+                        "Balance": -prev_added_balance
+                    }
+                }
+            )  
         if not invoice_data:
             messagebox.showerror("Not Found", "Invoice not found")
             return
@@ -3209,6 +3276,7 @@ class SalesSystemApp:
         # Clear the form or reset UI as needed
         self.invoice_var.set("")
         self.selected_invoice_id = None
+
         if source == "sales":
             self.sales_invoice(self.user_role,"update")
         else:
@@ -3445,7 +3513,7 @@ class SalesSystemApp:
             
             # Delete button
             delete_btn = tk.Button(invoice_frame, text=self.t("Delete Invoice"), 
-                                command=lambda: self.delete_invoice(purchases_col, suppliers_col,"purchase"),
+                                command=lambda: self.delete_invoice(materials_col,purchases_col, suppliers_col,"purchase"),
                                 bg='red', fg='white')
             delete_btn.grid(row=0, column=5, padx=5, sticky='ew')
 
@@ -6734,7 +6802,7 @@ class SalesSystemApp:
             
             new_number = last_number + 1
             # print(4)
-            return f"INV-{new_number:04d}"
+            return f"INV-{new_number:05d}"
         
         except Exception as e:
             messagebox.showerror("خطأ", f"فشل توليد الرقم التسلسلي: {str(e)}")
@@ -6764,7 +6832,7 @@ class SalesSystemApp:
             
             new_number = last_number + 1
             # print(4)
-            return f"INV-{new_number:04d}"
+            return f"INV-{new_number:05d}"
         
         except Exception as e:
             messagebox.showerror("خطأ", f"فشل توليد الرقم التسلسلي: {str(e)}")
@@ -6827,19 +6895,36 @@ class SalesSystemApp:
                     # التحقق من المخزون
                     stock = product.get("stock_quantity", 0)
                     stock = float(stock)
-                    if total_qty > stock:
-                        messagebox.showerror("نقص في المخزون", 
-                            f"الكمية المطلوبة ({total_qty}) تتجاوز المخزون ({stock}) للمنتج {product_code}")
-                        return
                     if self.update:
                         for item in self.items:
                             product_Code = item.get("Product_code")
                             Product = products_col.find_one({"product_code": product_Code})
                             total_Qty = item.get("Total_QTY")
+                        if total_qty > (stock + total_Qty):
+                            messagebox.showerror("نقص في المخزون", 
+                                f"الكمية المطلوبة ({total_qty}) تتجاوز المخزون ({stock + total_Qty}) للمنتج {product_code}")
+                            return
+                        
+                    else:
+                        if total_qty > stock:
+                            messagebox.showerror("نقص في المخزون", 
+                                f"الكمية المطلوبة ({total_qty}) تتجاوز المخزون ({stock}) للمنتج {product_code}")
+                            return
+                    if self.update:
+
                             if product_Code is not None and total_Qty is not None:    
                                 Stock = Product.get("stock_quantity", 0)
-                                stock_updates[product_Code] = Stock + total_Qty    
-                    stock_updates[product_code] = stock - total_qty
+                                stock_updates[product_Code] = Stock + total_Qty 
+                                if product_Code == product_code:
+                                    stock_updates[product_Code] -= total_qty
+                                else:
+                                    stock_updates[product_code] = stock - total_qty
+                    else:
+                        stock_updates[product_code] = stock - total_qty
+                    # if not stock_updates.get(product_code):
+                    #     stock_updates[product_code] = 0
+                    
+                    
                     total_amount += final_price
 
                     # إضافة العنصر
@@ -7127,20 +7212,66 @@ class SalesSystemApp:
             
             # 2. Update customer
             new_balance = (invoice_data['Financials']['Previous_balance'] + total_amount) - payed_cash
-            customers_col.update_one(
-                {"_id": self.pending_customer_id},
-                {
-                    "$set": {
-                        "Last_purchase_date": datetime.now(),
-                        "Balance": new_balance
-                    },
-                    "$inc": {
-                        "Sales": 1,
-                        "Debit": total_amount,
-                        "Credit": payed_cash
+            # Fetch the customer document
+            customer = customers_col.find_one({"_id": self.pending_customer_id})
+
+            # Prepare conversion updates if needed
+            update_fields = {}
+
+            # Fields to check and convert
+            fields = ["Sales", "Balance", "Debit", "Credit"]
+
+            for field in fields:
+                value = customer.get(field)
+                if isinstance(value, str):
+                    try:
+                        if field == "Sales":
+                            update_fields[field] = int(float(value))  # Sales to int
+                        else:
+                            update_fields[field] = float(value)       # Others to double
+                    except ValueError:
+                        update_fields[field] = 0  # fallback to 0 if conversion fails
+
+            # If any field needed conversion, apply the type fix fir
+            if update_fields:
+                customers_col.update_one(
+                    {"_id": self.pending_customer_id},
+                    {"$set": update_fields}
+                )
+            if self.update:
+                prev_total_amount = self.financials.get("Net_total")
+                prev_payed_cash = self.financials.get("Payed_cash")
+                prev_added_balance = prev_total_amount - prev_payed_cash
+                # Now perform the main update
+                customers_col.update_one(
+                    {"_id": self.pending_customer_id},
+                    {
+                        "$set": {
+                            "Last_purchase_date": datetime.now(),
+                            "Balance": new_balance - prev_added_balance
+                        },
+                        "$inc": {
+                            "Debit": total_amount-prev_total_amount,
+                            "Credit": payed_cash-prev_payed_cash
+                        }
                     }
-                }
-            )
+                )                               
+            else:
+                # Now perform the main update
+                customers_col.update_one(
+                    {"_id": self.pending_customer_id},
+                    {
+                        "$set": {
+                            "Last_purchase_date": datetime.now(),
+                            "Balance": new_balance
+                        },
+                        "$inc": {
+                            "Sales": 1,
+                            "Debit": total_amount,
+                            "Credit": payed_cash
+                        }
+                    }
+                )
             
             # 3. Generate PDF
             pdf_path = self.generate_pdf(invoice_data)
@@ -7237,8 +7368,13 @@ class SalesSystemApp:
                             total_Qty = float(item.get("Total_QTY"))
                             if Material_code is not None and total_Qty is not None:    
                                 Stock = Material.get("stock_quantity", 0)
-                                stock_updates[Material_code] = Stock - total_Qty    
-                    stock_updates[material_code] = stock + total_qty
+                                stock_updates[Material_code] = Stock - total_Qty
+                                if Material_code == material_code:
+                                    stock_updates[Material_code] += total_qty
+                                else:
+                                    stock_updates[material_code] = stock + total_qty                        
+                    else:
+                        stock_updates[material_code] = stock + total_qty
                     total_amount += final_price
 
                     # إضافة العنصر
@@ -7513,21 +7649,66 @@ class SalesSystemApp:
             
             # 2. Update supplier
             new_balance = (invoice_data['Financials']['Previous_balance'] + total_amount) - payed_cash
-            suppliers_col.update_one(
-                {"_id": self.pending_supplier_id},
-                {
-                    "$set": {
-                        "Last_purchase": datetime.now(),
-                        "Balance": new_balance
-                    },
-                    
-                    "$inc": {
-                        "Purchases": 1,
-                        "Debit": payed_cash,
-                        "Credit": total_amount
+
+            # Fetch the customer document
+            supplier = suppliers_col.find_one({"_id": self.pending_supplier_id})
+
+            # Prepare conversion updates if needed
+            update_fields = {}
+
+            # Fields to check and convert
+            fields = ["Sales", "Balance", "Debit", "Credit"]
+
+            for field in fields:
+                value = supplier.get(field)
+                if isinstance(value, str):
+                    try:
+                        if field == "Sales":
+                            update_fields[field] = int(float(value))  # Sales to int
+                        else:
+                            update_fields[field] = float(value)       # Others to double
+                    except ValueError:
+                        update_fields[field] = 0  # fallback to 0 if conversion fails
+            if update_fields:
+                suppliers_col.update_one(
+                    {"_id": self.pending_supplier_id},
+                    {"$set": update_fields}
+                )
+            if self.update_purchase:
+                prev_total_amount = self.financials_purchases.get("Net_total")
+                prev_payed_cash = self.financials_purchases.get("Payed_cash")
+                prev_added_balance = prev_total_amount - prev_payed_cash
+            
+                suppliers_col.update_one(
+                    {"_id": self.pending_supplier_id},
+                    {
+                        "$set": {
+                            "Last_purchase": datetime.now(),
+                            "Balance": new_balance - prev_added_balance
+                        },
+                        
+                        "$inc": {
+                            "Debit": payed_cash - prev_payed_cash,
+                            "Credit": total_amount - prev_total_amount
+                        }
                     }
-                }
-            )
+                )
+            else:
+                suppliers_col.update_one(
+                    {"_id": self.pending_supplier_id},
+                    {
+                        "$set": {
+                            "Last_purchase": datetime.now(),
+                            "Balance": new_balance
+                        },
+                        
+                        "$inc": {
+                            "Sales": 1,
+                            "Debit": payed_cash,
+                            "Credit": total_amount
+                        }
+                    }
+                )
             
             # 3. Generate PDF
             pdf_path = self.generate_pdf_purchase(invoice_data)
