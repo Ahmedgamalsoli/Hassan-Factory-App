@@ -4645,7 +4645,6 @@ class SalesSystemApp:
         supplier_code = self.supplier_code_cb.get().strip()
         supplier_name = self.supplier_name_cb.get().strip()
         supplier_payment_collection = self.get_collection_by_name("Supplier_Payments")
-        # suppliers_collection = self.get_fields_by_name("Suppliers")
         purchases_collection = self.get_collection_by_name("Purchases")
         
         if not debit or not payment_method or not supplier_code or not supplier_name:
@@ -4659,7 +4658,7 @@ class SalesSystemApp:
             return
 
         operation_number = self.get_next_operation_number(supplier_payment_collection)
-        current_time = datetime.now().strftime("%d/%m/%Y %H:%M")
+        current_time = datetime.now()
 
         doc = {
             "Operation_Number": operation_number,
@@ -4672,20 +4671,21 @@ class SalesSystemApp:
                 "name": supplier_name
             }
         }
-        
+    
         formatted = current_time.strftime("%Y-%m-%d %H:%M")
         
         supplier_payment_collection.insert_one(doc)
-        tree.insert("", tk.END, values=(formatted, operation_number, 0.0, debit_val))
+        tree.insert("", tk.END, values=(formatted, operation_number, debit_val, 0.0, payment_method))
 
-        self.update_totals(
-            purchases_collection,
-            supplier_payment_collection,
-            {
-                "supplier_info.code": supplier_code,
-                "supplier_info.name": supplier_name
-            },
-            tree
+        self.on_code_selected(
+            event=None,
+            code_cb=self.supplier_code_cb,
+            name_cb=self.supplier_name_cb,
+            collection=self.get_collection_by_name("Suppliers"),
+            invoices_collection=purchases_collection,
+            payment_collection=supplier_payment_collection,
+            field_path="supplier_info.code",
+            tree=tree
         )
 
         messagebox.showinfo("Success", f"Entry {operation_number} added.")
@@ -4737,7 +4737,6 @@ class SalesSystemApp:
         customer_code = self.customer_code_cb.get().strip()
         customer_name = self.customer_name_cb.get().strip()
         customer_payment_collection = self.get_collection_by_name("Customer_Payments")
-        # customers_collection = self.get_fields_by_name("Customers")
         sales_collection = self.get_collection_by_name("Sales")
 
         if not credit or not payment_method or not customer_code or not customer_name:
@@ -4765,9 +4764,11 @@ class SalesSystemApp:
                 "name": customer_name
             }
         }
-
+        
+        formatted = current_time.strftime("%Y-%m-%d %H:%M")
+        
         customer_payment_collection.insert_one(doc)
-        tree.insert("", tk.END, values=(current_time, operation_number, 0.0, credit_val,payment_method))
+        tree.insert("", tk.END, values=(formatted, operation_number, 0.0, credit_val,payment_method))
 
         self.on_code_selected(
             event=None,
@@ -4785,43 +4786,51 @@ class SalesSystemApp:
 
     def on_code_selected(self, event, code_cb, name_cb, collection, invoices_collection, payment_collection, field_path, tree):
         selected_code = code_cb.get().strip()
-        if not selected_code:
-            return
-
+        
         start_date_raw = self.start_date_entry.get_date()  # These should be instance variables
         end_date_raw = self.end_date_entry.get_date()
         start_date = datetime.combine(start_date_raw, time.min)          # 00:00:00
         end_date = datetime.combine(end_date_raw, time.max)              # 23:59:59.999999
-    
-        try:
-            person = collection.find_one({"Code": selected_code}, {"Name": 1, "_id": 0})
-            if not person:
-                try:
-                    selected_code_int = int(selected_code)
-                    person = collection.find_one({"Code": selected_code_int}, {"Name": 1, "_id": 0})
-                    # selected_code = selected_code_int  # update for consistency in update_totals
-                except ValueError:
-                    pass 
+        payment_query = {}
+        invoice_query = {}
+        
+        if not selected_code:
+            # returns
+            #time_query (it also compares dates but from payment db)
+            payment_query =  {"Time": { "$gte": start_date,"$lte": end_date } } 
+            #date_query
+            invoice_query = {"Date": { "$gte": start_date, "$lte": end_date} }  
+                
+        else:
+            try:
+                person = collection.find_one({"Code": selected_code}, {"Name": 1, "_id": 0})
+                if not person:
+                    try:
+                        selected_code_int = int(selected_code)
+                        person = collection.find_one({"Code": selected_code_int}, {"Name": 1, "_id": 0})
+                        # selected_code = selected_code_int  # update for consistency in update_totals
+                    except ValueError:
+                        pass 
 
-            if person:
-                name_cb.set(person["Name"])
-                payment_query = { #time_query (it also compares dates but from payment db)
-                    "$and": [
-                        {field_path: selected_code},
-                        {"Time": { "$gte": start_date,"$lte": end_date } }
-                    ]
-                }
+                if person:
+                    name_cb.set(person["Name"])
+                    payment_query = { #time_query (it also compares dates but from payment db)
+                        "$and": [
+                            {field_path: selected_code},
+                            {"Time": { "$gte": start_date,"$lte": end_date } }
+                        ]
+                    }
 
-                invoice_query = { #date_query
-                    "$and": [
-                        {field_path: selected_code},
-                        {"Date": { "$gte": start_date, "$lte": end_date} }
-                    ]
-                }
+                    invoice_query = { #date_query
+                        "$and": [
+                            {field_path: selected_code},
+                            {"Date": { "$gte": start_date, "$lte": end_date} }
+                        ]
+                    }
 
-            self.update_totals(invoices_collection, payment_collection, payment_query, invoice_query, tree)
-        except Exception as e:
-            messagebox.showerror("Database Error", f"Failed to process code: {selected_code}.\nError: {str(e)}")
+            except Exception as e:
+                messagebox.showerror("Database Error", f"Failed to process code: {selected_code}.\nError: {str(e)}")
+        self.update_totals(invoices_collection, payment_collection, payment_query, invoice_query, tree)
 
     def on_name_selected(self, event, code_cb, name_cb, collection, invoices_collection, payment_collection, field_path, tree):
         selected_name = name_cb.get().strip()
@@ -4866,8 +4875,8 @@ class SalesSystemApp:
         invoices = invoices_collection.find(invoice_query)
         payments = payment_collection.find(payment_query)
 
-        invoice_count = invoices_collection.count_documents({ "supplier_info.code": "A00" })
-        payment_count = payment_collection.count_documents({ "supplier_info.code": "A00" })
+        # invoice_count = invoices_collection.count_documents({ "supplier_info.code": "A00" })
+        # payment_count = payment_collection.count_documents({ "supplier_info.code": "A00" })
 
         total_debit = 0.0
         total_credit = 0.0
@@ -5396,6 +5405,8 @@ class SalesSystemApp:
             items = first_document.get("Items", [])
             
             if isinstance(entry, ttk.Combobox):
+                if value == '':
+                    value = first_document.get(child, "")
                 entry.set(value)
 
             if isinstance(value, datetime):
@@ -6023,13 +6034,14 @@ class SalesSystemApp:
             updated_entry["Items"]         = big_obj["Items"]
 
         for field, widget in self.entries.items():
-            if collection_name in ['Sales', 'Purchases', 'Customer_Payments', 'Supplier_Payments'] and field in ["customer_code", "customer_name", "customer_phone1", 
+            if collection_name in ['Sales', 'Purchases'] and field in ["customer_code", "customer_name", "customer_phone1", 
                 "customer_phone2", "customer_address", "Net_total", "Previous_balance", "Total_balance", "Payed_cash",
                 "Remaining_balance", "Payment_method", "Product_code", "product_name", "Unit", "QTY", "Total_QTY", 
                 "Unit_price", "numbering", "Discount_Type", "Discount_Value", "Final_Price", "supplier_code", "supplier_name", "Id"
                 "supplier_phone1","supplier_phone2","supplier_address","material_code","material_name"]  :
                 continue
-
+            elif collection_name in ['Customer_Payments', 'Supplier_Payments'] and field in ["customer_code", "customer_name","supplier_code", "supplier_name"]:
+                continue
             elif field in ["Id", "Date"]:
                 continue  # Skip Id and special fields (handled above)
 
