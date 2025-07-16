@@ -142,7 +142,7 @@ LOCKED_FIELDS = {
 MANDATORTY_FIELDS = { # list all mandatory fields (fields that can't be empty)
     "Name", "Phone_number1", "Code", "Company_address", "Name", "Password", "Role", "Phone_number", "Address", "Salary",
     "product_name","category","stock_quantity","Unit_Price","product_code","Units",
-    "material_name","material_code"
+    "material_name","material_code", "employee_code", "employee_name"
 }
 MANDATORY_DBS = {
     "Customers", "Employees", "Materials", "Products", "Suppliers" 
