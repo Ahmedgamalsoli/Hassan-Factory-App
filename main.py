@@ -9365,9 +9365,9 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = SalesSystemApp(root)
     
-    # app.open_login_window()  # Start with the login window
-    app.user_role="admin"
-    app.main_menu()
+    app.open_login_window()  # Start with the login window
+    # app.user_role="admin"
+    # app.main_menu()
 
     try:
         root.mainloop()
