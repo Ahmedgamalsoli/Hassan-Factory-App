@@ -424,6 +424,105 @@ class SalesSystemApp:
             "Login":{"Arabic":"تسجيل الدخول","English":"Login"},
             "Username:":{"Arabic":"اسم المستخدم:","English":"Username:"},
             "Password:":{"Arabic":"الباسورد:","English":"Password:"},
+            "Print Error":{"Arabic":"خطأ في الطباعة","English":"Print Error"},
+            "Failed to print PDF:":{"Arabic":"فشل في طباعة ملف:","English":"Failed to print PDF:"},
+            "No Internet Connection":{"Arabic":"لا يوجد اتصال بالإنترنت","English":"No Internet Connection"},
+            "Error":{"Arabic":"خطأ","English":"Error"},
+            "Failed to load reports:":{"Arabic":"فشل تحميل التقارير:","English":"Failed to load reports:"},
+            "Please select an employee":{"Arabic":"الرجاء اختيار الموظف","English":"Please select an employee"},
+            "Success":{"Arabic":"نجاح","English":"Success"},
+            "Database Error":{"Arabic":"خطأ في قاعدة البيانات","English":"Database Error"},
+            "checked":{"Arabic":"تم","English":"checked"},
+            "out":{"Arabic":"تسجيل خروج","English":"out"},
+            "in":{"Arabic":"تسجيل دخول","English":"in"},
+            "successfully":{"Arabic":"بنجاح","English":"successfully"},
+            "Please select an employee":{"Arabic":"الرجاء اختيار الموظف","English":"Please select an employee"},
+            "Invalid amount entered":{"Arabic":"تم إدخال مبلغ غير صالح","English":"Invalid amount entered"},
+            "Please select payment method":{"Arabic":"الرجاء اختيار طريقة الدفع","English":"Please select payment method"},
+            "Withdrawal recorded successfully":{"Arabic":"تم تسجيل السحب بنجاح","English":"Withdrawal recorded successfully"},
+            "Failed to save withdrawal:":{"Arabic":"فشل في حفظ السحب:","English":"Failed to save withdrawal:"},
+            "Warning":{"Arabic":"تحذير","English":"Warning"},
+            "Employee already took the salary in this month":{"Arabic":"لقد استلم الموظف راتبه في هذا الشهر بالفعل","English":"Employee already took the salary in this month"},
+            "Enter the payment Method":{"Arabic":"أدخل طريقة الدفع","English":"Enter the payment Method"},
+            "Salary record saved successfully":{"Arabic":"تم حفظ سجل الراتب بنجاح","English":"Salary record saved successfully"},
+            "Failed to save salary:":{"Arabic":"فشل في حفظ الراتب:","English":"Failed to save salary:"},
+            "Amount must be greater than zero":{"Arabic":"يجب أن يكون المبلغ أكبر من الصفر","English":"Amount must be greater than zero"},
+            "Please select a payment method":{"Arabic":"الرجاء اختيار طريقة الدفع","English":"Please select a payment method"},
+            "recorded successfully!":{"Arabic":"تم التسجيل بنجاح!","English":"recorded successfully!"},
+            "Failed to save transaction:":{"Arabic":"فشل حفظ المعاملة:","English":"Failed to save transaction:"},
+            "Failed to load products:":{"Arabic":"فشل تحميل المنتجات:","English":"Failed to load products:"},
+            "Selection Needed":{"Arabic":"الاختيار مطلوب","English":"Selection Needed"},
+            "Please select an invoice first":{"Arabic":"الرجاء تحديد الفاتورة أولاً","English":"Please select an invoice first"},
+            "Not Found":{"Arabic":"لم يتم العثور عليه","English":"Not Found"},
+            "Invoice not found in database":{"Arabic":"لم يتم العثور على الفاتورة في قاعدة البيانات","English":"Invoice not found in database"},
+            "Confirm Delete":{"Arabic":"تأكيد الحذف","English":"Confirm Delete"},
+            "Delete invoice":{"Arabic":"حذف الفاتورة","English":"Delete invoice"},
+            "permanently?":{"Arabic":"نهائيا؟","English":"permanently?"},
+            "Invoice not found":{"Arabic":"لم يتم العثور على الفاتورة","English":"Invoice not found"},
+            "Invoice deleted successfully":{"Arabic":"تم حذف الفاتورة بنجاح","English":"Invoice deleted successfully"},
+            "Failed to load materials:":{"Arabic":"فشل تحميل الخامات:","English":"Failed to load materials:"},
+            "Invalid values in row":{"Arabic":"القيم غير صالحة في الصف","English":"Invalid values in row"},
+            "Production order saved successfully":{"Arabic":"تم حفظ أمر الإنتاج بنجاح","English":"Production order saved successfully"},
+            "Operation failed:":{"Arabic":"فشلت العملية:","English":"Operation failed:"},
+            "Inventory Error":{"Arabic":"خطأ في المخزون","English":"Inventory Error"},
+            "Failed to update inventory:":{"Arabic":"فشل تحديث المخزون:","English":"Failed to update inventory:"},
+            "Update Error":{"Arabic":"خطأ التحديث","English":"Update Error"},
+            "Failed to update product info:":{"Arabic":"فشل تحديث معلومات المنتج:","English":"Failed to update product info:"},
+            "Failed to update Material info:":{"Arabic":"فشل في تحديث معلومات الخامات:","English":"Failed to update Material info:"},
+            "Discount Error":{"Arabic":"خطأ الخصم","English":"Discount Error"},
+            "All fields must be filled!":{"Arabic":"يجب ملء جميع الحقول!","English":"All fields must be filled!"},
+            "Cash must be a valid number.":{"Arabic":"يجب أن يكون النقد رقمًا صالحًا.","English":"Cash must be a valid number."},
+            "Entry":{"Arabic":"المدخل","English":"Entry"},
+            "added.":{"Arabic":"تمت اضافته.","English":"added."},
+            "Failed to process code:":{"Arabic":"فشل في معالجة الكود:","English":"Failed to process code:"},
+            "No matching code found for name:":{"Arabic":"لم يتم العثور على رمز مطابق للاسم:","English":"No matching code found for name:"},
+            "Failed to fetch code for":{"Arabic":"فشل في جلب الكود لـ","English":"Failed to fetch code for"},
+            "Error displaying data:":{"Arabic":"خطأ في عرض البيانات:    ","English":"Error displaying data:"},
+            "Upload Error":{"Arabic":"خطأ في التحميل","English":"Upload Error"},
+            "All Data fields must be filled:":{"Arabic":"يجب ملء جميع حقول البيانات:","English":"All Data fields must be filled:"},
+            "is not unique in field":{"Arabic":"ليس فريدًا في هذا المجال","English":"is not unique in field"},
+            "Validation Error":{"Arabic":"خطأ التحقق","English":"Validation Error"},
+            "Field":{"Arabic":"حقل","English":"Field"},
+            "cannot be empty.":{"Arabic":"لا يمكن أن يكون فارغا.","English":"cannot be empty."},
+            "Invalid date format for":{"Arabic":"تنسيق التاريخ غير صالح لـ","English":"Invalid date format for"},
+            "Please enter a value for":{"Arabic":"الرجاء إدخال قيمة لـ","English":"Please enter a value for"},
+            "Failed to upload image:":{"Arabic":"فشل تحميل الصورة:","English":"Failed to upload image:"},
+            "No PDF was selected.":{"Arabic":"لم يتم تحديد ملف PDF.","English":"No PDF was selected."},
+            "Failed to upload PDF:":{"Arabic":"فشل تحميل ملف PDF:","English":"Failed to upload PDF:"},
+            "should be a number":{"Arabic":"يجب أن يكون رقمًا","English":"should be a number"},
+            "Please enter a value for":{"Arabic":"الرجاء إدخال قيمة لـ","English":"Please enter a value for"},
+            "should be a floating number":{"Arabic":"يجب أن يكون رقمًا عشريا","English":"should be a floating number"},
+            "Record added successfully":{"Arabic":"تمت إضافة السجل بنجاح","English":"Record added successfully"},
+            "Error adding record:":{"Arabic":"خطأ في إضافة السجل:","English":"Error adding record:"},
+            "Please select a record to edit":{"Arabic":"الرجاء تحديد سجل لتعديله","English":"Please select a record to edit"},
+            "No data found for selected record":{"Arabic":"لم يتم العثور على بيانات للسجل المحدد","English":"No data found for selected record"},
+            "'Id' field not found in table columns":{"Arabic":"لم يتم العثور على حقل 'المعرف' في أعمدة الجدول","English":"'Id' field not found in table columns"},
+            "Could not find record in database":{"Arabic":"لم يتم العثور على السجل في قاعدة البيانات","English":"Could not find record in database"},
+            "Record updated successfully":{"Arabic":"تم تحديث السجل بنجاح","English":"Record updated successfully"},
+            "Info":{"Arabic":"معلومات","English":"Info"},
+            "No changes were made (record was identical)":{"Arabic":"لم يتم إجراء أي تغييرات (كان السجل متطابقًا)","English":"No changes were made (record was identical)"},
+            "Error updating record:":{"Arabic":"خطأ في تحديث السجل:","English":"Error updating record:"},
+            "Please select a record to delete":{"Arabic":"الرجاء تحديد سجل لحذفه","English":"Please select a record to delete"},
+            "Unable to determine identifier column.":{"Arabic":"غير قادر على تحديد عمود المعرف.","English":"Unable to determine identifier column."},
+            "Confirm":{"Arabic":"تأكيد","English":"Confirm"},
+            "Unable to read selected row data.":{"Arabic":"غير قادر على قراءة بيانات الصف المحدد.","English":"Unable to read selected row data."},
+            "Are you sure you want to delete this record?":{"Arabic":"هل أنت متأكد أنك تريد حذف هذا السجل؟","English":"Are you sure you want to delete this record?"},
+            "No matching record found to delete.":{"Arabic":"لم يتم العثور على سجل مطابق للحذف.","English":"No matching record found to delete."},
+            "Unit":{"Arabic":"الوحدة","English":"Unit"},
+            "removed from record.":{"Arabic":"تمت إزالتها من السجل.","English":"removed from record."},
+            "No changes were made to the document.":{"Arabic":"لم يتم إجراء أي تغييرات على الوثيقة.","English":"No changes were made to the document."},
+            "Record deleted successfully.":{"Arabic":"تم حذف السجل بنجاح.","English":"Record deleted successfully."},
+            "Error deleting record:":{"Arabic":"خطأ في حذف السجل:","English":"Error deleting record:"},
+            "Enter value for":{"Arabic":"أدخل القيمة لـ","English":"Enter value for"},
+            "Could not retrieve record for editing.":{"Arabic":"لم يتمكن من استرجاع السجل للتعديل.","English":"Could not retrieve record for editing."},
+            "Access Denied":{"Arabic":"تم الرفض","English":"Access Denied"},
+            "You do not have permission to access this page.":{"Arabic":"ليس لديك صلاحية الدخول لهذه الصفحة.","English":"You do not have permission to access this page."},
+            # "":{"Arabic":"","English":""},
+            # "":{"Arabic":"","English":""},
+            # "":{"Arabic":"","English":""},
+            # "":{"Arabic":"","English":""},
+            # "":{"Arabic":"","English":""},
+            # "":{"Arabic":"","English":""},
             "Exit":{"Arabic":"خروج","English":"Exit"},
             "Customer Payments":{"Arabic":"مدفوعات العملاء","English":"Customer Payments"},
             "Supplier Payments":{"Arabic":"مدفوعات الموردين","English":"Supplier Payments"},
@@ -609,7 +708,7 @@ class SalesSystemApp:
             client.admin.command('ping')
             print("✅ Connected to MongoDB")
         except Exception as e:
-            messagebox.showerror("No Internet Connection", str(e))
+            messagebox.showerror(self.t("No Internet Connection"), str(e))
 
         db = client["Hassan"]   
 
@@ -1236,7 +1335,7 @@ class SalesSystemApp:
 
         except Exception as e:
             print(f"Error generating visualizations: {e}")
-            tk.messagebox.showerror("Error", f"Failed to load reports: {str(e)}")           
+            tk.messagebox.showerror(self.t("Error"), f"{self.t("Failed to load reports:")} {str(e)}")           
 
 
             
@@ -1629,7 +1728,7 @@ class SalesSystemApp:
         name = self.name_var.get()
         
         if not code or not name:
-            messagebox.showerror("Error", "Please select an employee")
+            messagebox.showerror(self.t("Error"), self.t("Please select an employee"))
             return
         
         # Check existing appointment
@@ -1667,10 +1766,10 @@ class SalesSystemApp:
                 })
             print("sss")
             self.update_checkin_tree(appointments_col)
-            messagebox.showinfo("Success", f"{name} checked {'out' if existing else 'in'} successfully")
+            messagebox.showinfo(self.t("Success"), f"{name} {self.t("checked")} {self.t('out') if existing else self.t('in')} {self.t("successfully")}")
             
         except PyMongoError as e:
-            messagebox.showerror("Database Error", str(e))
+            messagebox.showerror(self.t("Database Error"), str(e))
 
     def update_checkin_tree(self, appointments_col):
         # Clear existing data
@@ -1864,7 +1963,7 @@ class SalesSystemApp:
         method = self.payment_method.get()
 
         if not code or not name:
-            messagebox.showerror("Error", "Please select an employee")
+            messagebox.showerror(self.t("Error"), self.t("Please select an employee"))
             return
         
         try:
@@ -1872,11 +1971,11 @@ class SalesSystemApp:
             if amount <= 0:
                 raise ValueError
         except ValueError:
-            messagebox.showerror("Error", "Invalid amount entered")
+            messagebox.showerror(self.t("Error"), self.t("Invalid amount entered"))
             return
 
         if not method:
-            messagebox.showerror("Error", "Please select payment method")
+            messagebox.showerror(self.t("Error"), self.t("Please select payment method"))
             return
 
         try:
@@ -1901,13 +2000,13 @@ class SalesSystemApp:
                 {'$set': {'previous_withdrawls': previous_total + amount}}
             )
 
-            messagebox.showinfo("Success", "Withdrawal recorded successfully")
+            messagebox.showinfo(self.t("Success"), self.t("Withdrawal recorded successfully"))
             self.amount_entry.delete(0, tk.END)
             self.payment_method.set('')
             self.update_previous_withdrawals()
 
         except PyMongoError as e:
-            messagebox.showerror("Database Error", f"Failed to save withdrawal: {str(e)}")
+            messagebox.showerror(self.t("Database Error"), f"{self.t("Failed to save withdrawal:")} {str(e)}")
 
     def employee_statistics_window(self, user_role):
         # Clear current window
@@ -2300,20 +2399,20 @@ class SalesSystemApp:
             })
             
             if existing:
-                messagebox.showwarning("Warning", 
-                    "Employee already took the salary in this month")
+                messagebox.showwarning(self.t("Warning"), 
+                    self.t("Employee already took the salary in this month"))
                 return
             if not self.payment_method.get():
-                messagebox.showinfo("Warning","Enter the payment Method")
+                messagebox.showinfo(self.t("Warning"),self.t("Enter the payment Method"))
                 return
             # Insert new record if not exists
             salary_col.insert_one(salary_data)
             withdrawals_col.insert_one(withdrawal_data)
             # self.save_withdrawal(withdrawals_col,employees_col)
-            messagebox.showinfo("Success", "Salary record saved successfully")
+            messagebox.showinfo(self.t("Success"), self.t("Salary record saved successfully"))
             
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save salary: {str(e)}")
+            messagebox.showerror(self.t("Error"), f"{self.t("Failed to save salary:")} {str(e)}")
 
     def manage_old_database_window(self, db_name=None, table_name=None):
         # self.db_name.set(db_name if db_name else "")
@@ -2473,11 +2572,11 @@ class SalesSystemApp:
             desc = self.revenue_desc.get()
         
         if amount <= 0:
-            messagebox.showerror("Error", "Amount must be greater than zero")
+            messagebox.showerror(self.t("Error"), self.t("Amount must be greater than zero"))
             return
             
         if not payment:
-            messagebox.showerror("Error", "Please select a payment method")
+            messagebox.showerror(self.t("Error"), self.t("Please select a payment method"))
             return
         code = self.get_next_code(self.general_exp_rev_collection)    
         # Create document for MongoDB
@@ -2494,7 +2593,7 @@ class SalesSystemApp:
         try:
             collection = self.general_exp_rev_collection
             collection.insert_one(transaction)
-            messagebox.showinfo("Success", f"{transaction_type} recorded successfully!")
+            messagebox.showinfo(self.t("Success"), f"{transaction_type} {self.t("recorded successfully!")}")
             
             # Clear fields
             if transaction_type == "Expense":
@@ -2507,7 +2606,7 @@ class SalesSystemApp:
                 self.revenue_desc.set("")
                 
         except Exception as e:
-            messagebox.showerror("Database Error", f"Failed to save transaction: {str(e)}")
+            messagebox.showerror(self.t("Database Error"), f"{self.t("Failed to save transaction:")} {str(e)}")
 
     def Treasury_window(self, user_role):
         # Clear current window
@@ -3005,7 +3104,7 @@ class SalesSystemApp:
             all_units = sorted(list(all_units))
 
         except Exception as e:
-            messagebox.showerror("Database Error", f"Failed to load products: {str(e)}")
+            messagebox.showerror(self.t("Database Error"), f"{self.t("Failed to load products:")} {str(e)}")
             return
 
         # ===== ITEMS GRID SECTION =====
@@ -3086,13 +3185,13 @@ class SalesSystemApp:
         """Load selected invoice data into the form"""
         invoice_number = self.invoice_var.get()
         if not invoice_number:
-            messagebox.showwarning("Selection Needed", "Please select an invoice first")
+            messagebox.showwarning(self.t("Selection Needed"), self.t("Please select an invoice first"))
             return
         
         # Fetch invoice data from MongoDB
         invoice_data = sales_col.find_one({"Receipt_Number": invoice_number})
         if not invoice_data:
-            messagebox.showerror("Not Found", "Invoice not found in database")
+            messagebox.showerror(self.t("Not Found"), self.t("Invoice not found in database"))
             return
         
         # Store invoice ID for later reference
@@ -3137,13 +3236,13 @@ class SalesSystemApp:
         """Load selected invoice data into the form"""
         invoice_number = self.invoice_var.get()
         if not invoice_number:
-            messagebox.showwarning("Selection Needed", "Please select an invoice first")
+            messagebox.showwarning(self.t("Selection Needed"), self.t("Please select an invoice first"))
             return
         
         # Fetch invoice data from MongoDB
         invoice_data = sales_col.find_one({"Receipt_Number": invoice_number})
         if not invoice_data:
-            messagebox.showerror("Not Found", "Invoice not found in database")
+            messagebox.showerror(self.t("Not Found"), self.t("Invoice not found in database")   )
             return
         
         # Store invoice ID for later reference
@@ -3189,11 +3288,11 @@ class SalesSystemApp:
         """Delete selected invoice from the database"""
         invoice_number = self.invoice_var.get()
         if not invoice_number:
-            messagebox.showwarning("Selection Needed", "Please select an invoice first")
+            messagebox.showwarning(self.t("Selection Needed"), self.t("Please select an invoice first"))
             return
         
         # Confirm deletion
-        if not messagebox.askyesno("Confirm Delete", f"Delete invoice {invoice_number} permanently?"):
+        if not messagebox.askyesno(self.t("Confirm Delete"), f"{self.t("Delete invoice")} {invoice_number} {self.t("permanently?")}"):
             return
         
         # Fetch invoice to get customer and amount details
@@ -3265,7 +3364,7 @@ class SalesSystemApp:
                 }
             )  
         if not invoice_data:
-            messagebox.showerror("Not Found", "Invoice not found")
+            messagebox.showerror(self.t("Not Found"), self.t("Invoice not found"))
             return
         
         # Delete from MongoDB
@@ -3274,7 +3373,7 @@ class SalesSystemApp:
         # # Revert customer balance
         # self.revert_customer_balance(customers_col, invoice_data)
         
-        messagebox.showinfo("Success", "Invoice deleted successfully")
+        messagebox.showinfo(self.t("Success"), self.t("Invoice deleted successfully"))
         # Clear the form or reset UI as needed
         self.invoice_var.set("")
         self.selected_invoice_id = None
@@ -3669,7 +3768,7 @@ class SalesSystemApp:
             all_units = sorted(list(all_units))
 
         except Exception as e:
-            messagebox.showerror("Database Error", f"Failed to load materials: {str(e)}")
+            messagebox.showerror(self.t("Database Error"), f"{self.t("Failed to load materials:")} {str(e)}")
             return
 
         # ===== ITEMS GRID SECTION =====
@@ -4160,7 +4259,7 @@ class SalesSystemApp:
                     product_qty = float(row[7].get())
                     waste = float(row[8].get())
                 except ValueError:
-                    messagebox.showerror("Error", f"Invalid values in row {idx+1}")
+                    messagebox.showerror(self.t("Error"), f"{self.t("Invalid values in row")} {idx+1}")
                     return
 
                 # Update material stock
@@ -4189,11 +4288,11 @@ class SalesSystemApp:
             if orders:
                 production_col.insert_many(orders)
             
-            messagebox.showinfo("Success", "Production order saved successfully")
+            messagebox.showinfo(self.t("Success"), self.t("Production order saved successfully"))
             self.new_production_order(None)  # Refresh form
 
         except PyMongoError as e:
-            messagebox.showerror("Database Error", f"Operation failed: {str(e)}")
+            messagebox.showerror(self.t("Database Error"), f"{self.t("Operation failed:")} {str(e)}")
 
     def update_inventory(self):
         # Update material and product stocks
@@ -4220,8 +4319,8 @@ class SalesSystemApp:
                     )
                     
         except PyMongoError as e:
-            messagebox.showerror("Inventory Error", 
-                f"Failed to update inventory: {str(e)}")
+            messagebox.showerror(self.t("Inventory Error"), 
+                f"{self.t("Failed to update inventory:")} {str(e)}")
 ###########################################################################
     def handle_combobox_change(self, event, row_idx, field_type):
         """Handle changes in product code/name comboboxes"""
@@ -4345,7 +4444,7 @@ class SalesSystemApp:
             
             self.calculate_totals(row_idx)
         except Exception as e:
-            messagebox.showerror("Update Error", f"Failed to update product info: {str(e)}")
+            messagebox.showerror(self.t("Update Error"), f"{self.t("Failed to update product info:")} {str(e)}")
             self.clear_row_fields(row_idx)
             
     def update_material_info(self, row_idx, source):
@@ -4408,7 +4507,7 @@ class SalesSystemApp:
             
             self.calculate_totals(row_idx)
         except Exception as e:
-            messagebox.showerror("Update Error", f"Failed to update Material info: {str(e)}")
+            messagebox.showerror(self.t("Update Error"), f"{self.t("Failed to update Material info:")} {str(e)}")
             self.clear_row_fields(row_idx)
 
     def calculate_totals(self, row_idx):
@@ -4450,7 +4549,7 @@ class SalesSystemApp:
 
         except ValueError as e:
             if "Percentage" in str(e):
-                messagebox.showerror("Discount Error", str(e))
+                messagebox.showerror(self.t("Discount Error"), str(e))
                 self.entries[row_idx][6].delete(0, tk.END)
                 self.entries[row_idx][6].insert(0, "0")
                 
@@ -4717,13 +4816,13 @@ class SalesSystemApp:
         purchases_collection = self.get_collection_by_name("Purchases")
         
         if not debit or not payment_method or not supplier_code or not supplier_name:
-            messagebox.showerror("Error", "All fields must be filled!")
+            messagebox.showerror(self.t("Error"), self.t("All fields must be filled!"))
             return
 
         try:
             debit_val = float(debit)
         except ValueError:
-            messagebox.showerror("Error", "Cash must be a valid number.")
+            messagebox.showerror(self.t("Error"), self.t("Cash must be a valid number."))
             return
 
         operation_number = self.get_next_operation_number(supplier_payment_collection)
@@ -4756,7 +4855,7 @@ class SalesSystemApp:
             tree
         )
 
-        messagebox.showinfo("Success", f"Entry {operation_number} added.")
+        messagebox.showinfo(self.t("Success"), f"{self.t("Entry")} {operation_number} {self.t("added.")}")
 
     def get_next_operation_number(self, payment_collection):
         last_entry = payment_collection.find_one(
@@ -4809,13 +4908,13 @@ class SalesSystemApp:
         sales_collection = self.get_collection_by_name("Sales")
 
         if not credit or not payment_method or not customer_code or not customer_name:
-            messagebox.showerror("Error", "All fields must be filled!")
+            messagebox.showerror(self.t("Error"), self.t("All fields must be filled!"))
             return
 
         try:
             credit_val = float(credit)
         except ValueError:
-            messagebox.showerror("Error", "Cash must be a valid number.")
+            messagebox.showerror(self.t("Error"), self.t("Cash must be a valid number."))
             return
 
         operation_number = self.get_next_operation_number(customer_payment_collection)
@@ -4848,7 +4947,7 @@ class SalesSystemApp:
             tree=tree
         )
 
-        messagebox.showinfo("Success", f"Entry {operation_number} added.")
+        messagebox.showinfo(self.t("Success"), f"{self.t("Entry")} {operation_number} {self.t("added.")}")
         #TODO Block of code to preview invoice to be generated + generate invoice as pdf
 
     def on_code_selected(self, event, code_cb, name_cb, collection, invoices_collection, payment_collection, field_path, tree):
@@ -4889,7 +4988,7 @@ class SalesSystemApp:
 
             self.update_totals(invoices_collection, payment_collection, payment_query, invoice_query, tree)
         except Exception as e:
-            messagebox.showerror("Database Error", f"Failed to process code: {selected_code}.\nError: {str(e)}")
+            messagebox.showerror(self.t("Database Error"), f"{self.t("Failed to process code:")} {selected_code}.\n{self.t("Error")}: {str(e)}")
 
     def on_name_selected(self, event, code_cb, name_cb, collection, invoices_collection, payment_collection, field_path, tree):
         selected_name = name_cb.get().strip()
@@ -4920,9 +5019,9 @@ class SalesSystemApp:
 
                 self.update_totals(invoices_collection, payment_collection, payment_query, invoice_query, tree)
             else:
-                messagebox.showwarning("Warning", f"No matching code found for name: {selected_name}")
+                messagebox.showwarning(self.t("Warning"), f"{self.t("No matching code found for name:")} {selected_name}")
         except Exception as e:
-            messagebox.showerror("Database Error", f"Failed to fetch code for {selected_name}.\nError: {str(e)}")
+            messagebox.showerror(self.t("Database Error"), f"{self.t("Failed to fetch code for")} {selected_name}.\n{self.t("Error")}: {str(e)}")
     
     def update_totals(self, invoices_collection, payment_collection, payment_query=None, invoice_query=None, tree=None):
         if payment_query is None:
@@ -5177,7 +5276,7 @@ class SalesSystemApp:
                 return
 
         except Exception as e:
-            messagebox.showerror("Error", f"Error displaying data:\n{e}")
+            messagebox.showerror(self.t("Error"), f"{self.t("Error displaying data:")}\n{e}")
 
     def display_general_table(self, current_collection, collection_name):
         
@@ -5663,7 +5762,7 @@ class SalesSystemApp:
                 tree.insert("", "end", values=("This collection has no documents.",))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Error displaying data: {e}")    
+            messagebox.showerror(self.t("Error"), f"{self.t("Error displaying data:")}\n{e}")    
 
     def add_generic_entry(self, tree, current_collection, collection_name):
         fields = self.get_fields_by_name(collection_name)
@@ -5798,7 +5897,7 @@ class SalesSystemApp:
 
                     items.append(item)
                 except (IndexError, ValueError) as e:
-                    messagebox.showerror("Upload Error", f"All Data fields must be filled: {e}")
+                    messagebox.showerror(self.t("Upload Error"), f"{self.t("All Data fields must be filled:")} {e}")
                     return
                 
             # new_entry["Date"] = datetime.now().strftime("%d/%m/%Y %H:%M")
@@ -5820,7 +5919,7 @@ class SalesSystemApp:
                 if is_unique:
                     value = prim_key_val
                 else:
-                    messagebox.showerror("Data Error", f"{prim_key_val} is not unique in field {field}")
+                    messagebox.showerror(self.t("Data Error"), f"{prim_key_val} {self.t("is not unique in field")} {field}")
                     return
                 
             elif field == "Date" and collection_name in ["Sales","Purchases"]:
@@ -5840,7 +5939,7 @@ class SalesSystemApp:
                 ] and collection_name in ["Sales","Purchases","Customer_Payments", "Supplier_Payments"]:
                 value = widget.get()
                 if not str(value).strip():
-                    messagebox.showerror("Validation Error", f"Field '{field}' cannot be empty.")
+                    messagebox.showerror(self.t("Validation Error"), f"{self.t("Field")} '{field}' {self.t("cannot be empty.")}")
                     return  # stop processing if any critical field is empty
                 continue  # Skip these fields
             
@@ -5858,26 +5957,26 @@ class SalesSystemApp:
                             value += timedelta(hours=random_hours, minutes=random_minutes, seconds=random_seconds)
 
                     except Exception as e:
-                        messagebox.showerror("Error", f"Invalid date format for {field}: {e}")
+                        messagebox.showerror(self.t("Error"), f"{self.t("Invalid date format for")} {field}: {e}")
                         return
                 else:
-                    messagebox.showwarning("Warning", f"Please enter a value for {field}")
+                    messagebox.showwarning(self.t("Warning"), f"{self.t("Please enter a value for")} {field}")
                     return
             elif "pic" in field.lower():
                 local_image_path = getattr(widget, 'image_path', None)
                 if not local_image_path:
-                    messagebox.showerror("Invalid Input", f"No img was selected")
+                    messagebox.showerror(self.t("Invalid Input"), self.t("No img was selected"))
                     return
                 try:
                     value = upload_file_to_cloudinary(local_image_path)
                 except Exception as e:
-                    messagebox.showerror("Upload Error", f"Failed to upload image: {e}")
+                    messagebox.showerror(self.t("Upload Error"), f"{self.t("Failed to upload image:")} {e}")
                     return
             elif "pdf_path" in field.lower():
                 local_pdf_path = getattr(widget, 'filepath', None)
 
                 if not local_pdf_path:
-                    messagebox.showerror("Invalid Input", "No PDF was selected.")
+                    messagebox.showerror(self.t("Invalid Input"), self.t("No PDF was selected."))
                     return
 
                 try:
@@ -5888,7 +5987,7 @@ class SalesSystemApp:
                         widget.filepath = None
                     widget.config(text="")  # Clear displayed filename or label
                 except Exception as e:
-                    messagebox.showerror("Upload Error", f"Failed to upload PDF: {e}")
+                    messagebox.showerror(self.t("Upload Error"), f"{self.t("Failed to upload PDF:")} {e}")
                     return
 
             elif any(word in field.lower() for word in ["instapay","bank_account","e-wallet"]) or (current_collection.name == "Customers" and field=="Sales") :
@@ -5897,22 +5996,22 @@ class SalesSystemApp:
                     try: 
                         value = int(value)
                     except Exception as e:
-                        messagebox.showerror("Error", f"{field} should be a number")
+                        messagebox.showerror(self.t("Error"), f"{field} {self.t("should be a number")}")
                         return
             elif any(word in field.lower() for word in ["stock_quantity", "salary", "credit", "debit", "balance", "Unit_Price", "duration", "net_total", "previous_balance", "payed_cash", "remaining_balance", "base_salary", "total_withdrawls", "delay_penalty", "overtime_bonus", "net_salary", "amount_withdrawls", "previous_withdrawls", "waste", "product_qty", "material_qty", "amount"]):
                 value = widget.get() 
                 if not value:
-                    messagebox.showwarning("Warning", f"Please enter a value for {field}")
+                    messagebox.showwarning(self.t("Warning"), f"{self.t("Please enter a value for")} {field}")
                     return
                 try: 
                     value = float(value)
                 except Exception as e:
-                    messagebox.showerror("Error", f"{field} should be a floating number")
+                    messagebox.showerror(self.t("Error"), f"{field} {self.t("should be a floating number")}")
                     return
             else:
                 value = widget.get()
                 if not value and (field in MANDATORTY_FIELDS) :
-                    messagebox.showwarning("Warning", f"Please enter a value for {self.t(field)}")
+                    messagebox.showwarning(self.t("Warning"), f"{self.t("Please enter a value for")} {self.t(field)}")
                     return
                 if any(word in field.lower() for word in ["units"]):
                     # Parse comma-separated input to list
@@ -5938,7 +6037,7 @@ class SalesSystemApp:
 
             current_collection.insert_one(new_entry)
             self.refresh_generic_table(tree, current_collection, collection_name, search_text="")
-            messagebox.showinfo("Success", "Record added successfully")
+            messagebox.showinfo(self.t("Success"), self.t("Record added successfully"))
 
             # Clear form fields after successful addition
             for field, widget in self.entries.items():
@@ -5953,18 +6052,18 @@ class SalesSystemApp:
                     widget.delete(0, tk.END)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Error adding record: {e}")
+            messagebox.showerror(self.t("Error"), f"{self.t("Error adding record:")} {e}")
   
     def edit_generic_entry(self, tree, current_collection, collection_name):
         selected_item = tree.selection()
 
         if not selected_item:
-            messagebox.showwarning("Warning", "Please select a record to edit")
+            messagebox.showwarning(self.t("Warning"), self.t("Please select a record to edit"))
             return
 
         selected_data = tree.item(selected_item)["values"]
         if not selected_data:
-            messagebox.showwarning("Warning", "No data found for selected record")
+            messagebox.showwarning(self.t("Warning"), self.t("No data found for selected record"))
             return
 
         columns = tree["columns"]  # This returns a tuple/list of column names
@@ -5980,7 +6079,7 @@ class SalesSystemApp:
                         id_index = idx
                         break
         except ValueError:
-            messagebox.showerror("Error", "'Id' field not found in table columns")
+            messagebox.showerror(self.t("Error"), self.t("'Id' field not found in table columns"))
             return
 
         record_id = selected_data[id_index]
@@ -5995,7 +6094,7 @@ class SalesSystemApp:
                 pass
 
         if not existing_record: #recheck existing record after potential update
-            messagebox.showerror("Error", "Could not find record in database")
+            messagebox.showerror(self.t("Error"), self.t("Could not find record in database"))
             return
 
         updated_entry = {}
@@ -6110,7 +6209,7 @@ class SalesSystemApp:
                         value_date = datetime.strptime(value, '%d-%m-%Y').date()
                         value = datetime.combine(value_date, time.min)
                     except Exception as e:
-                        messagebox.showerror("Error", f"Invalid date format for {field}: {e}")
+                        messagebox.showerror(self.t("Error"), f"{self.t("Invalid date format for")} {field}: {e}")
                         return
                 else:
                     value = existing_value  # Keep old date if no new input
@@ -6122,7 +6221,7 @@ class SalesSystemApp:
                     try:
                         value = upload_file_to_cloudinary(local_image_path)
                     except Exception as e:
-                        messagebox.showerror("Upload Error", f"Failed to upload image: {e}")
+                        messagebox.showerror(self.t("Upload Error"), f"{self.t("Failed to upload image:")} {e}")
                         return
                 else:
                     value = existing_value  # Keep old image URL if no new selection
@@ -6134,7 +6233,7 @@ class SalesSystemApp:
                     try:
                         value = self.upload_pdf_to_cloudinary(local_pdf_path)
                     except Exception as e:
-                        messagebox.showerror("Upload Error", f"Failed to upload PDF: {e}")
+                        messagebox.showerror(self.t("Upload Error"), f"{self.t("Failed to upload PDF:")} {e}")
                         return
                 else:
                     value = existing_value  # Keep old PDF URL if no new selection
@@ -6147,7 +6246,7 @@ class SalesSystemApp:
                     if value:
                         value = int(value)
                 except Exception as e:
-                    messagebox.showerror("Error", f"{field} should be a number")
+                    messagebox.showerror(self.t("Error"), f"{field} {self.t("should be a number")}")
                     return
 
             elif any(word in field.lower() for word in ["stock_quantity", "salary", "credit", "debit", "balance", "Unit_Price", "duration", "net_total", "previous_balance", "payed_cash", "remaining_balance", "base_salary", "total_withdrawls", "delay_penalty", "overtime_bonus", "net_salary", "amount_withdrawls", "previous_withdrawls", "waste", "product_qty", "material_qty", "amount"]):
@@ -6158,7 +6257,7 @@ class SalesSystemApp:
                     if value:
                         value = float(value)
                 except Exception as e:
-                    messagebox.showerror("Error", f"{field} should be a floating number")
+                    messagebox.showerror(self.t("Error"), f"{field} {self.t("should be a floating number")}")
                     return
             else:
                 try:
@@ -6181,9 +6280,9 @@ class SalesSystemApp:
             result = current_collection.update_one({identifier_field: record_id}, {"$set": updated_entry})
             
             if result.modified_count > 0:
-                messagebox.showinfo("Success", "Record updated successfully")
+                messagebox.showinfo(self.t("Success"), self.t("Record updated successfully"))
             else:
-                messagebox.showinfo("Info", "No changes were made (record was identical)")
+                messagebox.showinfo(self.t("Info"), self.t("No changes were made (record was identical)"))
 
             # Refresh table
             self.refresh_generic_table(tree, current_collection, collection_name, search_text="")
@@ -6202,7 +6301,7 @@ class SalesSystemApp:
                     widget.delete(0, tk.END)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Error updating record: {e}")
+            messagebox.showerror(self.t("Error"), f"{self.t("Error updating record:")} {e}")
     
     def revert_locked_fields(self, existing, updated):
         for key, locked_fields in LOCKED_FIELDS.items():
@@ -6246,7 +6345,7 @@ class SalesSystemApp:
         field_name = None
 
         if not selected_item:
-            messagebox.showwarning("Warning", "Please select a record to delete")
+            messagebox.showwarning(self.t("Warning"), self.t("Please select a record to delete"))
             return
         columns = tree["columns"]  # Tuple/list of column names
         try:
@@ -6272,11 +6371,11 @@ class SalesSystemApp:
                         id_index = idx
                         break
             else:
-                messagebox.showerror("Error", "Unable to determine identifier column.")
+                messagebox.showerror(self.t("Error"), self.t("Unable to determine identifier column."))
                 return
 
             if id_index is None:
-                messagebox.showerror("Error", "Unable to determine identifier column.")
+                messagebox.showerror(self.t("Error"), self.t("Unable to determine identifier column."))
                 return
             
             raw_unique_id = None
@@ -6297,13 +6396,13 @@ class SalesSystemApp:
                 try:
                     unique_id = datetime.strptime(raw_unique_id, "%Y-%m-%d %H:%M:%S")
                 except:
-                    messagebox.showerror("Error", "Unable to read selected row data.")
+                    messagebox.showerror(self.t("Error"), self.t("Unable to read selected row data."))
                     return
             else:
-                messagebox.showerror("Error", "Unable to read selected row data.")
+                messagebox.showerror(self.t("Error"), self.t("Unable to read selected row data."))
                 return
 
-        if not messagebox.askyesno("Confirm", "Are you sure you want to delete this record?"):
+        if not messagebox.askyesno(self.t("Confirm"), self.t("Are you sure you want to delete this record?")):
             return
 
         try:
@@ -6320,7 +6419,7 @@ class SalesSystemApp:
                     pass
 
             if not document:
-                messagebox.showwarning("Not Found", "No matching record found to delete.")
+                messagebox.showwarning(self.t("Not Found"), self.t("No matching record found to delete."))
                 return
 
             # Step 2: Check if document contains any ARRAY_FIELDS (like 'units')
@@ -6357,9 +6456,9 @@ class SalesSystemApp:
                     if update_result.modified_count > 0:
                         self.deselect_entry(tree)
                         self.refresh_generic_table(tree, current_collection, self.table_name.get(), search_text="")
-                        messagebox.showinfo("Success", f"Unit '{unique_id}' removed from record.")
+                        messagebox.showinfo(self.t("Success"), f"{self.t("Unit")} '{unique_id}' {self.t("removed from record.")}")
                     else:
-                        messagebox.showwarning("Warning", "No changes were made to the document.")
+                        messagebox.showwarning(self.t("Warning"), self.t("No changes were made to the document."))
 
             if isinstance(items_list,list):
                 if len(items_list) > 1 and current_collection.name in ['Sales','Purchases']:
@@ -6379,18 +6478,18 @@ class SalesSystemApp:
                     if update_result.modified_count > 0:
                         self.deselect_entry(tree)
                         self.refresh_generic_table(tree, current_collection, self.table_name.get(), search_text="")
-                        messagebox.showinfo("Success", f"Unit '{unique_id}' removed from record.")
+                        messagebox.showinfo(self.t("Success"), f"{self.t("Unit")} '{unique_id}' {self.t("removed from record.")}")
                     else:
-                        messagebox.showwarning("Warning", "No changes were made to the document.")
+                        messagebox.showwarning(self.t("Warning"), self.t("No changes were made to the document."))
 
                 else:
                     delete_result = current_collection.delete_one({"_id": document["_id"]})
                     if delete_result.deleted_count > 0:
                         self.deselect_entry(tree)
                         self.refresh_generic_table(tree, current_collection, self.table_name.get(), search_text="")
-                        messagebox.showinfo("Success", "Record deleted successfully.")
+                        messagebox.showinfo(self.t("Success"), self.t("Record deleted successfully."))
                     else:
-                        messagebox.showwarning("Warning", "No matching record found to delete.")
+                        messagebox.showwarning(self.t("Warning"), self.t("No matching record found to delete."))
                 return  # After handling Units logic, exit
 
             # Step 3: If no ARRAY_FIELDS handling triggered → do standard delete
@@ -6399,12 +6498,12 @@ class SalesSystemApp:
                 if delete_result.deleted_count > 0:
                     self.deselect_entry(tree) 
                     self.refresh_generic_table(tree, current_collection, self.table_name.get(), search_text="")
-                    messagebox.showinfo("Success", "Record deleted successfully.")
+                    messagebox.showinfo(self.t("Success"), self.t("Record deleted successfully."))
                 else:
-                    messagebox.showwarning("Warning", "No matching record found to delete.")
+                    messagebox.showwarning(self.t("Warning"), self.t("No matching record found to delete."))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Error deleting record: {e}")         
+            messagebox.showerror(self.t("Error"), f"{self.t("Error deleting record:")} {e}")         
 
     def add_entry(self):
         collection_name = self.table_name.get()
@@ -6463,7 +6562,7 @@ class SalesSystemApp:
                         value = datetime.combine(value, time.min) #Must do this to be comaptible with mongodb's Date type 
                     except Exception as e:
                         print(f"ValueError: {e}")
-                        messagebox.showerror("Error", f"Invalid date format for {field}")
+                        messagebox.showerror(self.t("Error"), f"{self.t("Invalid date format for")} {field}")
                         return
                 else:
                     return  # User cancelled
@@ -6475,10 +6574,10 @@ class SalesSystemApp:
                 try:
                     value = upload_file_to_cloudinary(file_path)
                 except Exception as e:
-                    messagebox.showerror("Upload Error", f"Failed to upload image: {e}")
+                    messagebox.showerror(self.t("Upload Error"), f"{self.t("Failed to upload image:")} {e}")
                     return
             else:
-                dialog = AlwaysOnTopInputDialog(self.root, f"Enter value for {field}:")
+                dialog = AlwaysOnTopInputDialog(self.root, f"{self.t("Enter value for")} {field}:")
                 value = dialog.get_result()
                 if value is None:
                     return
@@ -6488,9 +6587,9 @@ class SalesSystemApp:
         try:
             current_collection.insert_one(new_entry)
             self.display_table()
-            messagebox.showinfo("Success", "Record added successfully")
+            messagebox.showinfo(self.t("Success"), self.t("Record added successfully"))
         except Exception as e:
-            messagebox.showerror("Error", f"Error adding record: {e}")
+            messagebox.showerror(self.t("Error"), f"{self.t("Error adding record:")} {e}")
 
     def edit_entry(self):
         collection_name = self.table_name.get()
@@ -6498,20 +6597,20 @@ class SalesSystemApp:
         
         selected_item = self.tree.selection()
         if not selected_item:
-            messagebox.showwarning("Warning", "Please select a record to edit")
+            messagebox.showwarning(self.t("Warning"), self.t("Please select a record to edit"))
             return
 
         #TODO fix this ID no longer available in tree
         try:
             unique_id = self.tree.item(selected_item)['values'][2]  # Assuming this holds the custom unique ID
         except IndexError:
-            messagebox.showerror("Error", "Unable to read selected row data.")
+            messagebox.showerror(self.t("Error"), self.t("Unable to read selected row data."))
             return
         
         # Get the fields to edit (excluding _id)
         first_document = current_collection.find_one({"Id": unique_id})
         if not first_document:
-            messagebox.showerror("Error", "Could not retrieve record for editing.")
+            messagebox.showerror(self.t("Error"), self.t("Could not retrieve record for editing."))
             return
 
         fields = self.get_fields_by_name(collection_name)
@@ -6560,7 +6659,7 @@ class SalesSystemApp:
 
                     except Exception as e:
                         print(f"ValueError: {e}")
-                        messagebox.showerror("Error", f"Invalid date format for {field}")
+                        messagebox.showerror(self.t("Error"), f"{self.t("Invalid date format for")} {field}")
                         return
                 else:
                     return  # User cancelled
@@ -6576,9 +6675,9 @@ class SalesSystemApp:
         try:
             current_collection.update_one({"Id": unique_id}, {"$set": updated_values})
             self.display_table()
-            messagebox.showinfo("Success", "Record updated successfully")
+            messagebox.showinfo(self.t("Success"), self.t("Record updated successfully"))
         except Exception as e:
-            messagebox.showerror("Error", f"Error updating record: {e}")
+            messagebox.showerror(self.t("Error"), f"{self.t("Error updating record:")} {e}")
 
     def delete_entry(self):
         collection_name = self.table_name.get()
@@ -6586,25 +6685,25 @@ class SalesSystemApp:
 
         selected_item = self.tree.selection()
         if not selected_item:
-            messagebox.showwarning("Warning", "Please select a record to delete")
+            messagebox.showwarning(self.t("Warning"), self.t("Please select a record to delete"))
             return
 
         try:
             unique_id = self.tree.item(selected_item)['values'][2]  # Assuming this holds the custom unique ID
         except IndexError:
-            messagebox.showerror("Error", "Unable to read selected row data.")
+            messagebox.showerror(self.t("Error"), self.t("Unable to read selected row data."))
             return
 
-        if messagebox.askyesno("Confirm", "Are you sure you want to delete this record?"):
+        if messagebox.askyesno(self.t("Confirm"), self.t("Are you sure you want to delete this record?")):
             try:
                 delete_result = current_collection.delete_one({"Id": unique_id})
                 if delete_result.deleted_count == 0:
-                    messagebox.showwarning("Not Found", "No matching record found to delete.")
+                    messagebox.showwarning(self.t("Not Found"), self.t("No matching record found to delete."))
                 else:
                     self.display_table()
-                    messagebox.showinfo("Success", "Record deleted successfully")
+                    messagebox.showinfo(self.t("Success"), self.t("Record deleted successfully"))
             except Exception as e:
-                messagebox.showerror("Error", f"Error deleting record: {e}")
+                messagebox.showerror(self.t("Error"), f"{self.t("Error deleting record:")} {e}")
 
 ############################ Utility Functions ########################################
     def check_access_and_open(self, role):
@@ -6613,7 +6712,7 @@ class SalesSystemApp:
             # self.manage_old_database_window(db_name, table_name)
             self.manage_database_window()
         else:
-            messagebox.showwarning("Access Denied", "You do not have permission to access this page.")
+            messagebox.showwarning(self.t("Access Denied"), self.t("You do not have permission to access this page."))
 
     def get_collection_by_name(self, collection_name):
         """Returns the appropriate MongoDB collection object based on the provided name.
@@ -7204,9 +7303,9 @@ class SalesSystemApp:
             ("رصيد سابق:", f"{invoice_data['Financials']['Previous_balance']:,.2f}  ج.م"),
             ("إجمالي المستحق:", f"{invoice_data['Financials']['Total_balance']:,.2f}  ج.م"),
             ("مصاريف النقل :", f"{invoice_data['Financials']['transportation_fees']:,.2f}  ج.م"),
-            ("المدفوع:", f"{invoice_data['Financials']['Payed_cash']:,.2f} ج"),
+            ("المدفوع:", f"{invoice_data['Financials']['Payed_cash']:,.2f} ج.م"),
             ("الباقي:", f"{invoice_data['Financials']['Remaining_balance']:,.2f}  ج.م"),
-            ("طريقة الدفع:", f"{invoice_data['Financials']['Payment_method']:,.2f}  ج.م")
+            ("طريقة الدفع:", invoice_data['Financials']['Payment_method'])
         ]
         
         for i, (label, value) in enumerate(fin_data):
@@ -7644,7 +7743,7 @@ class SalesSystemApp:
             ("إجمالي المستحق:", f"{invoice_data['Financials']['Total_balance']:,.2f}  ج.م"),
             ("المدفوع:", f"{invoice_data['Financials']['Payed_cash']:,.2f}  ج.م"),
             ("الباقي:", f"{invoice_data['Financials']['Remaining_balance']:,.2f}  ج.م"),
-            ("طريقة الدفع:", f"{invoice_data['Financials']['Payment_method']:.2f}  ج.م")
+            ("طريقة الدفع:", invoice_data['Financials']['Payment_method'])
         ]
         
         for i, (label, value) in enumerate(fin_data):
@@ -8289,7 +8388,7 @@ class SalesSystemApp:
             try:
                 os.startfile(pdf_path, "print")
             except OSError as e:
-                messagebox.showerror("Print Error", f"Failed to print PDF:\n{e}")
+                messagebox.showerror(self.t("Print Error"), f"{self.t("Failed to print PDF:")}\n{e}")
 
             pdf_path = self.upload_pdf_to_cloudinary(pdf_path)
             return pdf_path
@@ -8693,7 +8792,7 @@ class SalesSystemApp:
             try:
                 os.startfile(pdf_path, "print")
             except OSError as e:
-                messagebox.showerror("Print Error", f"Failed to print PDF:\n{e}")
+                messagebox.showerror(self.t("Print Error"), f"{self.t("Failed to print PDF:")}\n{e}")
 
             pdf_path = self.upload_pdf_to_cloudinary(pdf_path)
             return pdf_path
