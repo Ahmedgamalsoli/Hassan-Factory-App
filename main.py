@@ -1,48 +1,69 @@
+# ======================
+# Used imports
+# ======================
+
 import tkinter as tk
-from tkinter import filedialog, ttk, messagebox,Tk, Label, PhotoImage,simpledialog
-from PIL import Image, ImageTk, ImageDraw  # Import Pillow classes
-import pandas as pd
-import pytz
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
-from datetime import datetime,time , time, timedelta, date
-from babel.dates import format_time
-from fpdf import FPDF
-import sqlite3
-import csv
 import io
 import re
 import os
-from tkcalendar import DateEntry  # Import DateEntry
-import sys
-from io import BytesIO
-from playsound import playsound
+import pytz
 import threading  # To play sound without freezing the GUI
-from pymongo import MongoClient
+import sys
 import cloudinary
 import cloudinary.uploader
-from cloudinary.uploader import upload
-from urllib.parse import quote_plus
-from bson.objectid import ObjectId
 import urllib.request
-# Add these imports at the top of your file
 import matplotlib
-matplotlib.use('TkAgg')  # Set the backend before importing pyplot
 import matplotlib.pyplot as plt
+import random
+
+from tkinter import filedialog, ttk, messagebox
+from PIL import Image, ImageTk, ImageDraw  # Import Pillow classes
+from datetime import datetime,time , time, timedelta, date
+from tkcalendar import DateEntry  # Import DateEntry
+from playsound import playsound
+from pymongo import MongoClient
+from urllib.parse import quote_plus
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
-from bidi.algorithm import get_display
-from matplotlib import rcParams
 from collections import defaultdict
-import random
+matplotlib.use('TkAgg')  # Set the backend before importing pyplot
+
+# ======================
+# Files Imports
+# ======================
+# from calculator import CalculatorPopup
+from Login import LoginWindow
+# from AuxiliaryClass import AlwaysOnTopInputDialog
+
+# ======================
+# Unused imports
+# ======================
+
+# import sqlite3
+# import csv
+# import pandas as pd
+# from tkinter import Tk, Label, PhotoImage,simpledialog
+# from reportlab.lib.pagesizes import letter
+# from reportlab.pdfgen import canvas
+# from babel.dates import format_time
+# from fpdf import FPDF
+# from io import BytesIO
+# from cloudinary.uploader import upload
+# from bidi.algorithm import get_display
+# from matplotlib import rcParams
+# from bson.objectid import ObjectId
+
+# ======================
+# Global Variables
+# ======================
 
 ######################################################### Access Data Base ##############################################################################
 dialog_width = 300  # Same width as AlwaysOnTopInputDialog
 dialog_height = 150 # Same height as AlwaysOnTopInputDialog
 
 ARRAY_FIELDS = ['Units', 'Items'] #Must be lower case
-######################################################### Access Data Base ##############################################################################
+
 COLORS = {
     "background": "#F5F7FA",       # Light grey background
     "primary": "#2A3F5F",           # Dark blue for headers
@@ -211,7 +232,8 @@ class SalesSystemApp:
         self.old = None
         self.root.title("مصنع حسن سليم للمنتجات البلاستيكية")
         self.root.attributes('-fullscreen', True)
-        
+        # self.login_window = LoginWindow(self.root, self)
+        # self.login_window.open_login_window()
         
         self.root.state("zoomed")
         self.root.configure(bg=COLORS["background"])
@@ -519,8 +541,11 @@ class SalesSystemApp:
             "Access Denied":{"Arabic":"تم الرفض","English":"Access Denied"},
             "You do not have permission to access this page.":{"Arabic":"ليس لديك صلاحية الدخول لهذه الصفحة.","English":"You do not have permission to access this page."},
             "Login successful! Role:":{"Arabic":"تم تسجيل الدخول بنجاح! الدور:","English":"Login successful! Role:"},
-            # "":{"Arabic":"","English":""},
-            # "":{"Arabic":"","English":""},
+            "Both fields are required.":{"Arabic":"كلا الحقلين مطلوبين.","English":"Both fields are required."},
+            "Invalid username or password.":{"Arabic":"اسم المستخدم أو كلمة المرور غير صحيحة.","English":"Invalid username or password."},
+            "An error occurred:":{"Arabic":"حدث خطأ:","English":"An error occurred:"},
+            "Unknown role":{"Arabic":"دور غير معروف","English":"Unknown role"},
+            "Access denied.":{"Arabic":"تم الرفض.","English":"Access denied."},
             # "":{"Arabic":"","English":""},
             # "":{"Arabic":"","English":""},
             # "":{"Arabic":"","English":""},
@@ -691,6 +716,9 @@ class SalesSystemApp:
         
         self.update_purchase =False
     
+    def start_with_login(self):
+        self.login_window = LoginWindow(self.root, self)
+        self.login_window.open_login_window()
 
 ########################################## Tables on Data Base ########################################
     def Connect_DB(self):
@@ -736,105 +764,8 @@ class SalesSystemApp:
         self.supplier_payments                = db["Supplier_Payments"]
         self.general_exp_rev_collection       = db["general_exp_rev"]
 
-
-
-        # date_format = "%d/%m/%Y %H:%M"
-        # # Find documents where Date is a string
-        # docs = self.purchases_collection.find({"Date": {"$type": "string"}})
-        # for doc in docs:
-        #     # Parse the string into a datetime object
-        #     date_str = doc["Date"]
-        #     parsed_date = datetime.strptime(date_str, date_format)
-
-        #     # Update the document with new date type
-        #     self.purchases_collection.update_one(
-        #         {"_id": doc["_id"]},
-        #         {"$set": {"Date": parsed_date}}
-        #     )
-
-        #     print(f"Updated _id={doc['_id']} with parsed date: {parsed_date}")
-
-        # print("Done")
-
 ############################################ Windows ########################################### 
     
-    def open_login_window(self):
-        for widget in self.root.winfo_children():
-            widget.destroy()
-
-        # Load and set the background image
-        image_path = os.path.join(BASE_DIR, "Static", "images", "Login.png")  # Path to your JPG image
-        bg_image = Image.open(image_path)
-        self.bg_photo = ImageTk.PhotoImage(bg_image)  # Convert to a format Tkinter can use
-        bg_label = tk.Label(self.root, image=self.bg_photo)
-        bg_label.place(relwidth=1, relheight=1)  # Cover the entire window
-        
-        # Login Frame
-        login_frame = tk.Frame(self.root, bg="white", bd=2, relief="ridge")
-        login_frame.place(relx=0.515, rely=0.5, anchor="center", width=400, height=350)
-
-        # Load Circular Logo
-        logo_path = os.path.join(BASE_DIR, "Static", "images", "Logo.jpg")  # Change this to your logo path
-        self.logo_image = self.create_circular_image(logo_path)
-        if self.logo_image:
-            logo_label = tk.Label(login_frame, image=self.logo_image, bg="white")
-            logo_label.place(x=150, y=10)
-
-        # Title
-        title = tk.Label(login_frame, text=self.t("Login"), font=("Arial", 18, "bold"), bg="white")
-        title.place(x=150, y=120)
-
-        # Username
-        username_label = tk.Label(login_frame, text=self.t("Username:"), font=("Arial", 12), bg="white")
-        username_label.place(x=50, y=160)
-        username_entry = tk.Entry(login_frame, font=("Arial", 12), bg="#f0f0f0")
-        username_entry.place(x=150, y=160, width=200)
-
-        # Password
-        password_label = tk.Label(login_frame, text=self.t("Password:"), font=("Arial", 12), bg="white")
-        password_label.place(x=50, y=190)
-        password_entry = tk.Entry(login_frame, font=("Arial", 12), bg="#f0f0f0", show="*")
-        password_entry.place(x=150, y=190, width=200)
-
-        username_entry.bind("<Return>", lambda event: validate_login()) # Bind Enter key to trigger add_todo from name_entry
-        password_entry.bind("<Return>", lambda event: validate_login()) # Bind Enter key to trigger add_todo from name_entry
-        
-        # Login Button
-        def validate_login():
-            username = username_entry.get()  # Assuming `username_entry` is the input field for the username
-            password = password_entry.get()  # Assuming `password_entry` is the input field for the password
-            self.user_name = username
-            # Validate input
-            if not username or not password:
-                self.silent_popup("Error", f"Both fields are required.",self.play_Error)
-                return
-
-            try:
-                user = self.employees_collection.find_one({"Name": username, "Password": password})
-                # print(user)
-                if user:
-                    self.user_role = user.get("Role", "Unknown")
-                    # messagebox.showinfo("Success", f"Login successful! Role: {self.user_role}")
-                    self.silent_popup("Success", f"{self.t("Login successful! Role:")} {self.user_role}",self.play_success)
-                    open_main_menu(self.user_role)
-                else:
-                    self.silent_popup("Error", "Invalid username or password.", self.play_Error)
-
-            except Exception as e:
-                self.silent_popup("Database Error", f"An error occurred: {e}", self.play_Error)
-
-
-        login_button = tk.Button(login_frame, text=self.t("Login"), font=("Arial", 12), bg="lightblue", command=validate_login)
-        login_button.place(x=150, y=270, width=100)
-
-        # Exit Button
-        exit_button = tk.Button(login_frame, text=self.t("Exit"), font=("Arial", 12), bg="lightgray", command=self.root.quit)
-        exit_button.place(x=270, y=270, width=80)
-        def open_main_menu(role):
-            if role:
-                self.main_menu()
-            else:
-                self.silent_popup("Unknown role", "Access denied.", self.play_Error)
 
     def main_menu(self):
         # Clear current window
@@ -8945,10 +8876,11 @@ class SalesSystemApp:
 
         # Logout icon
         try:
+            # login_window_instance = LoginWindow()
             logout_image = Image.open(self.logout_icon_path)
             logout_image = logout_image.resize((40, 40), Image.LANCZOS)
             self.logout_photo = ImageTk.PhotoImage(logout_image)
-            logout_icon = tk.Button(top_bar, image=self.logout_photo, bg="#dbb40f", bd=0, command=self.open_login_window)
+            logout_icon = tk.Button(top_bar, image=self.logout_photo, bg="#dbb40f", bd=0, command=self.login_window.open_login_window)
             logout_icon.pack(side="right", padx=10)
         except Exception as e:
             self.silent_popup("Error", "Error loading Logout icon: {e}", self.play_Error)
@@ -9385,12 +9317,10 @@ def resource_path(relative_path):
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = SalesSystemApp(root)
     
-    app.open_login_window()  # Start with the login window
-    # app.user_role="admin"
-    # app.main_menu()
-
+    app = SalesSystemApp(root)       # Create main app first
+    app.start_with_login()           # Then launch the login screen through app
+    
     try:
         root.mainloop()
     except Exception as e:
