@@ -4844,6 +4844,17 @@ class SalesSystemApp:
         supplier_payment_collection.insert_one(doc)
         tree.insert("", tk.END, values=(formatted, operation_number, debit_val, 0.0, payment_method))
 
+        # self.supplier_collection = self.get_collection_by_name("Suppliers")
+        self.supplier_collection.update_one(
+            {"Code": supplier_code},
+            {
+                "$inc": {
+                    "Debit": debit_val,
+                    "Balance": -debit_val
+                }
+            }
+        )
+
         self.on_code_selected(
             event=None,
             code_cb=self.supplier_code_cb,
@@ -4905,7 +4916,7 @@ class SalesSystemApp:
         customer_name = self.customer_name_cb.get().strip()
         customer_payment_collection = self.get_collection_by_name("Customer_Payments")
         sales_collection = self.get_collection_by_name("Sales")
-
+        
         if not credit or not payment_method or not customer_code or not customer_name:
             messagebox.showerror(self.t("Error"), self.t("All fields must be filled!"))
             return
@@ -4936,6 +4947,16 @@ class SalesSystemApp:
         
         customer_payment_collection.insert_one(doc)
         tree.insert("", tk.END, values=(formatted, operation_number, 0.0, credit_val,payment_method))
+
+        self.customer_collection.update_one(
+            {"Code": customer_code},
+            {
+                "$inc": {
+                    "Credit": credit_val,
+                    "Balance": -credit_val
+                }
+            }
+        )
 
         self.on_code_selected(
             event=None,
