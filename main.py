@@ -518,7 +518,7 @@ class SalesSystemApp:
             "Could not retrieve record for editing.":{"Arabic":"لم يتمكن من استرجاع السجل للتعديل.","English":"Could not retrieve record for editing."},
             "Access Denied":{"Arabic":"تم الرفض","English":"Access Denied"},
             "You do not have permission to access this page.":{"Arabic":"ليس لديك صلاحية الدخول لهذه الصفحة.","English":"You do not have permission to access this page."},
-            # "":{"Arabic":"","English":""},
+            "Login successful! Role:":{"Arabic":"تم تسجيل الدخول بنجاح! الدور:","English":"Login successful! Role:"},
             # "":{"Arabic":"","English":""},
             # "":{"Arabic":"","English":""},
             # "":{"Arabic":"","English":""},
@@ -815,7 +815,7 @@ class SalesSystemApp:
                 if user:
                     self.user_role = user.get("Role", "Unknown")
                     # messagebox.showinfo("Success", f"Login successful! Role: {self.user_role}")
-                    self.silent_popup("Success", f"Login successful! Role: {self.user_role}",self.play_success)
+                    self.silent_popup("Success", f"{self.t("Login successful! Role:")} {self.user_role}",self.play_success)
                     open_main_menu(self.user_role)
                 else:
                     self.silent_popup("Error", "Invalid username or password.", self.play_Error)
