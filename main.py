@@ -144,6 +144,7 @@ MANDATORTY_FIELDS = { # list all mandatory fields (fields that can't be empty)
     "product_name","category","stock_quantity","Unit_Price","product_code","Units",
     "material_name","material_code", "employee_code", "employee_name"
 }
+
 MANDATORY_DBS = {
     "Customers", "Employees", "Materials", "Products", "Suppliers" 
 }
@@ -9386,9 +9387,9 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = SalesSystemApp(root)
     
-    # app.open_login_window()  # Start with the login window
-    app.user_role="admin"
-    app.main_menu()
+    app.open_login_window()  # Start with the login window
+    # app.user_role="admin"
+    # app.main_menu()
 
     try:
         root.mainloop()
