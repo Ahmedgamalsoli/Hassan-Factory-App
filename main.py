@@ -701,6 +701,7 @@ class SalesSystemApp:
         self.calc_icon_path     = os.path.join(BASE_DIR, "Static", "images", "calculator.png")  # Path to exit icon
         self.minimize_icon_path = os.path.join(BASE_DIR, "Static", "images", "minimize.png")  # Path to exit icon
         self.back_icon_path     = os.path.join(BASE_DIR, "Static", "images", "Back.png")  # Path to back icon
+        self.lang_icon          = os.path.join(BASE_DIR, "Static", "images", "night.png")  # <- your image path
         # self.customer_name_var = None
         # Get the correct path for the icon
         # if hasattr(sys, "_MEIPASS"):
@@ -715,6 +716,9 @@ class SalesSystemApp:
         self.update =False
         
         self.update_purchase =False
+        
+        # icon_image = Image.open(icon_path).resize((16, 16))  # Resize to fit in the button
+        # self.lang_icon = ImageTk.PhotoImage(icon_image)
     
     def start_with_login(self):
         self.login_window = LoginWindow(self.root, self)
@@ -780,7 +784,8 @@ class SalesSystemApp:
         self.topbar(show_back_button=False)
 
         # Main container
-        main_container = tk.Frame(self.root, bg="white")
+        
+        main_container = tk.Frame(self.root, bg=COLORS["background"])
         main_container.pack(fill=tk.BOTH, expand=True)
         
         # Visualization frames
@@ -1006,12 +1011,13 @@ class SalesSystemApp:
     def create_right_visualization(self, parent):
         try:
             # Safe data retrieval
+            
             sales = float(self.get_sales_count()) if hasattr(self, 'get_sales_count') else 0.0
             purchases = float(self.get_purchase_count()) if hasattr(self, 'get_purchase_count') else 0.0
             top_client = self.get_top_client() if hasattr(self, 'get_top_client') else None
             fig = plt.Figure(figsize=(6, 8), dpi=60)
             fig.subplots_adjust(hspace=0.5)
-            fig.patch.set_facecolor('#FFFFFF')  
+            fig.patch.set_facecolor(COLORS["card"])  
 
             # Pie Chart
             ax1 = fig.add_subplot(211)
@@ -1279,7 +1285,7 @@ class SalesSystemApp:
                 # Clear current window
         for widget in self.root.winfo_children():
             widget.destroy()
-
+        self.root.configure(bg=COLORS["background"])
         # Create the top bar
         self.topbar(show_back_button=True)
 
@@ -1328,7 +1334,7 @@ class SalesSystemApp:
 
                 # Text label
                 lbl = tk.Label(sub_frame, text=btn_info["text"], 
-                            font=("Arial", 15, "bold"), bg=COLORS["background"], fg="#003366")
+                            font=("Arial", 15, "bold"), bg=COLORS["background"], fg=COLORS["text"])
                 lbl.pack(pady=5)
 
         except Exception as e:
@@ -2955,7 +2961,7 @@ class SalesSystemApp:
         tk.Label(customer_frame, text=self.t("Payment Method"), 
                 font=("Arial", 10, "bold")).grid(row=0, column=8, sticky='e')
         self.payment_method_var = tk.StringVar()
-        payment_methods = ['Cash', 'E_Wallet', 'Bank', 'Instapay']
+        payment_methods = ['Cash', 'E_Wallet', 'bank_account', 'Instapay']
         payment_cb = ttk.Combobox(customer_frame, 
                                 textvariable=self.payment_method_var, 
                                 values=payment_methods, 
@@ -3151,7 +3157,7 @@ class SalesSystemApp:
         
         # Set payment method
         payment_method = self.financials.get("payment_method", "Cash")
-        if payment_method in ["Cash", "E_Wallet", "Bank", "Instapay"]:
+        if payment_method in ["Cash", "E_Wallet", "bank_account", "Instapay"]:
             self.payment_method_var.set(payment_method)
         
         # Clear existing items 
@@ -3202,7 +3208,7 @@ class SalesSystemApp:
         
         # Set payment method
         payment_method = self.financials_purchases.get("Payment_method", "Cash")   
-        if payment_method in ["Cash", "E_Wallet", "Bank", "Instapay"]:
+        if payment_method in ["Cash", "E_Wallet", "bank_account", "Instapay"]:
             self.payment_method_var.set(payment_method)
         
         # Clear existing items 
@@ -8848,6 +8854,34 @@ class SalesSystemApp:
     def toggle_language(self):
         self.language = "English" if self.language == "Arabic" else "Arabic"
         self.main_menu()
+    def toggle_theme(self):
+        if COLORS["background"] == "#F5F7FA":
+            COLORS["background"]    = "#121212"   # Dark background (not pure black)
+            COLORS["primary"]       = "#D1D9E6"   # Soft light text (from light mode #2A3F5F)
+            COLORS["secondary"]     = "#00C0A3"   # Keep same – good contrast on dark
+            COLORS["accent"]        = "#FF6F61"   # Keep same – bright accent
+            COLORS["text"]          = "#FFFFFF"   # Bright white for main text
+            COLORS["card"]          = "#1E1E1E"   # Dark card background (soft contrast)
+            COLORS["chart1"]        = "#00C0A3"   # Same – stands out on dark
+            COLORS["chart2"]        = "#FF6F61"   # Same – bright red works well
+            COLORS["highlight"]     = "#9B6EF3"   # Softer version of #6C5CE7 for dark
+            COLORS["table_header"]  = "#2C2C2C"   # Dark header with slight elevation
+            COLORS["positive"]      = "#03DAC6"   # Material-style teal (greenish)
+            COLORS["neutral"]       = "#888888"   # Neutral gray for muted UI
+        else:
+            COLORS["background"]    = "#F5F7FA"
+            COLORS["primary"]       = "#2A3F5F"
+            COLORS["secondary"]     = "#00C0A3"
+            COLORS["accent"]        = "#FF6F61"
+            COLORS["text"]          = "#2A3F5F"
+            COLORS["card"]          = "#FFFFFF"
+            COLORS["chart1"]        = "#00C0A3"
+            COLORS["chart2"]        = "#FF6F61"
+            COLORS["highlight"]     = "#6C5CE7"
+            COLORS["table_header"]  = "#2A3F5F"
+            COLORS["positive"]      = "#00C0A3"
+            COLORS["neutral"]       = "#A0AEC0"
+        self.main_menu()
 
     #Function to update the time 
     # def update_time(self, time_label):
@@ -8920,6 +8954,12 @@ class SalesSystemApp:
         else:
             lang_btn = tk.Button(top_bar, text=self.t("Change Language"), bg="#dbb40f", fg="black",
                                 font=("Arial", 10, "bold"), bd=0, command=self.toggle_language)
+            lang_btn.pack(side="left", padx=10)
+            lang_image = Image.open(self.lang_icon)
+            lang_image = lang_image.resize((40, 40), Image.LANCZOS)
+            self.lang_photo = ImageTk.PhotoImage(lang_image)
+            lang_btn = tk.Button(top_bar, text=self.t("Change Language"),image=self.lang_photo, bg="#dbb40f", fg="black",
+                                font=("Arial", 10, "bold"), bd=0, command=self.toggle_theme)
             lang_btn.pack(side="left", padx=10)
 
         # Left side: Language or Back button
@@ -9321,7 +9361,6 @@ def resource_path(relative_path):
 
 if __name__ == "__main__":
     root = tk.Tk()
-    
     app = SalesSystemApp(root)       # Create main app first
     app.start_without_login()
     # app.start_with_login()           # Then launch the login screen through app

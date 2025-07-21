@@ -26,7 +26,7 @@ else:
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 class LoginWindow:
     def __init__(self, root, app):
-        # self.root = root
+        self.root = root
         self.app = app  # save reference to SalesSystemApp
 
     def open_login_window(self):
@@ -48,8 +48,9 @@ class LoginWindow:
         logo_path = os.path.join(BASE_DIR, "Static", "images", "Logo.jpg")  # Change this to your logo path
         self.app.logo_image = self.app.create_circular_image(logo_path)
         if self.app.logo_image:
-            logo_label = tk.Label(login_frame, image=self.app.logo_image, bg="white")
-            logo_label.place(x=150, y=10)
+            self.logo_label = tk.Label(login_frame, image=self.app.logo_image, bg="white")
+            self.logo_label.place(x=150, y=10)
+            self.animate_image_slide_in(-750)
 
         # Title
         title = tk.Label(login_frame, text=self.app.t("Login"), font=("Arial", 18, "bold"), bg="white")
@@ -87,7 +88,8 @@ class LoginWindow:
                     self.app.user_role = user.get("Role", "Unknown")
                     # messagebox.showinfo("Success", f"Login successful! Role: {self.user_role}")
                     self.app.silent_popup(self.app.t("Success"), f"{self.app.t("Login successful! Role:")} {self.app.user_role}",self.app.play_success)
-                    open_main_menu(self.app.user_role)
+                    # open_main_menu(self.app.user_role)
+                    self.show_logo_transition(self.app.user_role)
                 else:
                     self.app.silent_popup(self.app.t("Error"), self.app.t("Invalid username or password."), self.app.play_Error)
 
@@ -102,6 +104,68 @@ class LoginWindow:
         exit_button = tk.Button(login_frame, text=self.app.t("Exit"), font=("Arial", 12), bg="lightgray", command=self.app.root.quit)
         exit_button.place(x=270, y=270, width=80)
         def open_main_menu(role):
+            if role:
+                self.app.main_menu()
+            else:
+                self.app.silent_popup(self.app.t("Unknown role"), self.app.t("Access denied."), self.app.play_Error)
+    def animate_image_slide_in(self, x):
+        if x < 20:
+            self.logo_label.place(x=x)
+            self.root.after(10, lambda: self.animate_image_slide_in(x + 15))
+        else:
+            self.logo_label.place(x=100)
+
+    def show_logo_transition(self, role):
+        for widget in self.app.root.winfo_children():
+            widget.destroy()
+
+        self.app.root.configure(bg="white")
+
+        logo_path = os.path.join(BASE_DIR, "Static", "images", "Logo.jpg")
+        self.logo_original = Image.open(logo_path)
+
+        self.logo_frame = tk.Frame(self.app.root, bg="white")
+        self.logo_frame.place(relx=0.5, rely=0.5, anchor="center", width=300, height=300)
+
+        self.logo_size = 150  # Starting size
+        self.logo_direction = 1  # Slide direction (1 = down, -1 = up)
+        self.logo_y = 0         # Initial Y offset
+
+        # Prepare the first image
+        self.update_logo_image(self.logo_size)
+
+        # Start the animation
+        self.animate_logo_slide_and_grow(role, steps=0)
+
+    def update_logo_image(self, size):
+        resized = self.logo_original.resize((size, size))
+        self.logo_photo = ImageTk.PhotoImage(resized)
+
+        # Check if the logo_label exists and is still a valid widget
+        if hasattr(self, 'logo_label') and self.logo_label.winfo_exists():
+            self.logo_label.config(image=self.logo_photo)
+        else:
+            self.logo_label = tk.Label(self.logo_frame, image=self.logo_photo, bg="white")
+            self.logo_label.pack()
+
+        self.logo_label.image = self.logo_photo  # Prevent GC
+
+    def animate_logo_slide_and_grow(self, role, steps):
+        # Make logo grow for the first 15 steps
+        if steps < 15:
+            self.logo_size += 5
+            self.update_logo_image(self.logo_size)
+
+        # Slide up and down between -20 and +20 px
+        self.logo_y += self.logo_direction * 2
+        if abs(self.logo_y) >= 20:
+            self.logo_direction *= -1
+        self.logo_frame.place_configure(rely=0.5 + self.logo_y / 300.0)  # Slight vertical shift
+
+        # Continue animation
+        if steps < 75:
+            self.app.root.after(30, lambda: self.animate_logo_slide_and_grow(role, steps + 1))
+        else:
             if role:
                 self.app.main_menu()
             else:
