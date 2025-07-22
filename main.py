@@ -705,7 +705,7 @@ class SalesSystemApp:
             "payment_method", "previous_withdrawls", "amount_withdrawls",
             "code", "type"
         ]
-
+        self.clean_materials_collection()
         self.reverse_translations = {self.t(k): k for k in self.keys}
         
         self.db = None
@@ -3569,6 +3569,8 @@ class SalesSystemApp:
                 var = tk.StringVar(value=value)
                 entry = tk.Entry(row_frame, textvariable=var, relief='flat')
                 entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
+                # Recalculate totals when unit price changes
+                entry.bind('<KeyRelease>', lambda e, r=row_number: self.calculate_totals(r))
                 row_entries.append(entry)
             else:
                 var = tk.StringVar(value=value)
@@ -4031,6 +4033,7 @@ class SalesSystemApp:
                 var = tk.StringVar(value=value)
                 entry = tk.Entry(row_frame, textvariable=var, relief='flat')
                 entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
+                entry.bind('<KeyRelease>', lambda e, r=row_number: self.calculate_totals(r))
                 row_entries.append(entry)
             else:
                 var = tk.StringVar(value=value)
@@ -7018,7 +7021,18 @@ class SalesSystemApp:
         else:
             print(f"Warning: Collection name '{collection_name}' not recognized.")
             return []
-
+    def clean_materials_collection(self):
+        """Remove leading/trailing spaces and newlines from all string attributes in Materials collection."""
+        materials_col = self.get_collection_by_name("Materials")
+        for doc in materials_col.find():
+            updated_fields = {}
+            for key, value in doc.items():
+                if isinstance(value, str):
+                    cleaned = value.strip()
+                    updated_fields[key] = cleaned
+            # Also clean items in arrays if needed
+            if updated_fields:
+                materials_col.update_one({"_id": doc["_id"]}, {"$set": updated_fields})
     def update_search(self, event, collection):
         # Cancel any previous scheduled search **only if valid**
         if hasattr(self, '_after_id') and self._after_id is not None:
@@ -7288,23 +7302,28 @@ class SalesSystemApp:
             # self.customer_name_var.set(customer_info.get("name", ""))
             # self.customer_code_var.set(customer_info.get("code", ""))
             # self.previous_balance_var.set(str(financials.get("Previous_balance", 0)))
-            Previous_balance=0
-            for sales in self.sales_collection.find():
-                customer_info = sales.get("Customer_info", {})
-                name = customer_info.get("name", "Unknown")
-                if customer_name == name:
-                    financials = sales.get("Financials", {})
-                    prev_Net_total = float(financials.get("Net_total", 0))
-                    prev_Payed_cash = float(financials.get("Payed_cash", 0))  
-                    Previous_balance = Previous_balance + prev_Net_total - prev_Payed_cash
-                    print(f"Customer: {name}, Previous Balance: {Previous_balance}")
-            for payments in self.customer_payments.find():
-                customer_info = payments.get("Customer_info", {})
-                name = customer_info.get("name", "Unknown")
-                if customer_name == name:
-                    prev_payments = float(payments.get("Credit",0))
-                    Previous_balance = Previous_balance - prev_payments
-                    print(f"Customer: {name}, Previous Balance: {Previous_balance}")
+            print("\n###############################################################################################\n")
+            # Previous_balance=0
+            # for sales in self.sales_collection.find():
+            #     customer_info = sales.get("Customer_info", {})
+            #     name = customer_info.get("name", "Unknown")
+            #     if customer_name == name:
+            #         financials = sales.get("Financials", {})
+            #         prev_Net_total = float(financials.get("Net_total", 0))
+            #         prev_Payed_cash = float(financials.get("Payed_cash", 0))  
+            #         Previous_balance = Previous_balance + prev_Net_total - prev_Payed_cash
+            #         print(f"Customer: {name}, Previous Balance: {Previous_balance}")
+            # for payments in self.customer_payments.find():
+            #     customer_info = payments.get("Customer_info", {})
+            #     name = customer_info.get("name", "Unknown")
+            #     if customer_name == name:
+            #         prev_payments = float(payments.get("Credit",0))
+            #         Previous_balance = Previous_balance - prev_payments
+            #         print(f"Customer: {name}, Previous Balance: {Previous_balance}")
+            # if self.update:
+            #     Previous_balance = self.customer_info.get("Balance", 0) #the old financials
+            # else:
+            Previous_balance = customer.get("Balance", 0)
             print("\n###############################################################################################\n")
             # إنشاء بيانات الفاتورة الكاملة
             invoice_data = {
@@ -7653,7 +7672,7 @@ class SalesSystemApp:
 
                 material = materials_col.find_one({"material_code": material_code})
                 if not material:
-                    messagebox.showerror("خطأ", f"المنتج {material_code} غير موجود!")
+                    messagebox.showerror("خطأ", f"الخامة {material_code} غير موجود!")
                     return
 
                 try:
@@ -7728,24 +7747,31 @@ class SalesSystemApp:
                 invoice_number = self.generate_invoice_number_purchase()
             if not invoice_number:
                 return
-            Previous_balance=0
-            for purchases in self.purchases_collection.find():   
-                supplier_info = purchases.get("supplier_info", {})
-                name = supplier_info.get("name", "Unknown")
-                if supplier_name == name:
-                    financials = purchases.get("Financials", {})
-                    prev_Net_total = float(financials.get("Net_total", 0))
-                    prev_Payed_cash = float(financials.get("Payed_cash", 0))
-                    Previous_balance = Previous_balance + prev_Net_total - prev_Payed_cash
-                    print(f"Supplier: {name}, Previous Balance: {Previous_balance}")
-            for payments in self.supplier_payments.find():
-                supplier_info = payments.get("supplier_info", {})
-                name = supplier_info.get("name", "Unknown")
-                if supplier_name == name:
-                    prev_payments = float(payments.get("Debit",0))
-                    Previous_balance = Previous_balance - prev_payments
-                    print(f"Supplier: {name}, Previous Balance: {Previous_balance}")
+            
             print("\n###############################################################################################\n")
+            # Previous_balance=0
+            # for purchases in self.purchases_collection.find():   
+            #     supplier_info = purchases.get("supplier_info", {})
+            #     name = supplier_info.get("name", "Unknown")
+            #     if supplier_name == name:
+            #         financials = purchases.get("Financials", {})
+            #         prev_Net_total = float(financials.get("Net_total", 0))
+            #         prev_Payed_cash = float(financials.get("Payed_cash", 0))
+            #         Previous_balance = Previous_balance + prev_Net_total - prev_Payed_cash
+            #         print(f"Supplier: {name}, Previous Balance: {Previous_balance}")
+            # for payments in self.supplier_payments.find():
+            #     supplier_info = payments.get("supplier_info", {})
+            #     name = supplier_info.get("name", "Unknown")
+            #     if supplier_name == name:
+            #         prev_payments = float(payments.get("Debit",0))
+            #         Previous_balance = Previous_balance - prev_payments
+            #         print(f"Supplier: {name}, Previous Balance: {Previous_balance}")
+            # if self.update_purchase:
+            #     Previous_balance = self.supplier_info.get("Balance", 0) #the old financials
+            # else:
+            Previous_balance = supplier.get("Balance", 0)
+            print("\n###############################################################################################\n")
+            
             # إنشاء بيانات الفاتورة الكاملة
             invoice_data = {
                 "Receipt_Number": invoice_number,
@@ -9541,7 +9567,7 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = SalesSystemApp(root)       # Create main app first
     app.start_without_login()
-    app.start_with_login()     # Then launch the login screen through app
+    # app.start_with_login()     # Then launch the login screen through app
 
     try:
         root.mainloop()
