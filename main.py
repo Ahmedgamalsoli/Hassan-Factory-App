@@ -5212,7 +5212,7 @@ class SalesSystemApp:
                     tree.insert("", tk.END, values=row)
         else:
             #load total_debit/credit of the user selected
-            if (payment_collection.name == "Customer_Payments" or payment_collection.name == "Supplier_Payments"):
+            if (payment_collection.name == "Customer_Payments"):
                 doc = self.customer_collection.find_one({"Code": person_code}, {"Debit": 1, "Credit": 1, "Balance": 1})
             else:
                 doc = self.supplier_collection.find_one({"Code": person_code}, {"Debit": 1, "Credit": 1, "Balance": 1})
@@ -5241,7 +5241,8 @@ class SalesSystemApp:
                 formatted = datetime.now().strftime("%Y-%m-%d %H:%M")
                 new_credit =  doc_credit - total_credit
                 new_debit = doc_debit - total_debit
-                tree.insert("", tk.END, values=(formatted, "Other", new_debit, new_credit, "Cash"))
+                if new_credit > 0 or new_debit > 0:
+                    tree.insert("", tk.END, values=(formatted, "Other", new_debit, new_credit, "Cash"))
                 
                 if tree:
                     # tree.delete(*tree.get_children())
