@@ -15,6 +15,7 @@ import urllib.request
 import matplotlib
 import matplotlib.pyplot as plt
 import random
+import arabic_reshaper
 
 from tkinter import filedialog, ttk, messagebox
 from PIL import Image, ImageTk, ImageDraw  # Import Pillow classes
@@ -27,7 +28,9 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 from collections import defaultdict
+from bidi.algorithm import get_display
 matplotlib.use('TkAgg')  # Set the backend before importing pyplot
+
 
 # ======================
 # Files Imports
@@ -74,7 +77,7 @@ COLORS = {
     "chart1": "#00C0A3",            # Teal for Sales
     "chart2": "#FF6F61",            # Coral for Purchases
     "highlight": "#6C5CE7",         # Purple for interactive elements
-    "table_header": "#2A3F5F",      # Dark blue table headers
+    "table_header": "#FFFFFF",      # Dark blue table headers
     "positive": "#00C0A3",          # Teal for positive metrics
     "neutral": "#A0AEC0"            # Grey for secondary elements
 }
@@ -315,6 +318,8 @@ class SalesSystemApp:
             "Make Payment": {"Arabic": "حسابات وتوريدات الموردين", "English": "Supplier Supply Hub"},
             "Customers": {"Arabic": "العملاء", "English": "Customers"},
             "Suppliers": {"Arabic": "الموردين", "English": "Suppliers"},
+            "Customers number": {"Arabic": "عدد العملاء", "English": "Customers"},
+            "Suppliers number": {"Arabic": "عدد الموردين", "English": "Suppliers"},
             "Products": {"Arabic": "المنتجات", "English": "Products"},
             "Materials": {"Arabic": "الخامات", "English": "Materials"},
             "Employees": {"Arabic": "الموظفين", "English": "Employees"},
@@ -371,6 +376,7 @@ class SalesSystemApp:
             "Balance":{"Arabic": "صافي الحساب", "English": "Balance"},
             "Last_purchase_date":{"Arabic": "تاريخ اخر فاتورة", "English": "Last Purchase"},
             "Sales":{"Arabic": "عدد المبيعات", "English": "Sales"},
+            "Purchases":{"Arabic": "عدد المشتريات", "English": "Purchases"},
             "Password":{"Arabic": "الباسورد", "English": "Password"},
             "Role":{"Arabic": "الوظيفة", "English": "Role"},
             "Join_Date":{"Arabic": "تاريخ الالتحاق", "English": "Join Date"},
@@ -546,6 +552,21 @@ class SalesSystemApp:
             "An error occurred:":{"Arabic":"حدث خطأ:","English":"An error occurred:"},
             "Unknown role":{"Arabic":"دور غير معروف","English":"Unknown role"},
             "Access denied.":{"Arabic":"تم الرفض.","English":"Access denied."},
+            "Sales vs Purchases":{"Arabic":"المبيعات مقابل المشتريات","English":"Sales vs Purchases"},
+            "Top Client":{"Arabic":"أفضل عميل","English":"Top Client"},
+            "Count":{"Arabic":"العدد","English":"Count"},
+            "Metric":{"Arabic":"المقياس","English":"Metric"},
+            "Value":{"Arabic":"القيمة","English":"Value"},
+            "Number of Sales":{"Arabic":"عدد المبيعات","English":"Number of Sales"},
+            "Number of Purchases":{"Arabic":"عدد المشتريات","English":"Number of Purchases"},
+            # "":{"Arabic":"","English":""},
+            # "":{"Arabic":"","English":""},
+            # "":{"Arabic":"","English":""},
+            # "":{"Arabic":"","English":""},
+            # "":{"Arabic":"","English":""},
+            # "":{"Arabic":"","English":""},
+            # "":{"Arabic":"","English":""},
+            # "":{"Arabic":"","English":""},
             # "":{"Arabic":"","English":""},
             # "":{"Arabic":"","English":""},
             # "":{"Arabic":"","English":""},
@@ -618,6 +639,7 @@ class SalesSystemApp:
             #General_Exp_And_Rev DB
             "type":{"Arabic":"نوع","English":"Type"},
             "amount":{"Arabic":"المبلغ","English":"Amount"},
+            "Amount":{"Arabic":"المبلغ","English":"Amount"},
             "date":{"Arabic":"تاريخ","English":"Date"},    
 
 
@@ -726,7 +748,7 @@ class SalesSystemApp:
         
     def start_without_login(self):
         self.login_window = LoginWindow(self.root, self)
-        app.user_role="admin"
+        app.user_role="developer"
         app.main_menu()
 ########################################## Tables on Data Base ########################################
     def Connect_DB(self):
@@ -835,7 +857,7 @@ class SalesSystemApp:
             "command": lambda: self.trash(self.user_role)},
         ]
 
-        if self.user_role == "admin":
+        if self.user_role == "admin" or self.user_role == "developer":
             buttons.extend([
                 {"text": self.t("Database"), "image": "database.png", 
                 "command": lambda: self.check_access_and_open(self.user_role)}
@@ -936,14 +958,30 @@ class SalesSystemApp:
             # Bar Chart
             ax1 = fig.add_subplot(211)
             try:
-                bars = ax1.bar(['Customers', 'Suppliers'], 
+                arabic_title0 = self.t("Customers")
+                reshaped_text0 = arabic_reshaper.reshape(arabic_title0)
+                bidi_text0 = get_display(reshaped_text0)
+                arabic_title1 = self.t("Suppliers")
+                reshaped_text1 = arabic_reshaper.reshape(arabic_title1)
+                bidi_text1 = get_display(reshaped_text1)
+                bars = ax1.bar([bidi_text0, bidi_text1], 
                             [data['customers'], data['suppliers']], 
                             color=['#2E86C1', '#17A589'])
-                
-                ax1.set_title("Customer & Supplier Overview", fontsize=14,color=COLORS["text"])
+                arabic_title2 = self.t("Customer & Supplier Overview")
+                reshaped_text2 = arabic_reshaper.reshape(arabic_title2)
+                bidi_text2 = get_display(reshaped_text2)                
+                arabic_title3 = self.t("Count")
+                reshaped_text3 = arabic_reshaper.reshape(arabic_title3)
+                bidi_text3 = get_display(reshaped_text3)                
+                ax1.set_title(bidi_text2, fontsize=20,color=COLORS["text"], fontname="Arial")
                 ax1.set_facecolor(COLORS["text"])
-                ax1.tick_params(colors=COLORS["text"], labelsize=10)
-                ax1.set_ylabel("xx",text=self.t("Count"),color=COLORS["text"])
+                ax1.tick_params(colors=COLORS["text"], labelsize=13,)
+                ax1.set_ylabel("xx",text=bidi_text3,color=COLORS["text"], fontsize=18, fontname="Arial")
+                for label in ax1.get_xticklabels():
+                    label.set_fontsize(15)         # Change to your desired size
+                    label.set_fontname("Arial")    # Use a font that supports Arabic
+                    label.set_color(COLORS["text"])
+                    label.set_weight("bold") 
                 # Add simple data labels
                 for bar in bars:
                     height = bar.get_height()
@@ -958,13 +996,36 @@ class SalesSystemApp:
             # Summary Table
             ax2 = fig.add_subplot(212)
             ax2.axis('off')
-            
+            arabic_title4 = self.t("Metric")
+            reshaped_text4 = arabic_reshaper.reshape(arabic_title4)
+            bidi_text4 = get_display(reshaped_text4) 
+
+            arabic_title5 = self.t("Value")
+            reshaped_text5 = arabic_reshaper.reshape(arabic_title5)
+            bidi_text5 = get_display(reshaped_text5) 
+
+            arabic_title6 = self.t("Customers number")
+            reshaped_text6 = arabic_reshaper.reshape(arabic_title6)
+            bidi_text6 = get_display(reshaped_text6) 
+
+            arabic_title7 = self.t("Suppliers number")
+            reshaped_text7 = arabic_reshaper.reshape(arabic_title7)
+            bidi_text7 = get_display(reshaped_text7) 
+
+            arabic_title8 = self.t("Number of Sales")
+            reshaped_text8 = arabic_reshaper.reshape(arabic_title8)
+            bidi_text8 = get_display(reshaped_text8) 
+
+            arabic_title9 = self.t("Number of Purchases")
+            reshaped_text9 = arabic_reshaper.reshape(arabic_title9)
+            bidi_text9 = get_display(reshaped_text9) 
+
             table_data = [
-                ['Metric', 'Value'],
-                ['Customers', f"{int(data['customers'])}"],
-                ['Suppliers', f"{int(data['suppliers'])}"],
-                ['Number of Sales', f"{data['sales']:.2f}"],
-                ['Number of Purchases', f"{data['purchases']:.2f}"]
+                [bidi_text4, bidi_text5],
+                [bidi_text6, f"{int(data['customers'])}"],
+                [bidi_text7, f"{int(data['suppliers'])}"],
+                [bidi_text8, f"{data['sales']:.2f}"],
+                [bidi_text9, f"{data['purchases']:.2f}"]
             ]
             
             # Simple table without advanced styling
@@ -981,15 +1042,17 @@ class SalesSystemApp:
             # Additional adjustments for better spacing
             # fig.subplots_adjust(left=0.2, bottom=0.1, right=0.8, top=0.9, hspace=0.4)
             table.auto_set_font_size(False)
-            table.set_fontsize(10)
+            if self.language == "Arabic":
+                table.set_fontsize(15)
+            else:
+                table.set_fontsize(13)
+            # table.set_fontname("Arial")
             table.set_zorder(100)
             table.scale(1, 2)  # Less aggressive scaling
 
-            # except Exception as table_error:
-            #     print(f"Table error: {table_error}")
-            #
             for (row, col), cell in table.get_celld().items():
                 cell.set_facecolor(COLORS["card"])
+                cell.set_text_props(fontname="Arial")
                 # cell.set_facecolor("black") # background content
                 cell.set_text_props(color=COLORS["text"])
                 # cell.set_text_props(color="black") #text in header
@@ -1018,28 +1081,70 @@ class SalesSystemApp:
             fig = plt.Figure(figsize=(6, 8), dpi=60)
             fig.subplots_adjust(hspace=0.5)
             fig.patch.set_facecolor(COLORS["card"])  
-
+            # ...existing code...
             # Pie Chart
             ax1 = fig.add_subplot(211)
             try:
-                ax1.pie([sales, purchases],
-                    labels=['Sales', 'Purchases'],
-                    autopct='%1.1f%%',
-                    colors=['#28B463', '#E74C3C'],
-                    textprops={'color': COLORS["text"]})
-                ax1.set_title("Sales vs Purchases", fontsize=14,color=COLORS["text"])
+                # If both sales and purchases are zero, show a blank circle
+                if sales == 0 and purchases == 0:
+                    # Draw a blank pie with one wedge (invisible label)
+                    ax1.pie(
+                        [1],
+                        labels=[''],
+                        colors=[COLORS["primary"]],
+                        startangle=90,
+                        wedgeprops={'width': 1}
+                    )
+                else:
+                    arabic_title1 = self.t("Sales")
+                    reshaped_text1 = arabic_reshaper.reshape(arabic_title1)
+                    bidi_text1 = get_display(reshaped_text1)
+                    arabic_title2 = self.t("Purchases")
+                    reshaped_text2 = arabic_reshaper.reshape(arabic_title2)
+                    bidi_text2 = get_display(reshaped_text2)
+                    ax1.pie(
+                        [sales, purchases],
+                        labels=[bidi_text1, bidi_text2],
+                        autopct='%1.1f%%',
+                        colors=['#28B463', '#E74C3C'],
+                        textprops={'color': COLORS["text"], 'fontsize': 16, 'fontname': 'Arial'},
+                        wedgeprops={'width': 1}
+                    )
+                ax1.axis('equal')  # Ensures the pie is drawn as a circle
+                # Before setting the title:
+                arabic_title = self.t("Sales vs Purchases")
+                reshaped_text = arabic_reshaper.reshape(arabic_title)
+                bidi_text = get_display(reshaped_text)
+                ax1.set_title(bidi_text, fontsize=20, color=COLORS["text"], fontname="Arial")  # Use a font that supports Arabic
+                # ax1.set_title(self.t("المبيعات مقابل المشتريات"), fontsize=14, color=COLORS["text"])
             except Exception as pie_error:
                 print(f"Pie chart error: {pie_error}")
+            # ...existing code...
             # Top Client Chart
             ax2 = fig.add_subplot(212)
             try:
                 if top_client and isinstance(top_client, (list, tuple)) and len(top_client) >= 2:
                     name, value = top_client[0], float(top_client[1])  # ✅ Uses corrected field
-                    bar = ax2.bar([name], [value], color='#8E44AD')
-                    ax2.set_title("Top Client", fontsize=14,color=COLORS["text"])
+                    arabic_title5 = name
+                    reshaped_text5 = arabic_reshaper.reshape(arabic_title5)
+                    bidi_text5 = get_display(reshaped_text5)     
+                    bar = ax2.bar(bidi_text5, [value], color='#8E44AD')
+                    # ax2.tick_params(axis='x', labelsize = 20)  # Set x, -axis label font size (bidi_text5)
+                    for label in ax2.get_xticklabels():
+                        label.set_fontsize(18)     
+                        label.set_fontname("Arial")    # Font family (supports Arabic)
+                        label.set_color(COLORS["text"])   
+                        label.set_weight("bold")  # Font size
+                    arabic_title3 = self.t("Top Client")
+                    reshaped_text3 = arabic_reshaper.reshape(arabic_title3)
+                    bidi_text3 = get_display(reshaped_text3)
+                    ax2.set_title(bidi_text3, fontsize=20,color=COLORS["text"],fontname="Arial")  # Use a font that supports Arabic
                     ax2.set_facecolor(COLORS["text"])
-                    ax2.tick_params(colors=COLORS["text"], labelsize=10)
-                    ax2.set_ylabel("Amount",fontsize=10,color=COLORS["text"])
+                    ax2.tick_params(colors=COLORS["text"])
+                    arabic_title4 = self.t("Amount")
+                    reshaped_text4 = arabic_reshaper.reshape(arabic_title4)
+                    bidi_text4 = get_display(reshaped_text4)
+                    ax2.set_ylabel(bidi_text4,fontsize=18,color=COLORS["text"],fontname="Arial")
                     # Add value label
                     for rect in bar:
                         height = rect.get_height()
@@ -1175,17 +1280,17 @@ class SalesSystemApp:
                 #     }
                 # },
                 # Sort by creditNumeric (descending)
-                {"$sort": {"Credit": -1}},
+                {"$sort": {"Debit": -1}},
                 # Get the top client
                 {"$limit": 1},
                 # Project the correct identifier field: "Company address"
-                {"$project": {"Name": 1, "Credit": 1, "_id": 0}}  # 🔑 Fix here
+                {"$project": {"Name": 1, "Debit": 1, "_id": 0}}  # 🔑 Fix here
             ]
             result = list(self.customers_collection.aggregate(pipeline))
             # print(1)
             if result:
-                print(f"{result[0]["Name"]} ,{result[0]["Credit"]}")
-                return (result[0]["Name"], result[0]["Credit"])  # 🔑 Fix here
+                print(f"{result[0]["Name"]} ,{result[0]["Debit"]}")
+                return (result[0]["Name"], result[0]["Debit"])  # 🔑 Fix here
             return ("No clients found", 0)
             
         except PyMongoError as e:
@@ -1437,25 +1542,29 @@ class SalesSystemApp:
             "command": lambda: self.new_products(self.user_role)},
             {"text": self.t("Materials"), "image": "Materials.png", 
             "command": lambda: self.new_material(self.user_role)},
-            {"text": self.t("purchases"), "image": "Purchases_DB.png", 
-            "command": lambda: self.new_purchases(self.user_role)},
-            {"text": self.t("sales"), "image": "Sales_DB.png", 
-            "command": lambda: self.new_sales(self.user_role)},
-            {"text": self.t("Customer Payments"), "image": "Recieve.png", 
-            "command": lambda: self.new_customer_payment(self.user_role)},
-            {"text": self.t("Supplier Payments"), "image": "payment.png", 
-            "command": lambda: self.new_supplier_payment(self.user_role)},
             {"text": self.t("Employee Salary"), "image": "employee-benefit.png", 
             "command": lambda: self.new_emp_salary(self.user_role)},
             {"text": self.t("Employee Appointments"), "image": "employee.png", 
             "command": lambda: self.new_emp_appointment(self.user_role)},
             {"text": self.t("Employee Withdrawals"), "image": "compensation (1).png", 
             "command": lambda: self.new_emp_withdrawal(self.user_role)},
-            {"text": self.t("Produnction"), "image": "manufacture.png", 
-            "command": lambda: self.new_production(self.user_role)},
             {"text": self.t("General_Exp_And_Rev"), "image": "exp_rev.png", 
-            "command": lambda: self.new_general_exp(self.user_role)},
+            "command": lambda: self.new_general_exp(self.user_role)}
         ]
+        if self.user_role == "developer":
+            buttons.extend([
+                {"text": self.t("purchases"), "image": "Purchases_DB.png", 
+                "command": lambda: self.new_purchases(self.user_role)},
+                {"text": self.t("sales"), "image": "Sales_DB.png", 
+                "command": lambda: self.new_sales(self.user_role)},
+                {"text": self.t("Customer Payments"), "image": "Recieve.png", 
+                "command": lambda: self.new_customer_payment(self.user_role)},
+                {"text": self.t("Supplier Payments"), "image": "payment.png", 
+                "command": lambda: self.new_supplier_payment(self.user_role)},
+                {"text": self.t("Produnction"), "image": "manufacture.png", 
+                "command": lambda: self.new_production(self.user_role)},
+
+            ])
         images = []  # Keep references to prevent garbage collection
         columns_per_row = 4  # Number of buttons per row
 
@@ -3440,9 +3549,14 @@ class SalesSystemApp:
                 entry.bind('<KeyRelease>', lambda e, r=row_number: self.calculate_totals(r))
                 entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
                 row_entries.append(entry)
-            elif col in ["Unit_Price", "Total_QTY", "Total_Price"]:
+            elif col in ["Total_QTY", "Total_Price"]:
                 var = tk.StringVar(value=value)
                 entry = tk.Entry(row_frame, textvariable=var, relief='flat', state='readonly')
+                entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
+                row_entries.append(entry)
+            elif col in ["Unit_Price"]:
+                var = tk.StringVar(value=value)
+                entry = tk.Entry(row_frame, textvariable=var, relief='flat')
                 entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
                 row_entries.append(entry)
             else:
@@ -3897,9 +4011,14 @@ class SalesSystemApp:
                 entry.bind('<KeyRelease>', lambda e, r=row_number: self.calculate_totals(r))
                 entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
                 row_entries.append(entry)
-            elif col in ["Unit_Price", "Total_QTY", "Total_Price"]:
+            elif col in ["Total_QTY", "Total_Price"]:
                 var = tk.StringVar(value=value)
                 entry = tk.Entry(row_frame, textvariable=var, relief='flat', state='readonly')
+                entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
+                row_entries.append(entry)
+            elif col in ["Unit_Price"]:
+                var = tk.StringVar(value=value)
+                entry = tk.Entry(row_frame, textvariable=var, relief='flat')
                 entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
                 row_entries.append(entry)
             else:
@@ -4382,7 +4501,7 @@ class SalesSystemApp:
             self.entries[row_idx][8].config(state='normal')
             self.entries[row_idx][8].delete(0, tk.END)
             self.entries[row_idx][8].insert(0, f"{product_info.get('price', 0):.2f}")
-            self.entries[row_idx][8].config(state='readonly')
+            # self.entries[row_idx][8].config(state='readonly')
             
             self.calculate_totals(row_idx)
         except Exception as e:
@@ -4445,7 +4564,7 @@ class SalesSystemApp:
             self.entries[row_idx][8].config(state='normal')
             self.entries[row_idx][8].delete(0, tk.END)
             self.entries[row_idx][8].insert(0, f"{material_info.get('price', 0):.2f}")
-            self.entries[row_idx][8].config(state='readonly')
+            # self.entries[row_idx][8].config(state='readonly')
             
             self.calculate_totals(row_idx)
         except Exception as e:
@@ -6682,7 +6801,7 @@ class SalesSystemApp:
 
 ############################ Utility Functions ########################################
     def check_access_and_open(self, role):
-        allowed_roles = ["admin"]  # Define roles that can access this
+        allowed_roles = ["admin","developer"]  # Define roles that can access this
         if role in allowed_roles:
             # self.manage_old_database_window(db_name, table_name)
             self.manage_database_window()
@@ -6985,11 +7104,13 @@ class SalesSystemApp:
         try:
             # التحقق من وجود بيانات العميل
             customer_name = self.customer_name_var.get().strip()
+            customer_code = self.customer_code_var.get().strip()
             if not customer_name:
                 messagebox.showerror("خطأ", "يرجى اختيار عميل")
                 return
 
             # البحث عن العميل في قاعدة البيانات
+            # customer_code = customers_col.find_one({"": c})
             customer = customers_col.find_one({"Name": customer_name})
             if not customer:
                 messagebox.showerror("خطأ", "العميل غير مسجل!")
@@ -9363,7 +9484,7 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = SalesSystemApp(root)       # Create main app first
     app.start_without_login()
-    app.start_with_login()           # Then launch the login screen through app
+    # app.start_with_login()           # Then launch the login screen through app
 
     try:
         root.mainloop()
