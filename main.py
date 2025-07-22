@@ -3249,15 +3249,15 @@ class SalesSystemApp:
         self.selected_invoice_id = str(invoice_data["_id"])
         
         # Extract nested dictionaries
-        customer_info = invoice_data.get("Customer_info", {})
+        self.customer_info = invoice_data.get("Customer_info", {})
         self.financials = invoice_data.get("Financials", {})
         self.items = invoice_data.get("Items", [])
         # self.products_set  = {item.get("Product_code") for item in self.items if "Product_code" in item}
         # self.Total_Qty_set = {item.get("Total_QTY") for item in self.items if "Product_code" in item}
 
         # Populate customer information
-        self.customer_name_var.set(customer_info.get("name", ""))
-        self.customer_code_var.set(customer_info.get("code", ""))
+        self.customer_name_var.set(self.customer_info.get("name", ""))
+        self.customer_code_var.set(self.customer_info.get("code", ""))
         self.previous_balance_var.set(str(self.financials.get("Previous_balance", 0)))
         
         # Populate financial fields
@@ -3300,15 +3300,15 @@ class SalesSystemApp:
         self.selected_invoice_id = str(invoice_data["_id"])
         
         # Extract nested dictionaries
-        customer_info = invoice_data.get("supplier_info", {})
+        self.supplier_info = invoice_data.get("supplier_info", {})
         self.financials_purchases = invoice_data.get("Financials", {})
         self.items_purchase = invoice_data.get("Items", [])
         # self.products_set  = {item.get("Product_code") for item in self.items if "Product_code" in item}
         # self.Total_Qty_set = {item.get("Total_QTY") for item in self.items if "Product_code" in item}
 
         # Populate customer information
-        self.supplier_name_var.set(customer_info.get("name", ""))
-        self.supplier_code_var.set(customer_info.get("code", ""))
+        self.supplier_name_var.set(self.supplier_info.get("name", ""))
+        self.supplier_code_var.set(self.supplier_info.get("code", ""))
         self.previous_balance_var.set(str(self.financials_purchases.get("Previous_balance", 0)))
         
         # Populate financial fields
@@ -7521,12 +7521,13 @@ class SalesSystemApp:
                     {"product_code": code},
                     {"$set": {"stock_quantity": new_stock}}
                 )
-            
             # 2. Update customer
-            new_balance = (invoice_data['Financials']['Previous_balance'] + total_amount) - payed_cash
             # Fetch the customer document
             customer = customers_col.find_one({"_id": self.pending_customer_id})
 
+            # balance = customers_col.get("_id": self.pending_customer_id, "Balance", 0)
+            # new_balance = (invoice_data['Financials']['Previous_balance'] + total_amount) - payed_cash
+            new_balance = total_amount - payed_cash
             # Prepare conversion updates if needed
             update_fields = {}
 
@@ -7551,39 +7552,37 @@ class SalesSystemApp:
                     {"$set": update_fields}
                 )
             if self.update:
-                prev_total_amount = self.financials.get("Net_total")
-                prev_payed_cash = self.financials.get("Payed_cash")
+                Prev_customer_name = self.customer_info.get("name", "")
+                prev_total_amount = self.financials.get("Net_total") # the old financials
+                prev_payed_cash = self.financials.get("Payed_cash") # the old financials
                 prev_added_balance = prev_total_amount - prev_payed_cash
                 # Now perform the main update
                 customers_col.update_one(
-                    {"_id": self.pending_customer_id},
+                    {"Name": Prev_customer_name},
                     {
-                        "$set": {
-                            "Last_purchase_date": datetime.now(),
-                            "Balance": new_balance - prev_added_balance
-                        },
                         "$inc": {
-                            "Debit": total_amount-prev_total_amount,
-                            "Credit": payed_cash-prev_payed_cash
+                            "Sales": -1,
+                            "Balance": - prev_added_balance,
+                            "Debit": - prev_total_amount,
+                            "Credit": - prev_payed_cash
                         }
                     }
                 )                               
-            else:
-                # Now perform the main update
-                customers_col.update_one(
-                    {"_id": self.pending_customer_id},
-                    {
-                        "$set": {
-                            "Last_purchase_date": datetime.now(),
-                            "Balance": new_balance
-                        },
-                        "$inc": {
-                            "Sales": 1,
-                            "Debit": total_amount,
-                            "Credit": payed_cash
-                        }
+            # Now perform the main update
+            customers_col.update_one(
+                {"_id": self.pending_customer_id},
+                {
+                    "$set": {
+                        "Last_purchase_date": datetime.now()
+                    },
+                    "$inc": {
+                        "Sales": 1,
+                        "Balance": new_balance,
+                        "Debit": total_amount,
+                        "Credit": payed_cash
                     }
-                )
+                }
+            )
             
             # 3. Generate PDF
             pdf_path = self.generate_pdf(invoice_data)
@@ -7960,7 +7959,7 @@ class SalesSystemApp:
                 )
             
             # 2. Update supplier
-            new_balance = (invoice_data['Financials']['Previous_balance'] + total_amount) - payed_cash
+            new_balance = total_amount - payed_cash
 
             # Fetch the customer document
             supplier = suppliers_col.find_one({"_id": self.pending_supplier_id})
@@ -7987,40 +7986,38 @@ class SalesSystemApp:
                     {"$set": update_fields}
                 )
             if self.update_purchase:
+                prev_supplier_name = self.supplier_info.get("name", "")
                 prev_total_amount = self.financials_purchases.get("Net_total")
                 prev_payed_cash = self.financials_purchases.get("Payed_cash")
                 prev_added_balance = prev_total_amount - prev_payed_cash
-            
+                # Now perform the main update
                 suppliers_col.update_one(
-                    {"_id": self.pending_supplier_id},
-                    {
-                        "$set": {
-                            "Last_purchase": datetime.now(),
-                            "Balance": new_balance - prev_added_balance
-                        },
-                        
+                    {"Name": prev_supplier_name},
+                    {   
                         "$inc": {
-                            "Debit": payed_cash - prev_payed_cash,
-                            "Credit": total_amount - prev_total_amount
+                            "Sales": -1,
+                            "Balance": - prev_added_balance,
+                            "Debit": - prev_payed_cash,
+                            "Credit": - prev_total_amount
                         }
                     }
                 )
-            else:
-                suppliers_col.update_one(
-                    {"_id": self.pending_supplier_id},
-                    {
-                        "$set": {
-                            "Last_purchase": datetime.now(),
-                            "Balance": new_balance
-                        },
-                        
-                        "$inc": {
-                            "Sales": 1,
-                            "Debit": payed_cash,
-                            "Credit": total_amount
-                        }
+
+            suppliers_col.update_one(
+                {"_id": self.pending_supplier_id},
+                {
+                    "$set": {
+                        "Last_purchase": datetime.now(),
+                    },
+                    
+                    "$inc": {
+                        "Sales": 1,
+                        "Balance": new_balance,
+                        "Debit": payed_cash,
+                        "Credit": total_amount
                     }
-                )
+                }
+            )
             
             # 3. Generate PDF
             pdf_path = self.generate_pdf_purchase(invoice_data)
