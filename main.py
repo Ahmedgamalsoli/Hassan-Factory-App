@@ -5055,9 +5055,13 @@ class SalesSystemApp:
                 person = collection.find_one({"Code": selected_code}, {"Name": 1, "_id": 0})
                 if not person:
                     try:
-                        selected_code_int = int(selected_code)
-                        person = collection.find_one({"Code": selected_code_int}, {"Name": 1, "_id": 0})
-                        # selected_code = selected_code_int  # update for consistency in update_totals
+                        # selected_code_int = int(selected_code)
+                        # person = collection.find_one({"Code": selected_code_int}, {"Name": 1, "_id": 0})
+                        
+                        selected_code = int(selected_code)
+                        person = collection.find_one({"Code": selected_code}, {"Name": 1, "_id": 0})
+                        
+                        ## selected_code = selected_code_int  # update for consistency in update_totals
                     except ValueError:
                         pass 
 
@@ -5079,15 +5083,18 @@ class SalesSystemApp:
 
             except Exception as e:
                 messagebox.showerror(self.t("Database Error"), f"{self.t("Failed to process code:")} {selected_code}.\n{self.t("Error")}: {str(e)}")
-        self.update_totals(invoices_collection, payment_collection, payment_query, invoice_query, tree)
+        self.update_totals(invoices_collection, payment_collection, payment_query, invoice_query, tree, selected_code)
 
     def on_name_selected(self, event, code_cb, name_cb, collection, invoices_collection, payment_collection, field_path, tree):
         selected_name = name_cb.get().strip()
         if not selected_name:
             return
         
-        start_date = self.start_date_entry.get_date()  # These should be instance variables
-        end_date = self.end_date_entry.get_date()
+        start_date_raw = self.start_date_entry.get_date()  # These should be instance variables
+        end_date_raw = self.end_date_entry.get_date()
+        
+        start_date = datetime.combine(start_date_raw, time.min)          # 00:00:00
+        end_date = datetime.combine(end_date_raw, time.max)              # 23:59:59.999999
 
         try:
             person = collection.find_one({"Name": selected_name}, {"Code": 1, "_id": 0})
@@ -5108,13 +5115,16 @@ class SalesSystemApp:
                     ]
                 }
 
-                self.update_totals(invoices_collection, payment_collection, payment_query, invoice_query, tree)
+                self.update_totals(invoices_collection, payment_collection, payment_query, invoice_query, tree, code)
             else:
                 messagebox.showwarning(self.t("Warning"), f"{self.t("No matching code found for name:")} {selected_name}")
         except Exception as e:
             messagebox.showerror(self.t("Database Error"), f"{self.t("Failed to fetch code for")} {selected_name}.\n{self.t("Error")}: {str(e)}")
-    
-    def update_totals(self, invoices_collection, payment_collection, payment_query=None, invoice_query=None, tree=None):
+
+    def update_totals(self, invoices_collection, payment_collection, payment_query=None, invoice_query=None, tree=None, person_code=None, cust_supp=None):
+        # cust_supp = 0 -> customer
+        # cust_supp = 1 -> supplier
+
         if payment_query is None:
             payment_query = {}
         
@@ -5174,20 +5184,58 @@ class SalesSystemApp:
         else: #Case of Customer/Sales
             balance += float(total_debit - total_credit)
 
-        # Insert calculated totals into entries (clear first)
-        self.total_debit_entry.delete(0, tk.END)
-        self.total_debit_entry.insert(0, str(total_debit))
+        if not invoice_query:
+            # Insert calculated totals into entries (clear first)
+            self.total_debit_entry.delete(0, tk.END)
+            self.total_debit_entry.insert(0, str(total_debit))
 
-        self.total_credit_entry.delete(0, tk.END)
-        self.total_credit_entry.insert(0, str(total_credit))
+            self.total_credit_entry.delete(0, tk.END)
+            self.total_credit_entry.insert(0, str(total_credit))
 
-        self.balance_entry.delete(0, tk.END)
-        self.balance_entry.insert(0, str(balance))
+            self.balance_entry.delete(0, tk.END)
+            self.balance_entry.insert(0, str(balance))
 
-        if tree:
+            if tree:
+                tree.delete(*tree.get_children())
+                for row in sample_data:
+                    tree.insert("", tk.END, values=row)
+        else:
+            #load total_debit/credit of the user selected
+            if (payment_collection.name == "Customer_Payments" or payment_collection.name == "Supplier_Payments"):
+                doc = self.customer_collection.find_one({"Code": person_code}, {"Debit": 1, "Credit": 1, "Balance": 1})
+            else:
+                doc = self.supplier_collection.find_one({"Code": person_code}, {"Debit": 1, "Credit": 1, "Balance": 1})
+
             tree.delete(*tree.get_children())
-            for row in sample_data:
-                tree.insert("", tk.END, values=row)
+            
+            if not doc:
+                if tree:
+                    for row in sample_data:
+                        tree.insert("", tk.END, values=row)
+            
+            else:
+                doc_debit = doc.get("Debit", 0)
+                doc_credit = doc.get("Credit", 0)
+                doc_balance = doc.get("Balance", 0)
+
+                self.total_debit_entry.delete(0, tk.END)
+                self.total_debit_entry.insert(0, str(doc_debit))
+
+                self.total_credit_entry.delete(0, tk.END)
+                self.total_credit_entry.insert(0, str(doc_credit))
+
+                self.balance_entry.delete(0, tk.END)
+                self.balance_entry.insert(0, str(doc_balance))
+
+                formatted = datetime.now().strftime("%Y-%m-%d %H:%M")
+                new_credit =  doc_credit - total_credit
+                new_debit = doc_debit - total_debit
+                tree.insert("", tk.END, values=(formatted, "Other", new_debit, new_credit, "Cash"))
+                
+                if tree:
+                    # tree.delete(*tree.get_children())
+                    for row in sample_data:
+                        tree.insert("", tk.END, values=row)
 
     def customer_interactions(self, user_role):
         for widget in self.root.winfo_children():
