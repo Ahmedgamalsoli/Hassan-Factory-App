@@ -895,8 +895,19 @@ class SalesSystemApp:
                 
                 # Load and process image
                 img_path = os.path.join(BASE_DIR, "Static", "images", btn_info["image"])
+                # ...existing code...
                 img = Image.open(img_path).resize((button_size, button_size), Image.LANCZOS)
+                
+                # Change opacity (e.g., 0.5 for 50% opacity)
+                opacity = 1
+                if img.mode != "RGBA":
+                    img = img.convert("RGBA")
+                alpha = img.split()[3]
+                alpha = alpha.point(lambda p: int(p * opacity))
+                img.putalpha(alpha)
+                
                 photo_img = ImageTk.PhotoImage(img)
+                # ...existing code...
                 images.append(photo_img)  # Keep reference to prevent garbage collection
                 
                 # Create modern button
@@ -9529,7 +9540,7 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = SalesSystemApp(root)       # Create main app first
     app.start_without_login()
-    # app.start_with_login()           # Then launch the login screen through app
+    app.start_with_login()     # Then launch the login screen through app
 
     try:
         root.mainloop()
