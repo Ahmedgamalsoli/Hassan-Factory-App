@@ -79,7 +79,9 @@ COLORS = {
     "highlight": "#6C5CE7",         # Purple for interactive elements
     "table_header": "#FFFFFF",      # Dark blue table headers
     "positive": "#00C0A3",          # Teal for positive metrics
-    "neutral": "#A0AEC0"            # Grey for secondary elements
+    "neutral": "#A0AEC0",            # Grey for secondary elements
+    "top_bar": "#dbb40f",        # Dark blue for top bar
+    "top_bar_icons": "#000000",  # White for top bar icons
 }
 
 # Determine the base directory
@@ -232,15 +234,18 @@ class SalesSystemApp:
 
     def __init__(self, root):
         self.root = root
-        self.old = None
+        # ...existing code...
         self.root.title("مصنع حسن سليم للمنتجات البلاستيكية")
         self.root.attributes('-fullscreen', True)
-        # self.login_window = LoginWindow(self.root, self)
-        # self.login_window.open_login_window()
-        
         self.root.state("zoomed")
         self.root.configure(bg=COLORS["background"])
         self.current_window = None
+
+        # Set main application icon (Logo.ico)
+        logo_icon_path = os.path.join(BASE_DIR, "Static", "images", "Logo.ico")
+        if os.path.exists(logo_icon_path):
+            self.root.iconbitmap(logo_icon_path)
+        # ...rest of your __init__ code...
         
 
         style = ttk.Style()
@@ -706,6 +711,10 @@ class SalesSystemApp:
             "code", "type"
         ]
         self.clean_materials_collection()
+        self.clean_products_collection()
+        self.clean_customers_collection()
+        self.clean_employees_collection()
+        self.clean_suppliers_collection()
         self.reverse_translations = {self.t(k): k for k in self.keys}
         
         self.db = None
@@ -718,12 +727,13 @@ class SalesSystemApp:
         self.user_role = ""  # Placeholder for user role
         self.all_customers = None  # Will be loaded on first search
         self._after_id = None
-        self.logout_icon_path   = os.path.join(BASE_DIR, "Static", "images", "Logout.png")  # Path to logout icon
-        self.exit_icon_path     = os.path.join(BASE_DIR, "Static", "images", "Exit.png")  # Path to exit icon
-        self.calc_icon_path     = os.path.join(BASE_DIR, "Static", "images", "calculator.png")  # Path to exit icon
-        self.minimize_icon_path = os.path.join(BASE_DIR, "Static", "images", "minimize.png")  # Path to exit icon
-        self.back_icon_path     = os.path.join(BASE_DIR, "Static", "images", "Back.png")  # Path to back icon
-        self.lang_icon          = os.path.join(BASE_DIR, "Static", "images", "night.png")  # <- your image path
+        self.logout_icon_path   = os.path.join(BASE_DIR, "Static", "images", "logout-dark.png")  # Path to logout icon
+        self.exit_icon_path     = os.path.join(BASE_DIR, "Static", "images", "exit-dark.png")  # Path to exit icon
+        self.calc_icon_path     = os.path.join(BASE_DIR, "Static", "images", "calculator-dark.png")  # Path to exit icon
+        self.minimize_icon_path = os.path.join(BASE_DIR, "Static", "images", "minus-dark.png")  # Path to exit icon
+        self.back_icon_path     = os.path.join(BASE_DIR, "Static", "images", "left-arrow-dark.png")  # Path to back icon
+        self.dark_mode_img      = os.path.join(BASE_DIR, "Static", "images", "dark-mode.png")  # <- your image path
+        self.light_mode_img     = os.path.join(BASE_DIR, "Static", "images", "light-mode.png")  # <- your image path
         # self.customer_name_var = None
         # Get the correct path for the icon
         # if hasattr(sys, "_MEIPASS"):
@@ -736,7 +746,7 @@ class SalesSystemApp:
         # List to track selected products
         self.selected_products = []   
         self.update =False
-        
+        self.light = True  # Default to light mode
         self.update_purchase =False
         
         # icon_image = Image.open(icon_path).resize((16, 16))  # Resize to fit in the button
@@ -796,7 +806,140 @@ class SalesSystemApp:
 
 ############################################ Windows ########################################### 
     
+    def open_chatbot(self):
+        chatbot_win = tk.Toplevel(self.root)
+        chatbot_win.title("مساعد التطبيق")
+        chatbot_win.geometry("400x500")
+        chatbot_win.resizable(False, False)
+    
+        # Set custom icon for the window (feather.ico)
+        icon_path = os.path.join(BASE_DIR, "Static", "images", "chatbot_icon.ico")
+        if os.path.exists(icon_path):
+            chatbot_win.iconbitmap(icon_path)
+    
+        # Chatbot icon (draggable)
+        icon_frame = tk.Frame(chatbot_win, width=60, height=60)
+        icon_frame.place(x=10, y=10)
+        icon_img_path = os.path.join(BASE_DIR, "Static", "images", "chatbot_icon.ico")
+        if os.path.exists(icon_img_path):
+            icon_img = Image.open(icon_img_path).resize((60, 60), Image.LANCZOS)
+            icon_photo = ImageTk.PhotoImage(icon_img)
+            icon_label = tk.Label(icon_frame, image=icon_photo)
+            icon_label.image = icon_photo
+            icon_label.pack()
+        else:
+            icon_label = tk.Label(icon_frame, text="🤖", font=("Arial", 32))
+            icon_label.pack()
+    
+        # Make icon draggable
+        def start_drag(event):
+            icon_frame._drag_start_x = event.x
+            icon_frame._drag_start_y = event.y
+    
+        def do_drag(event):
+            x = icon_frame.winfo_x() + event.x - icon_frame._drag_start_x
+            y = icon_frame.winfo_y() + event.y - icon_frame._drag_start_y
+            icon_frame.place(x=x, y=y)
+    
+        icon_label.bind("<Button-1>", start_drag)
+        icon_label.bind("<B1-Motion>", do_drag)
+    
+        # Chat area
+        chat_frame = tk.Frame(chatbot_win)
+        chat_frame.place(x=80, y=10, width=310, height=420)
+        chat_text = tk.Text(chat_frame, state="disabled", wrap="word", font=("Arial", 12))
+        chat_text.pack(fill="both", expand=True)
+    
+        # Entry and send button (hidden, not used)
+        entry_frame = tk.Frame(chatbot_win)
+        entry_frame.place(x=10, y=440, width=380, height=50)
+    
+        # ...inside open_chatbot...
+                # Fixed questions and replies
+        questions = [
+            "كيف أضيف فاتورة مبيعات؟",
+            "كيف أبحث عن عميل؟",
+            "كيف أعدل بيانات منتج؟",
+            "كيف أغير اللغة؟",
+            "كيف أضيف موظف جديد؟",
+            "كيف أبحث عن فاتورة مبيعات؟",
+            "كيف أعدل فاتورة مبيعات؟",
+            "كيف أضيف فاتورة مشتريات؟",
+            "كيف أبحث عن مورد؟",
+            "كيف أعدل بيانات مورد؟",
+            "كيف أضيف منتج جديد؟",
+            "كيف أبحث عن منتج؟",
+            "كيف أعدل بيانات موظف؟",
+            "كيف أضيف مصروف عام؟",
+            "كيف أضيف إيراد عام؟",
+            "كيف أبحث في قاعدة البيانات؟",
+            "كيف أستخدم التقارير؟",
+            "كيف أغير كلمة المرور؟",
+            "كيف أعمل نسخة احتياطية للبيانات؟",
+            "كيف أسترجع نسخة احتياطية؟",
+            "كيف أضيف وردية يومية؟",
+            "كيف أضيف أمر إنتاج؟",
+            "كيف أبحث عن سجل موظف؟",
+            "كيف أبحث عن سجل مورد؟",
+            "كيف أبحث عن سجل منتج؟",
+            "كيف أبحث عن سجل فاتورة؟",
+            "مساعدة"
+        ]
+        replies = {
+            "كيف أضيف فاتورة مبيعات؟": "من القائمة الرئيسية، اختر 'فاتورة مبيعات' ثم اضغط على 'فاتورة مبيعات جديدة'.",
+            "كيف أبحث عن عميل؟": "استخدم مربع البحث في نافذة العملاء أو قاعدة البيانات.",
+            "كيف أعدل بيانات منتج؟": "اذهب إلى قاعدة البيانات، اختر 'المنتجات' ثم اضغط على 'تعديل سجل'.",
+            "كيف أغير اللغة؟": "اضغط على زر تغيير اللغة في الشريط العلوي.",
+            "كيف أضيف موظف جديد؟": "من قاعدة البيانات، اختر 'الموظفين' ثم اضغط على 'إضافة سجل'.",
+            "كيف أبحث عن فاتورة مبيعات؟": "من نافذة الفواتير، استخدم مربع البحث أو اختر رقم الفاتورة من القائمة.",
+            "كيف أعدل فاتورة مبيعات؟": "من نافذة الفواتير، اختر الفاتورة ثم اضغط على 'تعديل'.",
+            "كيف أضيف فاتورة مشتريات؟": "من القائمة الرئيسية، اختر 'فاتورة مشتريات' ثم اضغط على 'فاتورة مشتريات جديدة'.",
+            "كيف أبحث عن مورد؟": "استخدم مربع البحث في نافذة الموردين أو قاعدة البيانات.",
+            "كيف أعدل بيانات مورد؟": "اذهب إلى قاعدة البيانات، اختر 'الموردين' ثم اضغط على 'تعديل سجل'.",
+            "كيف أضيف منتج جديد؟": "من قاعدة البيانات، اختر 'المنتجات' ثم اضغط على 'إضافة سجل'.",
+            "كيف أبحث عن منتج؟": "استخدم مربع البحث في نافذة المنتجات أو قاعدة البيانات.",
+            "كيف أعدل بيانات موظف؟": "اذهب إلى قاعدة البيانات، اختر 'الموظفين' ثم اضغط على 'تعديل سجل'.",
+            "كيف أضيف مصروف عام؟": "من القائمة الرئيسية، اختر 'ايرادات و مصروفات عامة' ثم اضغط على 'تسجيل مصروف'.",
+            "كيف أضيف إيراد عام؟": "من القائمة الرئيسية، اختر 'ايرادات و مصروفات عامة' ثم اضغط على 'تسجيل إيراد'.",
+            "كيف أبحث في قاعدة البيانات؟": "استخدم مربع البحث في نافذة قاعدة البيانات وحدد الجدول المطلوب.",
+            "كيف أستخدم التقارير؟": "من القائمة الرئيسية، اختر 'التقارير' ثم حدد التقرير المطلوب.",
+            "كيف أغير كلمة المرور؟": "من نافذة المستخدمين، اختر اسمك ثم اضغط على 'تغيير كلمة المرور'.",
+            "كيف أعمل نسخة احتياطية للبيانات؟": "من الإعدادات، اختر 'نسخة احتياطية' واتبع التعليمات.",
+            "كيف أسترجع نسخة احتياطية؟": "من الإعدادات، اختر 'استرجاع نسخة احتياطية' واتبع التعليمات.",
+            "كيف أضيف وردية يومية؟": "من قاعدة البيانات، اختر 'الورديات اليومية' ثم اضغط على 'إضافة وردية'.",
+            "كيف أضيف أمر إنتاج؟": "من القائمة الرئيسية، اختر 'أمر إنتاج' ثم أدخل البيانات المطلوبة.",
+            "كيف أبحث عن سجل موظف؟": "استخدم مربع البحث في نافذة الموظفين أو قاعدة البيانات.",
+            "كيف أبحث عن سجل مورد؟": "استخدم مربع البحث في نافذة الموردين أو قاعدة البيانات.",
+            "كيف أبحث عن سجل منتج؟": "استخدم مربع البحث في نافذة المنتجات أو قاعدة البيانات.",
+            "كيف أبحث عن سجل فاتورة؟": "استخدم مربع البحث في نافذة الفواتير أو قاعدة البيانات.",
+            "مساعدة": "اسألني عن إضافة أو تعديل أو بحث أو تقارير أو إعدادات أو أي وظيفة أخرى في التطبيق.",
+        }
+        # ...rest of open_chatbot...
+    
+        # Dropdown for questions
+        selected_question = tk.StringVar()
+        question_dropdown = ttk.Combobox(entry_frame, textvariable=selected_question, values=questions, font=("Arial", 14), state="readonly")
+        question_dropdown.pack(fill="x", padx=8, pady=8)
+    
+        def on_select(event=None):
+            q = selected_question.get()
+            if not q:
+                return
+            chat_text.config(state="normal")
+            chat_text.insert("end", f"أنت: {q}\n")
+            reply = replies.get(q, "عذراً، لم أفهم سؤالك. جرب كلمة 'مساعدة'.")
+            chat_text.insert("end", f"المساعد: {reply}\n\n")
+            chat_text.config(state="disabled")
+            chat_text.see("end")
+    
+        question_dropdown.bind("<<ComboboxSelected>>", on_select)
+    
+        # Optionally, show a welcome/help message
+        chat_text.config(state="normal")
+        chat_text.insert("end", "مرحباً! اختر سؤالاً من الأسئلة الشائعة بالأسفل.\n\n")
+        chat_text.config(state="disabled")
 
+# To use: add a button in your main menu or topbar to call self.open_chatbot()
     def main_menu(self):
         # Clear current window
         for widget in self.root.winfo_children():
@@ -804,6 +947,7 @@ class SalesSystemApp:
 
         # Create the top bar
         self.topbar(show_back_button=False)
+
 
         # Main container
         
@@ -830,38 +974,70 @@ class SalesSystemApp:
         # Create visualizations
         self.create_left_visualization(left_viz_frame)
         self.create_right_visualization(right_viz_frame)
-        
-        # Define buttons with images, text, and commands
-        buttons = [
-            # {"text": self.t("New Sales Invoice"), "image": "Sales.png",
-            # "command": lambda: self.new_sales_invoice(self.user_role)},
-            {"text": self.t("Sales Invoice"), "image": "sales_invoice.png",
-            "command": lambda: self.manage_sales_invoices_window()},
-            # {"text": self.t("New Purchase Invoice"), "image": "Purchase.png", 
-            # "command": lambda: self.new_Purchase_invoice(self.user_role)},
-            {"text": self.t("Purchase Invoice"), "image": "purchases_invoice.png", 
-            "command": lambda: self.manage_purchases_invoices_window()},
-            {"text": self.t("Receive Payment"), "image": "Recieve.png", 
-            "command": lambda: self.customer_interactions(self.user_role)},
-            {"text": self.t("Make Payment"), "image": "payment.png", 
-            "command": lambda: self.supplier_interactions(self.user_role)},
-            {"text": self.t("Production Order"), "image": "Production Order.png", 
-            "command": lambda: self.new_production_order(self.user_role)},
-            {"text": self.t("Employee interactions"), "image": "Employees.png", 
-            "command": lambda: self.manage_Employees_window()},
-            {"text": self.t("Treasury"), "image": "Treasury.png", 
-            "command": lambda: self.Treasury_window(self.user_role)},
-            {"text": self.t("General_Exp_And_Rev"), "image": "EXP & REV.png", 
-            "command": lambda: self.general_exp_rev(self.user_role)},
-            {"text": self.t("Reports"), "image": "Reports.png", 
-            "command": lambda: self.trash(self.user_role)},
-        ]
+        if self.light:
+            # Define buttons with images, text, and commands
+            buttons = [
+                # {"text": self.t("New Sales Invoice"), "image": "Sales.png",
+                # "command": lambda: self.new_sales_invoice(self.user_role)},
+                {"text": self.t("Sales Invoice"), "image": "sales_invoice-dark.png",
+                "command": lambda: self.manage_sales_invoices_window()},
+                # {"text": self.t("New Purchase Invoice"), "image": "Purchase.png", 
+                # "command": lambda: self.new_Purchase_invoice(self.user_role)},
+                {"text": self.t("Purchase Invoice"), "image": "purchases_invoice-dark.png", 
+                "command": lambda: self.manage_purchases_invoices_window()},
+                {"text": self.t("Receive Payment"), "image": "customer_payment-dark.png", 
+                "command": lambda: self.customer_interactions(self.user_role)},
+                {"text": self.t("Make Payment"), "image": "supplier_payment-dark.png", 
+                "command": lambda: self.supplier_interactions(self.user_role)},
+                {"text": self.t("Production Order"), "image": "production-dark.png", 
+                "command": lambda: self.new_production_order(self.user_role)},
+                {"text": self.t("Employee interactions"), "image": "employee-dark.png", 
+                "command": lambda: self.manage_Employees_window()},
+                {"text": self.t("Treasury"), "image": "treasury-dark.png", 
+                "command": lambda: self.Treasury_window(self.user_role)},
+                {"text": self.t("General_Exp_And_Rev"), "image": "financial-dark.png", 
+                "command": lambda: self.general_exp_rev(self.user_role)},
+                {"text": self.t("Reports"), "image": "report-dark.png", 
+                "command": lambda: self.trash(self.user_role)},
+            ]
+            
+            if self.user_role == "admin" or self.user_role == "developer":
+                buttons.extend([
+                    {"text": self.t("Database"), "image": "database-dark.png", 
+                    "command": lambda: self.check_access_and_open(self.user_role)}
+                ])
+        elif not self.light:
+            # Define buttons with images, text, and commands
+            buttons = [
+                # {"text": self.t("New Sales Invoice"), "image": "Sales.png",
+                # "command": lambda: self.new_sales_invoice(self.user_role)},
+                {"text": self.t("Sales Invoice"), "image": "sales_invoice-light.png",
+                "command": lambda: self.manage_sales_invoices_window()},
+                # {"text": self.t("New Purchase Invoice"), "image": "Purchase.png", 
+                # "command": lambda: self.new_Purchase_invoice(self.user_role)},
+                {"text": self.t("Purchase Invoice"), "image": "purchases_invoice-light.png", 
+                "command": lambda: self.manage_purchases_invoices_window()},
+                {"text": self.t("Receive Payment"), "image": "customer_payment-light.png", 
+                "command": lambda: self.customer_interactions(self.user_role)},
+                {"text": self.t("Make Payment"), "image": "supplier_payment-light.png", 
+                "command": lambda: self.supplier_interactions(self.user_role)},
+                {"text": self.t("Production Order"), "image": "production-light.png", 
+                "command": lambda: self.new_production_order(self.user_role)},
+                {"text": self.t("Employee interactions"), "image": "employee-light.png", 
+                "command": lambda: self.manage_Employees_window()},
+                {"text": self.t("Treasury"), "image": "treasury-light.png", 
+                "command": lambda: self.Treasury_window(self.user_role)},
+                {"text": self.t("General_Exp_And_Rev"), "image": "financial-light.png", 
+                "command": lambda: self.general_exp_rev(self.user_role)},
+                {"text": self.t("Reports"), "image": "report-light.png", 
+                "command": lambda: self.trash(self.user_role)},
+            ]
 
-        if self.user_role == "admin" or self.user_role == "developer":
-            buttons.extend([
-                {"text": self.t("Database"), "image": "database.png", 
-                "command": lambda: self.check_access_and_open(self.user_role)}
-            ])
+            if self.user_role == "admin" or self.user_role == "developer":
+                buttons.extend([
+                    {"text": self.t("Database"), "image": "database-light.png", 
+                    "command": lambda: self.check_access_and_open(self.user_role)}
+                ])
         
         # Create button container with centered alignment
         button_container = tk.Frame(button_frame, bg=COLORS["card"])
@@ -947,6 +1123,32 @@ class SalesSystemApp:
                             activebackground=COLORS["highlight"],
                             font=("Segoe UI", 10))
                 btn.grid(row=row, column=column, padx=5, pady=5)
+        # Remove previous chatbot icon if exists
+        if hasattr(self, 'chatbot_main_btn') and self.chatbot_main_btn.winfo_exists():
+            self.chatbot_main_btn.destroy()
+
+        try:
+            chatbot_icon_path = os.path.join(BASE_DIR, "Static", "images", "chatbot_icon.png")
+            chatbot_img = Image.open(chatbot_icon_path).resize((60, 60), Image.LANCZOS)
+            self.chatbot_main_photo = ImageTk.PhotoImage(chatbot_img)
+            self.chatbot_main_btn = tk.Label(self.root, image=self.chatbot_main_photo, bg=COLORS["card"], cursor="hand2")
+            self.chatbot_main_btn.place(x=20, y=780)  # Initial position
+
+            # Make icon draggable
+            def start_drag(event):
+                self.chatbot_main_btn._drag_start_x = event.x
+                self.chatbot_main_btn._drag_start_y = event.y
+
+            def do_drag(event):
+                x = self.chatbot_main_btn.winfo_x() + event.x - self.chatbot_main_btn._drag_start_x
+                y = self.chatbot_main_btn.winfo_y() + event.y - self.chatbot_main_btn._drag_start_y
+                self.chatbot_main_btn.place(x=x, y=y)
+
+            self.chatbot_main_btn.bind("<Button-1>", start_drag)
+            self.chatbot_main_btn.bind("<B1-Motion>", do_drag)
+            self.chatbot_main_btn.bind("<ButtonRelease-1>", lambda e: self.open_chatbot())
+        except Exception as e:
+            print(f"Error loading chatbot icon for main window: {e}")
                 
     def create_left_visualization(self, parent):
         try:
@@ -7033,6 +7235,53 @@ class SalesSystemApp:
             # Also clean items in arrays if needed
             if updated_fields:
                 materials_col.update_one({"_id": doc["_id"]}, {"$set": updated_fields})
+    def clean_customers_collection(self):
+        """Remove leading/trailing spaces and newlines from all string attributes in Customers collection."""
+        customers_col = self.get_collection_by_name("Customers")
+        for doc in customers_col.find():
+            updated_fields = {}
+            for key, value in doc.items():
+                if isinstance(value, str):
+                    cleaned = value.strip()
+                    updated_fields[key] = cleaned
+            if updated_fields:
+                customers_col.update_one({"_id": doc["_id"]}, {"$set": updated_fields})
+    
+    def clean_suppliers_collection(self):
+        """Remove leading/trailing spaces and newlines from all string attributes in Suppliers collection."""
+        suppliers_col = self.get_collection_by_name("Suppliers")
+        for doc in suppliers_col.find():
+            updated_fields = {}
+            for key, value in doc.items():
+                if isinstance(value, str):
+                    cleaned = value.strip()
+                    updated_fields[key] = cleaned
+            if updated_fields:
+                suppliers_col.update_one({"_id": doc["_id"]}, {"$set": updated_fields})
+    
+    def clean_products_collection(self):
+        """Remove leading/trailing spaces and newlines from all string attributes in Products collection."""
+        products_col = self.get_collection_by_name("Products")
+        for doc in products_col.find():
+            updated_fields = {}
+            for key, value in doc.items():
+                if isinstance(value, str):
+                    cleaned = value.strip()
+                    updated_fields[key] = cleaned
+            if updated_fields:
+                products_col.update_one({"_id": doc["_id"]}, {"$set": updated_fields})
+    
+    def clean_employees_collection(self):
+        """Remove leading/trailing spaces and newlines from all string attributes in Employees collection."""
+        employees_col = self.get_collection_by_name("Employees")
+        for doc in employees_col.find():
+            updated_fields = {}
+            for key, value in doc.items():
+                if isinstance(value, str):
+                    cleaned = value.strip()
+                    updated_fields[key] = cleaned
+            if updated_fields:
+                employees_col.update_one({"_id": doc["_id"]}, {"$set": updated_fields})
     def update_search(self, event, collection):
         # Cancel any previous scheduled search **only if valid**
         if hasattr(self, '_after_id') and self._after_id is not None:
@@ -9057,11 +9306,15 @@ class SalesSystemApp:
     # Function tot oggle from Arabic to English and Vicaverse
     def toggle_language(self):
         self.language = "English" if self.language == "Arabic" else "Arabic"
-        self.main_menu()
+        self.main_menu()   
     def toggle_theme(self):
+        if self.light:
+            self.light = False
+        elif not self.light:
+            self.light = True
         if COLORS["background"] == "#F5F7FA":
             COLORS["background"]    = "#121212"   # Dark background (not pure black)
-            COLORS["primary"]       = "#D1D9E6"   # Soft light text (from light mode #2A3F5F)
+            COLORS["primary"]       = "#2A3F5F"   # Soft light text (from light mode #2A3F5F)
             COLORS["secondary"]     = "#00C0A3"   # Keep same – good contrast on dark
             COLORS["accent"]        = "#FF6F61"   # Keep same – bright accent
             COLORS["text"]          = "#FFFFFF"   # Bright white for main text
@@ -9072,6 +9325,8 @@ class SalesSystemApp:
             COLORS["table_header"]  = "#2C2C2C"   # Dark header with slight elevation
             COLORS["positive"]      = "#03DAC6"   # Material-style teal (greenish)
             COLORS["neutral"]       = "#888888"   # Neutral gray for muted UI
+            COLORS["top_bar"]       = "#23272A"   # <-- New dark mode top bar color
+            COLORS["top_bar_icons"] = "#fbd307"   # <-- New dark mode user info color
         else:
             COLORS["background"]    = "#F5F7FA"
             COLORS["primary"]       = "#2A3F5F"
@@ -9085,6 +9340,8 @@ class SalesSystemApp:
             COLORS["table_header"]  = "#2A3F5F"
             COLORS["positive"]      = "#00C0A3"
             COLORS["neutral"]       = "#A0AEC0"
+            COLORS["top_bar"]       = "#dbb40f"   # <-- Original light mode top bar color
+            COLORS["top_bar_icons"] = "#000000"   # <-- Original light mode user info color
         self.main_menu()
 
     #Function to update the time 
@@ -9103,14 +9360,18 @@ class SalesSystemApp:
             Back_to_Purchases_Window = False
             ):
         # Top Bar
-        top_bar = tk.Frame(self.root, bg="#dbb40f", height=60)
+        top_bar = tk.Frame(self.root, bg=COLORS["top_bar"], height=60)
         top_bar.pack(fill="x")
         # Exit icon
         try:    
+            if self.light:
+                self.exit_icon_path     = os.path.join(BASE_DIR, "Static", "images", "exit-dark.png")
+            elif not self.light:
+                self.exit_icon_path     = os.path.join(BASE_DIR, "Static", "images", "exit-light.png")
             exit_image = Image.open(self.exit_icon_path)
             exit_image = exit_image.resize((35, 35), Image.LANCZOS)
             self.exit_photo = ImageTk.PhotoImage(exit_image)
-            exit_icon = tk.Label(top_bar, image=self.exit_photo, bg="#dbb40f")
+            exit_icon = tk.Label(top_bar, image=self.exit_photo, bg=COLORS["top_bar"])
             exit_icon.pack(side="right", padx=10)
             exit_icon.bind("<Button-1>", lambda e: self.root.quit())
         except Exception as e:
@@ -9119,19 +9380,27 @@ class SalesSystemApp:
         # Logout icon
         try:
             # login_window_instance = LoginWindow()
+            if self.light:
+                self.logout_icon_path = os.path.join(BASE_DIR, "Static", "images", "logout-dark.png")
+            elif not self.light:
+                self.logout_icon_path = os.path.join(BASE_DIR, "Static", "images", "logout-light.png")
             logout_image = Image.open(self.logout_icon_path)
             logout_image = logout_image.resize((40, 40), Image.LANCZOS)
             self.logout_photo = ImageTk.PhotoImage(logout_image)
-            logout_icon = tk.Button(top_bar, image=self.logout_photo, bg="#dbb40f", bd=0, command=self.login_window.open_login_window)
+            logout_icon = tk.Button(top_bar, image=self.logout_photo, bg=COLORS["top_bar"], bd=0, command=self.login_window.open_login_window)
             logout_icon.pack(side="right", padx=10)
         except Exception as e:
             self.silent_popup("Error", "Error loading Logout icon: {e}", self.play_Error)
         # Minimize icon
         try:
+            if self.light:
+                self.minimize_icon_path = os.path.join(BASE_DIR, "Static", "images", "minus-dark.png")
+            elif not self.light:
+                self.minimize_icon_path = os.path.join(BASE_DIR, "Static", "images", "minus-light.png")
             minimze_image = Image.open(self.minimize_icon_path)
             minimze_image = minimze_image.resize((40, 40), Image.LANCZOS)
             self.minimize_photo = ImageTk.PhotoImage(minimze_image)
-            minimize_icon = tk.Button(top_bar, image=self.minimize_photo, bg="#dbb40f", bd=0, command=root.iconify)
+            minimize_icon = tk.Button(top_bar, image=self.minimize_photo, bg=COLORS["top_bar"], bd=0, command=root.iconify)
             minimize_icon.pack(side="right", padx=10)
         except Exception as e:
             self.silent_popup("Error", "Error loading Minimize icon: {e}", self.play_Error)
@@ -9139,54 +9408,65 @@ class SalesSystemApp:
 
         if show_back_button:
             try:
+                if self.light:
+                    self.back_icon_path = os.path.join(BASE_DIR, "Static", "images", "left-arrow-dark.png")
+                elif not self.light:
+                    self.back_icon_path = os.path.join(BASE_DIR, "Static", "images", "left-arrow-light.png")
                 back_image = Image.open(self.back_icon_path)
                 back_image = back_image.resize((40, 40), Image.LANCZOS)
                 self.back_photo = ImageTk.PhotoImage(back_image)
                 if Back_to_Database_Window:
-                    back_icon = tk.Button(top_bar, image=self.back_photo, bg="#dbb40f", bd=0, command=self.manage_database_window)
+                    back_icon = tk.Button(top_bar, image=self.back_photo, bg=COLORS["top_bar"], bd=0, command=self.manage_database_window)
                 elif Back_to_Employee_Window:
-                    back_icon = tk.Button(top_bar, image=self.back_photo, bg="#dbb40f", bd=0, command=self.manage_Employees_window)
+                    back_icon = tk.Button(top_bar, image=self.back_photo, bg=COLORS["top_bar"], bd=0, command=self.manage_Employees_window)
                 elif Back_to_Sales_Window:
-                    back_icon = tk.Button(top_bar, image=self.back_photo, bg="#dbb40f", bd=0, command=self.manage_sales_invoices_window)
+                    back_icon = tk.Button(top_bar, image=self.back_photo, bg=COLORS["top_bar"], bd=0, command=self.manage_sales_invoices_window)
                 elif Back_to_Purchases_Window:
-                    back_icon = tk.Button(top_bar, image=self.back_photo, bg="#dbb40f", bd=0, command=self.manage_purchases_invoices_window)
+                    back_icon = tk.Button(top_bar, image=self.back_photo, bg=COLORS["top_bar"], bd=0, command=self.manage_purchases_invoices_window)
                 else:
-                    back_icon = tk.Button(top_bar, image=self.back_photo, bg="#dbb40f", bd=0, command=self.main_menu)
+                    back_icon = tk.Button(top_bar, image=self.back_photo, bg=COLORS["top_bar"], bd=0, command=self.main_menu)
                 back_icon.pack(side="left", padx=10)
             except Exception as e:
                 self.silent_popup("Error", "Error loading back icon: {e}", self.play_Error)
         else:
-            lang_btn = tk.Button(top_bar, text=self.t("Change Language"), bg="#dbb40f", fg="black",
+            lang_btn = tk.Button(top_bar, text=self.t("Change Language"), bg=COLORS["top_bar"], fg=COLORS["top_bar_icons"],
                                 font=("Arial", 10, "bold"), bd=0, command=self.toggle_language)
             lang_btn.pack(side="left", padx=10)
-            lang_image = Image.open(self.lang_icon)
+            if self.light:
+                lang_image = Image.open(self.dark_mode_img)
+            elif not self.light:
+                lang_image = Image.open(self.light_mode_img)
             lang_image = lang_image.resize((40, 40), Image.LANCZOS)
             self.lang_photo = ImageTk.PhotoImage(lang_image)
-            lang_btn = tk.Button(top_bar, text=self.t("Change Language"),image=self.lang_photo, bg="#dbb40f", fg="black",
+            lang_btn = tk.Button(top_bar, text=self.t("Change Language"),image=self.lang_photo, bg=COLORS["top_bar"], fg="black",
                                 font=("Arial", 10, "bold"), bd=0, command=self.toggle_theme)
             lang_btn.pack(side="left", padx=10)
 
         # Left side: Language or Back button
         # tk.Button(top_bar, text="Open Calculator", command=open_calculator, font=("Arial", 14)).pack(side="left", padx=10)
+        if self.light:
+            self.calc_icon_path = os.path.join(BASE_DIR, "Static", "images", "calculator-dark.png")
+        elif not self.light:
+            self.calc_icon_path = os.path.join(BASE_DIR, "Static", "images", "calculator-light.png")
         calc_image = Image.open(self.calc_icon_path)
         calc_image = calc_image.resize((35, 35), Image.LANCZOS)
         self.calc_photo = ImageTk.PhotoImage(calc_image)
-        calc_icon = tk.Label(top_bar, image=self.calc_photo, bg="#dbb40f")
+        calc_icon = tk.Label(top_bar, image=self.calc_photo, bg=COLORS["top_bar"])
         calc_icon.pack(side="left", padx=10)
         calc_icon.bind("<Button-1>", lambda event: open_calculator())
         
         # Time label
         time_label = tk.Label(top_bar, text=datetime.now().strftime('%B %d, %Y %I:%M %p'),
-                            font=("Arial", 20, "bold"), fg="black", bg="#dbb40f")
+                            font=("Arial", 20, "bold"), fg=COLORS["top_bar_icons"], bg=COLORS["top_bar"])
 
         time_label.place(relx=0.5, rely=0.5, anchor="center")
         # self.update_time(time_label)
         #TODO
         # User info frame
-        user_frame = tk.Frame(top_bar, bg="#dbb40f")
+        user_frame = tk.Frame(top_bar, bg=COLORS["top_bar"])
         user_frame.pack(side="right", padx=10)
 
-        username_label = tk.Label(user_frame, text=self.user_name, font=("Arial", 14), fg="black", bg="#dbb40f")
+        username_label = tk.Label(user_frame, text=self.user_name, font=("Arial", 14), fg="black", bg=COLORS["top_bar"])
         username_label.pack(side="left")
     
     def trash(self, user_role):
@@ -9271,57 +9551,102 @@ class SalesSystemApp:
         popup.wait_window()  # Blocks further execution until the popup is closed
         self.stop_sound()
 
-class CalculatorPopup(tk.Toplevel):
-    def __init__(self, parent, target_entry=None):
-        super().__init__(parent)
-        self.title("Calculator")
-        self.target_entry = target_entry  # Entry widget to receive the result
-        self.geometry("300x400")
-        self.create_widgets()
+# class CalculatorPopup(tk.Toplevel):
+#     def __init__(self, parent, target_entry=None):
+#         super().__init__(parent)
+#         self.title("Calculator")
+#         self.target_entry = target_entry
+#         self.geometry("300x400")
+
+#         # Set window icon (shows in title bar and taskbar)
+#         icon_path = os.path.join(BASE_DIR, "Static", "images", "Calculator.ico")
+#         try:
+#             if os.path.exists(icon_path):
+#                 self.iconbitmap(icon_path)
+#         except Exception as e:
+#             print(f"Calculator icon error: {e}")
+
+#         # Add a label at the top (with icon and text)
+#         label_frame = tk.Frame(self)
+#         label_frame.pack(fill="x", pady=8)
+
+#         if os.path.exists(icon_path):
+#             try:
+#                 icon_img = Image.open(icon_path).resize((32, 32), Image.LANCZOS)
+#                 icon_photo = ImageTk.PhotoImage(icon_img)
+#                 icon_label = tk.Label(label_frame, image=icon_photo, bg="#fbd307")
+#                 icon_label.image = icon_photo
+#                 icon_label.pack(side="left", padx=5)
+#             except Exception as e:
+#                 print(f"Calculator icon image error: {e}")
+
+#         title_label = tk.Label(label_frame, text="الآلة الحاسبة", font=("Arial", 16, "bold"), fg="#23272A", bg="#fbd307")
+#         title_label.pack(side="left", padx=5)
+
+#         self.create_widgets()
+#         # ...existing code...
         
-    def create_widgets(self):
-        # Display
-        self.display = tk.Entry(self, font=('Arial', 24), justify='right', bd=10)
-        self.display.grid(row=0, column=0, columnspan=4, sticky="nsew")
-        
-        # Button layout
-        buttons = [
-            ('7', 1, 0), ('8', 1, 1), ('9', 1, 2), ('/', 1, 3),
-            ('4', 2, 0), ('5', 2, 1), ('6', 2, 2), ('*', 2, 3),
-            ('1', 3, 0), ('2', 3, 1), ('3', 3, 2), ('-', 3, 3),
-            ('C', 4, 0), ('0', 4, 1), ('=', 4, 2), ('+', 4, 3)
-        ]
-        
-        # Create buttons
-        for (text, row, col) in buttons:
-            btn = ttk.Button(self, text=text, 
-                           command=lambda t=text: self.on_button_click(t))
-            btn.grid(row=row, column=col, sticky="nsew", padx=2, pady=2)
-        
-        # Configure grid weights
-        for i in range(5):
-            self.grid_rowconfigure(i, weight=1)
-        for i in range(4):
-            self.grid_columnconfigure(i, weight=1)
+#     def create_widgets(self):
+#         # Display
+#         self.display = tk.Entry(self, font=('Arial', 24), justify='right', bd=10, bg="#23272A", fg="#FFFFFF")
+#         self.display.grid(row=0, column=0, columnspan=4, sticky="nsew")
     
-    def on_button_click(self, text):
-        current = self.display.get()
+#         # Button layout with colors
+#         buttons = [
+#             # text, row, col, bg, fg
+#             ('C', 1, 0, '#e74c3c', '#fff'),
+#             ('(', 1, 1, '#ffa500', '#23272A'),
+#             (')', 1, 2, '#ffa500', '#23272A'),
+#             ('÷', 1, 3, '#ffa500', '#23272A'),
+#             ('7', 2, 0, '#444', '#fff'),
+#             ('8', 2, 1, '#444', '#fff'),
+#             ('9', 2, 2, '#444', '#fff'),
+#             ('x', 2, 3, '#ffa500', '#23272A'),
+#             ('4', 3, 0, '#444', '#fff'),
+#             ('5', 3, 1, '#444', '#fff'),
+#             ('6', 3, 2, '#444', '#fff'),
+#             ('-', 3, 3, '#ffa500', '#23272A'),
+#             ('1', 4, 0, '#444', '#fff'),
+#             ('2', 4, 1, '#444', '#fff'),
+#             ('3', 4, 2, '#444', '#fff'),
+#             ('+', 4, 3, '#ffa500', '#23272A'),
+#             ('+/-', 5, 0, '#444', '#fff'),
+#             ('0', 5, 1, '#444', '#fff'),
+#             ('.', 5, 2, '#444', '#fff'),
+#             ('=', 5, 3, '#27ae60', '#fff'),
+#         ]
+    
+#         # Create buttons
+#         for (text, row, col, bg, fg) in buttons:
+#             btn = tk.Button(self, text=text, font=('Arial', 18, 'bold'), bg=bg, fg=fg,
+#                             bd=0, activebackground=bg, activeforeground=fg,
+#                             command=lambda t=text: self.on_button_click(t))
+#             btn.grid(row=row, column=col, sticky="nsew", padx=2, pady=2)
+    
+#         # Configure grid weights
+#         for i in range(6):
+#             self.grid_rowconfigure(i, weight=1)
+#         for i in range(4):
+#             self.grid_columnconfigure(i, weight=1)
+    
+#     def on_button_click(self, text):
+#         current = self.display.get()
         
-        if text == '=':
-            try:
-                result = str(eval(current))
-                self.display.delete(0, tk.END)
-                self.display.insert(0, result)
-                if self.target_entry:
-                    self.target_entry.delete(0, tk.END)
-                    self.target_entry.insert(0, result)
-            except:
-                self.display.delete(0, tk.END)
-                self.display.insert(0, "Error")
-        elif text == 'C':
-            self.display.delete(0, tk.END)
-        else:
-            self.display.insert(tk.END, text)
+#         if text == '=':
+#             try:
+#                 result = str(eval(current))
+#                 self.display.delete(0, tk.END)
+#                 self.display.insert(0, result)
+#                 if self.target_entry:
+#                     self.target_entry.delete(0, tk.END)
+#                     self.target_entry.insert(0, result)
+#             except:
+#                 self.display.delete(0, tk.END)
+#                 self.display.insert(0, "Error")
+#         elif text == 'C':
+#             self.display.delete(0, tk.END)
+#         else:
+#             self.display.insert(tk.END, text)
 
 def upload_file_to_cloudinary(file_path_param):
     # import cloudinary.uploader
@@ -9419,6 +9744,16 @@ def open_calculator():
     calc_win.title("Calculator")
     calc_win.configure(bg="#2e2e2e")
     calc_win.resizable(False, False)
+
+    # Set window icon (shows in title bar and taskbar)
+    icon_path = os.path.join(BASE_DIR, "Static", "images", "calculator-1.ico")
+    if os.path.exists(icon_path):
+        try:
+            calc_win.iconbitmap(icon_path)
+        except Exception as e:
+            print(f"Calculator icon error: {e}")
+
+    # ...rest of your calculator code...
 
     entry = tk.Entry(calc_win, width=18, font=('Helvetica', 28), bd=0, bg="#1e1e1e", fg="white", justify='right')
     entry.grid(row=0, column=0, columnspan=4, pady=(10, 20), padx=10, ipady=20)
