@@ -9466,7 +9466,7 @@ class SalesSystemApp:
         user_frame = tk.Frame(top_bar, bg=COLORS["top_bar"])
         user_frame.pack(side="right", padx=10)
 
-        username_label = tk.Label(user_frame, text=self.user_name, font=("Arial", 14), fg="black", bg=COLORS["top_bar"])
+        username_label = tk.Label(user_frame, text=self.user_name, font=("Arial", 20), fg=COLORS["top_bar_icons"], bg=COLORS["top_bar"])
         username_label.pack(side="left")
     
     def trash(self, user_role):
@@ -9902,7 +9902,7 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = SalesSystemApp(root)       # Create main app first
     app.start_without_login()
-    # app.start_with_login()     # Then launch the login screen through app
+    app.start_with_login()     # Then launch the login screen through app
 
     try:
         root.mainloop()
