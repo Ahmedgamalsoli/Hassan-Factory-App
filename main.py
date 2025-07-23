@@ -803,9 +803,101 @@ class SalesSystemApp:
         self.customer_payments                = db["Customer_Payments"]
         self.supplier_payments                = db["Supplier_Payments"]
         self.general_exp_rev_collection       = db["general_exp_rev"]
+        self.messages_collection              = db["Messages"]
 
 ############################################ Windows ########################################### 
-    
+    def open_group_chat_window(self):
+        chat_win = tk.Toplevel(self.root)
+        chat_win.title("Group Chat - Employee Notes")
+        chat_win.geometry("450x500")
+        chat_win.resizable(False, False)
+
+        # Set custom icon for the window (groupchat.ico)
+        icon_path = os.path.join(BASE_DIR, "Static", "images", "groupchat.ico")
+        if os.path.exists(icon_path):
+            chat_win.iconbitmap(icon_path)
+
+        # Group chat icon (draggable)
+        icon_frame = tk.Frame(chat_win, width=60, height=60)
+        icon_frame.place(x=10, y=10)
+        icon_img_path = os.path.join(BASE_DIR, "Static", "images", "groupchat.ico")
+        if os.path.exists(icon_img_path):
+            icon_img = Image.open(icon_img_path).resize((60, 60), Image.LANCZOS)
+            icon_photo = ImageTk.PhotoImage(icon_img)
+            icon_label = tk.Label(icon_frame, image=icon_photo)
+            icon_label.image = icon_photo
+            icon_label.pack()
+        else:
+            icon_label = tk.Label(icon_frame, text="👥", font=("Arial", 32))
+            icon_label.pack()
+
+        # Make icon draggable
+        def start_drag(event):
+            icon_frame._drag_start_x = event.x
+            icon_frame._drag_start_y = event.y
+
+        def do_drag(event):
+            x = icon_frame.winfo_x() + event.x - icon_frame._drag_start_x
+            y = icon_frame.winfo_y() + event.y - icon_frame._drag_start_y
+            icon_frame.place(x=x, y=y)
+
+        icon_label.bind("<Button-1>", start_drag)
+        icon_label.bind("<B1-Motion>", do_drag)
+
+        # Chat area
+        chat_frame = tk.Frame(chat_win)
+        chat_frame.place(x=80, y=10, width=310, height=420)
+        chat_display = tk.Text(chat_frame, state="disabled", wrap="word", font=("Arial", 12))
+        chat_display.pack(fill="both", expand=True)
+
+        # Entry area
+        entry_frame = tk.Frame(chat_win)
+        entry_frame.place(x=10, y=440, width=380, height=50)
+
+        name_var = tk.StringVar(value=self.user_name if self.user_name else "")
+        tk.Label(entry_frame, text="Name:", font=("Arial", 10)).pack(side=tk.LEFT)
+        name_entry = tk.Entry(entry_frame, textvariable=name_var, width=12)
+        name_entry.pack(side=tk.LEFT, padx=5)
+
+        msg_var = tk.StringVar()
+        msg_entry = tk.Entry(entry_frame, textvariable=msg_var, width=28)
+        msg_entry.pack(side=tk.LEFT, padx=5)
+
+        def load_messages():
+            chat_display.config(state="normal")
+            chat_display.delete(1.0, tk.END)
+            for msg in self.messages_collection.find().sort("timestamp", 1):
+                name = msg.get("name", "Unknown")
+                text = msg.get("text", "")
+                time = msg.get("timestamp", "").strftime("%Y-%m-%d %H:%M") if msg.get("timestamp") else ""
+                chat_display.insert(tk.END, f"[{time}] {name}: {text}\n")
+            chat_display.config(state="disabled")
+            chat_display.see(tk.END)
+
+        def send_message():
+            name = name_var.get().strip() or "Unknown"
+            text = msg_var.get().strip()
+            if text:
+                self.messages_collection.insert_one({
+                    "name": name,
+                    "text": text,
+                    "timestamp": datetime.now()
+                })
+                msg_var.set("")
+                load_messages()
+
+        send_btn = tk.Button(entry_frame, text="Send", command=send_message)
+        send_btn.pack(side=tk.LEFT, padx=5)
+
+        refresh_btn = tk.Button(entry_frame, text="Refresh", command=load_messages)
+        refresh_btn.pack(side=tk.LEFT, padx=5)
+
+        chat_display.config(state="normal")
+        chat_display.insert("end", "Welcome! This is the group chat for employee notes.\n\n")
+        chat_display.config(state="disabled")
+
+        load_messages()
+
     def open_chatbot(self):
         chatbot_win = tk.Toplevel(self.root)
         chatbot_win.title("مساعد التطبيق")
@@ -1147,6 +1239,17 @@ class SalesSystemApp:
             self.chatbot_main_btn.bind("<Button-1>", start_drag)
             self.chatbot_main_btn.bind("<B1-Motion>", do_drag)
             self.chatbot_main_btn.bind("<ButtonRelease-1>", lambda e: self.open_chatbot())
+
+            groupchat_icon_path = os.path.join(BASE_DIR, "Static", "images", "groupchat.ico")
+            groupchat_img = Image.open(groupchat_icon_path).resize((60, 60), Image.LANCZOS)
+            self.groupchat_main_photo = ImageTk.PhotoImage(groupchat_img)
+            self.groupchat_main_btn = tk.Label(self.root, image=self.groupchat_main_photo, bg=COLORS["card"], cursor="hand2")
+            self.groupchat_main_btn.place(x=100, y=780)  # Initial position
+
+            self.groupchat_main_btn.bind("<Button-1>", start_drag)
+            self.groupchat_main_btn.bind("<B1-Motion>", do_drag)
+            self.groupchat_main_btn.bind("<ButtonRelease-1>", lambda e: self.open_group_chat_window())
+
         except Exception as e:
             print(f"Error loading chatbot icon for main window: {e}")
                 
