@@ -564,9 +564,9 @@ class SalesSystemApp:
             "Value":{"Arabic":"القيمة","English":"Value"},
             "Number of Sales":{"Arabic":"عدد المبيعات","English":"Number of Sales"},
             "Number of Purchases":{"Arabic":"عدد المشتريات","English":"Number of Purchases"},
-            # "":{"Arabic":"","English":""},
-            # "":{"Arabic":"","English":""},
-            # "":{"Arabic":"","English":""},
+            "Group Chat - Employee Notes":{"Arabic":"دردشة جماعية - ملاحظات الموظف","English":"Group Chat - Employee Notes"},
+            "Unknown":{"Arabic":"غير معروف","English":"Unknown"},
+            "Application Assistant":{"Arabic":"مساعد التطبيق","English":"Application Assistant"},
             # "":{"Arabic":"","English":""},
             # "":{"Arabic":"","English":""},
             # "":{"Arabic":"","English":""},
@@ -808,7 +808,7 @@ class SalesSystemApp:
 ############################################ Windows ########################################### 
     def open_group_chat_window(self):
         chat_win = tk.Toplevel(self.root)
-        chat_win.title("Group Chat - Employee Notes")
+        chat_win.title(self.t("Group Chat - Employee Notes"))
         chat_win.geometry("450x500")
         chat_win.resizable(False, False)
 
@@ -842,7 +842,7 @@ class SalesSystemApp:
             icon_frame.place(x=x, y=y)
 
         icon_label.bind("<Button-1>", start_drag)
-        icon_label.bind("<B1-Motion>", do_drag)
+        icon_label.bind("<B2-Motion>", do_drag)
 
         # Chat area
         chat_frame = tk.Frame(chat_win)
@@ -854,10 +854,10 @@ class SalesSystemApp:
         entry_frame = tk.Frame(chat_win)
         entry_frame.place(x=10, y=440, width=380, height=50)
 
-        name_var = tk.StringVar(value=self.user_name if self.user_name else "")
-        tk.Label(entry_frame, text="Name:", font=("Arial", 10)).pack(side=tk.LEFT)
-        name_entry = tk.Entry(entry_frame, textvariable=name_var, width=12)
-        name_entry.pack(side=tk.LEFT, padx=5)
+        # name_var = tk.StringVar(value=self.user_name if self.user_name else "")
+        # tk.Label(entry_frame, text="Name:", font=("Arial", 10)).pack(side=tk.LEFT)
+        # name_entry = tk.Entry(entry_frame, textvariable=name_var, width=12)
+        # name_entry.pack(side=tk.LEFT, padx=5)
 
         msg_var = tk.StringVar()
         msg_entry = tk.Entry(entry_frame, textvariable=msg_var, width=28)
@@ -867,15 +867,17 @@ class SalesSystemApp:
             chat_display.config(state="normal")
             chat_display.delete(1.0, tk.END)
             for msg in self.messages_collection.find().sort("timestamp", 1):
-                name = msg.get("name", "Unknown")
+                # name = msg.get("name", "Unknown")
+                name = msg.get("name", self.t("Unknown"))
                 text = msg.get("text", "")
                 time = msg.get("timestamp", "").strftime("%Y-%m-%d %H:%M") if msg.get("timestamp") else ""
-                chat_display.insert(tk.END, f"[{time}] {name}: {text}\n")
+                chat_display.insert(tk.END, f"[{time}] {self.t(name)}: {text}\n")
             chat_display.config(state="disabled")
             chat_display.see(tk.END)
 
         def send_message():
-            name = name_var.get().strip() or "Unknown"
+            # name = name_var.get().strip() or "Unknown"
+            name = self.user_name if self.user_name else "Unknown"
             text = msg_var.get().strip()
             if text:
                 self.messages_collection.insert_one({
@@ -901,6 +903,7 @@ class SalesSystemApp:
     def open_chatbot(self):
         chatbot_win = tk.Toplevel(self.root)
         chatbot_win.title("مساعد التطبيق")
+        chatbot_win.title(self.t("Application Assistant"))
         chatbot_win.geometry("400x500")
         chatbot_win.resizable(False, False)
     
@@ -1215,6 +1218,22 @@ class SalesSystemApp:
                             activebackground=COLORS["highlight"],
                             font=("Segoe UI", 10))
                 btn.grid(row=row, column=column, padx=5, pady=5)
+
+
+        def start_drag(event):
+            widget = event.widget
+            widget.startX = event.x
+            widget.startY = event.y
+
+        def do_drag(event):
+            widget = event.widget
+            if hasattr(widget, 'startX') and hasattr(widget, 'startY'):
+                x = widget.winfo_x() + event.x - widget.startX
+                y = widget.winfo_y() + event.y - widget.startY
+                widget.place(x=x, y=y)
+
+
+
         # Remove previous chatbot icon if exists
         if hasattr(self, 'chatbot_main_btn') and self.chatbot_main_btn.winfo_exists():
             self.chatbot_main_btn.destroy()
@@ -1226,20 +1245,20 @@ class SalesSystemApp:
             self.chatbot_main_btn = tk.Label(self.root, image=self.chatbot_main_photo, bg=COLORS["card"], cursor="hand2")
             self.chatbot_main_btn.place(x=20, y=780)  # Initial position
 
-            # Make icon draggable
-            def start_drag(event):
-                self.chatbot_main_btn._drag_start_x = event.x
-                self.chatbot_main_btn._drag_start_y = event.y
 
-            def do_drag(event):
-                x = self.chatbot_main_btn.winfo_x() + event.x - self.chatbot_main_btn._drag_start_x
-                y = self.chatbot_main_btn.winfo_y() + event.y - self.chatbot_main_btn._drag_start_y
-                self.chatbot_main_btn.place(x=x, y=y)
 
             self.chatbot_main_btn.bind("<Button-1>", start_drag)
             self.chatbot_main_btn.bind("<B1-Motion>", do_drag)
             self.chatbot_main_btn.bind("<ButtonRelease-1>", lambda e: self.open_chatbot())
 
+
+
+        except Exception as e:
+            print(f"Error loading chatbot icon for main window: {e}")
+
+        if hasattr(self, 'groupchat_main_btn') and self.groupchat_main_btn.winfo_exists():
+            self.groupchat_main_btn.destroy()
+        try:
             groupchat_icon_path = os.path.join(BASE_DIR, "Static", "images", "groupchat.ico")
             groupchat_img = Image.open(groupchat_icon_path).resize((60, 60), Image.LANCZOS)
             self.groupchat_main_photo = ImageTk.PhotoImage(groupchat_img)
@@ -1249,10 +1268,9 @@ class SalesSystemApp:
             self.groupchat_main_btn.bind("<Button-1>", start_drag)
             self.groupchat_main_btn.bind("<B1-Motion>", do_drag)
             self.groupchat_main_btn.bind("<ButtonRelease-1>", lambda e: self.open_group_chat_window())
-
         except Exception as e:
-            print(f"Error loading chatbot icon for main window: {e}")
-                
+            print(f"Error loading groupchat icon for main window: {e}")
+        
     def create_left_visualization(self, parent):
         try:
         
