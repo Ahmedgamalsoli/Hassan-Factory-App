@@ -851,6 +851,7 @@ class SalesSystemApp:
         chat_display.pack(fill="both", expand=True)
 
         # Entry area
+        # Entry area
         entry_frame = tk.Frame(chat_win)
         entry_frame.place(x=10, y=440, width=380, height=50)
 
@@ -886,11 +887,13 @@ class SalesSystemApp:
                 msg_var.set("")
                 load_messages()
 
-        send_btn = tk.Button(entry_frame, text="Send", command=send_message)
+
+        send_btn = tk.Button(entry_frame, text="Send", command=send_message, font=("Arial", 11), width=8, bg="#2196F3", fg="white")
         send_btn.pack(side=tk.LEFT, padx=5)
 
-        refresh_btn = tk.Button(entry_frame, text="Refresh", command=load_messages)
-        refresh_btn.pack(side=tk.LEFT, padx=5)
+        # Make refresh button larger and more visible
+        refresh_btn = tk.Button(entry_frame, text="Refresh", command=load_messages, font=("Arial", 11), width=10, bg="#21F35D", fg="white")
+        refresh_btn.pack(side=tk.LEFT, padx=8, ipadx=8, ipady=8)
 
         chat_display.config(state="normal")
         chat_display.insert("end", "Welcome! This is the group chat for employee notes.\n\n")
