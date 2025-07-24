@@ -2106,6 +2106,7 @@ class SalesSystemApp:
         for widget in self.root.winfo_children():
             widget.destroy()
         
+
         self.topbar(show_back_button=True, Back_to_Employee_Window=True)
         
         # Database collections
@@ -2122,6 +2123,7 @@ class SalesSystemApp:
             self.employee_name_code[name] = code
 
         # Main frame
+        # self.root.configure(bg="#f0f0f0")
         main_frame = tk.Frame(self.root, padx=20, pady=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
@@ -6037,8 +6039,7 @@ class SalesSystemApp:
         ).pack(side="left")
         
         # Bottom buttons
-        # bottom_frame = tk.Frame(main_frame) #new frame for buttons
-        # bottom_frame.pack(side="bottom", fill="both", expand=True) #new frame for buttons
+        self.root.configure(bg="#f0f0f0")  # Set background color for the root window
         button_frame = tk.LabelFrame(root, text="Actions", padx=10, pady=10, font=("Arial", 12, 'bold'))
         button_frame.pack(pady=10)
 
@@ -6054,6 +6055,7 @@ class SalesSystemApp:
 
         # Load initial table content
         self.refresh_generic_table(tree, current_collection, collection_name, search_text="")
+        # self.root.configure(bg=COLORS["background"])
 
     def on_tree_selection(self, event, tree, columns, collection_name, img_label):
         first_document = None
