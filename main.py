@@ -69,7 +69,8 @@ ARRAY_FIELDS = ['Units', 'Items'] #Must be lower case
 
 COLORS = {
     "background": "#F5F7FA",       # Light grey background
-    "primary": "#2A3F5F",           # Dark blue for headers
+    "primary": "#3B82F6",           # Dark blue for headers
+    "main_frame": "#2A3F5F",           # Dark blue for headers
     "secondary": "#00C0A3",         # Teal for primary actions
     "accent": "#FF6F61",            # Coral for highlights
     "text": "#2A3F5F",              # Dark blue text
@@ -564,9 +565,9 @@ class SalesSystemApp:
             "Value":{"Arabic":"القيمة","English":"Value"},
             "Number of Sales":{"Arabic":"عدد المبيعات","English":"Number of Sales"},
             "Number of Purchases":{"Arabic":"عدد المشتريات","English":"Number of Purchases"},
-            # "":{"Arabic":"","English":""},
-            # "":{"Arabic":"","English":""},
-            # "":{"Arabic":"","English":""},
+            "Group Chat - Employee Notes":{"Arabic":"دردشة جماعية - ملاحظات الموظف","English":"Group Chat - Employee Notes"},
+            "Unknown":{"Arabic":"غير معروف","English":"Unknown"},
+            "Application Assistant":{"Arabic":"مساعد التطبيق","English":"Application Assistant"},
             # "":{"Arabic":"","English":""},
             # "":{"Arabic":"","English":""},
             # "":{"Arabic":"","English":""},
@@ -808,7 +809,7 @@ class SalesSystemApp:
 ############################################ Windows ########################################### 
     def open_group_chat_window(self):
         chat_win = tk.Toplevel(self.root)
-        chat_win.title("Group Chat - Employee Notes")
+        chat_win.title(self.t("Group Chat - Employee Notes"))
         chat_win.geometry("450x500")
         chat_win.resizable(False, False)
 
@@ -842,7 +843,7 @@ class SalesSystemApp:
             icon_frame.place(x=x, y=y)
 
         icon_label.bind("<Button-1>", start_drag)
-        icon_label.bind("<B1-Motion>", do_drag)
+        icon_label.bind("<B2-Motion>", do_drag)
 
         # Chat area
         chat_frame = tk.Frame(chat_win)
@@ -855,10 +856,10 @@ class SalesSystemApp:
         entry_frame = tk.Frame(chat_win)
         entry_frame.place(x=10, y=440, width=380, height=50)
 
-        name_var = tk.StringVar(value=self.user_name if self.user_name else "")
-        tk.Label(entry_frame, text="Name:", font=("Arial", 10)).pack(side=tk.LEFT)
-        name_entry = tk.Entry(entry_frame, textvariable=name_var, width=12)
-        name_entry.pack(side=tk.LEFT, padx=5)
+        # name_var = tk.StringVar(value=self.user_name if self.user_name else "")
+        # tk.Label(entry_frame, text="Name:", font=("Arial", 10)).pack(side=tk.LEFT)
+        # name_entry = tk.Entry(entry_frame, textvariable=name_var, width=12)
+        # name_entry.pack(side=tk.LEFT, padx=5)
 
         msg_var = tk.StringVar()
         msg_entry = tk.Entry(entry_frame, textvariable=msg_var, width=28)
@@ -868,15 +869,17 @@ class SalesSystemApp:
             chat_display.config(state="normal")
             chat_display.delete(1.0, tk.END)
             for msg in self.messages_collection.find().sort("timestamp", 1):
-                name = msg.get("name", "Unknown")
+                # name = msg.get("name", "Unknown")
+                name = msg.get("name", self.t("Unknown"))
                 text = msg.get("text", "")
                 time = msg.get("timestamp", "").strftime("%Y-%m-%d %H:%M") if msg.get("timestamp") else ""
-                chat_display.insert(tk.END, f"[{time}] {name}: {text}\n")
+                chat_display.insert(tk.END, f"[{time}] {self.t(name)}: {text}\n")
             chat_display.config(state="disabled")
             chat_display.see(tk.END)
 
         def send_message():
-            name = name_var.get().strip() or "Unknown"
+            # name = name_var.get().strip() or "Unknown"
+            name = self.user_name if self.user_name else "Unknown"
             text = msg_var.get().strip()
             if text:
                 self.messages_collection.insert_one({
@@ -904,6 +907,7 @@ class SalesSystemApp:
     def open_chatbot(self):
         chatbot_win = tk.Toplevel(self.root)
         chatbot_win.title("مساعد التطبيق")
+        chatbot_win.title(self.t("Application Assistant"))
         chatbot_win.geometry("400x500")
         chatbot_win.resizable(False, False)
     
@@ -1189,7 +1193,7 @@ class SalesSystemApp:
                             bg=COLORS["card"],
                             fg=COLORS["text"],
                             activebackground=COLORS["highlight"],
-                            font=("Segoe UI", 10),
+                            font=("Arial", 15, "bold"),
                             borderwidth=0,
                             command=btn_info["command"])
                 btn.image = photo_img  # Keep reference
@@ -1218,6 +1222,22 @@ class SalesSystemApp:
                             activebackground=COLORS["highlight"],
                             font=("Segoe UI", 10))
                 btn.grid(row=row, column=column, padx=5, pady=5)
+
+
+        def start_drag(event):
+            widget = event.widget
+            widget.startX = event.x
+            widget.startY = event.y
+
+        def do_drag(event):
+            widget = event.widget
+            if hasattr(widget, 'startX') and hasattr(widget, 'startY'):
+                x = widget.winfo_x() + event.x - widget.startX
+                y = widget.winfo_y() + event.y - widget.startY
+                widget.place(x=x, y=y)
+
+
+
         # Remove previous chatbot icon if exists
         if hasattr(self, 'chatbot_main_btn') and self.chatbot_main_btn.winfo_exists():
             self.chatbot_main_btn.destroy()
@@ -1229,20 +1249,20 @@ class SalesSystemApp:
             self.chatbot_main_btn = tk.Label(self.root, image=self.chatbot_main_photo, bg=COLORS["card"], cursor="hand2")
             self.chatbot_main_btn.place(x=20, y=780)  # Initial position
 
-            # Make icon draggable
-            def start_drag(event):
-                self.chatbot_main_btn._drag_start_x = event.x
-                self.chatbot_main_btn._drag_start_y = event.y
 
-            def do_drag(event):
-                x = self.chatbot_main_btn.winfo_x() + event.x - self.chatbot_main_btn._drag_start_x
-                y = self.chatbot_main_btn.winfo_y() + event.y - self.chatbot_main_btn._drag_start_y
-                self.chatbot_main_btn.place(x=x, y=y)
 
             self.chatbot_main_btn.bind("<Button-1>", start_drag)
             self.chatbot_main_btn.bind("<B1-Motion>", do_drag)
             self.chatbot_main_btn.bind("<ButtonRelease-1>", lambda e: self.open_chatbot())
 
+
+
+        except Exception as e:
+            print(f"Error loading chatbot icon for main window: {e}")
+
+        if hasattr(self, 'groupchat_main_btn') and self.groupchat_main_btn.winfo_exists():
+            self.groupchat_main_btn.destroy()
+        try:
             groupchat_icon_path = os.path.join(BASE_DIR, "Static", "images", "groupchat.ico")
             groupchat_img = Image.open(groupchat_icon_path).resize((60, 60), Image.LANCZOS)
             self.groupchat_main_photo = ImageTk.PhotoImage(groupchat_img)
@@ -1252,10 +1272,9 @@ class SalesSystemApp:
             self.groupchat_main_btn.bind("<Button-1>", start_drag)
             self.groupchat_main_btn.bind("<B1-Motion>", do_drag)
             self.groupchat_main_btn.bind("<ButtonRelease-1>", lambda e: self.open_group_chat_window())
-
         except Exception as e:
-            print(f"Error loading chatbot icon for main window: {e}")
-                
+            print(f"Error loading groupchat icon for main window: {e}")
+        
     def create_left_visualization(self, parent):
         try:
         
@@ -1376,7 +1395,7 @@ class SalesSystemApp:
                 cell.set_text_props(color=COLORS["text"])
                 # cell.set_text_props(color="black") #text in header
                 if row == 0:
-                    cell.set_facecolor(COLORS["primary"])
+                    cell.set_facecolor(COLORS["main_frame"])
                     cell.set_text_props(weight='bold',color="white")
 
             canvas = FigureCanvasTkAgg(fig, master=parent)
@@ -1410,7 +1429,7 @@ class SalesSystemApp:
                     ax1.pie(
                         [1],
                         labels=[''],
-                        colors=[COLORS["primary"]],
+                        colors=[COLORS["main_frame"]],
                         startangle=90,
                         wedgeprops={'width': 1}
                     )
@@ -1489,7 +1508,7 @@ class SalesSystemApp:
     
     def create_card_frame(self, parent, padding=0):
         frame = tk.Frame(parent, bg=COLORS["card"], bd=0,
-                        highlightbackground=COLORS["primary"],
+                        highlightbackground=COLORS["main_frame"],
                         highlightthickness=3)
         if padding:
             frame.grid_propagate(False)
@@ -1704,7 +1723,6 @@ class SalesSystemApp:
             tk.messagebox.showerror(self.t("Error"), f"{self.t("Failed to load reports:")} {str(e)}")           
 
 
-            
     def manage_sales_invoices_window(self):
                 # Clear current window
         for widget in self.root.winfo_children():
@@ -1718,20 +1736,29 @@ class SalesSystemApp:
         button_frame.pack(pady=30)
 
         # Define buttons with images, text, and commands
-        buttons = [
-            {"text": self.t("New Sales Invoice"), "image": "Sales.png",
-            "command": lambda: self.sales_invoice(self.user_role,"add")},
-            {"text": self.t("Update Sales Invoice"), "image": "update_sales.png",
-            "command": lambda: self.sales_invoice(self.user_role,"update")}
-        ]
+        if self.light:
+            buttons = [
+                {"text": self.t("New Sales Invoice"), "image": "new_invoice-dark.png",
+                "command": lambda: self.sales_invoice(self.user_role,"add")},
+                {"text": self.t("Update Sales Invoice"), "image": "update_invoice-dark.png",
+                "command": lambda: self.sales_invoice(self.user_role,"update")}
+            ]
+        elif not self.light:
+            buttons = [
+                {"text": self.t("New Sales Invoice"), "image": "new_invoice-light.png",
+                "command": lambda: self.sales_invoice(self.user_role,"add")},
+                {"text": self.t("Update Sales Invoice"), "image": "update_invoice-light.png",
+                "command": lambda: self.sales_invoice(self.user_role,"update")}
+            ]
         images = []  # Keep references to prevent garbage collection
         columns_per_row = 3  # Number of buttons per row
+        button_size = 120
 
         try:
             for index, btn_info in enumerate(buttons):
                 # Load and resize image
                 img_path = os.path.join(BASE_DIR, "Static", "images", btn_info["image"])
-                img = Image.open(img_path).resize((70, 70), Image.LANCZOS)
+                img = Image.open(img_path).resize((button_size, button_size), Image.LANCZOS)
                 photo_img = ImageTk.PhotoImage(img)
                 images.append(photo_img)
 
@@ -1744,22 +1771,24 @@ class SalesSystemApp:
                 sub_frame.grid(row=row, column=column, padx=20, pady=20)
 
                 # Image button
-                btn = tk.Button(sub_frame, image=photo_img, bd=0, 
-                            compound=tk.TOP,
-                            bg=COLORS["background"],
-                            fg=COLORS["text"],
-                            activebackground=COLORS["highlight"],
-                            command=btn_info["command"])
+                btn = tk.Button(sub_frame, image=photo_img, bd=0,
+                                text=btn_info["text"], 
+                                font=("Arial", 15, "bold"),
+                                compound=tk.TOP,
+                                bg=COLORS["background"],
+                                fg=COLORS["text"],
+                                activebackground=COLORS["highlight"],
+                                command=btn_info["command"])
                 btn.image = photo_img  # Keep reference
-                btn.pack()
+                btn.pack(expand=True, fill=tk.BOTH)  # Make button expand to fill frame
                 
                 btn.bind("<Enter>", lambda e, b=btn: b.config(bg=COLORS["primary"]))
                 btn.bind("<Leave>", lambda e, b=btn: b.config(bg=COLORS["background"]))
 
-                # Text label
-                lbl = tk.Label(sub_frame, text=btn_info["text"], 
-                            font=("Arial", 15, "bold"), bg=COLORS["background"], fg=COLORS["text"])
-                lbl.pack(pady=5)
+                # # Text label
+                # lbl = tk.Label(sub_frame, text=btn_info["text"], 
+                #             font=("Arial", 15, "bold"), bg=COLORS["background"], fg=COLORS["text"])
+                # lbl.pack(pady=5)
 
         except Exception as e:
             print(f"Error loading images: {e}")
@@ -1774,7 +1803,7 @@ class SalesSystemApp:
                 # Clear current window
         for widget in self.root.winfo_children():
             widget.destroy()
-
+        self.root.configure(bg=COLORS["background"])
         # Create the top bar
         self.topbar(show_back_button=True)
 
@@ -1783,21 +1812,29 @@ class SalesSystemApp:
         button_frame.pack(pady=30)
 
         # Define buttons with images, text, and commands
-        buttons = [
-            {"text": self.t("New Purchase Invoice"), "image": "Purchase.png", 
-            "command": lambda: self.new_Purchase_invoice(self.user_role,"add")},
-            {"text": self.t("Update Purchase Invoice"), "image": "update_sales.png",
-            "command": lambda: self.new_Purchase_invoice(self.user_role,"update")}
-        ]
+        if self.light:
+            buttons = [
+                {"text": self.t("New Purchase Invoice"), "image": "new_invoice-dark.png", 
+                "command": lambda: self.new_Purchase_invoice(self.user_role,"add")},
+                {"text": self.t("Update Purchase Invoice"), "image": "update_invoice-dark.png",
+                "command": lambda: self.new_Purchase_invoice(self.user_role,"update")}
+            ]
+        elif not self.light:
+            buttons = [
+                {"text": self.t("New Purchase Invoice"), "image": "new_invoice-light.png", 
+                "command": lambda: self.new_Purchase_invoice(self.user_role,"add")},
+                {"text": self.t("Update Purchase Invoice"), "image": "update_invoice-light.png",
+                "command": lambda: self.new_Purchase_invoice(self.user_role,"update")}
+            ]            
         
         images = []  # Keep references to prevent garbage collection
         columns_per_row = 3  # Number of buttons per row
-
+        button_size = 120
         try:
             for index, btn_info in enumerate(buttons):
                 # Load and resize image
                 img_path = os.path.join(BASE_DIR, "Static", "images", btn_info["image"])
-                img = Image.open(img_path).resize((70, 70), Image.LANCZOS)
+                img = Image.open(img_path).resize((button_size, button_size), Image.LANCZOS)
                 photo_img = ImageTk.PhotoImage(img)
                 images.append(photo_img)
 
@@ -1810,22 +1847,24 @@ class SalesSystemApp:
                 sub_frame.grid(row=row, column=column, padx=20, pady=20)
 
                 # Image button
-                btn = tk.Button(sub_frame, image=photo_img, bd=0, 
-                            compound=tk.TOP,
-                            bg=COLORS["background"],
-                            fg=COLORS["text"],
-                            activebackground=COLORS["highlight"],
-                            command=btn_info["command"])
+                btn = tk.Button(sub_frame, image=photo_img, bd=0,
+                                text=btn_info["text"], 
+                                font=("Arial", 15, "bold"),
+                                compound=tk.TOP,
+                                bg=COLORS["background"],
+                                fg=COLORS["text"],
+                                activebackground=COLORS["highlight"],
+                                command=btn_info["command"])
                 btn.image = photo_img  # Keep reference
                 btn.pack()
                 
                 btn.bind("<Enter>", lambda e, b=btn: b.config(bg=COLORS["primary"]))
                 btn.bind("<Leave>", lambda e, b=btn: b.config(bg=COLORS["background"]))
 
-                # Text label
-                lbl = tk.Label(sub_frame, text=btn_info["text"], 
-                            font=("Arial", 15, "bold"), bg=COLORS["background"], fg="#003366")
-                lbl.pack(pady=5)
+                # # Text label
+                # lbl = tk.Label(sub_frame, text=btn_info["text"], 
+                #             font=("Arial", 15, "bold"), bg=COLORS["background"], fg="#003366")
+                # lbl.pack(pady=5)
 
         except Exception as e:
             print(f"Error loading images: {e}")
@@ -1841,7 +1880,7 @@ class SalesSystemApp:
                 # Clear current window
         for widget in self.root.winfo_children():
             widget.destroy()
-
+        self.root.configure(bg=COLORS["background"])
         # Create the top bar
         self.topbar(show_back_button=True)
 
@@ -1850,26 +1889,48 @@ class SalesSystemApp:
         button_frame.pack(pady=30)
 
         # Define buttons with images, text, and commands
-        buttons = [
-            {"text": self.t("Customers"), "image": "customers.png", 
-            "command": lambda: self.new_customer(self.user_role)},
-            {"text": self.t("Suppliers"), "image": "suppliers.png", 
-            "command": lambda: self.new_supplier(self.user_role)},
-            {"text": self.t("Employees"), "image": "Employees.png", 
-            "command": lambda: self.new_employee(self.user_role)},
-            {"text": self.t("Products"), "image": "Products.png", 
-            "command": lambda: self.new_products(self.user_role)},
-            {"text": self.t("Materials"), "image": "Materials.png", 
-            "command": lambda: self.new_material(self.user_role)},
-            {"text": self.t("Employee Salary"), "image": "employee-benefit.png", 
-            "command": lambda: self.new_emp_salary(self.user_role)},
-            {"text": self.t("Employee Appointments"), "image": "employee.png", 
-            "command": lambda: self.new_emp_appointment(self.user_role)},
-            {"text": self.t("Employee Withdrawals"), "image": "compensation (1).png", 
-            "command": lambda: self.new_emp_withdrawal(self.user_role)},
-            {"text": self.t("General_Exp_And_Rev"), "image": "exp_rev.png", 
-            "command": lambda: self.new_general_exp(self.user_role)}
-        ]
+        if self.light:
+            buttons = [
+                {"text": self.t("Customers"), "image": "cus_db-dark.png", 
+                "command": lambda: self.new_customer(self.user_role)},
+                {"text": self.t("Suppliers"), "image": "supp_db-dark.png", 
+                "command": lambda: self.new_supplier(self.user_role)},
+                {"text": self.t("Employees"), "image": "emp_db-dark.png", 
+                "command": lambda: self.new_employee(self.user_role)},
+                {"text": self.t("Products"), "image": "prod_db-dark.png", 
+                "command": lambda: self.new_products(self.user_role)},
+                {"text": self.t("Materials"), "image": "mat_db-dark.png", 
+                "command": lambda: self.new_material(self.user_role)},
+                {"text": self.t("Employee Salary"), "image": "employee-benefit.png", 
+                "command": lambda: self.new_emp_salary(self.user_role)},
+                {"text": self.t("Employee Appointments"), "image": "employee.png", 
+                "command": lambda: self.new_emp_appointment(self.user_role)},
+                {"text": self.t("Employee Withdrawals"), "image": "compensation (1).png", 
+                "command": lambda: self.new_emp_withdrawal(self.user_role)},
+                {"text": self.t("General_Exp_And_Rev"), "image": "exp_rev.png", 
+                "command": lambda: self.new_general_exp(self.user_role)}
+            ]
+        elif not self.light:
+            buttons = [
+                {"text": self.t("Customers"), "image": "cus_db-light.png", 
+                "command": lambda: self.new_customer(self.user_role)},
+                {"text": self.t("Suppliers"), "image": "supp_db-light.png", 
+                "command": lambda: self.new_supplier(self.user_role)},
+                {"text": self.t("Employees"), "image": "emp_db-light.png", 
+                "command": lambda: self.new_employee(self.user_role)},
+                {"text": self.t("Products"), "image": "prod_db-light.png", 
+                "command": lambda: self.new_products(self.user_role)},
+                {"text": self.t("Materials"), "image": "mat_db-light.png", 
+                "command": lambda: self.new_material(self.user_role)},
+                {"text": self.t("Employee Salary"), "image": "employee-benefit.png", 
+                "command": lambda: self.new_emp_salary(self.user_role)},
+                {"text": self.t("Employee Appointments"), "image": "employee.png", 
+                "command": lambda: self.new_emp_appointment(self.user_role)},
+                {"text": self.t("Employee Withdrawals"), "image": "compensation (1).png", 
+                "command": lambda: self.new_emp_withdrawal(self.user_role)},
+                {"text": self.t("General_Exp_And_Rev"), "image": "exp_rev.png", 
+                "command": lambda: self.new_general_exp(self.user_role)}
+            ]
         if self.user_role == "developer":
             buttons.extend([
                 {"text": self.t("purchases"), "image": "Purchases_DB.png", 
@@ -1885,13 +1946,13 @@ class SalesSystemApp:
 
             ])
         images = []  # Keep references to prevent garbage collection
-        columns_per_row = 4  # Number of buttons per row
-
+        columns_per_row = 5  # Number of buttons per row
+        button_size = 120
         try:
             for index, btn_info in enumerate(buttons):
                 # Load and resize image
                 img_path = os.path.join(BASE_DIR, "Static", "images", btn_info["image"])
-                img = Image.open(img_path).resize((70, 70), Image.LANCZOS)
+                img = Image.open(img_path).resize((button_size, button_size), Image.LANCZOS)
                 photo_img = ImageTk.PhotoImage(img)
                 images.append(photo_img)
 
@@ -1904,12 +1965,14 @@ class SalesSystemApp:
                 sub_frame.grid(row=row, column=column, padx=20, pady=20)
 
                 # Image button
-                btn = tk.Button(sub_frame, image=photo_img, bd=0, 
-                            compound=tk.TOP,
-                            bg=COLORS["background"],
-                            fg=COLORS["text"],
-                            activebackground=COLORS["highlight"],
-                            command=btn_info["command"])
+                btn = tk.Button(sub_frame, image=photo_img, bd=0,
+                                text=btn_info["text"], 
+                                font=("Arial", 15, "bold"),
+                                compound=tk.TOP,
+                                bg=COLORS["background"],
+                                fg=COLORS["text"],
+                                activebackground=COLORS["highlight"],
+                                command=btn_info["command"])
                 btn.image = photo_img  # Keep reference
                 btn.pack()
                 
@@ -1917,9 +1980,9 @@ class SalesSystemApp:
                 btn.bind("<Leave>", lambda e, b=btn: b.config(bg=COLORS["background"]))
 
                 # Text label
-                lbl = tk.Label(sub_frame, text=btn_info["text"], 
-                            font=("Arial", 15, "bold"), bg=COLORS["background"], fg="#003366")
-                lbl.pack(pady=5)
+                # lbl = tk.Label(sub_frame, text=btn_info["text"], 
+                #             font=("Arial", 15, "bold"), bg=COLORS["background"], fg="#003366")
+                # lbl.pack(pady=5)
 
         except Exception as e:
             print(f"Error loading images: {e}")
@@ -1935,7 +1998,7 @@ class SalesSystemApp:
                 # Clear current window
         for widget in self.root.winfo_children():
             widget.destroy()
-
+        self.root.configure(bg=COLORS["background"])
         # Create the top bar
         self.topbar(show_back_button=True)
 
@@ -1945,30 +2008,40 @@ class SalesSystemApp:
 
 
         # Define buttons with images, text, and commands
-        buttons = [
-            {"text": self.t("Employee hours"), "image": "Emp_hours.png", 
-            "command": lambda: self.employee_hours_window(self.user_role)},
-            {"text": self.t("Employee Withdrawals"), "image": "Emp_Withdraw.png", 
-            "command": lambda: self.employee_withdrowls_window(self.user_role)},
-            {"text": self.t("Employee Statistics"), "image": "employee time statistics.png", 
-            "command": lambda: self.employee_statistics_window(self.user_role)},
-        ]
+        if self.light:
+            buttons = [
+                {"text": self.t("Employee hours"), "image": "emp_hour-dark.png", 
+                "command": lambda: self.employee_hours_window(self.user_role)},
+                {"text": self.t("Employee Withdrawals"), "image": "emp_with-dark.png", 
+                "command": lambda: self.employee_withdrowls_window(self.user_role)},
+                {"text": self.t("Employee Statistics"), "image": "emp_salary-dark.png", 
+                "command": lambda: self.employee_statistics_window(self.user_role)},
+            ]
+        elif not self.light:
+            buttons = [
+                {"text": self.t("Employee hours"), "image": "emp_hour-light.png", 
+                "command": lambda: self.employee_hours_window(self.user_role)},
+                {"text": self.t("Employee Withdrawals"), "image": "emp_with-light.png", 
+                "command": lambda: self.employee_withdrowls_window(self.user_role)},
+                {"text": self.t("Employee Statistics"), "image": "emp_salary-light.png", 
+                "command": lambda: self.employee_statistics_window(self.user_role)},
+            ]
         images = []  # Keep references to prevent garbage collection
         columns_per_row = 3  # Number of buttons per row
-
+        button_size = 120
         try:
             for index, btn_info in enumerate(buttons):
                 # Default transparent image
                 img_path = os.path.join(BASE_DIR, "Static", "images", btn_info["image"])
                 original_img = Image.open(img_path).convert("RGBA")
-                transparent_img = original_img.resize((70, 70), Image.LANCZOS)
+                transparent_img = original_img.resize((button_size, button_size), Image.LANCZOS)
                 photo_transparent = ImageTk.PhotoImage(transparent_img)
 
                 # Image with background
                 bg_color = (0,0,0,0)  # F5F7FA in RGBA
                 bg_img = Image.new("RGBA", original_img.size, bg_color)
                 composited_img = Image.alpha_composite(bg_img, original_img)
-                resized_composited = composited_img.resize((70, 70), Image.LANCZOS)
+                resized_composited = composited_img.resize((button_size, button_size), Image.LANCZOS)
                 photo_with_bg = ImageTk.PhotoImage(resized_composited)
 
                 # Save both images
@@ -1984,9 +2057,9 @@ class SalesSystemApp:
                 sub_frame.grid(row=row, column=column, padx=20, pady=20)
 
                 # Image button
-                btn = tk.Button(sub_frame,
-                                image=photo_transparent,
-                                bd=0,
+                btn = tk.Button(sub_frame, image=photo_transparent, bd=0,
+                                text=btn_info["text"], 
+                                font=("Arial", 15, "bold"),
                                 compound=tk.TOP,
                                 bg=COLORS["background"],
                                 fg=COLORS["text"],
@@ -1999,10 +2072,10 @@ class SalesSystemApp:
                 btn.bind("<Enter>", lambda e, b=btn: b.config(bg=COLORS["primary"]))
                 btn.bind("<Leave>", lambda e, b=btn: b.config(bg=COLORS["background"]))
 
-                # Text label
-                lbl = tk.Label(sub_frame, text=btn_info["text"], 
-                            font=("Arial", 15, "bold"), bg=COLORS["background"], fg="#003366")
-                lbl.pack(pady=5)
+                # # Text label
+                # lbl = tk.Label(sub_frame, text=btn_info["text"], 
+                #             font=("Arial", 15, "bold"), bg=COLORS["background"], fg="#003366")
+                # lbl.pack(pady=5)
 
         except Exception as e:
             print(f"Error loading images: {e}")
@@ -2835,8 +2908,8 @@ class SalesSystemApp:
         self.topbar(show_back_button=True)
         
         # Create main container frame
-        main_frame = tk.Frame(self.root)
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        main_frame = tk.Frame(self.root, padx=20, pady=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
         
         # Create paned window for resizable split
         paned_window = tk.PanedWindow(main_frame, orient=tk.HORIZONTAL, sashrelief=tk.RAISED, sashwidth=4)
@@ -2986,8 +3059,8 @@ class SalesSystemApp:
         self.topbar(show_back_button=True)
 
         # Main container
-        main_frame = tk.Frame(self.root)
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        main_frame = tk.Frame(self.root, padx=20, pady=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
 
         # Filter controls
         filter_frame = tk.Frame(main_frame)
@@ -3268,10 +3341,10 @@ class SalesSystemApp:
         products_col = self.get_collection_by_name("Products")
 
         # Main form frame with responsive sizing
-        form_frame = tk.Frame(self.root)
-        form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        form_frame = tk.Frame(self.root, padx=20, pady=20)
+        form_frame.pack(fill=tk.BOTH, expand=True)
         
-        # Configure columns - 12 columns with equal weight
+        # Configure columns - 10 columns with equal weight
         for i in range(10):
             form_frame.columnconfigure(i, weight=1)
 
@@ -3952,8 +4025,8 @@ class SalesSystemApp:
         materials_col = self.get_collection_by_name("Materials")
 
         # Main form frame with responsive sizing
-        form_frame = tk.Frame(self.root)
-        form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        form_frame = tk.Frame(self.root, padx=20, pady=20)
+        form_frame.pack(fill=tk.BOTH, expand=True)
         
         # Configure columns - 10 columns with equal weight
         for i in range(10):
@@ -4443,8 +4516,8 @@ class SalesSystemApp:
             self.product_name_map[name] = {'code': code, 'stock_quantity': stock}
 
         # Main form frame with responsive sizing
-        form_frame = tk.Frame(self.root)
-        form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        form_frame = tk.Frame(self.root, padx=20, pady=20)
+        form_frame.pack(fill=tk.BOTH, expand=True)
         
         # Configure columns - 9 columns with equal weight
         for i in range(9):
@@ -5074,8 +5147,8 @@ class SalesSystemApp:
             supplier_codes.append(supplier.get("Code"))
             supplier_names.append(supplier.get("Name"))
         
-        main_frame = tk.Frame(root)
-        main_frame.pack(fill="both", expand=True, padx=20, pady=50)
+        main_frame = tk.Frame(root, padx=20, pady=50)
+        main_frame.pack(fill="both", expand=True)
         
         left_frame = tk.Frame(main_frame, width=330)
         left_frame.pack(side="left", fill="y")
@@ -5577,8 +5650,8 @@ class SalesSystemApp:
             customer_codes.append(customer.get("Code"))
             customer_names.append(customer.get("Name"))
         
-        main_frame = tk.Frame(root)
-        main_frame.pack(fill="both", expand=True, padx=20, pady=50)
+        main_frame = tk.Frame(root ,padx=20, pady=50)
+        main_frame.pack(fill="both", expand=True)
         
         left_frame = tk.Frame(main_frame, width=330)
         left_frame.pack(side="left", fill="y")
@@ -5758,8 +5831,8 @@ class SalesSystemApp:
         pic_fields = [label for label in columns if "pic" in label.lower()]
         ordered_fields = normal_fields + pic_fields
 
-        main_frame = tk.Frame(root)
-        main_frame.pack(fill="both", expand=True, padx=20, pady=50)
+        main_frame = tk.Frame(root, padx=20, pady=50)
+        main_frame.pack(fill="both", expand=True)
 
         # ==== 1. Create scrollable form frame ====
         form_container = tk.Frame(main_frame)
@@ -5949,6 +6022,8 @@ class SalesSystemApp:
         ).pack(side="left")
         
         # Bottom buttons
+        # bottom_frame = tk.Frame(main_frame) #new frame for buttons
+        # bottom_frame.pack(side="bottom", fill="both", expand=True) #new frame for buttons
         button_frame = tk.LabelFrame(root, text="Actions", padx=10, pady=10, font=("Arial", 12, 'bold'))
         button_frame.pack(pady=10)
 
@@ -9420,7 +9495,8 @@ class SalesSystemApp:
             self.light = True
         if COLORS["background"] == "#F5F7FA":
             COLORS["background"]    = "#121212"   # Dark background (not pure black)
-            COLORS["primary"]       = "#2A3F5F"   # Soft light text (from light mode #2A3F5F)
+            COLORS["primary"]       = "#3B82F6"   # Soft light text (from light mode #2A3F5F)
+            COLORS["main_frame"]    = "#2A3F5F"   # Soft light text (from light mode #2A3F5F)
             COLORS["secondary"]     = "#00C0A3"   # Keep same – good contrast on dark
             COLORS["accent"]        = "#FF6F61"   # Keep same – bright accent
             COLORS["text"]          = "#FFFFFF"   # Bright white for main text
@@ -9435,7 +9511,8 @@ class SalesSystemApp:
             COLORS["top_bar_icons"] = "#fbd307"   # <-- New dark mode user info color
         else:
             COLORS["background"]    = "#F5F7FA"
-            COLORS["primary"]       = "#2A3F5F"
+            COLORS["primary"]       = "#3B82F6"
+            COLORS["main_frame"]    = "#2A3F5F"
             COLORS["secondary"]     = "#00C0A3"
             COLORS["accent"]        = "#FF6F61"
             COLORS["text"]          = "#2A3F5F"
@@ -10008,7 +10085,7 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = SalesSystemApp(root)       # Create main app first
     app.start_without_login()
-    app.start_with_login()     # Then launch the login screen through app
+    # app.start_with_login()     # Then launch the login screen through app
 
     try:
         root.mainloop()
