@@ -1901,13 +1901,13 @@ class SalesSystemApp:
                 "command": lambda: self.new_products(self.user_role)},
                 {"text": self.t("Materials"), "image": "mat_db-dark.png", 
                 "command": lambda: self.new_material(self.user_role)},
-                {"text": self.t("Employee Salary"), "image": "employee-benefit.png", 
+                {"text": self.t("Employee Salary"), "image": "emp_salary_db-dark.png", 
                 "command": lambda: self.new_emp_salary(self.user_role)},
-                {"text": self.t("Employee Appointments"), "image": "employee.png", 
+                {"text": self.t("Employee Appointments"), "image": "emp_hour-dark.png", 
                 "command": lambda: self.new_emp_appointment(self.user_role)},
-                {"text": self.t("Employee Withdrawals"), "image": "compensation (1).png", 
+                {"text": self.t("Employee Withdrawals"), "image": "emp_with-dark.png", 
                 "command": lambda: self.new_emp_withdrawal(self.user_role)},
-                {"text": self.t("General_Exp_And_Rev"), "image": "exp_rev.png", 
+                {"text": self.t("General_Exp_And_Rev"), "image": "financial-dark.png", 
                 "command": lambda: self.new_general_exp(self.user_role)}
             ]
         elif not self.light:
@@ -1922,29 +1922,44 @@ class SalesSystemApp:
                 "command": lambda: self.new_products(self.user_role)},
                 {"text": self.t("Materials"), "image": "mat_db-light.png", 
                 "command": lambda: self.new_material(self.user_role)},
-                {"text": self.t("Employee Salary"), "image": "employee-benefit.png", 
+                {"text": self.t("Employee Salary"), "image": "emp_salary_db-light.png", 
                 "command": lambda: self.new_emp_salary(self.user_role)},
-                {"text": self.t("Employee Appointments"), "image": "employee.png", 
+                {"text": self.t("Employee Appointments"), "image": "emp_hour-light.png", 
                 "command": lambda: self.new_emp_appointment(self.user_role)},
-                {"text": self.t("Employee Withdrawals"), "image": "compensation (1).png", 
+                {"text": self.t("Employee Withdrawals"), "image": "emp_with-light.png", 
                 "command": lambda: self.new_emp_withdrawal(self.user_role)},
-                {"text": self.t("General_Exp_And_Rev"), "image": "exp_rev.png", 
+                {"text": self.t("General_Exp_And_Rev"), "image": "financial-light.png", 
                 "command": lambda: self.new_general_exp(self.user_role)}
             ]
         if self.user_role == "developer":
-            buttons.extend([
-                {"text": self.t("purchases"), "image": "Purchases_DB.png", 
-                "command": lambda: self.new_purchases(self.user_role)},
-                {"text": self.t("sales"), "image": "Sales_DB.png", 
-                "command": lambda: self.new_sales(self.user_role)},
-                {"text": self.t("Customer Payments"), "image": "Recieve.png", 
-                "command": lambda: self.new_customer_payment(self.user_role)},
-                {"text": self.t("Supplier Payments"), "image": "payment.png", 
-                "command": lambda: self.new_supplier_payment(self.user_role)},
-                {"text": self.t("Produnction"), "image": "manufacture.png", 
-                "command": lambda: self.new_production(self.user_role)},
+            if self.light:
+                buttons.extend([
+                    {"text": self.t("purchases"), "image": "purchases_invoice-dark.png", 
+                    "command": lambda: self.new_purchases(self.user_role)},
+                    {"text": self.t("sales"), "image": "sales_invoice-dark.png", 
+                    "command": lambda: self.new_sales(self.user_role)},
+                    {"text": self.t("Customer Payments"), "image": "customer_payment-dark.png", 
+                    "command": lambda: self.new_customer_payment(self.user_role)},
+                    {"text": self.t("Supplier Payments"), "image": "supplier_payment-dark.png", 
+                    "command": lambda: self.new_supplier_payment(self.user_role)},
+                    {"text": self.t("Produnction"), "image": "production-dark.png", 
+                    "command": lambda: self.new_production(self.user_role)},
 
-            ])
+                ])
+            elif not self.light:
+                buttons.extend([
+                    {"text": self.t("purchases"), "image": "purchases_invoice-light.png", 
+                    "command": lambda: self.new_purchases(self.user_role)},
+                    {"text": self.t("sales"), "image": "sales_invoice-light.png", 
+                    "command": lambda: self.new_sales(self.user_role)},
+                    {"text": self.t("Customer Payments"), "image": "customer_payment-light.png", 
+                    "command": lambda: self.new_customer_payment(self.user_role)},
+                    {"text": self.t("Supplier Payments"), "image": "supplier_payment-light.png", 
+                    "command": lambda: self.new_supplier_payment(self.user_role)},
+                    {"text": self.t("Produnction"), "image": "production-light.png", 
+                    "command": lambda: self.new_production(self.user_role)},
+
+                ])
         images = []  # Keep references to prevent garbage collection
         columns_per_row = 5  # Number of buttons per row
         button_size = 120
