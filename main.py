@@ -1166,7 +1166,7 @@ class SalesSystemApp:
                 
                 # Create frame for each button
                 btn_frame = tk.Frame(centered_frame, bg=COLORS["card"])
-                btn_frame.grid(row=row, column=column, padx=15, pady=15, sticky="nsew")
+                btn_frame.grid(row=row, column=column, padx=10, pady=10, sticky="nsew")
                 
                 # Load and process image
                 img_path = os.path.join(BASE_DIR, "Static", "images", btn_info["image"])
@@ -10102,7 +10102,7 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = SalesSystemApp(root)       # Create main app first
     app.start_without_login()
-    # app.start_with_login()     # Then launch the login screen through app
+    app.start_with_login()     # Then launch the login screen through app
 
     try:
         root.mainloop()
