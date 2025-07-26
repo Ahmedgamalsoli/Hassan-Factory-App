@@ -16,6 +16,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import random
 import arabic_reshaper
+import openpyxl
 
 from tkinter import filedialog, ttk, messagebox
 from PIL import Image, ImageTk, ImageDraw  # Import Pillow classes
@@ -29,8 +30,16 @@ from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 from collections import defaultdict
 from bidi.algorithm import get_display
+from matplotlib.figure import Figure    
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.lib.units import inch
 matplotlib.use('TkAgg')  # Set the backend before importing pyplot
-
 
 # ======================
 # Files Imports
@@ -299,6 +308,7 @@ class SalesSystemApp:
         self.stop_event = threading.Event()
         
         self.image_refs = []
+        self.filtered_transactions = []
         self.production_entries = []
         #         elif collection_name == "Sales_Header":
         #     return [self.t("Product_code"), self.t("product_name"), self.t("unit"),self.t("numbering"),self.t("QTY"),self.t("Discount Type"),self.t("Discount Value"),self.t("Total_QTY"),self.t("Unit_Price"),self.t("Total_Price")]
@@ -319,9 +329,9 @@ class SalesSystemApp:
             "New Purchase Invoice": {"Arabic": "فاتورة مشتريات جديدة", "English": "New Purchase Invoice"},
             "Purchase Invoice": {"Arabic": "فاتورة مشتريات", "English": "Purchase Invoice"},
             "Update Purchase Invoice": {"Arabic": "تعديل فاتورة مشتريات", "English": "Update Purchase Invoice"},
-            "Receive Payment": {"Arabic": "حسابات وتوريدات العملاء", "English": "Customer Supply Hub"},
+            "Receive Payment": {"Arabic": "حسابات وتوريدات العملاء", "English": "Customer Hub"},
             "Treasury": {"Arabic": "الخزينة", "English": "Treasury"},
-            "Make Payment": {"Arabic": "حسابات وتوريدات الموردين", "English": "Supplier Supply Hub"},
+            "Make Payment": {"Arabic": "حسابات وتوريدات الموردين", "English": "Supplier Hub"},
             "Customers": {"Arabic": "العملاء", "English": "Customers"},
             "Suppliers": {"Arabic": "الموردين", "English": "Suppliers"},
             "Customers number": {"Arabic": "عدد العملاء", "English": "Customers"},
@@ -568,7 +578,17 @@ class SalesSystemApp:
             "Group Chat - Employee Notes":{"Arabic":"دردشة جماعية - ملاحظات الموظف","English":"Group Chat - Employee Notes"},
             "Unknown":{"Arabic":"غير معروف","English":"Unknown"},
             "Application Assistant":{"Arabic":"مساعد التطبيق","English":"Application Assistant"},
-            # "":{"Arabic":"","English":""},
+            "Sales Report":{"Arabic":"تقرير المبيعات","English":"Sales Report"},
+            "Purchase Report":{"Arabic":"تقرير المشتريات","English":"Purchase Report"},
+            "Profit and Loss (P&L) Report":{"Arabic":"تقرير الربح والخسارة","English":"Profit and Loss Report"},
+            "Customer Reports":{"Arabic":"تقارير العملاء","English":"Customer Reports"},
+            "Supplier Reports":{"Arabic":"تقارير الموردين","English":"Supplier Reports"},
+            "Inventory Report":{"Arabic":"تقرير المخزون","English":"Inventory Report"},
+            "Payment & Collection Report":{"Arabic":"تقرير الدفع والتحصيل","English":"Payment & Collection Report"},
+            "General Expenses Report":{"Arabic":"تقرير المصروفات العامة","English":"General Expenses Report"},
+            "Employee Performance Report":{"Arabic":"تقرير أداء الموظفين","English":"Employee Performance Report"},
+            "Export to Excel":{"Arabic":"تحويل الي اكسل","English":"Export to Excel"},
+            "Export to PDF":{"Arabic":"تحويل الي pdf","English":"Export to PDF"},
             # "":{"Arabic":"","English":""},
             # "":{"Arabic":"","English":""},
             # "":{"Arabic":"","English":""},
@@ -1097,7 +1117,7 @@ class SalesSystemApp:
                 {"text": self.t("General_Exp_And_Rev"), "image": "financial-dark.png", 
                 "command": lambda: self.general_exp_rev(self.user_role)},
                 {"text": self.t("Reports"), "image": "report-dark.png", 
-                "command": lambda: self.trash(self.user_role)},
+                "command": lambda: self.manage_Reports_window()},
             ]
             
             if self.user_role == "admin" or self.user_role == "developer":
@@ -1129,7 +1149,7 @@ class SalesSystemApp:
                 {"text": self.t("General_Exp_And_Rev"), "image": "financial-light.png", 
                 "command": lambda: self.general_exp_rev(self.user_role)},
                 {"text": self.t("Reports"), "image": "report-light.png", 
-                "command": lambda: self.trash(self.user_role)},
+                "command": lambda: self.manage_Reports_window()},
             ]
 
             if self.user_role == "admin" or self.user_role == "developer":
@@ -2040,6 +2060,119 @@ class SalesSystemApp:
                 "command": lambda: self.employee_withdrowls_window(self.user_role)},
                 {"text": self.t("Employee Statistics"), "image": "emp_salary-light.png", 
                 "command": lambda: self.employee_statistics_window(self.user_role)},
+            ]
+        images = []  # Keep references to prevent garbage collection
+        columns_per_row = 3  # Number of buttons per row
+        button_size = 120
+        try:
+            for index, btn_info in enumerate(buttons):
+                # Default transparent image
+                img_path = os.path.join(BASE_DIR, "Static", "images", btn_info["image"])
+                original_img = Image.open(img_path).convert("RGBA")
+                transparent_img = original_img.resize((button_size, button_size), Image.LANCZOS)
+                photo_transparent = ImageTk.PhotoImage(transparent_img)
+
+                # Image with background
+                bg_color = (0,0,0,0)  # F5F7FA in RGBA
+                bg_img = Image.new("RGBA", original_img.size, bg_color)
+                composited_img = Image.alpha_composite(bg_img, original_img)
+                resized_composited = composited_img.resize((button_size, button_size), Image.LANCZOS)
+                photo_with_bg = ImageTk.PhotoImage(resized_composited)
+
+                # Save both images
+                images.append(photo_transparent)
+                images.append(photo_with_bg)
+
+                # Calculate grid position
+                row = index // columns_per_row
+                column = index % columns_per_row
+
+                # Create sub-frame for each button
+                sub_frame = tk.Frame(button_frame, bg=COLORS["background"])
+                sub_frame.grid(row=row, column=column, padx=20, pady=20)
+
+                # Image button
+                btn = tk.Button(sub_frame, image=photo_transparent, bd=0,
+                                text=btn_info["text"], 
+                                font=("Arial", 15, "bold"),
+                                compound=tk.TOP,
+                                bg=COLORS["background"],
+                                fg=COLORS["text"],
+                                activebackground=COLORS["highlight"],
+                                command=btn_info["command"])
+                btn.image_transparent = photo_transparent
+                btn.image_with_bg = photo_with_bg
+                btn.pack()
+                
+                btn.bind("<Enter>", lambda e, b=btn: b.config(bg=COLORS["primary"]))
+                btn.bind("<Leave>", lambda e, b=btn: b.config(bg=COLORS["background"]))
+
+                # # Text label
+                # lbl = tk.Label(sub_frame, text=btn_info["text"], 
+                #             font=("Arial", 15, "bold"), bg=COLORS["background"], fg="#003366")
+                # lbl.pack(pady=5)
+
+        except Exception as e:
+            print(f"Error loading images: {e}")
+            # Fallback to text buttons if images fail
+            fallback_frame = tk.Frame(self.root, bg=COLORS["background"])
+            fallback_frame.pack(pady=20)
+            for btn_info in buttons:
+                tk.Button(fallback_frame, text=btn_info["text"], 
+                        command=btn_info["command"]).pack(side="left", padx=10)
+    def manage_Reports_window(self):
+                # Clear current window
+        for widget in self.root.winfo_children():
+            widget.destroy()
+        self.root.configure(bg=COLORS["background"])
+        # Create the top bar
+        self.topbar(show_back_button=True)
+
+        button_frame = tk.Frame(self.root, bg=COLORS["background"])
+        button_frame.pack(pady=30)
+
+        # Define buttons with images, text, and commands
+        if self.light:
+            buttons = [
+                {"text": self.t("Sales Report"), "image": "sales_rep-dark.png", 
+                "command": lambda: self.sales_report(self.user_role)},
+                {"text": self.t("Purchase Report"), "image": "Purchase_rep-dark.png", 
+                "command": lambda: self.trash(self.user_role)},
+                {"text": self.t("Profit and Loss (P&L) Report"), "image": "p&l_repo-dark.png", 
+                "command": lambda: self.trash(self.user_role)},
+                {"text": self.t("Customer Reports"), "image": "Customer_repo-dark.png", 
+                "command": lambda: self.trash(self.user_role)},
+                {"text": self.t("Supplier Reports"), "image": "Supplier_repo-dark.png", 
+                "command": lambda: self.trash(self.user_role)},
+                {"text": self.t("Inventory Report"), "image": "Inventory_repo-dark.png", 
+                "command": lambda: self.trash(self.user_role)},
+                {"text": self.t("Payment & Collection Report"), "image": "payment_repo-dark.png", 
+                "command": lambda: self.trash(self.user_role)},
+                {"text": self.t("General Expenses Report"), "image": "General Expenses_repo-dark.png", 
+                "command": lambda: self.trash(self.user_role)},
+                {"text": self.t("Employee Performance Report"), "image": "Employee_Performance_repo-dark.png", 
+                "command": lambda: self.trash(self.user_role)},
+            ]
+        elif not self.light:
+            buttons = [
+                {"text": self.t("Sales Report"), "image": "sales_rep-light.png", 
+                "command": lambda: self.sales_report(self.user_role)},
+                {"text": self.t("Purchase Report"), "image": "Purchase_rep-light.png", 
+                "command": lambda: self.trash(self.user_role)},
+                {"text": self.t("Profit and Loss (P&L) Report"), "image": "p&l_repo-light.png", 
+                "command": lambda: self.trash(self.user_role)},
+                {"text": self.t("Customer Reports"), "image": "Customer_repo-light.png", 
+                "command": lambda: self.trash(self.user_role)},
+                {"text": self.t("Supplier Reports"), "image": "Supplier_repo-light.png", 
+                "command": lambda: self.trash(self.user_role)},
+                {"text": self.t("Inventory Report"), "image": "Inventory_repo-light.png", 
+                "command": lambda: self.trash(self.user_role)},
+                {"text": self.t("Payment & Collection Report"), "image": "payment_repo-light.png", 
+                "command": lambda: self.trash(self.user_role)},
+                {"text": self.t("General Expenses Report"), "image": "General Expenses_repo-light.png", 
+                "command": lambda: self.trash(self.user_role)},
+                {"text": self.t("Employee Performance Report"), "image": "Employee_Performance_repo-light.png", 
+                "command": lambda: self.trash(self.user_role)},
             ]
         images = []  # Keep references to prevent garbage collection
         columns_per_row = 3  # Number of buttons per row
@@ -3151,6 +3284,14 @@ class SalesSystemApp:
         tk.Label(totals_frame, text=self.t("Balance:"), font=('Arial', 10, 'bold')).pack(side=tk.LEFT, padx=10)
         tk.Label(totals_frame, textvariable=self.balance_var, font=('Arial', 10)).pack(side=tk.LEFT)
 
+        headers = ["date", "description", 'credit', 'debit', "payment_method"]
+        filename_excel = f"تقرير الخزنه_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        filename_pdf = f"تقرير الخزنه_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        report_folder = "تقارير الخزنه"
+        excel_btn = ttk.Button(totals_frame, text=self.t("Export to Excel"), command=lambda: self.export_to_excel(self.filtered_transactions,headers,filename_excel))
+        pdf_btn = ttk.Button(totals_frame, text=self.t("Export to PDF"), command=lambda: self.export_to_pdf(self.filtered_transactions,headers=headers,filename=filename_pdf,report_folder=report_folder,title=report_folder))
+        excel_btn.pack(side=tk.LEFT, padx=10, pady=5)
+        pdf_btn.pack(side=tk.LEFT, padx=10, pady=5)
     def parse_date(self, date_str):
         # print(date_str)
         if not date_str:
@@ -3311,16 +3452,16 @@ class SalesSystemApp:
         # print(transactions)
         # Filter transactions
         allowed_methods = ["cash", "instapay", "bank_account", "e_wallet"]
-        filtered_transactions = []
+        self.filtered_transactions = []
         for t in transactions:
             if selected_method != "all":
                 if t["payment_method"] != selected_method.replace(" ", "_"):
                     continue
             if t["payment_method"] in allowed_methods and t["date"] is not None:
-                filtered_transactions.append(t)
+                self.filtered_transactions.append(t)
 
         # Populate treeview and calculate totals
-        for t in filtered_transactions:
+        for t in self.filtered_transactions:
             self.totals['credit'] += t['credit']
             self.totals['debit'] += t['debit']
             
@@ -3338,6 +3479,7 @@ class SalesSystemApp:
         # self.total_debit_var.set(f"${self.totals['debit']:,.2f}")
         balance = self.totals['credit'] - self.totals['debit']
         self.balance_var.set(f"{balance:,.2f} ج.م")
+        
 
     def sales_invoice(self, user_role, add_or_update):
         # Clear current window
@@ -9557,7 +9699,8 @@ class SalesSystemApp:
             Back_to_Database_Window = False, 
             Back_to_Employee_Window = False, 
             Back_to_Sales_Window = False,
-            Back_to_Purchases_Window = False
+            Back_to_Purchases_Window = False,
+            Back_to_Reports_Window = False
             ):
         # Top Bar
         top_bar = tk.Frame(self.root, bg=COLORS["top_bar"], height=60)
@@ -9623,6 +9766,8 @@ class SalesSystemApp:
                     back_icon = tk.Button(top_bar, image=self.back_photo, bg=COLORS["top_bar"], bd=0, command=self.manage_sales_invoices_window)
                 elif Back_to_Purchases_Window:
                     back_icon = tk.Button(top_bar, image=self.back_photo, bg=COLORS["top_bar"], bd=0, command=self.manage_purchases_invoices_window)
+                elif Back_to_Reports_Window:
+                    back_icon = tk.Button(top_bar, image=self.back_photo, bg=COLORS["top_bar"], bd=0, command=self.manage_Reports_window)
                 else:
                     back_icon = tk.Button(top_bar, image=self.back_photo, bg=COLORS["top_bar"], bd=0, command=self.main_menu)
                 back_icon.pack(side="left", padx=10)
@@ -9669,6 +9814,223 @@ class SalesSystemApp:
         username_label = tk.Label(user_frame, text=self.user_name, font=("Arial", 20), fg=COLORS["top_bar_icons"], bg=COLORS["top_bar"])
         username_label.pack(side="left")
     
+    def generate_report_data(self):
+        return [
+            ["Total Sales", "72000", "From 45 invoices"],
+            ["Top Customer", "عماد خطاب", "EGP 70,000"],
+            ["Total Items Sold", "320", "25 Products"]
+        ]
+
+    def export_to_excel(self, data, headers=["Metric", "Value", "Details"], filename="sales_report.xlsx"):
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.append(headers)
+        
+        print(f"\nExporting to {filename}")  # Debug
+        print(f"Headers: {headers}")  # Debug
+        print(f"First 3 rows: {data[:3] if data else 'EMPTY'}")  # Debug
+        
+        for i, row in enumerate(data, 1):
+            try:
+                if isinstance(row, dict):
+                    # Convert dict to ordered list
+                    export_row = [str(row.get(header, "")) for header in headers]
+                else:
+                    # Convert to list and stringify all values
+                    export_row = [str(item) for item in row]
+                
+                print(f"Row {i}: {export_row}")  # Debug
+                ws.append(export_row)
+                
+            except Exception as e:
+                print(f"Error processing row {i}: {e}\nRow content: {row}")
+                continue
+        
+        wb.save(filename)
+        print(f"Successfully saved to {filename}")  # Debug
+        os.startfile(filename)
+
+
+    def export_to_pdf(self, data, headers=None, title="Report", filename="report.pdf", report_folder="reports",
+                    page_size=letter, font_size=12):
+        """
+        Complete PDF export function with full Arabic support
+        
+        Args:
+            data: Data to export (list of dicts or lists)
+            headers: Column headers (list)
+            title: Report title (string)
+            filename: Output filename (string)
+            report_folder: Folder name on desktop (string)
+            page_size: Page size (default: letter)
+            font_size: Base font size (default: 12)
+        
+        Returns:
+            str: Path to generated PDF if successful, None otherwise
+        """
+        def load_arabic_fonts():
+            """Helper function to load Arabic fonts with fallback"""
+            try:
+                # Try to load custom Arabic font (Amiri)
+                arabic_font_path = os.path.join("Static", "Fonts", "Amiri-Regular.ttf")
+                if os.path.exists(arabic_font_path):
+                    pdfmetrics.registerFont(TTFont('Arabic', arabic_font_path))
+                    pdfmetrics.registerFont(TTFont('Arabic-Bold', arabic_font_path))
+                    return True
+            except Exception as e:
+                print(f"Arabic font loading error: {e}")
+
+            # Fallback to Arial if available
+            try:
+                pdfmetrics.registerFont(TTFont('Arabic', 'Arial'))
+                pdfmetrics.registerFont(TTFont('Arabic-Bold', 'Arial-Bold'))
+                return False
+            except:
+                return False
+
+        def format_arabic(text):
+            """Format Arabic text with proper shaping and direction"""
+            if isinstance(text, str):
+                reshaped = arabic_reshaper.reshape(text)
+                return get_display(reshaped)
+            return str(text)
+
+        try:
+            # 1. Load Arabic fonts
+            arabic_font_available = load_arabic_fonts()
+            font_name = 'Arabic' if arabic_font_available else 'Helvetica'
+            
+            # 2. Create output directory
+            desktop = os.path.join(os.path.expanduser('~'), 'Desktop')
+            report_folder_path = os.path.join(desktop, report_folder)
+            os.makedirs(report_folder_path, exist_ok=True)
+            pdf_path = os.path.join(report_folder_path, filename)
+            
+            # 3. Prepare PDF document
+            doc = SimpleDocTemplate(pdf_path, pagesize=page_size)
+            elements = []
+            styles = getSampleStyleSheet()
+            
+            # 4. Configure styles for Arabic
+            title_style = styles['Title']
+            title_style.fontName = f'{font_name}-Bold'
+            title_style.fontSize = font_size + 4
+            title_style.alignment = 2  # Right alignment
+            
+            normal_style = styles['Normal']
+            normal_style.fontName = font_name
+            normal_style.alignment = 2
+            
+            # 5. Add title and spacing
+            elements.append(Paragraph(format_arabic(title), title_style))
+            elements.append(Spacer(1*inch, 0.25*inch))
+            
+            # 6. Prepare table data
+            table_data = []
+            
+            # Process headers
+            if headers:
+                arabic_headers = [format_arabic(h) for h in headers]
+                table_data.append(arabic_headers)
+            
+            # Process data rows
+            for row in data:
+                if isinstance(row, dict):
+                    row_data = [format_arabic(row.get(h, "")) for h in headers] if headers else [format_arabic(v) for v in row.values()]
+                else:
+                    row_data = [format_arabic(item) for item in row]
+                table_data.append(row_data)
+            
+            # 7. Create and style table
+            table = Table(table_data, repeatRows=1)
+            table.hAlign = 'RIGHT'
+            
+            style = TableStyle([
+                ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#4F81BD')),
+                ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
+                ('ALIGN', (0,0), (-1,-1), 'RIGHT'),
+                ('FONTNAME', (0,0), (-1,-1), font_name),
+                ('FONTNAME', (0,0), (-1,0), f'{font_name}-Bold'),
+                ('FONTSIZE', (0,0), (-1,-1), font_size),
+                ('BOTTOMPADDING', (0,0), (-1,0), 12),
+                ('BACKGROUND', (0,1), (-1,-1), colors.HexColor('#DCE6F1')),
+                ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+                ('VALIGN', (0,0), (-1,-1), 'TOP')
+            ])
+            table.setStyle(style)
+            elements.append(table)
+            
+            # 8. Generate PDF
+            doc.build(elements)
+            
+            # 9. Try to open/print the file
+            try:
+                if os.name == 'nt':  # Windows
+                    os.startfile(pdf_path, "print")
+                elif os.name == 'posix':  # Mac/Linux
+                    subprocess.run(['lp', pdf_path], check=False)
+            except Exception as e:
+                messagebox.showerror(self.t("Print Error"), f"{self.t("Failed to print PDF:")}\n{e}")
+
+            # 10. Show success message (in Arabic)
+            messagebox.showinfo("نجاح", f"تم حفظ الملف بنجاح في:\n{pdf_path}")
+            
+            return pdf_path
+            
+        except Exception as e:
+            messagebox.showerror("خطأ", f"فشل في تصدير الملف:\n{str(e)}")
+            return None
+
+    def show_sales_chart(self,container, labels, values):
+        fig = Figure(figsize=(4, 3))
+        ax = fig.add_subplot(111)
+        ax.bar(labels, values, color='orange')
+        ax.set_title("Top Customers")
+        chart = FigureCanvasTkAgg(fig, master=container)
+        chart.get_tk_widget().pack()
+
+
+    def sales_report(self, user_role):
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        self.topbar(show_back_button=True, Back_to_Reports_Window=True)
+
+        # === Filters ===
+        filter_frame = ttk.Frame(self.root)
+        filter_frame.pack(pady=10)
+
+        ttk.Label(filter_frame, text="Start Date:").grid(row=0, column=0)
+        start_date = DateEntry(filter_frame)
+        start_date.grid(row=0, column=1, padx=5)
+
+        ttk.Label(filter_frame, text="End Date:").grid(row=0, column=2)
+        end_date = DateEntry(filter_frame)
+        end_date.grid(row=0, column=3, padx=5)
+
+        # === Table ===
+        table = ttk.Treeview(self.root, columns=("A", "B", "C"), show="headings", height=6)
+        table.heading("A", text="Metric")
+        table.heading("B", text="Value")
+        table.heading("C", text="Details")
+        table.pack(pady=10)
+
+        data = self.generate_report_data()
+        for row in data:
+            table.insert("", "end", values=row)
+
+        # === Chart ===
+        chart_frame = tk.Frame(self.root)
+        chart_frame.pack()
+        self.show_sales_chart(chart_frame, ["عماد خطاب", "أحمد سالم"], [70000, 30000])
+
+        # === Export Buttons ===
+        button_frame = ttk.Frame(self.root)
+        button_frame.pack(pady=10)
+        # headers = ["Metric", "Value", "Details", "Date"]
+        
+        ttk.Button(button_frame, text="Export to Excel", command=lambda: self.export_to_excel(data)).grid(row=0, column=0, padx=10)
+        ttk.Button(button_frame, text="Export to PDF", command=lambda: self.export_to_pdf(data)).grid(row=0, column=1, padx=10)
     def trash(self, user_role):
         # Clear current window
         for widget in self.root.winfo_children():
@@ -10102,7 +10464,7 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = SalesSystemApp(root)       # Create main app first
     app.start_without_login()
-    app.start_with_login()     # Then launch the login screen through app
+    # app.start_with_login()     # Then launch the login screen through app
 
     try:
         root.mainloop()
