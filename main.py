@@ -588,7 +588,7 @@ class SalesSystemApp:
             "General Expenses Report":{"Arabic":"تقرير المصروفات العامة","English":"General Expenses Report"},
             "Employee Performance Report":{"Arabic":"تقرير أداء الموظفين","English":"Employee Performance Report"},
             "Export to Excel":{"Arabic":"تحويل الي اكسل","English":"Export to Excel"},
-            "Export to PDF":{"Arabic":"تحويل الي pdf","English":"Export to PDF"},
+            "Export to PDF":{"Arabic":"حفظ الملف","English":"Save as PDF"},
             # "":{"Arabic":"","English":""},
             # "":{"Arabic":"","English":""},
             # "":{"Arabic":"","English":""},
@@ -3288,8 +3288,71 @@ class SalesSystemApp:
         filename_excel = f"تقرير الخزنه_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
         filename_pdf = f"تقرير الخزنه_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
         report_folder = "تقارير الخزنه"
-        excel_btn = ttk.Button(totals_frame, text=self.t("Export to Excel"), command=lambda: self.export_to_excel(self.filtered_transactions,headers,filename_excel))
-        pdf_btn = ttk.Button(totals_frame, text=self.t("Export to PDF"), command=lambda: self.export_to_pdf(self.filtered_transactions,headers=headers,filename=filename_pdf,report_folder=report_folder,title=report_folder))
+
+        # Get values and convert to float if they're strings
+        def safe_float(value):
+            try:
+                return float(value)
+            except (ValueError, TypeError):
+                return 0.0  # Default value if conversion fails
+        # Debug print to check actual values
+        print(f"Debug Values - Credit: {self.total_credit_var}, Debit: {self.total_debit_var}, Balance: {self.balance_var}")
+        print(f"Type Credit: {type(self.total_credit_var)}, Debit: {type(self.total_debit_var)}, Balance: {type(self.balance_var)}")
+
+        # If they're tkinter variables
+        if hasattr(self.total_credit_var, 'get'):
+            print(f"Actual Values - Credit: {self.total_credit_var.get()}, Debit: {self.total_debit_var.get()}, Balance: {self.balance_var.get()}")
+        def get_numeric_value(var):
+            """Safely extract numeric value from either tkinter variable or direct value"""
+            try:
+                # Handle tkinter variables
+                if hasattr(var, 'get'):
+                    value = var.get()
+                else:
+                    value = var
+                    
+                # Clean and convert to float
+                if isinstance(value, str):
+                    value = value.replace(',', '').replace('ر.س', '').strip()
+                return float(value) if value else 0.0
+            except (ValueError, TypeError, AttributeError):
+                return 0.0
+
+        total_credit = get_numeric_value(self.total_credit_var)
+        total_debit = get_numeric_value(self.total_debit_var)
+        balance = get_numeric_value(self.balance_var)
+
+        # Create footer with properly formatted numbers
+        footer = [
+            f"إجمالي دائن: {total_credit:,.2f}",  # Total Credit in Arabic
+            f"إجمالي مدين: {total_debit:,.2f}",   # Total Debit in Arabic
+            f"الرصيد: {balance:,.2f}"            # Balance in Arabic
+        ] 
+
+        excel_btn = tk.Button(totals_frame,
+                            text=self.t("Export to Excel"), 
+                            command=lambda: self.export_to_excel(self.filtered_transactions,headers=headers,filename=filename_excel,
+                                                                report_folder=report_folder,title=report_folder,
+                                                                startdate=self.from_date.get() if hasattr(self.from_date, 'get') else str(self.from_date),
+                                                                enddate=self.to_date.get() if hasattr(self.to_date, 'get') else str(self.to_date),
+                                                                footerline_out_of_table=[
+                                                                    f"إجمالي دائن: {str(self.total_credit_var.get())}",
+                                                                    f"إجمالي مدين: {str(self.total_debit_var.get())}",
+                                                                    f"الرصيد: {str(self.balance_var.get())}"
+                                                                ]
+                                                                 ),bg="#21F35D", fg='white')
+        pdf_btn   = tk.Button(totals_frame, 
+                            text=self.t("Export to PDF"),
+                            command=lambda: self.export_to_pdf(self.filtered_transactions,headers=headers,filename=filename_pdf,
+                                                                report_folder=report_folder,title=report_folder,
+                                                                startdate=self.from_date.get() if hasattr(self.from_date, 'get') else str(self.from_date),
+                                                                enddate=self.to_date.get() if hasattr(self.to_date, 'get') else str(self.to_date),
+                                                                footerline_out_of_table=[
+                                                                    f"إجمالي دائن: {str(self.total_credit_var.get())}",
+                                                                    f"إجمالي مدين: {str(self.total_debit_var.get())}",
+                                                                    f"الرصيد: {str(self.balance_var.get())}"
+                                                                ]
+                                                                ),bg="#2144F3", fg='white')
         excel_btn.pack(side=tk.LEFT, padx=10, pady=5)
         pdf_btn.pack(side=tk.LEFT, padx=10, pady=5)
     def parse_date(self, date_str):
@@ -5791,6 +5854,7 @@ class SalesSystemApp:
                     # tree.delete(*tree.get_children())
                     for row in sample_data:
                         tree.insert("", tk.END, values=row)
+                    # Also store raw values for PDF export
 
     def customer_interactions(self, user_role):
         for widget in self.root.winfo_children():
@@ -7866,7 +7930,7 @@ class SalesSystemApp:
                         "Discount_Value": discount_value,
                         "Final_Price": final_price
                     })
-                    
+                
                 except ValueError as e:
                     messagebox.showerror("خطأ", f"قيم غير صالحة في الصف {row_idx+1}: {str(e)}")
                     return
@@ -7912,7 +7976,20 @@ class SalesSystemApp:
             # if self.update:
             #     Previous_balance = self.customer_info.get("Balance", 0) #the old financials
             # else:
-            Previous_balance = customer.get("Balance", 0)
+            if self.update:
+                Prev_customer_name = self.customer_info.get("name", "")
+                Previous_Net_total= self.financials.get("Net_total", 0) # the old financials
+                if Prev_customer_name == customer_name:
+                    Previous_balance = (customer.get("Balance", 0)) - Previous_Net_total
+                else:
+                    Previous_balance = customer.get("Balance", 0)
+                     # the old financials
+                # prev_total_amount = self.financials.get("Net_total") # the old financials
+                # prev_payed_cash = self.financials.get("Payed_cash") # the old financials
+                # prev_added_balance = prev_total_amount - prev_payed_cash
+            else:
+                Previous_balance = customer.get("Balance", 0)
+
             print("\n###############################################################################################\n")
             # إنشاء بيانات الفاتورة الكاملة
             invoice_data = {
@@ -8061,7 +8138,7 @@ class SalesSystemApp:
         # Financial summary
         fin_frame = ttk.LabelFrame(main_frame, text="الملخص المالي")
         fin_frame.pack(fill=tk.X, pady=10, padx=20)
-        
+
         fin_data = [
             ("صافي الفاتورة:", f"{invoice_data['Financials']['Net_total']:,.2f}  ج.م"),
             ("رصيد سابق:", f"{invoice_data['Financials']['Previous_balance']:,.2f}  ج.م"),
@@ -8358,7 +8435,20 @@ class SalesSystemApp:
             # if self.update_purchase:
             #     Previous_balance = self.supplier_info.get("Balance", 0) #the old financials
             # else:
-            Previous_balance = supplier.get("Balance", 0)
+            if self.update_purchase:
+                Prev_supplier_name = self.supplier_info.get("name", "")
+                Previous_Net_total= self.financials_purchases.get("Net_total", 0) # the old financials
+                if Prev_supplier_name == supplier_name:
+                    Previous_balance = (supplier.get("Balance", 0)) - Previous_Net_total
+                else:
+                    Previous_balance = supplier.get("Balance", 0)
+                     # the old financials
+                # prev_total_amount = self.financials.get("Net_total") # the old financials
+                # prev_payed_cash = self.financials.get("Payed_cash") # the old financials
+                # prev_added_balance = prev_total_amount - prev_payed_cash
+            else:
+                Previous_balance = supplier.get("Balance", 0)
+            # Previous_balance = supplier.get("Balance", 0)
             print("\n###############################################################################################\n")
             
             # إنشاء بيانات الفاتورة الكاملة
@@ -9820,41 +9910,11 @@ class SalesSystemApp:
             ["Top Customer", "عماد خطاب", "EGP 70,000"],
             ["Total Items Sold", "320", "25 Products"]
         ]
-
-    def export_to_excel(self, data, headers=["Metric", "Value", "Details"], filename="sales_report.xlsx"):
-        wb = openpyxl.Workbook()
-        ws = wb.active
-        ws.append(headers)
         
-        print(f"\nExporting to {filename}")  # Debug
-        print(f"Headers: {headers}")  # Debug
-        print(f"First 3 rows: {data[:3] if data else 'EMPTY'}")  # Debug
-        
-        for i, row in enumerate(data, 1):
-            try:
-                if isinstance(row, dict):
-                    # Convert dict to ordered list
-                    export_row = [str(row.get(header, "")) for header in headers]
-                else:
-                    # Convert to list and stringify all values
-                    export_row = [str(item) for item in row]
-                
-                print(f"Row {i}: {export_row}")  # Debug
-                ws.append(export_row)
-                
-            except Exception as e:
-                print(f"Error processing row {i}: {e}\nRow content: {row}")
-                continue
-        
-        wb.save(filename)
-        print(f"Successfully saved to {filename}")  # Debug
-        os.startfile(filename)
-
-
-    def export_to_pdf(self, data, headers=None, title="Report", filename="report.pdf", report_folder="reports",
-                    page_size=letter, font_size=12):
+    def export_to_excel(self, data, headers=None, title="Report", filename="report.xlsx", report_folder="reports",
+                    startdate=None, enddate=None, footerline_out_of_table=None):
         """
-        Complete PDF export function with full Arabic support
+        Enhanced Excel export function with date range display and comprehensive error handling
         
         Args:
             data: Data to export (list of dicts or lists)
@@ -9862,107 +9922,224 @@ class SalesSystemApp:
             title: Report title (string)
             filename: Output filename (string)
             report_folder: Folder name on desktop (string)
-            page_size: Page size (default: letter)
-            font_size: Base font size (default: 12)
+            startdate: Start date for report (optional)
+            enddate: End date for report (optional)
+            footerline_out_of_table: Footer text (optional)
         
         Returns:
-            str: Path to generated PDF if successful, None otherwise
+            str: Path to generated file if successful, None otherwise
+        """
+        try:
+            # Create workbook and worksheet
+            wb = openpyxl.Workbook()
+            ws = wb.active
+            
+            # Set up output paths
+            desktop = os.path.join(os.path.expanduser('~'), 'Desktop')
+            report_path = os.path.join(desktop, report_folder)
+            os.makedirs(report_path, exist_ok=True)
+            file_path = os.path.join(report_path, filename)
+            
+            # Add title at the top
+            if title:
+                ws.append([title])
+                ws.append([])  # Empty row for spacing
+            
+            # Add date range if provided
+            if startdate or enddate:
+                date_text = ""
+                if startdate:
+                    # Handle both string and datetime objects
+                    if isinstance(startdate, datetime):
+                        startdate = startdate.strftime("%Y-%m-%d")
+                    date_text += f"From: {startdate} "
+                if enddate:
+                    if isinstance(enddate, datetime):
+                        enddate = enddate.strftime("%Y-%m-%d")
+                    date_text += f"To: {enddate}"
+                
+                ws.append([date_text])
+                ws.append([])  # Empty row for spacing
+            
+            # Auto-detect headers if not provided
+            if headers is None:
+                if data and isinstance(data[0], dict):
+                    headers = list(data[0].keys())
+                elif data and isinstance(data[0], (list, tuple)):
+                    headers = [f"Column {i+1}" for i in range(len(data[0]))]
+            
+            # Add headers if available
+            if headers:
+                ws.append(headers)
+            
+            # Process data rows
+            for i, row in enumerate(data, 1):
+                try:
+                    if isinstance(row, dict):
+                        # Handle dictionary rows
+                        row_data = []
+                        for header in headers:
+                            val = row.get(header, "")
+                            # Convert datetime objects to strings
+                            if isinstance(val, datetime):
+                                val = val.strftime("%Y-%m-%d %H:%M:%S")
+                            row_data.append(str(val))
+                    else:
+                        # Handle list/tuple rows
+                        row_data = []
+                        for item in row:
+                            if isinstance(item, datetime):
+                                item = item.strftime("%Y-%m-%d %H:%M:%S")
+                            row_data.append(str(item))
+                    
+                    ws.append(row_data)
+                    
+                except Exception as e:
+                    print(f"Error processing row {i}: {str(e)}")
+                    continue
+            
+            # Add footer if provided (with spacing)
+            if footerline_out_of_table:
+                ws.append([])  # Empty row for spacing
+                if isinstance(footerline_out_of_table, (list, tuple)):
+                    for line in footerline_out_of_table:
+                        ws.append([str(line)])
+                else:
+                    ws.append([str(footerline_out_of_table)])
+            
+            # Auto-adjust column widths
+            for col in ws.columns:
+                max_length = 0
+                column = col[0].column_letter
+                for cell in col:
+                    try:
+                        if len(str(cell.value)) > max_length:
+                            max_length = len(cell.value)
+                    except:
+                        pass
+                adjusted_width = (max_length + 2) * 1.2
+                ws.column_dimensions[column].width = adjusted_width
+            
+            # Save and open the file
+            wb.save(file_path)
+            
+            # Open the file if supported by OS
+            if os.name == 'nt':  # Windows
+                os.startfile(file_path)
+            elif os.name == 'posix':  # Mac/Linux
+                subprocess.run(['open', file_path], check=False)
+            # 10. Show success message (in Arabic)
+            messagebox.showinfo("نجاح", f"تم حفظ الملف بنجاح في:\n{file_path}")                
+            return file_path
+        
+        except Exception as e:
+            error_msg = f"Failed to export Excel file: {str(e)}"
+            print(error_msg)
+            messagebox.showerror("Export Error", error_msg)
+            return None
+
+
+    def export_to_pdf(self, data, headers=None, title="Report", filename="report.pdf", report_folder="reports",
+                    page_size=letter, font_size=12, startdate=None, enddate=None, footerline_out_of_table=None):
+        """
+        Enhanced PDF export function with proper date and footer handling
         """
         def load_arabic_fonts():
-            """Helper function to load Arabic fonts with fallback"""
             try:
-                # Try to load custom Arabic font (Amiri)
                 arabic_font_path = os.path.join("Static", "Fonts", "Amiri-Regular.ttf")
                 if os.path.exists(arabic_font_path):
                     pdfmetrics.registerFont(TTFont('Arabic', arabic_font_path))
                     pdfmetrics.registerFont(TTFont('Arabic-Bold', arabic_font_path))
                     return True
             except Exception as e:
-                print(f"Arabic font loading error: {e}")
-
-            # Fallback to Arial if available
-            try:
-                pdfmetrics.registerFont(TTFont('Arabic', 'Arial'))
-                pdfmetrics.registerFont(TTFont('Arabic-Bold', 'Arial-Bold'))
-                return False
-            except:
-                return False
+                print(f"Font error: {e}")
+            return False
 
         def format_arabic(text):
-            """Format Arabic text with proper shaping and direction"""
             if isinstance(text, str):
-                reshaped = arabic_reshaper.reshape(text)
-                return get_display(reshaped)
+                return get_display(arabic_reshaper.reshape(text))
             return str(text)
 
         try:
-            # 1. Load Arabic fonts
-            arabic_font_available = load_arabic_fonts()
-            font_name = 'Arabic' if arabic_font_available else 'Helvetica'
+            # Setup fonts and paths
+            arabic_font_loaded = load_arabic_fonts()
+            font_name = 'Arabic' if arabic_font_loaded else 'Helvetica'
             
-            # 2. Create output directory
             desktop = os.path.join(os.path.expanduser('~'), 'Desktop')
-            report_folder_path = os.path.join(desktop, report_folder)
-            os.makedirs(report_folder_path, exist_ok=True)
-            pdf_path = os.path.join(report_folder_path, filename)
-            
-            # 3. Prepare PDF document
+            report_path = os.path.join(desktop, report_folder)
+            os.makedirs(report_path, exist_ok=True)
+            pdf_path = os.path.join(report_path, filename)
+
+            # Create document
             doc = SimpleDocTemplate(pdf_path, pagesize=page_size)
             elements = []
             styles = getSampleStyleSheet()
-            
-            # 4. Configure styles for Arabic
+
+            # Custom styles
             title_style = styles['Title']
             title_style.fontName = f'{font_name}-Bold'
             title_style.fontSize = font_size + 4
-            title_style.alignment = 2  # Right alignment
-            
-            normal_style = styles['Normal']
-            normal_style.fontName = font_name
-            normal_style.alignment = 2
-            
-            # 5. Add title and spacing
+            title_style.alignment = 2  # Right align
+
+            date_style = styles['Normal']
+            date_style.fontName = font_name
+            date_style.fontSize = font_size + 4
+            date_style.alignment = 0  # Left align
+
+            # Add date range if provided
+            if startdate or enddate:
+                date_text = ""
+                if startdate:
+                    date_text += f"From: {startdate} "
+                if enddate:
+                    date_text += f"To: {enddate}"
+                elements.append(Paragraph(format_arabic(date_text), date_style))
+                elements.append(Spacer(1, 10))
+
+            # Add title
             elements.append(Paragraph(format_arabic(title), title_style))
-            elements.append(Spacer(1*inch, 0.25*inch))
-            
-            # 6. Prepare table data
+            elements.append(Spacer(1, 20))
+
+            # Create table
             table_data = []
-            
-            # Process headers
             if headers:
-                arabic_headers = [format_arabic(h) for h in headers]
-                table_data.append(arabic_headers)
+                table_data.append([format_arabic(h) for h in headers])
             
-            # Process data rows
             for row in data:
                 if isinstance(row, dict):
-                    row_data = [format_arabic(row.get(h, "")) for h in headers] if headers else [format_arabic(v) for v in row.values()]
+                    table_data.append([format_arabic(row.get(h, "")) for h in headers])
                 else:
-                    row_data = [format_arabic(item) for item in row]
-                table_data.append(row_data)
-            
-            # 7. Create and style table
+                    table_data.append([format_arabic(item) for item in row])
+
             table = Table(table_data, repeatRows=1)
-            table.hAlign = 'RIGHT'
-            
-            style = TableStyle([
+            table.setStyle(TableStyle([
                 ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#4F81BD')),
                 ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
                 ('ALIGN', (0,0), (-1,-1), 'RIGHT'),
                 ('FONTNAME', (0,0), (-1,-1), font_name),
-                ('FONTNAME', (0,0), (-1,0), f'{font_name}-Bold'),
                 ('FONTSIZE', (0,0), (-1,-1), font_size),
-                ('BOTTOMPADDING', (0,0), (-1,0), 12),
-                ('BACKGROUND', (0,1), (-1,-1), colors.HexColor('#DCE6F1')),
                 ('GRID', (0,0), (-1,-1), 0.5, colors.black),
-                ('VALIGN', (0,0), (-1,-1), 'TOP')
-            ])
-            table.setStyle(style)
+            ]))
             elements.append(table)
-            
-            # 8. Generate PDF
+
+            # Add footer if provided
+            if footerline_out_of_table:
+                footer_style = styles['Normal']
+                footer_style.fontName = font_name
+                footer_style.alignment = 2  # Right align
+                footer_style.fontSize = font_size + 2  # Slightly larger
+                footer_style.leading = font_size + 4  # Line spacing
+                
+                elements.append(Spacer(1, 20))  # Space before footer
+                
+                # Handle both list and string footers
+                if isinstance(footerline_out_of_table, list):
+                    for line in footerline_out_of_table:
+                        elements.append(Paragraph(format_arabic(line), footer_style))
+                else:
+                    elements.append(Paragraph(format_arabic(footerline_out_of_table), footer_style))
+
             doc.build(elements)
-            
             # 9. Try to open/print the file
             try:
                 if os.name == 'nt':  # Windows
@@ -10464,7 +10641,7 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = SalesSystemApp(root)       # Create main app first
     app.start_without_login()
-    # app.start_with_login()     # Then launch the login screen through app
+    app.start_with_login()     # Then launch the login screen through app
 
     try:
         root.mainloop()
