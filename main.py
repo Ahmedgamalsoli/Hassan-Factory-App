@@ -765,7 +765,9 @@ class SalesSystemApp:
         # Set the icon
         # self.root.iconbitmap(icon_path)
         # List to track selected products
-        self.selected_products = []   
+        self.selected_products = []  
+        self.raw_tree_data = [] 
+        self.report_customer_name = ""
         self.update =False
         self.light = True  # Default to light mode
         self.update_purchase =False
@@ -780,6 +782,7 @@ class SalesSystemApp:
     def start_without_login(self):
         self.login_window = LoginWindow(self.root, self)
         app.user_role="developer"
+        self.toggle_theme()
         app.main_menu()
 ########################################## Tables on Data Base ########################################
     def Connect_DB(self):
@@ -3283,51 +3286,47 @@ class SalesSystemApp:
 
         tk.Label(totals_frame, text=self.t("Balance:"), font=('Arial', 10, 'bold')).pack(side=tk.LEFT, padx=10)
         tk.Label(totals_frame, textvariable=self.balance_var, font=('Arial', 10)).pack(side=tk.LEFT)
-
-        headers = ["date", "description", 'credit', 'debit', "payment_method"]
+        if self.language == "Arabic":
+            headers = ["التاريخ", "الوصف", 'الدائن', 'المدين', "طريقة الدفع"]
+        else:
+            headers = ["date", "description", 'credit', 'debit', "payment_method"]
         filename_excel = f"تقرير الخزنه_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
         filename_pdf = f"تقرير الخزنه_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
         report_folder = "تقارير الخزنه"
 
-        # Get values and convert to float if they're strings
-        def safe_float(value):
-            try:
-                return float(value)
-            except (ValueError, TypeError):
-                return 0.0  # Default value if conversion fails
         # Debug print to check actual values
-        print(f"Debug Values - Credit: {self.total_credit_var}, Debit: {self.total_debit_var}, Balance: {self.balance_var}")
-        print(f"Type Credit: {type(self.total_credit_var)}, Debit: {type(self.total_debit_var)}, Balance: {type(self.balance_var)}")
+        # print(f"Debug Values - Credit: {self.total_credit_var}, Debit: {self.total_debit_var}, Balance: {self.balance_var}")
+        # print(f"Type Credit: {type(self.total_credit_var)}, Debit: {type(self.total_debit_var)}, Balance: {type(self.balance_var)}")
 
         # If they're tkinter variables
         if hasattr(self.total_credit_var, 'get'):
             print(f"Actual Values - Credit: {self.total_credit_var.get()}, Debit: {self.total_debit_var.get()}, Balance: {self.balance_var.get()}")
-        def get_numeric_value(var):
-            """Safely extract numeric value from either tkinter variable or direct value"""
-            try:
-                # Handle tkinter variables
-                if hasattr(var, 'get'):
-                    value = var.get()
-                else:
-                    value = var
+        # def get_numeric_value(var):
+        #     """Safely extract numeric value from either tkinter variable or direct value"""
+        #     try:
+        #         # Handle tkinter variables
+        #         if hasattr(var, 'get'):
+        #             value = var.get()
+        #         else:
+        #             value = var
                     
-                # Clean and convert to float
-                if isinstance(value, str):
-                    value = value.replace(',', '').replace('ر.س', '').strip()
-                return float(value) if value else 0.0
-            except (ValueError, TypeError, AttributeError):
-                return 0.0
+        #         # Clean and convert to float
+        #         if isinstance(value, str):
+        #             value = value.replace(',', '').replace('ر.س', '').strip()
+        #         return float(value) if value else 0.0
+        #     except (ValueError, TypeError, AttributeError):
+        #         return 0.0
 
-        total_credit = get_numeric_value(self.total_credit_var)
-        total_debit = get_numeric_value(self.total_debit_var)
-        balance = get_numeric_value(self.balance_var)
+        # total_credit = get_numeric_value(self.total_credit_var)
+        # total_debit = get_numeric_value(self.total_debit_var)
+        # balance = get_numeric_value(self.balance_var)
 
-        # Create footer with properly formatted numbers
-        footer = [
-            f"إجمالي دائن: {total_credit:,.2f}",  # Total Credit in Arabic
-            f"إجمالي مدين: {total_debit:,.2f}",   # Total Debit in Arabic
-            f"الرصيد: {balance:,.2f}"            # Balance in Arabic
-        ] 
+        # # Create footer with properly formatted numbers
+        # footer = [
+        #     f"إجمالي دائن: {total_credit:,.2f}",  # Total Credit in Arabic
+        #     f"إجمالي مدين: {total_debit:,.2f}",   # Total Debit in Arabic
+        #     f"الرصيد: {balance:,.2f}"            # Balance in Arabic
+        # ] 
 
         excel_btn = tk.Button(totals_frame,
                             text=self.t("Export to Excel"), 
@@ -5684,6 +5683,7 @@ class SalesSystemApp:
 
                 if person:
                     name_cb.set(person["Name"])
+                    self.report_customer_name = name_cb.get().strip()  # Store the selected name for later use
                     payment_query = { #time_query (it also compares dates but from payment db)
                         "$and": [
                             {field_path: selected_code},
@@ -5704,6 +5704,7 @@ class SalesSystemApp:
 
     def on_name_selected(self, event, code_cb, name_cb, collection, invoices_collection, payment_collection, field_path, tree):
         selected_name = name_cb.get().strip()
+        self.report_customer_name = selected_name  # Store the selected name for later use
         if not selected_name:
             return
         
@@ -5848,13 +5849,15 @@ class SalesSystemApp:
                 new_credit =  doc_credit - total_credit
                 new_debit = doc_debit - total_debit
                 if new_credit > 0 or new_debit > 0:
-                    tree.insert("", tk.END, values=(formatted, "Other", new_debit, new_credit, "Cash"))
+                    # tree.insert("", tk.END, values=(formatted, "Other", new_debit, new_credit, "Cash"))
+                    sample_data.insert(0, (formatted, "Other", str(new_debit), str(new_credit), "Cash"))
                 
                 if tree:
                     # tree.delete(*tree.get_children())
                     for row in sample_data:
                         tree.insert("", tk.END, values=row)
                     # Also store raw values for PDF export
+        self.raw_tree_data = sample_data
 
     def customer_interactions(self, user_role):
         for widget in self.root.winfo_children():
@@ -5973,8 +5976,55 @@ class SalesSystemApp:
         self.balance_entry = tk.Entry(right_frame)
         self.balance_entry.grid(row=13, column=8, sticky="w")
 
+        if self.language == "Arabic":
+            headers = ["التاريخ", "رقم الفاتورة", 'الدائن', 'المدين', "طريقة الدفع"]
+        else:
+            headers = ["date", "invoice number", 'credit', 'debit', "payment_method"]
+        # 1. Get the selected customer name from the Combobox
+    
+        # 2. Clean the name for use in filenames (remove special characters)
+        def clean_filename(text):
+            # Replace spaces and special characters
+            return (text.replace(" ", "_")
+                        .replace("/", "-")
+                        .replace("\\", "-")
+                        .replace(":", "-")
+                        .replace("*", "")
+                        .replace("?", "")
+                        .replace('"', "")
+                        .replace("<", "")
+                        .replace(">", "")
+                        .replace("|", "")
+                        .strip())
+
+        report_folder = "حسابات مفصلة للعملاء"
         # Initial update with empty query
         self.update_totals(self.sales_collection, self.customer_payment_collection, tree=tree)
+        tk.Button(right_frame,
+                            text=self.t("Export to Excel"), 
+                            command=lambda: self.export_to_excel(self.raw_tree_data,headers=headers,filename= f"كشف_حساب_للعميل_{clean_filename(self.report_customer_name)}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                                                                report_folder=report_folder,title=report_folder,
+                                                                startdate=self.start_date_entry.get() if hasattr(self.start_date_entry, 'get') else str(self.start_date_entry),
+                                                                enddate=self.end_date_entry.get() if hasattr(self.end_date_entry, 'get') else str(self.end_date_entry),
+                                                                footerline_out_of_table=[
+                                                                    f"إجمالي دائن: {str(self.total_credit_entry.get())}",
+                                                                    f"إجمالي مدين: {str(self.total_debit_entry.get())}",
+                                                                    f"الرصيد: {str(self.balance_entry.get())}"
+                                                                ]
+                                                                 ),bg="#21F35D", fg='white').grid(row=13, column=9, sticky="w")
+        tk.Button(right_frame, 
+                            text=self.t("Export to PDF"),
+                            command=lambda: self.export_to_pdf(self.raw_tree_data,headers=headers,filename= f"كشف_حساب_للعميل_{clean_filename(self.report_customer_name)}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+                                                                report_folder=report_folder,title=report_folder,
+                                                                startdate=self.start_date_entry.get() if hasattr(self.start_date_entry, 'get') else str(self.start_date_entry),
+                                                                enddate=self.end_date_entry.get() if hasattr(self.end_date_entry, 'get') else str(self.end_date_entry),
+                                                                footerline_out_of_table=[
+                                                                    f"إجمالي دائن: {str(self.total_credit_entry.get())}",
+                                                                    f"إجمالي مدين: {str(self.total_debit_entry.get())}",
+                                                                    f"الرصيد: {str(self.balance_entry.get())}"
+                                                                ]
+                                                                ),bg="#2144F3", fg='white').grid(row=13, column=10, sticky="w", padx=10)
+
 
 ############################ Main Functions ########################################
     def display_table(self):
@@ -10641,7 +10691,7 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = SalesSystemApp(root)       # Create main app first
     app.start_without_login()
-    app.start_with_login()     # Then launch the login screen through app
+    # app.start_with_login()     # Then launch the login screen through app
 
     try:
         root.mainloop()
