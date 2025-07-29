@@ -32,7 +32,7 @@ from collections import defaultdict
 from bidi.algorithm import get_display
 from matplotlib.figure import Figure    
 from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
+from reportlab.lib.pagesizes import letter,A5
 from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
@@ -309,6 +309,7 @@ class SalesSystemApp:
         
         self.image_refs = []
         self.filtered_transactions = []
+        self.filtered_transactions_table = []
         self.production_entries = []
         #         elif collection_name == "Sales_Header":
         #     return [self.t("Product_code"), self.t("product_name"), self.t("unit"),self.t("numbering"),self.t("QTY"),self.t("Discount Type"),self.t("Discount Value"),self.t("Total_QTY"),self.t("Unit_Price"),self.t("Total_Price")]
@@ -3330,7 +3331,7 @@ class SalesSystemApp:
 
         excel_btn = tk.Button(totals_frame,
                             text=self.t("Export to Excel"), 
-                            command=lambda: self.export_to_excel(self.filtered_transactions,headers=headers,filename=filename_excel,
+                            command=lambda: self.export_to_excel(self.filtered_transactions_table,headers=headers,filename=filename_excel,
                                                                 report_folder=report_folder,title=report_folder,
                                                                 startdate=self.from_date.get() if hasattr(self.from_date, 'get') else str(self.from_date),
                                                                 enddate=self.to_date.get() if hasattr(self.to_date, 'get') else str(self.to_date),
@@ -3342,7 +3343,7 @@ class SalesSystemApp:
                                                                  ),bg="#21F35D", fg='white')
         pdf_btn   = tk.Button(totals_frame, 
                             text=self.t("Export to PDF"),
-                            command=lambda: self.export_to_pdf(self.filtered_transactions,headers=headers,filename=filename_pdf,
+                            command=lambda: self.export_to_pdf(self.filtered_transactions_table,headers=headers,filename=filename_pdf,
                                                                 report_folder=report_folder,title=report_folder,
                                                                 startdate=self.from_date.get() if hasattr(self.from_date, 'get') else str(self.from_date),
                                                                 enddate=self.to_date.get() if hasattr(self.to_date, 'get') else str(self.to_date),
@@ -3515,12 +3516,20 @@ class SalesSystemApp:
         # Filter transactions
         allowed_methods = ["cash", "instapay", "bank_account", "e_wallet"]
         self.filtered_transactions = []
+        self.filtered_transactions_table = []
         for t in transactions:
             if selected_method != "all":
                 if t["payment_method"] != selected_method.replace(" ", "_"):
                     continue
             if t["payment_method"] in allowed_methods and t["date"] is not None:
                 self.filtered_transactions.append(t)
+                self.filtered_transactions_table.append({
+                    "طريقة الدفع": t["payment_method"].replace("_", " ").title(),
+                    "المدين": f"{t['debit']:,.2f} ج.م", 
+                    "الدائن": f"{t['credit']:,.2f} ج.م",
+                    "الوصف": t["description"],
+                    "التاريخ": t["date"].strftime("%d/%m/%Y %H:%M")
+                })
 
         # Populate treeview and calculate totals
         for t in self.filtered_transactions:
@@ -10088,52 +10097,79 @@ class SalesSystemApp:
             messagebox.showerror("Export Error", error_msg)
             return None
 
-
     def export_to_pdf(self, data, headers=None, title="Report", filename="report.pdf", report_folder="reports",
                     page_size=letter, font_size=12, startdate=None, enddate=None, footerline_out_of_table=None):
         """
-        Enhanced PDF export function with proper date and footer handling
+        Enhanced PDF export function with PyInstaller-compatible font handling
         """
-        def load_arabic_fonts():
+        def get_font_path():
+            """Get the correct font path for both development and EXE"""
             try:
-                arabic_font_path = os.path.join("Static", "Fonts", "Amiri-Regular.ttf")
-                if os.path.exists(arabic_font_path):
-                    pdfmetrics.registerFont(TTFont('Arabic', arabic_font_path))
-                    pdfmetrics.registerFont(TTFont('Arabic-Bold', arabic_font_path))
+                if getattr(sys, 'frozen', False):  # Running in EXE
+                    base_path = sys._MEIPASS
+                else:  # Running in development
+                    base_path = os.path.dirname(__file__)
+                
+                font_path = os.path.join(base_path, "Static", "Fonts", "Amiri-Regular.ttf")
+                if os.path.exists(font_path):
+                    return font_path
+                return None
+            except Exception as e:
+                print(f"Font path error: {e}")
+                return None
+
+        def load_arabic_fonts():
+            """Load Arabic fonts with fallback handling"""
+            try:
+                font_path = get_font_path()
+                if font_path:
+                    pdfmetrics.registerFont(TTFont('Arabic', font_path))
+                    pdfmetrics.registerFont(TTFont('Arabic-Bold', font_path))
                     return True
             except Exception as e:
-                print(f"Font error: {e}")
-            return False
+                print(f"Font loading error: {e}")
+            
+            # Fallback to Arial if available
+            try:
+                pdfmetrics.registerFont(TTFont('Arabic', 'Arial'))
+                pdfmetrics.registerFont(TTFont('Arabic-Bold', 'Arial-Bold'))
+                return False
+            except:
+                return False
 
         def format_arabic(text):
+            """Format Arabic text with proper shaping and direction"""
             if isinstance(text, str):
-                return get_display(arabic_reshaper.reshape(text))
+                reshaped = arabic_reshaper.reshape(text)
+                return get_display(reshaped)
             return str(text)
 
         try:
-            # Setup fonts and paths
+            # Load fonts
             arabic_font_loaded = load_arabic_fonts()
             font_name = 'Arabic' if arabic_font_loaded else 'Helvetica'
+            print(f"Using font: {font_name}")  # Debug output
             
+            # Create output directory
             desktop = os.path.join(os.path.expanduser('~'), 'Desktop')
             report_path = os.path.join(desktop, report_folder)
             os.makedirs(report_path, exist_ok=True)
             pdf_path = os.path.join(report_path, filename)
 
-            # Create document
-            doc = SimpleDocTemplate(pdf_path, pagesize=page_size)
+            # Prepare PDF document
+            doc = SimpleDocTemplate(pdf_path, pagesize=A5)
             elements = []
             styles = getSampleStyleSheet()
 
-            # Custom styles
+            # Configure styles
             title_style = styles['Title']
             title_style.fontName = f'{font_name}-Bold'
             title_style.fontSize = font_size + 4
-            title_style.alignment = 2  # Right align
+            title_style.alignment = 2  # Right align for Arabic
 
             date_style = styles['Normal']
             date_style.fontName = font_name
-            date_style.fontSize = font_size + 4
+            date_style.fontSize = font_size - 2
             date_style.alignment = 0  # Left align
 
             # Add date range if provided
@@ -10150,58 +10186,72 @@ class SalesSystemApp:
             elements.append(Paragraph(format_arabic(title), title_style))
             elements.append(Spacer(1, 20))
 
-            # Create table
+            # Prepare table data
             table_data = []
             if headers:
-                table_data.append([format_arabic(h) for h in headers])
+                arabic_headers = [format_arabic(h) for h in headers]
+                table_data.append(arabic_headers)
             
+            # Process data rows
             for row in data:
                 if isinstance(row, dict):
-                    table_data.append([format_arabic(row.get(h, "")) for h in headers])
+                    row_data = [format_arabic(row.get(h, "")) for h in headers] if headers else [format_arabic(v) for v in row.values()]
                 else:
-                    table_data.append([format_arabic(item) for item in row])
+                    row_data = [format_arabic(item) for item in row]
+                table_data.append(row_data)
 
+            # Create and style table
             table = Table(table_data, repeatRows=1)
-            table.setStyle(TableStyle([
+            # Center the entire table on the page
+            table.hAlign = 'CENTER'
+
+            style = TableStyle([
+                # Header styling
                 ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#4F81BD')),
                 ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
-                ('ALIGN', (0,0), (-1,-1), 'RIGHT'),
-                ('FONTNAME', (0,0), (-1,-1), font_name),
-                ('FONTSIZE', (0,0), (-1,-1), font_size),
+                ('ALIGN', (0,0), (-1,0), 'CENTER'),  # Center header text
+                ('FONTNAME', (0,0), (-1,0), f'{font_name}-Bold'),
+                ('FONTSIZE', (0,0), (-1,0), font_size),
+                ('BOTTOMPADDING', (0,0), (-1,0), 12),
+                
+                # Body styling
+                ('ALIGN', (0,1), (-1,-1), 'CENTER'),  # Center all body cells
+                ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),  # Vertical center
+                ('FONTNAME', (0,1), (-1,-1), font_name),
+                ('BACKGROUND', (0,1), (-1,-1), colors.HexColor('#DCE6F1')),
                 ('GRID', (0,0), (-1,-1), 0.5, colors.black),
-            ]))
+            ])
+            table.setStyle(style)
             elements.append(table)
 
             # Add footer if provided
             if footerline_out_of_table:
                 footer_style = styles['Normal']
                 footer_style.fontName = font_name
-                footer_style.alignment = 2  # Right align
-                footer_style.fontSize = font_size + 2  # Slightly larger
-                footer_style.leading = font_size + 4  # Line spacing
+                footer_style.alignment = 2
+                footer_style.fontSize = font_size + 1
                 
-                elements.append(Spacer(1, 20))  # Space before footer
+                elements.append(Spacer(1, 20))
                 
-                # Handle both list and string footers
                 if isinstance(footerline_out_of_table, list):
                     for line in footerline_out_of_table:
                         elements.append(Paragraph(format_arabic(line), footer_style))
                 else:
                     elements.append(Paragraph(format_arabic(footerline_out_of_table), footer_style))
 
+            # Generate PDF
             doc.build(elements)
-            # 9. Try to open/print the file
+            
+            # Try to open/print
             try:
-                if os.name == 'nt':  # Windows
+                if os.name == 'nt':
                     os.startfile(pdf_path, "print")
-                elif os.name == 'posix':  # Mac/Linux
+                elif os.name == 'posix':
                     subprocess.run(['lp', pdf_path], check=False)
             except Exception as e:
-                messagebox.showerror(self.t("Print Error"), f"{self.t("Failed to print PDF:")}\n{e}")
+                messagebox.showerror(self.t("Print Error"), f"{self.t('Failed to print PDF:')}\n{e}")
 
-            # 10. Show success message (in Arabic)
             messagebox.showinfo("نجاح", f"تم حفظ الملف بنجاح في:\n{pdf_path}")
-            
             return pdf_path
             
         except Exception as e:
