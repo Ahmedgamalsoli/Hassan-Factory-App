@@ -692,8 +692,8 @@ class SalesSystemApp:
 
             "Operation_Number":{"Arabic":"رقم العملية","English":"Operation Number"},
 
-            "Total Debit":{"Arabic":"إجمالي الدائن","English":"Total Debit"},
-            "Total Credit":{"Arabic":"إجمالي المدين","English":"Total Credit"},            
+            "Total Debit":{"Arabic":"إجمالي المدين","English":"Total Debit"},
+            "Total Credit":{"Arabic":"إجمالي الدائن","English":"Total Credit"},            
 
             # "Add Entry":{"Arabic":"الوقت","English":"Add Entry"},
             "Update Entry":{"Arabic":"تحديث خانة","English":"Update Entry"},
@@ -3259,11 +3259,11 @@ class SalesSystemApp:
         self.tree.heading("debit", text=self.t("Debit"))
         self.tree.heading("payment_method", text=self.t("Payment Method"))
 
-        self.tree.column("date", width=120)
-        self.tree.column("description", width=250)
-        self.tree.column("credit", width=120)
-        self.tree.column("debit", width=120)
-        self.tree.column("payment_method", width=150)
+        self.tree.column("date", width=120, anchor='center')
+        self.tree.column("description", width=250, anchor='center')
+        self.tree.column("credit", width=120, anchor='center')
+        self.tree.column("debit", width=120, anchor='center')
+        self.tree.column("payment_method", width=150, anchor='center')
 
         # Add scrollbar
         scrollbar = ttk.Scrollbar(main_frame, orient=tk.VERTICAL, command=self.tree.yview)
@@ -3288,9 +3288,9 @@ class SalesSystemApp:
         tk.Label(totals_frame, text=self.t("Balance:"), font=('Arial', 10, 'bold')).pack(side=tk.LEFT, padx=10)
         tk.Label(totals_frame, textvariable=self.balance_var, font=('Arial', 10)).pack(side=tk.LEFT)
         if self.language == "Arabic":
-            headers = ["التاريخ", "الوصف", 'الدائن', 'المدين', "طريقة الدفع"]
+            headers = ["التاريخ", "الوصف", 'المدين', 'الدائن',  "طريقة الدفع"]
         else:
-            headers = ["date", "description", 'credit', 'debit', "payment_method"]
+            headers = ["date", "description", 'debit', 'credit',  "payment_method"]
         filename_excel = f"تقرير الخزنه_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
         filename_pdf = f"تقرير الخزنه_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
         report_folder = "تقارير الخزنه"
@@ -3336,9 +3336,9 @@ class SalesSystemApp:
                                                                 startdate=self.from_date.get() if hasattr(self.from_date, 'get') else str(self.from_date),
                                                                 enddate=self.to_date.get() if hasattr(self.to_date, 'get') else str(self.to_date),
                                                                 footerline_out_of_table=[
-                                                                    f"إجمالي دائن: {str(self.total_credit_var.get())}",
-                                                                    f"إجمالي مدين: {str(self.total_debit_var.get())}",
-                                                                    f"الرصيد: {str(self.balance_var.get())}"
+                                                                    f"{self.t("Total Credit:")} {str(self.total_credit_var.get())}",
+                                                                    f"{self.t("Total Debit:")} {str(self.total_debit_var.get())}",
+                                                                    f"{self.t("Balance:")} {str(self.balance_var.get())}"
                                                                 ]
                                                                  ),bg="#21F35D", fg='white')
         pdf_btn   = tk.Button(totals_frame, 
@@ -3523,14 +3523,22 @@ class SalesSystemApp:
                     continue
             if t["payment_method"] in allowed_methods and t["date"] is not None:
                 self.filtered_transactions.append(t)
-                self.filtered_transactions_table.append({
-                    "طريقة الدفع": t["payment_method"].replace("_", " ").title(),
-                    "المدين": f"{t['debit']:,.2f} ج.م", 
-                    "الدائن": f"{t['credit']:,.2f} ج.م",
-                    "الوصف": t["description"],
-                    "التاريخ": t["date"].strftime("%d/%m/%Y %H:%M")
-                })
-
+                if self.language == "Arabic":
+                    self.filtered_transactions_table.append({
+                        "طريقة الدفع": t["payment_method"].replace("_", " ").title(),
+                        "المدين": f"{t['debit']:,.2f} ج.م", 
+                        "الدائن": f"{t['credit']:,.2f} ج.م",
+                        "الوصف": t["description"],
+                        "التاريخ": t["date"].strftime("%d/%m/%Y %H:%M")
+                    })
+                else:
+                    self.filtered_transactions_table.append({
+                        "payment_method": t["payment_method"].replace("_", " ").title(),
+                        "debit": f"{t['debit']:,.2f} ج.م", 
+                        "credit": f"{t['credit']:,.2f} ج.م",
+                        "description": t["description"],
+                        "date": t["date"].strftime("%d/%m/%Y %H:%M")
+                    })
         # Populate treeview and calculate totals
         for t in self.filtered_transactions:
             self.totals['credit'] += t['credit']
@@ -5475,6 +5483,7 @@ class SalesSystemApp:
             tree.heading(col, text=self.t(col))
             # tree.heading(col, text=col.capitalize())
             tree.column(col, width=150)
+            tree.column(col, anchor="center")  # This centers the content
 
         # ==== Footer Totals ====
         tk.Label(right_frame, text=self.t("Total Debit")).grid(row=13, column=3, sticky="e")
@@ -5488,10 +5497,54 @@ class SalesSystemApp:
         tk.Label(right_frame, text=self.t("Balance")).grid(row=13, column=7, sticky="e")
         self.balance_entry = tk.Entry(right_frame)
         self.balance_entry.grid(row=13, column=8, sticky="w")
+        if self.language == "Arabic":
+            headers = ["التاريخ", "الوصف", 'المدين', 'الدائن',  "طريقة الدفع"]
+        else:
+            headers = ["date", "description", 'debit', 'credit',  "payment_method"]
+        # 1. Get the selected customer name from the Combobox
+    
+        # 2. Clean the name for use in filenames (remove special characters)
+        def clean_filename(text):
+            # Replace spaces and special characters
+            return (text.replace(" ", "_")
+                        .replace("/", "-")
+                        .replace("\\", "-")
+                        .replace(":", "-")
+                        .replace("*", "")
+                        .replace("?", "")
+                        .replace('"', "")
+                        .replace("<", "")
+                        .replace(">", "")
+                        .replace("|", "")
+                        .strip())
 
+        report_folder = "حسابات مفصلة للموردين"
         # Initial update with empty query
         self.update_totals(self.purchases_collection, self.supplier_payment_collection, tree=tree)
-
+        tk.Button(right_frame,
+                            text=self.t("Export to Excel"), 
+                            command=lambda: self.export_to_excel(self.raw_tree_data,headers=headers,filename= f"كشف_حساب_للعميل_{clean_filename(self.report_customer_name)}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                                                                report_folder=report_folder,title=report_folder,
+                                                                startdate=self.start_date_entry.get() if hasattr(self.start_date_entry, 'get') else str(self.start_date_entry),
+                                                                enddate=self.end_date_entry.get() if hasattr(self.end_date_entry, 'get') else str(self.end_date_entry),
+                                                                footerline_out_of_table=[
+                                                                    f"إجمالي دائن: {str(self.total_credit_entry.get())}",
+                                                                    f"إجمالي مدين: {str(self.total_debit_entry.get())}",
+                                                                    f"الرصيد: {str(self.balance_entry.get())}"
+                                                                ]
+                                                                 ),bg="#21F35D", fg='white').grid(row=13, column=9, sticky="w")
+        tk.Button(right_frame, 
+                            text=self.t("Export to PDF"),
+                            command=lambda: self.export_to_pdf(self.raw_tree_data,headers=headers,filename= f"كشف_حساب_للعميل_{clean_filename(self.report_customer_name)}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+                                                                report_folder=report_folder,title=report_folder,
+                                                                startdate=self.start_date_entry.get() if hasattr(self.start_date_entry, 'get') else str(self.start_date_entry),
+                                                                enddate=self.end_date_entry.get() if hasattr(self.end_date_entry, 'get') else str(self.end_date_entry),
+                                                                footerline_out_of_table=[
+                                                                    f"إجمالي دائن: {str(self.total_credit_entry.get())}",
+                                                                    f"إجمالي مدين: {str(self.total_debit_entry.get())}",
+                                                                    f"الرصيد: {str(self.balance_entry.get())}"
+                                                                ]
+                                                                ),bg="#2144F3", fg='white').grid(row=13, column=10, sticky="w", padx=10)
     def add_supplier_payment(self, tree):
         debit = self.cash_entry.get().strip()
         payment_method = self.payment_entry.get().strip()
@@ -5903,7 +5956,8 @@ class SalesSystemApp:
         self.payment_entry.pack(pady=5, padx=10, fill="x")
         self.payment_entry.set(self.t("Cash"))  
 
-        add_btn = tk.Button(left_frame, text=self.t("Add Entry"), width=35, command=lambda: self.add_customer_payment(tree))
+        add_btn = tk.Button(left_frame, text=self.t("Add Entry"), width=35, 
+                            command=lambda: self.add_customer_payment(tree))
         add_btn.pack(pady=20 , padx=10)
 
         #Right part (table)
@@ -5919,8 +5973,14 @@ class SalesSystemApp:
         self.customer_name_cb = ttk.Combobox(right_frame, values=customer_names)
         self.customer_name_cb.grid(padx=(10,20), row=1, column=5)
 
-        self.customer_code_cb.bind("<<ComboboxSelected>>", lambda event: self.on_code_selected(event, self.customer_code_cb, self.customer_name_cb, self.customer_collection, self.sales_collection, self.customer_payment_collection, "Customer_info.code", tree))
-        self.customer_name_cb.bind("<<ComboboxSelected>>", lambda event: self.on_name_selected(event, self.customer_code_cb, self.customer_name_cb, self.customer_collection, self.sales_collection, self.customer_payment_collection, "Customer_info.code", tree))
+        self.customer_code_cb.bind("<<ComboboxSelected>>", lambda event: self.on_code_selected(
+                                        event, self.customer_code_cb, self.customer_name_cb, 
+                                        self.customer_collection, self.sales_collection, self.customer_payment_collection, 
+                                        "Customer_info.code", tree))
+        self.customer_name_cb.bind("<<ComboboxSelected>>", lambda event: self.on_name_selected(
+                                        event, self.customer_code_cb, self.customer_name_cb, 
+                                        self.customer_collection, self.sales_collection, self.customer_payment_collection, 
+                                        "Customer_info.code", tree))
         
         tk.Label(right_frame, text=self.t("Start Date")).grid(padx=(10,20), row=0, column=7)
         self.start_date_entry = DateEntry(right_frame, font=("Arial", 12), date_pattern='dd-MM-yyyy', width=14)
@@ -5971,6 +6031,7 @@ class SalesSystemApp:
             tree.heading(col, text=self.t(col))
             # tree.heading(col, text=col.capitalize())
             tree.column(col, width=150)
+            tree.column(col, anchor="center")  # This centers the content
 
         # ==== Footer Totals ====
         tk.Label(right_frame, text=self.t("Total Debit")).grid(row=13, column=3, sticky="e")
@@ -5986,9 +6047,9 @@ class SalesSystemApp:
         self.balance_entry.grid(row=13, column=8, sticky="w")
 
         if self.language == "Arabic":
-            headers = ["التاريخ", "رقم الفاتورة", 'الدائن', 'المدين', "طريقة الدفع"]
+            headers = ["التاريخ", "الوصف", 'المدين', 'الدائن',  "طريقة الدفع"]
         else:
-            headers = ["date", "invoice number", 'credit', 'debit', "payment_method"]
+            headers = ["date", "description", 'debit', 'credit',  "payment_method"]
         # 1. Get the selected customer name from the Combobox
     
         # 2. Clean the name for use in filenames (remove special characters)
