@@ -250,6 +250,8 @@ class SalesSystemApp:
         self.root.state("zoomed")
         self.root.configure(bg=COLORS["background"])
         self.current_window = None
+        self.last_number_of_msgs = 0
+        self.is_group_chat_read = False
 
         # Set main application icon (Logo.ico)
         logo_icon_path = os.path.join(BASE_DIR, "Static", "images", "Logo.ico")
@@ -831,6 +833,30 @@ class SalesSystemApp:
         self.messages_collection              = db["Messages"]
 
 ############################################ Windows ########################################### 
+    def update_groupchat_icon(self):
+        if self.last_number_of_msgs == 0:
+            self.last_number_of_msgs = self.messages_collection.count_documents({})
+            self.root.after(10000, self.update_groupchat_icon)
+            self.is_group_chat_read = False
+            return
+        
+        icon_path = os.path.join(BASE_DIR, "Static", "images", "groupchat.ico")
+        img = Image.open(icon_path).resize((60, 60), Image.LANCZOS).convert("RGBA")
+        draw = ImageDraw.Draw(img)
+        
+        unread_count = self.messages_collection.count_documents({}) - self.last_number_of_msgs
+        if (unread_count > 0):
+            draw.ellipse((40, 0, 60, 20), fill="red")
+            draw.text((45, 2), str(unread_count), fill="white")
+            self.is_group_chat_read = False
+
+        icon_photo = ImageTk.PhotoImage(img)
+        self.groupchat_main_btn.config(image=icon_photo)
+        self.groupchat_main_btn.image = icon_photo  # Prevent garbage collection
+        
+        # self.last_number_of_msgs = self.messages_collection.count_documents({})
+        self.root.after(10000, self.update_groupchat_icon)
+
     def open_group_chat_window(self):
         chat_win = tk.Toplevel(self.root)
         chat_win.title(self.t("Group Chat - Employee Notes"))
@@ -876,14 +902,8 @@ class SalesSystemApp:
         chat_display.pack(fill="both", expand=True)
 
         # Entry area
-        # Entry area
         entry_frame = tk.Frame(chat_win)
         entry_frame.place(x=10, y=440, width=380, height=50)
-
-        # name_var = tk.StringVar(value=self.user_name if self.user_name else "")
-        # tk.Label(entry_frame, text="Name:", font=("Arial", 10)).pack(side=tk.LEFT)
-        # name_entry = tk.Entry(entry_frame, textvariable=name_var, width=12)
-        # name_entry.pack(side=tk.LEFT, padx=5)
 
         msg_var = tk.StringVar()
         msg_entry = tk.Entry(entry_frame, textvariable=msg_var, width=28)
@@ -893,13 +913,14 @@ class SalesSystemApp:
             chat_display.config(state="normal")
             chat_display.delete(1.0, tk.END)
             for msg in self.messages_collection.find().sort("timestamp", 1):
-                # name = msg.get("name", "Unknown")
                 name = msg.get("name", self.t("Unknown"))
                 text = msg.get("text", "")
                 time = msg.get("timestamp", "").strftime("%Y-%m-%d %H:%M") if msg.get("timestamp") else ""
                 chat_display.insert(tk.END, f"[{time}] {self.t(name)}: {text}\n")
             chat_display.config(state="disabled")
             chat_display.see(tk.END)
+            self.last_number_of_msgs = self.messages_collection.count_documents({})
+            self.is_group_chat_read = True
 
         def send_message():
             # name = name_var.get().strip() or "Unknown"
@@ -919,8 +940,8 @@ class SalesSystemApp:
         send_btn.pack(side=tk.LEFT, padx=5)
 
         # Make refresh button larger and more visible
-        refresh_btn = tk.Button(entry_frame, text="Refresh", command=load_messages, font=("Arial", 11), width=10, bg="#21F35D", fg="white")
-        refresh_btn.pack(side=tk.LEFT, padx=8, ipadx=8, ipady=8)
+        refresh_btn = tk.Button(entry_frame, text="Refresh", command=load_messages, font=("Arial", 11), width=8, bg="#21F35D", fg="white")
+        refresh_btn.pack(side=tk.LEFT, padx=5)
 
         chat_display.config(state="normal")
         chat_display.insert("end", "Welcome! This is the group chat for employee notes.\n\n")
@@ -1273,8 +1294,6 @@ class SalesSystemApp:
             self.chatbot_main_btn = tk.Label(self.root, image=self.chatbot_main_photo, bg=COLORS["card"], cursor="hand2")
             self.chatbot_main_btn.place(x=20, y=780)  # Initial position
 
-
-
             self.chatbot_main_btn.bind("<Button-1>", start_drag)
             self.chatbot_main_btn.bind("<B1-Motion>", do_drag)
             self.chatbot_main_btn.bind("<ButtonRelease-1>", lambda e: self.open_chatbot())
@@ -1296,6 +1315,8 @@ class SalesSystemApp:
             self.groupchat_main_btn.bind("<Button-1>", start_drag)
             self.groupchat_main_btn.bind("<B1-Motion>", do_drag)
             self.groupchat_main_btn.bind("<ButtonRelease-1>", lambda e: self.open_group_chat_window())
+            self.update_groupchat_icon()
+
         except Exception as e:
             print(f"Error loading groupchat icon for main window: {e}")
         
