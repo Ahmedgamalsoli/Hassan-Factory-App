@@ -1102,8 +1102,72 @@ class SalesSystemApp:
         chat_text.config(state="normal")
         chat_text.insert("end", "مرحباً! اختر سؤالاً من الأسئلة الشائعة بالأسفل.\n\n")
         chat_text.config(state="disabled")
+    def create_chatbot_button(self):
+        """Create and animate the chatbot GIF button in the main menu"""
+        chatbot_icon_path = os.path.join(BASE_DIR, "Static", "images", "chatbot.gif")
+        
+        # Initialize animation variables
+        self.gif_frames = []
+        self.current_gif_frame = 0  # Initialize frame counter
+        
+        try:
+            with Image.open(chatbot_icon_path) as gif:
+                # Get total frames (some GIFs report 0 for n_frames)
+                total_frames = gif.n_frames if hasattr(gif, 'n_frames') else 0
+                
+                if total_frames > 0:
+                    for frame in range(total_frames):
+                        gif.seek(frame)
+                        resized_frame = gif.copy().resize((60, 60), Image.LANCZOS)
+                        self.gif_frames.append(ImageTk.PhotoImage(resized_frame))
+                else:
+                    # Handle single-frame GIFs or invalid frame counts
+                    resized_frame = gif.copy().resize((60, 60), Image.LANCZOS)
+                    self.gif_frames.append(ImageTk.PhotoImage(resized_frame))
+                    
+        except Exception as e:
+            print(f"Error loading GIF: {e}")
+            # Fallback to blank image
+            blank_img = Image.new('RGBA', (60, 60), (0, 0, 0, 0))
+            self.gif_frames = [ImageTk.PhotoImage(blank_img)]
+        
+        # Create the button
+        self.chatbot_main_btn = tk.Label(
+            self.root,
+            image=self.gif_frames[0],
+            bg=COLORS["card"],
+            cursor="hand2"
+        )
+        self.chatbot_main_btn.place(x=20, y=780)
+        def start_drag(event):
+            widget = event.widget
+            widget.startX = event.x
+            widget.startY = event.y
 
-# To use: add a button in your main menu or topbar to call self.open_chatbot()
+        def do_drag(event):
+            widget = event.widget
+            if hasattr(widget, 'startX') and hasattr(widget, 'startY'):
+                x = widget.winfo_x() + event.x - widget.startX
+                y = widget.winfo_y() + event.y - widget.startY
+                widget.place(x=x, y=y)        
+        # Bind events
+        self.chatbot_main_btn.bind("<Button-1>", start_drag)
+        self.chatbot_main_btn.bind("<B1-Motion>", do_drag)
+        self.chatbot_main_btn.bind("<ButtonRelease-1>", lambda e: self.open_chatbot())
+        
+        # Start animation if we have multiple frames
+        if len(self.gif_frames) > 1:
+            self.animate_gif()
+
+    def animate_gif(self):
+        """Handle GIF animation"""
+        if not hasattr(self, 'chatbot_main_btn') or not self.chatbot_main_btn.winfo_exists():
+            return  # Stop if button doesn't exist
+        
+        self.current_gif_frame = (self.current_gif_frame + 1) % len(self.gif_frames)
+        self.chatbot_main_btn.config(image=self.gif_frames[self.current_gif_frame])
+        self.root.after(100, self.animate_gif)  # Continue animation
+    # To use: add a button in your main menu or topbar to call self.open_chatbot()
     def main_menu(self):
         # Clear current window
         for widget in self.root.winfo_children():
@@ -1111,9 +1175,6 @@ class SalesSystemApp:
 
         # Create the top bar
         self.topbar(show_back_button=False)
-
-
-        # Main container
         
         main_container = tk.Frame(self.root, bg=COLORS["background"])
         main_container.pack(fill=tk.BOTH, expand=True)
@@ -1308,16 +1369,20 @@ class SalesSystemApp:
             self.chatbot_main_btn.destroy()
 
         try:
-            chatbot_icon_path = os.path.join(BASE_DIR, "Static", "images", "chatbot_icon.png")
-            chatbot_img = Image.open(chatbot_icon_path).resize((60, 60), Image.LANCZOS)
-            self.chatbot_main_photo = ImageTk.PhotoImage(chatbot_img)
-            self.chatbot_main_btn = tk.Label(self.root, image=self.chatbot_main_photo, bg=COLORS["card"], cursor="hand2")
-            self.chatbot_main_btn.place(x=20, y=780)  # Initial position
+            # chatbot_icon_path = os.path.join(BASE_DIR, "Static", "images", "chatbot_icon.png")
+            # chatbot_img = Image.open(chatbot_icon_path).resize((60, 60), Image.LANCZOS)
+            # self.chatbot_main_photo = ImageTk.PhotoImage(chatbot_img)
+            # self.chatbot_main_btn = tk.Label(self.root, image=self.chatbot_main_photo, bg=COLORS["card"], cursor="hand2")
+            # self.chatbot_main_btn.place(x=20, y=780)  # Initial position
+            # chatbot_icon_path = os.path.join(BASE_DIR, "Static", "images", "chatbot.gif")
+            # self.chatbot_main_photo = tk.PhotoImage(file=chatbot_icon_path)
+            # self.chatbot_main_btn = tk.Label(self.root, image=self.chatbot_main_photo, bg=COLORS["card"], cursor="hand2")
+            # self.chatbot_main_btn.place(x=20, y=780)
 
-            self.chatbot_main_btn.bind("<Button-1>", start_drag)
-            self.chatbot_main_btn.bind("<B1-Motion>", do_drag)
-            self.chatbot_main_btn.bind("<ButtonRelease-1>", lambda e: self.open_chatbot())
-
+            # self.chatbot_main_btn.bind("<Button-1>", start_drag)
+            # self.chatbot_main_btn.bind("<B1-Motion>", do_drag)
+            # self.chatbot_main_btn.bind("<ButtonRelease-1>", lambda e: self.open_chatbot())
+            self.create_chatbot_button()  # Add this where you build your menu
 
 
         except Exception as e:
