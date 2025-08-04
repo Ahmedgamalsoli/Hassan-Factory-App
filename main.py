@@ -749,6 +749,7 @@ class SalesSystemApp:
         self.user_photo = ""
         self.user_name = ""  # Placeholder for dynamic user name
         self.user_role = ""  # Placeholder for user role
+        self.user_id = None  # Placeholder for user ID
         self.all_customers = None  # Will be loaded on first search
         self._after_id = None
         self.logout_icon_path   = os.path.join(BASE_DIR, "Static", "images", "logout-dark.png")  # Path to logout icon
@@ -881,7 +882,7 @@ class SalesSystemApp:
         else:
             icon_label = tk.Label(icon_frame, text="👥", font=("Arial", 32))
             icon_label.pack()
-
+        
         # Make icon draggable
         def start_drag(event):
             icon_frame._drag_start_x = event.x
@@ -894,6 +895,8 @@ class SalesSystemApp:
 
         icon_label.bind("<Button-1>", start_drag)
         icon_label.bind("<B2-Motion>", do_drag)
+
+        logged_in_users = list(self.employees_collection.find({"logged_in": True}))
 
         # Chat area
         chat_frame = tk.Frame(chat_win)
