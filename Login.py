@@ -76,7 +76,7 @@ class LoginWindow:
             username = username_entry.get()  # Assuming `username_entry` is the input field for the username
             password = password_entry.get()  # Assuming `password_entry` is the input field for the password
             self.app.user_name = username
-            # Validate input
+            
             if not username or not password:
                 self.app.silent_popup(self.app.t("Error"), self.app.t("Both fields are required."),self.app.play_Error)
                 return
@@ -86,6 +86,11 @@ class LoginWindow:
                 # print(user)
                 if user:
                     self.app.user_role = user.get("Role", "Unknown")
+                    self.app.user_id = user.get("_id", None)
+                    
+                    self.app.employees_collection.update_one({"_id": self.app.user_id}, {"$set": {"logged_in": True}})
+
+                    self.app.last_number_of_msgs = user.get("last_number_of_msgs", 0)
                     # messagebox.showinfo("Success", f"Login successful! Role: {self.user_role}")
                     self.app.silent_popup(self.app.t("Success"), f"{self.app.t("Login successful! Role:")} {self.app.user_role}",self.app.play_success)
                     # open_main_menu(self.app.user_role)

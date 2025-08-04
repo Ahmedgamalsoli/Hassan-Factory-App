@@ -836,7 +836,10 @@ class SalesSystemApp:
 ############################################ Windows ########################################### 
     def update_groupchat_icon(self):
         if self.last_number_of_msgs == 0:
-            self.last_number_of_msgs = self.messages_collection.count_documents({})
+            user_doc = self.employees_collection.find_one({"Id": self.user_id})
+            if user_doc:
+                self.last_number_of_msgs = user_doc.get("last_number_of_msgs", 0)
+            
             self.root.after(10000, self.update_groupchat_icon)
             self.is_group_chat_read = False
             return
@@ -870,17 +873,19 @@ class SalesSystemApp:
             chat_win.iconbitmap(icon_path)
 
         # Group chat icon (draggable)
-        icon_frame = tk.Frame(chat_win, width=60, height=60)
+        icon_frame = tk.Frame(chat_win, width=180, height=120)
         icon_frame.place(x=10, y=10)
+        # icon_frame = tk.Frame(chat_win, width=60, height=60)
+        # icon_frame.place(x=10, y=10)
         icon_img_path = os.path.join(BASE_DIR, "Static", "images", "groupchat.ico")
         if os.path.exists(icon_img_path):
-            icon_img = Image.open(icon_img_path).resize((60, 60), Image.LANCZOS)
+            icon_img = Image.open(icon_img_path).resize((50, 50), Image.LANCZOS)
             icon_photo = ImageTk.PhotoImage(icon_img)
             icon_label = tk.Label(icon_frame, image=icon_photo)
             icon_label.image = icon_photo
-            icon_label.pack()
+            icon_label.pack(pady=(5, 0))
         else:
-            icon_label = tk.Label(icon_frame, text="👥", font=("Arial", 32))
+            icon_label = tk.Label(icon_frame, text="👥", font=("Arial", 24))
             icon_label.pack()
         
         # Make icon draggable
@@ -897,13 +902,25 @@ class SalesSystemApp:
         icon_label.bind("<B2-Motion>", do_drag)
 
         logged_in_users = list(self.employees_collection.find({"logged_in": True}))
+        if logged_in_users:
 
-        # Chat area
+            online_frame = tk.Frame(icon_frame)
+            online_frame.pack(pady=(5, 0))  # Place under the icon
+
+        for user in logged_in_users:
+            name = user.get("Name", "Unknown")
+            row = tk.Frame(online_frame)
+            row.pack(anchor="w")
+            dot_label = tk.Label(row, text="●", fg="green", font=("Arial", 12, "bold"))
+            dot_label.pack(side=tk.LEFT)
+            name_label = tk.Label(row, text=name, font=("Arial", 12))
+            name_label.pack(side=tk.LEFT, padx=2)
+        
         chat_frame = tk.Frame(chat_win)
         chat_frame.place(x=80, y=10, width=310, height=420)
         chat_display = tk.Text(chat_frame, state="disabled", wrap="word", font=("Arial", 12))
         chat_display.pack(fill="both", expand=True)
-
+        
         # Entry area
         entry_frame = tk.Frame(chat_win)
         entry_frame.place(x=10, y=440, width=380, height=50)
@@ -9924,7 +9941,25 @@ class SalesSystemApp:
     # def update_time(self, time_label):
     #     time_label.config(text=datetime.now().strftime('%B %d, %Y %I:%M %p'))
     #     self.root.after(1000, self.update_time, time_label)
+    def handle_logout(self):
+        if self.user_id:
+            self.employees_collection.update_one(
+                {"_id": self.user_id},
+                {"$set": {
+                    "logged_in": False,
+                    "last_number_of_msgs": self.last_number_of_msgs
+                }})
+        self.login_window.open_login_window()
 
+    def on_app_exit(self):
+        if self.user_id:
+            self.employees_collection.update_one(
+                {"_id": self.user_id},
+                {"$set": {
+                    "logged_in": False,
+                    "last_number_of_msgs": self.last_number_of_msgs
+                }})
+        self.root.quit()
 
     # Function to make the top bar part
     def topbar(
@@ -9950,7 +9985,7 @@ class SalesSystemApp:
             self.exit_photo = ImageTk.PhotoImage(exit_image)
             exit_icon = tk.Label(top_bar, image=self.exit_photo, bg=COLORS["top_bar"])
             exit_icon.pack(side="right", padx=10)
-            exit_icon.bind("<Button-1>", lambda e: self.root.quit())
+            exit_icon.bind("<Button-1>", lambda e: self.on_app_exit())
         except Exception as e:
             self.silent_popup("Error", "Error loading exit icon: {e}", self.play_Error)
 
@@ -9964,7 +9999,7 @@ class SalesSystemApp:
             logout_image = Image.open(self.logout_icon_path)
             logout_image = logout_image.resize((40, 40), Image.LANCZOS)
             self.logout_photo = ImageTk.PhotoImage(logout_image)
-            logout_icon = tk.Button(top_bar, image=self.logout_photo, bg=COLORS["top_bar"], bd=0, command=self.login_window.open_login_window)
+            logout_icon = tk.Button(top_bar, image=self.logout_photo, bg=COLORS["top_bar"], bd=0, command=self.handle_logout)
             logout_icon.pack(side="right", padx=10)
         except Exception as e:
             self.silent_popup("Error", "Error loading Logout icon: {e}", self.play_Error)
