@@ -73,11 +73,11 @@ class reports:
                 "command": lambda: self.Treasury_window_report(self.app.user_role)},
                 # {"text": self.app.t("Sales Report"), "image": "sales_rep-dark.png", 
                 # "command": lambda: self.app.sales_report(self.app.user_role)},
-                {"text": self.app.app.t("Purchase Report"), "image": "Purchase_rep-dark.png", 
+                {"text": self.app.t("Purchase Report"), "image": "Purchase_rep-dark.png", 
                 "command": lambda: self.app.trash(self.app.user_role)},
-                {"text": self.app.app.t("Profit and Loss (P&L) Report"), "image": "p&l_repo-dark.png", 
+                {"text": self.app.t("Profit and Loss (P&L) Report"), "image": "p&l_repo-dark.png", 
                 "command": lambda: self.app.trash(self.app.user_role)},
-                {"text": self.app.app.t("Customer Reports"), "image": "Customer_repo-dark.png", 
+                {"text": self.app.t("Customer Reports"), "image": "Customer_repo-dark.png", 
                 "command": lambda: self.app.trash(self.app.user_role)},
                 {"text": self.app.t("Supplier Reports"), "image": "Supplier_repo-dark.png", 
                 "command": lambda: self.app.trash(self.app.user_role)},
@@ -323,23 +323,26 @@ class reports:
         
         transactions = []
         
-        # 1. Customer Payments (Credit)
         customer_payments = self.app.customer_payments.find()
+        # print(customer_payments)
         for doc in customer_payments:
+            Customer_info = doc.get("Customer_info", {})
             transactions.append({
                 "date": self.parse_date(doc.get("Time", "")),
-                "description": doc.get("Operation_Number", ""),
+                "description":  "دفعة"+  " - " + Customer_info.get("name", ""),
                 "credit": float(doc.get("Credit", 0)),
                 "debit": 0.0,
                 "payment_method": doc.get("Payment_method", "").lower().replace(" ", "_")
             })
+        # # print(transactions)
 
-        # 2. Employee Salary (Debit)
+        # 2. Employee Salary (Debit) done
         salaries = self.app.employee_salary_collection.find()
+        # print(salaries)
         for doc in salaries:
             transactions.append({
                 "date": self.parse_date(doc.get("timestamp", "")),
-                "description": f"Salary {doc.get('month_year', '')}",
+                "description": f"مرتب {doc.get('employee_name', '')}",
                 "credit": 0.0,
                 "debit": float(doc.get("net_salary", 0)),
                 "payment_method": doc.get("payment_method", "").lower().replace(" ", "_")
@@ -350,7 +353,7 @@ class reports:
         for doc in withdrawals:
             transactions.append({
                 "date": self.parse_date(doc.get("timestamp", "")),
-                "description": f"Withdrawal {doc.get('employee_code', '')}",
+                "description": f"سلفة {doc.get('employee_name', '')}",
                 "credit": 0.0,
                 "debit": float(doc.get("amount_withdrawls", 0)),
                 "payment_method": doc.get("payment_method", "").lower().replace(" ", "_")
@@ -360,9 +363,10 @@ class reports:
         purchases = self.app.purchases_collection.find()
         for doc in purchases:
             financials = doc.get("Financials", {})  # Safely get the nested Financials object
+            supplier_info = doc.get("supplier_info", {})
             transactions.append({
                 "date": self.parse_date(doc.get("Date", "")),
-                "description": doc.get("Receipt_Number", ""),
+                "description": supplier_info.get("name","") + " - " + doc.get("Receipt_Number", ""),
                 "credit": 0.0,
                 "debit": float(financials.get("Payed_cash", 0)),  # Access via Financials
                 "payment_method": financials.get("Payment_method", "").lower().replace(" ", "_")  # Acce
@@ -370,11 +374,13 @@ class reports:
         # # print(transactions)
         # 5. Sales (Credit)
         sales = self.app.sales_collection.find()
+        
         for doc in sales:
             financials = doc.get("Financials", {})  # Safely get the nested Financials object
+            Customer_info2= doc.get("Customer_info", {})
             transactions.append({
                 "date": self.parse_date(doc.get("Date", "")),
-                "description": doc.get("Receipt_Number", ""),
+                "description": Customer_info2.get("name","") + "-" + doc.get("Receipt_Number", ""),
                 "credit": float(financials.get("Payed_cash", 0)),
                 "debit": 0.0,
                 "payment_method": financials.get("Payment_method", "").lower().replace(" ", "_")  # Acce
@@ -383,9 +389,10 @@ class reports:
         # 6. Supplier Payments (Debit)
         supplier_payments = self.app.supplier_payments.find()
         for doc in supplier_payments:
+            supplier_info=doc.get("supplier_info", {})
             transactions.append({
                 "date": self.parse_date(doc.get("Time", "")),
-                "description": doc.get("Operation_Number", ""),
+                "description": "دفعة"+  " - " + supplier_info.get("name", ""),
                 "credit": 0.0,
                 "debit": float(doc.get("Debit", 0)),
                 "payment_method": doc.get("Payment_method", "").lower().replace(" ", "_")

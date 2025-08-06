@@ -3092,9 +3092,10 @@ class SalesSystemApp:
         customer_payments = self.customer_payments.find({"Time": {"$gte": start_date, "$lte": end_date}})
         # print(customer_payments)
         for doc in customer_payments:
+            Customer_info = doc.get("Customer_info", {})
             transactions.append({
                 "date": self.parse_date(doc.get("Time", "")),
-                "description": doc.get("Operation_Number", ""),
+                "description": "دفعة"+  " - " + Customer_info.get("name", ""),
                 "credit": float(doc.get("Credit", 0)),
                 "debit": 0.0,
                 "payment_method": doc.get("Payment_method", "").lower().replace(" ", "_")
@@ -3107,7 +3108,7 @@ class SalesSystemApp:
         for doc in salaries:
             transactions.append({
                 "date": self.parse_date(doc.get("timestamp", "")),
-                "description": f"Salary {doc.get('month_year', '')}",
+                "description": f"مرتب {doc.get('employee_name', '')}",
                 "credit": 0.0,
                 "debit": float(doc.get("net_salary", 0)),
                 "payment_method": doc.get("payment_method", "").lower().replace(" ", "_")
@@ -3118,7 +3119,7 @@ class SalesSystemApp:
         for doc in withdrawals:
             transactions.append({
                 "date": self.parse_date(doc.get("timestamp", "")),
-                "description": f"Withdrawal {doc.get('employee_code', '')}",
+                "description": f"سلفة {doc.get('employee_name', '')}",
                 "credit": 0.0,
                 "debit": float(doc.get("amount_withdrawls", 0)),
                 "payment_method": doc.get("payment_method", "").lower().replace(" ", "_")
@@ -3128,9 +3129,10 @@ class SalesSystemApp:
         purchases = self.purchases_collection.find({"Date": {"$gte": start_date, "$lte": end_date}})
         for doc in purchases:
             financials = doc.get("Financials", {})  # Safely get the nested Financials object
+            supplier_info = doc.get("supplier_info", {})
             transactions.append({
                 "date": self.parse_date(doc.get("Date", "")),
-                "description": doc.get("Receipt_Number", ""),
+                "description": supplier_info.get("name","") + " - " + doc.get("Receipt_Number", ""),
                 "credit": 0.0,
                 "debit": float(financials.get("Payed_cash", 0)),  # Access via Financials
                 "payment_method": financials.get("Payment_method", "").lower().replace(" ", "_")  # Acce
@@ -3138,11 +3140,13 @@ class SalesSystemApp:
         # # print(transactions)
         # 5. Sales (Credit)
         sales = self.sales_collection.find({"Date": {"$gte": start_date, "$lte": end_date}})
+        
         for doc in sales:
             financials = doc.get("Financials", {})  # Safely get the nested Financials object
+            Customer_info2= doc.get("Customer_info", {})
             transactions.append({
                 "date": self.parse_date(doc.get("Date", "")),
-                "description": doc.get("Receipt_Number", ""),
+                "description": Customer_info2.get("name","") + "-" + doc.get("Receipt_Number", ""),
                 "credit": float(financials.get("Payed_cash", 0)),
                 "debit": 0.0,
                 "payment_method": financials.get("Payment_method", "").lower().replace(" ", "_")  # Acce
@@ -3151,9 +3155,10 @@ class SalesSystemApp:
         # 6. Supplier Payments (Debit)
         supplier_payments = self.supplier_payments.find({"Time": {"$gte": start_date, "$lte": end_date}})
         for doc in supplier_payments:
+            supplier_info=doc.get("supplier_info", {})
             transactions.append({
                 "date": self.parse_date(doc.get("Time", "")),
-                "description": doc.get("Operation_Number", ""),
+                "description": "دفعة"+  " - " + supplier_info.get("name", ""),
                 "credit": 0.0,
                 "debit": float(doc.get("Debit", 0)),
                 "payment_method": doc.get("Payment_method", "").lower().replace(" ", "_")
@@ -10129,8 +10134,8 @@ def resource_path(relative_path):
 if __name__ == "__main__":
     root = tk.Tk()
     app = SalesSystemApp(root)       # Create main app first
-    app.start_without_login()
-    # app.start_with_login()     # Then launch the login screen through app
+    # app.start_without_login()
+    app.start_with_login()     # Then launch the login screen through app
 
     try:
         root.mainloop()
