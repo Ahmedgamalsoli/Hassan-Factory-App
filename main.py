@@ -9853,14 +9853,18 @@ class SalesSystemApp:
             if footerline_out_of_table:
                 footer_style = styles['Normal']
                 footer_style.fontName = font_name
-                footer_style.alignment = 2
+                footer_style.alignment = 2  # Center alignment
                 footer_style.fontSize = font_size + 1
                 
-                elements.append(Spacer(1, 20))
+                # Increase vertical space before footer (changed from 20 to 30)
+                elements.append(Spacer(1, 30))  # Increased space before footer
                 
                 if isinstance(footerline_out_of_table, list):
-                    for line in footerline_out_of_table:
+                    for i, line in enumerate(footerline_out_of_table):
                         elements.append(Paragraph(format_arabic(line), footer_style))
+                        # Add space after each line except the last one
+                        if i < len(footerline_out_of_table) - 1:
+                            elements.append(Spacer(1, 15))  # Space between footer lines
                 else:
                     elements.append(Paragraph(format_arabic(footerline_out_of_table), footer_style))
 

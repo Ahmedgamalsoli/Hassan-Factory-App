@@ -4,20 +4,15 @@
 # ======================
 
 import tkinter as tk
-import io
 import re
 import os
 import pytz
-import threading  # To play sound without freezing the GUI
+
 import sys
-import cloudinary
-import cloudinary.uploader
-import urllib.request
+
 import matplotlib
 import matplotlib.pyplot as plt
-import random
-import arabic_reshaper
-import openpyxl
+
 
 from tkinter import filedialog, ttk, messagebox
 from PIL import Image, ImageTk, ImageDraw  # Import Pillow classes
@@ -189,38 +184,6 @@ class reports:
         # Main container
         main_frame = tk.Frame(self.root, padx=20, pady=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
-
-        # # Filter controls
-        # filter_frame = tk.Frame(main_frame)
-        # filter_frame.pack(fill=tk.X, pady=10)
-
-        # # Date filters
-        # date_frame = tk.Frame(filter_frame)
-        # date_frame.pack(side=tk.LEFT, padx=10)
-
-        # tk.Label(date_frame, text=self.t("From Date:")).pack(side=tk.LEFT)
-        # self.from_date = DateEntry(date_frame, date_pattern="dd/mm/yyyy")
-        # self.from_date.pack(side=tk.LEFT, padx=10)
-
-        # tk.Label(date_frame, text=self.t("To Date:")).pack(side=tk.LEFT, padx=(20,0))
-        # self.to_date = DateEntry(date_frame, date_pattern="dd/mm/yyyy")
-        # self.to_date.pack(side=tk.LEFT)
-
-        # # Payment method filter
-        # method_frame = tk.Frame(filter_frame)
-        # method_frame.pack(side=tk.LEFT, padx=20)
-
-        # tk.Label(method_frame, text=self.t("Payment Method:")).pack(side=tk.LEFT)
-        # self.payment_method = ttk.Combobox(
-        #     method_frame,
-        #     values=["All", "Cash", "Instapay", "Bank Account", "E Wallet"]
-        # )
-        # self.payment_method.set("All")
-        # self.payment_method.pack(side=tk.LEFT, padx=10)
-
-        # # Search button
-        # search_btn = tk.Button(filter_frame, text=self.t("Search"), command=self.fetch_transactions)
-        # search_btn.pack(side=tk.RIGHT, padx=10)
 
         # Results Treeview
         columns = ("date", "description", "credit", "debit", "payment_method")
