@@ -44,9 +44,12 @@ matplotlib.use('TkAgg')  # Set the backend before importing pyplot
 # ======================
 # Files Imports
 # ======================
-# from calculator import CalculatorPopup
+import config
 from Login import LoginWindow
-# from AuxiliaryClass import AlwaysOnTopInputDialog
+from groupchat import GroupChat
+from chatbot import chatbot
+from topbar import topbar
+from reports import reports
 
 # ======================
 # Unused imports
@@ -76,23 +79,7 @@ dialog_height = 150 # Same height as AlwaysOnTopInputDialog
 
 ARRAY_FIELDS = ['Units', 'Items'] #Must be lower case
 
-COLORS = {
-    "background": "#F5F7FA",       # Light grey background
-    "primary": "#3B82F6",           # Dark blue for headers
-    "main_frame": "#2A3F5F",           # Dark blue for headers
-    "secondary": "#00C0A3",         # Teal for primary actions
-    "accent": "#FF6F61",            # Coral for highlights
-    "text": "#2A3F5F",              # Dark blue text
-    "card": "#FFFFFF",              # White card backgrounds
-    "chart1": "#00C0A3",            # Teal for Sales
-    "chart2": "#FF6F61",            # Coral for Purchases
-    "highlight": "#6C5CE7",         # Purple for interactive elements
-    "table_header": "#FFFFFF",      # Dark blue table headers
-    "positive": "#00C0A3",          # Teal for positive metrics
-    "neutral": "#A0AEC0",            # Grey for secondary elements
-    "top_bar": "#dbb40f",        # Dark blue for top bar
-    "top_bar_icons": "#000000",  # White for top bar icons
-}
+
 
 # Determine the base directory
 if getattr(sys, "frozen", False):
@@ -248,7 +235,7 @@ class SalesSystemApp:
         self.root.title("مصنع حسن سليم للمنتجات البلاستيكية")
         self.root.attributes('-fullscreen', True)
         self.root.state("zoomed")
-        self.root.configure(bg=COLORS["background"])
+        self.root.configure(bg=config.COLORS["background"])
         self.current_window = None
         self.last_number_of_msgs = 0
         self.is_group_chat_read = False
@@ -273,11 +260,11 @@ class SalesSystemApp:
         self.title_font = ("Segoe UI", 16, "bold")
         
         # style.theme_create("modern", parent="alt", settings={
-        #     "TFrame": {"configure": {"background": COLORS["background"]}},
+        #     "TFrame": {"configure": {"background": config.COLORS["background"]}},
         #     "TLabel": {
         #         "configure": {
-        #             "background": COLORS["background"],
-        #             "foreground": COLORS["text"],
+        #             "background": config.COLORS["background"],
+        #             "foreground": config.COLORS["text"],
         #             "font": self.custom_font
         #         }
         #     },
@@ -285,14 +272,14 @@ class SalesSystemApp:
         #         "configure": {
         #             "anchor": "center",
         #             "relief": "flat",
-        #             "background": COLORS["primary"],
-        #             "foreground": COLORS["text"],
+        #             "background": config.COLORS["primary"],
+        #             "foreground": config.COLORS["text"],
         #             "font": self.custom_font,
         #             "padding": 10
         #         },
         #         "map": {
         #             "background": [
-        #                 ("active", COLORS["highlight"]),
+        #                 ("active", config.COLORS["highlight"]),
         #                 ("disabled", "#95a5a6")
         #             ]
         #         }
@@ -592,7 +579,7 @@ class SalesSystemApp:
             "Employee Performance Report":{"Arabic":"تقرير أداء الموظفين","English":"Employee Performance Report"},
             "Export to Excel":{"Arabic":"تحويل الي اكسل","English":"Export to Excel"},
             "Export to PDF":{"Arabic":"حفظ الملف","English":"Save as PDF"},
-            # "":{"Arabic":"","English":""},
+            "Daily treasury report":{"Arabic":"تقرير الخزنة اليومية","English":"Daily treasury report"},
             # "":{"Arabic":"","English":""},
             # "":{"Arabic":"","English":""},
             # "":{"Arabic":"","English":""},
@@ -775,7 +762,10 @@ class SalesSystemApp:
         self.update =False
         self.light = True  # Default to light mode
         self.update_purchase =False
-        
+        self.groupchat = GroupChat(self.root, self)
+        self.chatbot = chatbot(self.root, self)
+        self.topbar = topbar(self.root, self)
+        self.reports = reports(self.root, self)
         # icon_image = Image.open(icon_path).resize((16, 16))  # Resize to fit in the button
         # self.lang_icon = ImageTk.PhotoImage(icon_image)
     
@@ -834,349 +824,19 @@ class SalesSystemApp:
         self.messages_collection              = db["Messages"]
 
 ############################################ Windows ########################################### 
-    def update_groupchat_icon(self):
-        if self.last_number_of_msgs == 0:
-            user_doc = self.employees_collection.find_one({"Id": self.user_id})
-            if user_doc:
-                self.last_number_of_msgs = user_doc.get("last_number_of_msgs", 0)
-            
-            self.root.after(10000, self.update_groupchat_icon)
-            self.is_group_chat_read = False
-            return
-        
-        icon_path = os.path.join(BASE_DIR, "Static", "images", "groupchat.ico")
-        img = Image.open(icon_path).resize((60, 60), Image.LANCZOS).convert("RGBA")
-        draw = ImageDraw.Draw(img)
-        
-        unread_count = self.messages_collection.count_documents({}) - self.last_number_of_msgs
-        if (unread_count > 0):
-            draw.ellipse((40, 0, 60, 20), fill="red")
-            draw.text((45, 2), str(unread_count), fill="white")
-            self.is_group_chat_read = False
-
-        icon_photo = ImageTk.PhotoImage(img)
-        self.groupchat_main_btn.config(image=icon_photo)
-        self.groupchat_main_btn.image = icon_photo  # Prevent garbage collection
-        
-        # self.last_number_of_msgs = self.messages_collection.count_documents({})
-        self.root.after(10000, self.update_groupchat_icon)
-
-    def open_group_chat_window(self):
-        chat_win = tk.Toplevel(self.root)
-        chat_win.title(self.t("Group Chat - Employee Notes"))
-        chat_win.geometry("450x500")
-        chat_win.resizable(False, False)
-
-        # Set custom icon for the window (groupchat.ico)
-        icon_path = os.path.join(BASE_DIR, "Static", "images", "groupchat.ico")
-        if os.path.exists(icon_path):
-            chat_win.iconbitmap(icon_path)
-
-        # Group chat icon (draggable)
-        icon_frame = tk.Frame(chat_win, width=180, height=120)
-        icon_frame.place(x=10, y=10)
-        # icon_frame = tk.Frame(chat_win, width=60, height=60)
-        # icon_frame.place(x=10, y=10)
-        icon_img_path = os.path.join(BASE_DIR, "Static", "images", "groupchat.ico")
-        if os.path.exists(icon_img_path):
-            icon_img = Image.open(icon_img_path).resize((50, 50), Image.LANCZOS)
-            icon_photo = ImageTk.PhotoImage(icon_img)
-            icon_label = tk.Label(icon_frame, image=icon_photo)
-            icon_label.image = icon_photo
-            icon_label.pack(pady=(5, 0))
-        else:
-            icon_label = tk.Label(icon_frame, text="👥", font=("Arial", 24))
-            icon_label.pack()
-        
-        # Make icon draggable
-        def start_drag(event):
-            icon_frame._drag_start_x = event.x
-            icon_frame._drag_start_y = event.y
-
-        def do_drag(event):
-            x = icon_frame.winfo_x() + event.x - icon_frame._drag_start_x
-            y = icon_frame.winfo_y() + event.y - icon_frame._drag_start_y
-            icon_frame.place(x=x, y=y)
-
-        icon_label.bind("<Button-1>", start_drag)
-        icon_label.bind("<B2-Motion>", do_drag)
-
-        logged_in_users = list(self.employees_collection.find({"logged_in": True}))
-        if logged_in_users:
-
-            online_frame = tk.Frame(icon_frame)
-            online_frame.pack(pady=(5, 0))  # Place under the icon
-
-        for user in logged_in_users:
-            name = user.get("Name", "Unknown")
-            row = tk.Frame(online_frame)
-            row.pack(anchor="w")
-            dot_label = tk.Label(row, text="●", fg="green", font=("Arial", 12, "bold"))
-            dot_label.pack(side=tk.LEFT)
-            name_label = tk.Label(row, text=name, font=("Arial", 12))
-            name_label.pack(side=tk.LEFT, padx=2)
-        
-        chat_frame = tk.Frame(chat_win)
-        chat_frame.place(x=80, y=10, width=310, height=420)
-        chat_display = tk.Text(chat_frame, state="disabled", wrap="word", font=("Arial", 12))
-        chat_display.pack(fill="both", expand=True)
-        
-        # Entry area
-        entry_frame = tk.Frame(chat_win)
-        entry_frame.place(x=10, y=440, width=380, height=50)
-
-        msg_var = tk.StringVar()
-        msg_entry = tk.Entry(entry_frame, textvariable=msg_var, width=28)
-        msg_entry.pack(side=tk.LEFT, padx=5)
-
-        def load_messages():
-            chat_display.config(state="normal")
-            chat_display.delete(1.0, tk.END)
-            for msg in self.messages_collection.find().sort("timestamp", 1):
-                name = msg.get("name", self.t("Unknown"))
-                text = msg.get("text", "")
-                time = msg.get("timestamp", "").strftime("%Y-%m-%d %H:%M") if msg.get("timestamp") else ""
-                chat_display.insert(tk.END, f"[{time}] {self.t(name)}: {text}\n")
-            chat_display.config(state="disabled")
-            chat_display.see(tk.END)
-            self.last_number_of_msgs = self.messages_collection.count_documents({})
-            self.is_group_chat_read = True
-
-        def send_message():
-            # name = name_var.get().strip() or "Unknown"
-            name = self.user_name if self.user_name else "Unknown"
-            text = msg_var.get().strip()
-            if text:
-                self.messages_collection.insert_one({
-                    "name": name,
-                    "text": text,
-                    "timestamp": datetime.now()
-                })
-                msg_var.set("")
-                load_messages()
 
 
-        send_btn = tk.Button(entry_frame, text="Send", command=send_message, font=("Arial", 11), width=8, bg="#2196F3", fg="white")
-        send_btn.pack(side=tk.LEFT, padx=5)
 
-        # Make refresh button larger and more visible
-        refresh_btn = tk.Button(entry_frame, text="Refresh", command=load_messages, font=("Arial", 11), width=8, bg="#21F35D", fg="white")
-        refresh_btn.pack(side=tk.LEFT, padx=5)
-
-        chat_display.config(state="normal")
-        chat_display.insert("end", "Welcome! This is the group chat for employee notes.\n\n")
-        chat_display.config(state="disabled")
-
-        load_messages()
-
-    def open_chatbot(self):
-        chatbot_win = tk.Toplevel(self.root)
-        chatbot_win.title("مساعد التطبيق")
-        chatbot_win.title(self.t("Application Assistant"))
-        chatbot_win.geometry("400x500")
-        chatbot_win.resizable(False, False)
-    
-        # Set custom icon for the window (feather.ico)
-        icon_path = os.path.join(BASE_DIR, "Static", "images", "chatbot_icon.ico")
-        if os.path.exists(icon_path):
-            chatbot_win.iconbitmap(icon_path)
-    
-        # Chatbot icon (draggable)
-        icon_frame = tk.Frame(chatbot_win, width=60, height=60)
-        icon_frame.place(x=10, y=10)
-        icon_img_path = os.path.join(BASE_DIR, "Static", "images", "chatbot_icon.ico")
-        if os.path.exists(icon_img_path):
-            icon_img = Image.open(icon_img_path).resize((60, 60), Image.LANCZOS)
-            icon_photo = ImageTk.PhotoImage(icon_img)
-            icon_label = tk.Label(icon_frame, image=icon_photo)
-            icon_label.image = icon_photo
-            icon_label.pack()
-        else:
-            icon_label = tk.Label(icon_frame, text="🤖", font=("Arial", 32))
-            icon_label.pack()
-    
-        # Make icon draggable
-        def start_drag(event):
-            icon_frame._drag_start_x = event.x
-            icon_frame._drag_start_y = event.y
-    
-        def do_drag(event):
-            x = icon_frame.winfo_x() + event.x - icon_frame._drag_start_x
-            y = icon_frame.winfo_y() + event.y - icon_frame._drag_start_y
-            icon_frame.place(x=x, y=y)
-    
-        icon_label.bind("<Button-1>", start_drag)
-        icon_label.bind("<B1-Motion>", do_drag)
-    
-        # Chat area
-        chat_frame = tk.Frame(chatbot_win)
-        chat_frame.place(x=80, y=10, width=310, height=420)
-        chat_text = tk.Text(chat_frame, state="disabled", wrap="word", font=("Arial", 12))
-        chat_text.pack(fill="both", expand=True)
-    
-        # Entry and send button (hidden, not used)
-        entry_frame = tk.Frame(chatbot_win)
-        entry_frame.place(x=10, y=440, width=380, height=50)
-    
-        # ...inside open_chatbot...
-                # Fixed questions and replies
-        questions = [
-            "كيف أضيف فاتورة مبيعات؟",
-            "كيف أبحث عن عميل؟",
-            "كيف أعدل بيانات منتج؟",
-            "كيف أغير اللغة؟",
-            "كيف أضيف موظف جديد؟",
-            "كيف أبحث عن فاتورة مبيعات؟",
-            "كيف أعدل فاتورة مبيعات؟",
-            "كيف أضيف فاتورة مشتريات؟",
-            "كيف أبحث عن مورد؟",
-            "كيف أعدل بيانات مورد؟",
-            "كيف أضيف منتج جديد؟",
-            "كيف أبحث عن منتج؟",
-            "كيف أعدل بيانات موظف؟",
-            "كيف أضيف مصروف عام؟",
-            "كيف أضيف إيراد عام؟",
-            "كيف أبحث في قاعدة البيانات؟",
-            "كيف أستخدم التقارير؟",
-            "كيف أغير كلمة المرور؟",
-            "كيف أعمل نسخة احتياطية للبيانات؟",
-            "كيف أسترجع نسخة احتياطية؟",
-            "كيف أضيف وردية يومية؟",
-            "كيف أضيف أمر إنتاج؟",
-            "كيف أبحث عن سجل موظف؟",
-            "كيف أبحث عن سجل مورد؟",
-            "كيف أبحث عن سجل منتج؟",
-            "كيف أبحث عن سجل فاتورة؟",
-            "مساعدة"
-        ]
-        replies = {
-            "كيف أضيف فاتورة مبيعات؟": "من القائمة الرئيسية، اختر 'فاتورة مبيعات' ثم اضغط على 'فاتورة مبيعات جديدة'.",
-            "كيف أبحث عن عميل؟": "استخدم مربع البحث في نافذة العملاء أو قاعدة البيانات.",
-            "كيف أعدل بيانات منتج؟": "اذهب إلى قاعدة البيانات، اختر 'المنتجات' ثم اضغط على 'تعديل سجل'.",
-            "كيف أغير اللغة؟": "اضغط على زر تغيير اللغة في الشريط العلوي.",
-            "كيف أضيف موظف جديد؟": "من قاعدة البيانات، اختر 'الموظفين' ثم اضغط على 'إضافة سجل'.",
-            "كيف أبحث عن فاتورة مبيعات؟": "من نافذة الفواتير، استخدم مربع البحث أو اختر رقم الفاتورة من القائمة.",
-            "كيف أعدل فاتورة مبيعات؟": "من نافذة الفواتير، اختر الفاتورة ثم اضغط على 'تعديل'.",
-            "كيف أضيف فاتورة مشتريات؟": "من القائمة الرئيسية، اختر 'فاتورة مشتريات' ثم اضغط على 'فاتورة مشتريات جديدة'.",
-            "كيف أبحث عن مورد؟": "استخدم مربع البحث في نافذة الموردين أو قاعدة البيانات.",
-            "كيف أعدل بيانات مورد؟": "اذهب إلى قاعدة البيانات، اختر 'الموردين' ثم اضغط على 'تعديل سجل'.",
-            "كيف أضيف منتج جديد؟": "من قاعدة البيانات، اختر 'المنتجات' ثم اضغط على 'إضافة سجل'.",
-            "كيف أبحث عن منتج؟": "استخدم مربع البحث في نافذة المنتجات أو قاعدة البيانات.",
-            "كيف أعدل بيانات موظف؟": "اذهب إلى قاعدة البيانات، اختر 'الموظفين' ثم اضغط على 'تعديل سجل'.",
-            "كيف أضيف مصروف عام؟": "من القائمة الرئيسية، اختر 'ايرادات و مصروفات عامة' ثم اضغط على 'تسجيل مصروف'.",
-            "كيف أضيف إيراد عام؟": "من القائمة الرئيسية، اختر 'ايرادات و مصروفات عامة' ثم اضغط على 'تسجيل إيراد'.",
-            "كيف أبحث في قاعدة البيانات؟": "استخدم مربع البحث في نافذة قاعدة البيانات وحدد الجدول المطلوب.",
-            "كيف أستخدم التقارير؟": "من القائمة الرئيسية، اختر 'التقارير' ثم حدد التقرير المطلوب.",
-            "كيف أغير كلمة المرور؟": "من نافذة المستخدمين، اختر اسمك ثم اضغط على 'تغيير كلمة المرور'.",
-            "كيف أعمل نسخة احتياطية للبيانات؟": "من الإعدادات، اختر 'نسخة احتياطية' واتبع التعليمات.",
-            "كيف أسترجع نسخة احتياطية؟": "من الإعدادات، اختر 'استرجاع نسخة احتياطية' واتبع التعليمات.",
-            "كيف أضيف وردية يومية؟": "من قاعدة البيانات، اختر 'الورديات اليومية' ثم اضغط على 'إضافة وردية'.",
-            "كيف أضيف أمر إنتاج؟": "من القائمة الرئيسية، اختر 'أمر إنتاج' ثم أدخل البيانات المطلوبة.",
-            "كيف أبحث عن سجل موظف؟": "استخدم مربع البحث في نافذة الموظفين أو قاعدة البيانات.",
-            "كيف أبحث عن سجل مورد؟": "استخدم مربع البحث في نافذة الموردين أو قاعدة البيانات.",
-            "كيف أبحث عن سجل منتج؟": "استخدم مربع البحث في نافذة المنتجات أو قاعدة البيانات.",
-            "كيف أبحث عن سجل فاتورة؟": "استخدم مربع البحث في نافذة الفواتير أو قاعدة البيانات.",
-            "مساعدة": "اسألني عن إضافة أو تعديل أو بحث أو تقارير أو إعدادات أو أي وظيفة أخرى في التطبيق.",
-        }
-        # ...rest of open_chatbot...
-    
-        # Dropdown for questions
-        selected_question = tk.StringVar()
-        question_dropdown = ttk.Combobox(entry_frame, textvariable=selected_question, values=questions, font=("Arial", 14), state="readonly")
-        question_dropdown.pack(fill="x", padx=8, pady=8)
-    
-        def on_select(event=None):
-            q = selected_question.get()
-            if not q:
-                return
-            chat_text.config(state="normal")
-            chat_text.insert("end", f"أنت: {q}\n")
-            reply = replies.get(q, "عذراً، لم أفهم سؤالك. جرب كلمة 'مساعدة'.")
-            chat_text.insert("end", f"المساعد: {reply}\n\n")
-            chat_text.config(state="disabled")
-            chat_text.see("end")
-    
-        question_dropdown.bind("<<ComboboxSelected>>", on_select)
-    
-        # Optionally, show a welcome/help message
-        chat_text.config(state="normal")
-        chat_text.insert("end", "مرحباً! اختر سؤالاً من الأسئلة الشائعة بالأسفل.\n\n")
-        chat_text.config(state="disabled")
-    def create_chatbot_button(self):
-        """Create and animate the chatbot GIF button in the main menu"""
-        chatbot_icon_path = os.path.join(BASE_DIR, "Static", "images", "chatbot.gif")
-        
-        # Initialize animation variables
-        self.gif_frames = []
-        self.current_gif_frame = 0  # Initialize frame counter
-        
-        try:
-            with Image.open(chatbot_icon_path) as gif:
-                # Get total frames (some GIFs report 0 for n_frames)
-                total_frames = gif.n_frames if hasattr(gif, 'n_frames') else 0
-                
-                if total_frames > 0:
-                    for frame in range(total_frames):
-                        gif.seek(frame)
-                        resized_frame = gif.copy().resize((60, 60), Image.LANCZOS)
-                        self.gif_frames.append(ImageTk.PhotoImage(resized_frame))
-                else:
-                    # Handle single-frame GIFs or invalid frame counts
-                    resized_frame = gif.copy().resize((60, 60), Image.LANCZOS)
-                    self.gif_frames.append(ImageTk.PhotoImage(resized_frame))
-                    
-        except Exception as e:
-            print(f"Error loading GIF: {e}")
-            # Fallback to blank image
-            blank_img = Image.new('RGBA', (60, 60), (0, 0, 0, 0))
-            self.gif_frames = [ImageTk.PhotoImage(blank_img)]
-        
-        # Create the button
-        self.chatbot_main_btn = tk.Label(
-            self.root,
-            image=self.gif_frames[0],
-            bg=COLORS["card"],
-            cursor="hand2"
-        )
-        self.chatbot_main_btn.place(x=20, y=780)
-        def start_drag(event):
-            widget = event.widget
-            widget.startX = event.x
-            widget.startY = event.y
-
-        def do_drag(event):
-            widget = event.widget
-            if hasattr(widget, 'startX') and hasattr(widget, 'startY'):
-                x = widget.winfo_x() + event.x - widget.startX
-                y = widget.winfo_y() + event.y - widget.startY
-                widget.place(x=x, y=y)        
-        # Bind events
-        self.chatbot_main_btn.bind("<Button-1>", start_drag)
-        self.chatbot_main_btn.bind("<B1-Motion>", do_drag)
-        self.chatbot_main_btn.bind("<ButtonRelease-1>", lambda e: self.open_chatbot())
-        
-        # Start animation if we have multiple frames
-        if len(self.gif_frames) > 1:
-            self.animate_gif()
-
-    def animate_gif(self):
-        """Handle GIF animation"""
-        if not hasattr(self, 'chatbot_main_btn') or not self.chatbot_main_btn.winfo_exists():
-            return  # Stop if button doesn't exist
-        
-        self.current_gif_frame = (self.current_gif_frame + 1) % len(self.gif_frames)
-        self.chatbot_main_btn.config(image=self.gif_frames[self.current_gif_frame])
-        self.root.after(100, self.animate_gif)  # Continue animation
-    # To use: add a button in your main menu or topbar to call self.open_chatbot()
+    # To use: add a button in your main menu or topbar.topbar to call self.open_chatbot()
     def main_menu(self):
         # Clear current window
         for widget in self.root.winfo_children():
             widget.destroy()
 
         # Create the top bar
-        self.topbar(show_back_button=False)
+        self.topbar.topbar(show_back_button=False)
         
-        main_container = tk.Frame(self.root, bg=COLORS["background"])
+        main_container = tk.Frame(self.root, bg=config.COLORS["background"])
         main_container.pack(fill=tk.BOTH, expand=True)
         
         # Visualization frames
@@ -1223,7 +883,7 @@ class SalesSystemApp:
                 {"text": self.t("General_Exp_And_Rev"), "image": "financial-dark.png", 
                 "command": lambda: self.general_exp_rev(self.user_role)},
                 {"text": self.t("Reports"), "image": "report-dark.png", 
-                "command": lambda: self.manage_Reports_window()},
+                "command": lambda: self.reports.manage_Reports_window()},
             ]
             
             if self.user_role == "admin" or self.user_role == "developer":
@@ -1255,7 +915,7 @@ class SalesSystemApp:
                 {"text": self.t("General_Exp_And_Rev"), "image": "financial-light.png", 
                 "command": lambda: self.general_exp_rev(self.user_role)},
                 {"text": self.t("Reports"), "image": "report-light.png", 
-                "command": lambda: self.manage_Reports_window()},
+                "command": lambda: self.reports.manage_Reports_window()},
             ]
 
             if self.user_role == "admin" or self.user_role == "developer":
@@ -1265,11 +925,11 @@ class SalesSystemApp:
                 ])
         
         # Create button container with centered alignment
-        button_container = tk.Frame(button_frame, bg=COLORS["card"])
+        button_container = tk.Frame(button_frame, bg=config.COLORS["card"])
         button_container.pack(fill=tk.BOTH, expand=True)  # Expand to fill available space
         
         # Create frame for the button grid (centered horizontally, aligned to top)
-        grid_container = tk.Frame(button_container, bg=COLORS["card"])
+        grid_container = tk.Frame(button_container, bg=config.COLORS["card"])
         grid_container.pack(side="top", pady=20)  # Align to top with padding
         
         # Center the grid horizontally
@@ -1277,7 +937,7 @@ class SalesSystemApp:
         grid_container.grid_columnconfigure(2, weight=1)  # Right spacer
         
         # Create a centered frame inside grid_container
-        centered_frame = tk.Frame(grid_container, bg=COLORS["card"])
+        centered_frame = tk.Frame(grid_container, bg=config.COLORS["card"])
         centered_frame.grid(row=0, column=1)  # Center column
         
         # Load images and create buttons
@@ -1291,7 +951,7 @@ class SalesSystemApp:
                 column = index % columns_per_row
                 
                 # Create frame for each button
-                btn_frame = tk.Frame(centered_frame, bg=COLORS["card"])
+                btn_frame = tk.Frame(centered_frame, bg=config.COLORS["card"])
                 btn_frame.grid(row=row, column=column, padx=10, pady=10, sticky="nsew")
                 
                 # Load and process image
@@ -1316,9 +976,9 @@ class SalesSystemApp:
                             image=photo_img,
                             text=btn_info["text"],
                             compound=tk.TOP,
-                            bg=COLORS["card"],
-                            fg=COLORS["text"],
-                            activebackground=COLORS["highlight"],
+                            bg=config.COLORS["card"],
+                            fg=config.COLORS["text"],
+                            activebackground=config.COLORS["highlight"],
                             font=("Arial", 15, "bold"),
                             borderwidth=0,
                             command=btn_info["command"])
@@ -1326,13 +986,13 @@ class SalesSystemApp:
                 btn.pack(expand=True, fill=tk.BOTH)  # Make button expand to fill frame
                 
                 # Hover effect
-                btn.bind("<Enter>", lambda e, b=btn: b.config(bg=COLORS["primary"]))
-                btn.bind("<Leave>", lambda e, b=btn: b.config(bg=COLORS["card"]))
+                btn.bind("<Enter>", lambda e, b=btn: b.config(bg=config.COLORS["primary"]))
+                btn.bind("<Leave>", lambda e, b=btn: b.config(bg=config.COLORS["card"]))
                 
         except Exception as e:
             print(f"Error loading images: {e}")
             # Fallback to text buttons if images fail
-            text_frame = tk.Frame(centered_frame, bg=COLORS["card"])
+            text_frame = tk.Frame(centered_frame, bg=config.COLORS["card"])
             text_frame.grid(row=0, column=0, sticky="nsew")
             
             for i, btn_info in enumerate(buttons):
@@ -1343,25 +1003,39 @@ class SalesSystemApp:
                             text=btn_info["text"], 
                             command=btn_info["command"],
                             padx=10, pady=5,
-                            bg=COLORS["card"],
-                            fg=COLORS["text"],
-                            activebackground=COLORS["highlight"],
+                            bg=config.COLORS["card"],
+                            fg=config.COLORS["text"],
+                            activebackground=config.COLORS["highlight"],
                             font=("Segoe UI", 10))
                 btn.grid(row=row, column=column, padx=5, pady=5)
 
 
         def start_drag(event):
             widget = event.widget
-            widget.startX = event.x
-            widget.startY = event.y
+            # Store initial cursor position (window-relative)
+            widget._drag_start_x = event.x_root - widget.winfo_rootx()
+            widget._drag_start_y = event.y_root - widget.winfo_rooty()
 
         def do_drag(event):
             widget = event.widget
-            if hasattr(widget, 'startX') and hasattr(widget, 'startY'):
-                x = widget.winfo_x() + event.x - widget.startX
-                y = widget.winfo_y() + event.y - widget.startY
-                widget.place(x=x, y=y)
+            if hasattr(widget, '_drag_start_x'):
+                # Calculate new position in window coordinates
+                new_x = event.x_root - widget._drag_start_x
+                new_y = event.y_root - widget._drag_start_y
+                
+                # Convert to relative (0.0-1.0) coordinates
+                relx = new_x / widget.winfo_toplevel().winfo_width()
+                rely = new_y / widget.winfo_toplevel().winfo_height()
+                
+                # Constrain to window bounds
+                relx = max(0.0, min(relx, 0.99))  # 1% margin
+                rely = max(0.0, min(rely, 0.99))
+                
+                # Update position
+                widget.place(relx=relx, rely=rely, anchor='nw')  # Anchor NW for smooth dragging
 
+        def on_drag_end(event):
+            self.groupchat.open_group_chat_window()
 
 
         # Remove previous chatbot icon if exists
@@ -1372,17 +1046,17 @@ class SalesSystemApp:
             # chatbot_icon_path = os.path.join(BASE_DIR, "Static", "images", "chatbot_icon.png")
             # chatbot_img = Image.open(chatbot_icon_path).resize((60, 60), Image.LANCZOS)
             # self.chatbot_main_photo = ImageTk.PhotoImage(chatbot_img)
-            # self.chatbot_main_btn = tk.Label(self.root, image=self.chatbot_main_photo, bg=COLORS["card"], cursor="hand2")
+            # self.chatbot_main_btn = tk.Label(self.root, image=self.chatbot_main_photo, bg=config.COLORS["card"], cursor="hand2")
             # self.chatbot_main_btn.place(x=20, y=780)  # Initial position
             # chatbot_icon_path = os.path.join(BASE_DIR, "Static", "images", "chatbot.gif")
             # self.chatbot_main_photo = tk.PhotoImage(file=chatbot_icon_path)
-            # self.chatbot_main_btn = tk.Label(self.root, image=self.chatbot_main_photo, bg=COLORS["card"], cursor="hand2")
+            # self.chatbot_main_btn = tk.Label(self.root, image=self.chatbot_main_photo, bg=config.COLORS["card"], cursor="hand2")
             # self.chatbot_main_btn.place(x=20, y=780)
 
             # self.chatbot_main_btn.bind("<Button-1>", start_drag)
             # self.chatbot_main_btn.bind("<B1-Motion>", do_drag)
             # self.chatbot_main_btn.bind("<ButtonRelease-1>", lambda e: self.open_chatbot())
-            self.create_chatbot_button()  # Add this where you build your menu
+            self.chatbot.create_chatbot_button()  # Add this where you build your menu
 
 
         except Exception as e:
@@ -1394,13 +1068,13 @@ class SalesSystemApp:
             groupchat_icon_path = os.path.join(BASE_DIR, "Static", "images", "groupchat.ico")
             groupchat_img = Image.open(groupchat_icon_path).resize((60, 60), Image.LANCZOS)
             self.groupchat_main_photo = ImageTk.PhotoImage(groupchat_img)
-            self.groupchat_main_btn = tk.Label(self.root, image=self.groupchat_main_photo, bg=COLORS["card"], cursor="hand2")
-            self.groupchat_main_btn.place(x=100, y=780)  # Initial position
+            self.groupchat_main_btn = tk.Label(self.root, image=self.groupchat_main_photo, bg=config.COLORS["card"], cursor="hand2")
+            self.groupchat_main_btn.place(relx=0.05, rely=0.97, anchor='sw')
 
             self.groupchat_main_btn.bind("<Button-1>", start_drag)
             self.groupchat_main_btn.bind("<B1-Motion>", do_drag)
-            self.groupchat_main_btn.bind("<ButtonRelease-1>", lambda e: self.open_group_chat_window())
-            self.update_groupchat_icon()
+            self.groupchat_main_btn.bind("<ButtonRelease-1>", on_drag_end)
+            self.groupchat.update_groupchat_icon()
 
         except Exception as e:
             print(f"Error loading groupchat icon for main window: {e}")
@@ -1418,7 +1092,7 @@ class SalesSystemApp:
             # Create figure with basic styling
 
             plt.style.use('dark_background')  # Modern dark theme
-            fig = plt.Figure(figsize=(6, 10), dpi=70, facecolor=COLORS["card"])
+            fig = plt.Figure(figsize=(6, 10), dpi=70, facecolor=config.COLORS["card"])
             # fig.subplots_adjust(hspace=0.4)
             fig.subplots_adjust(hspace=0.4, left=0.15, right=0.85)
             # fig.patch.set_facecolor('#FFFFFF')  # White background
@@ -1441,14 +1115,14 @@ class SalesSystemApp:
                 arabic_title3 = self.t("Count")
                 reshaped_text3 = arabic_reshaper.reshape(arabic_title3)
                 bidi_text3 = get_display(reshaped_text3)                
-                ax1.set_title(bidi_text2, fontsize=20,color=COLORS["text"], fontname="Arial")
-                ax1.set_facecolor(COLORS["text"])
-                ax1.tick_params(colors=COLORS["text"], labelsize=13,)
-                ax1.set_ylabel("xx",text=bidi_text3,color=COLORS["text"], fontsize=18, fontname="Arial")
+                ax1.set_title(bidi_text2, fontsize=20,color=config.COLORS["text"], fontname="Arial")
+                ax1.set_facecolor(config.COLORS["text"])
+                ax1.tick_params(colors=config.COLORS["text"], labelsize=13,)
+                ax1.set_ylabel("xx",text=bidi_text3,color=config.COLORS["text"], fontsize=18, fontname="Arial")
                 for label in ax1.get_xticklabels():
                     label.set_fontsize(15)         # Change to your desired size
                     label.set_fontname("Arial")    # Use a font that supports Arabic
-                    label.set_color(COLORS["text"])
+                    label.set_color(config.COLORS["text"])
                     label.set_weight("bold") 
                 # Add simple data labels
                 for bar in bars:
@@ -1456,7 +1130,7 @@ class SalesSystemApp:
                     ax1.text(bar.get_x() + bar.get_width()/2., height,
                             f'{int(height)}',
                             ha='center', va='bottom',
-                            color=COLORS["text"], fontsize=10)
+                            color=config.COLORS["text"], fontsize=10)
                     
             except Exception as bar_error:
                 print(f"Bar chart error: {bar_error}")
@@ -1519,18 +1193,18 @@ class SalesSystemApp:
             table.scale(1, 2)  # Less aggressive scaling
 
             for (row, col), cell in table.get_celld().items():
-                cell.set_facecolor(COLORS["card"])
+                cell.set_facecolor(config.COLORS["card"])
                 cell.set_text_props(fontname="Arial")
                 # cell.set_facecolor("black") # background content
-                cell.set_text_props(color=COLORS["text"])
+                cell.set_text_props(color=config.COLORS["text"])
                 # cell.set_text_props(color="black") #text in header
                 if row == 0:
-                    cell.set_facecolor(COLORS["main_frame"])
+                    cell.set_facecolor(config.COLORS["main_frame"])
                     cell.set_text_props(weight='bold',color="white")
 
             canvas = FigureCanvasTkAgg(fig, master=parent)
             canvas.draw()
-            canvas.get_tk_widget().config(bg=COLORS["card"])
+            canvas.get_tk_widget().config(bg=config.COLORS["card"])
             canvas.get_tk_widget().pack(fill="x", expand=True)
             # canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
@@ -1548,7 +1222,7 @@ class SalesSystemApp:
             top_client = self.get_top_client() if hasattr(self, 'get_top_client') else None
             fig = plt.Figure(figsize=(6, 8), dpi=60)
             fig.subplots_adjust(hspace=0.5)
-            fig.patch.set_facecolor(COLORS["card"])  
+            fig.patch.set_facecolor(config.COLORS["card"])  
             # ...existing code...
             # Pie Chart
             ax1 = fig.add_subplot(211)
@@ -1559,7 +1233,7 @@ class SalesSystemApp:
                     ax1.pie(
                         [1],
                         labels=[''],
-                        colors=[COLORS["main_frame"]],
+                        colors=[config.COLORS["main_frame"]],
                         startangle=90,
                         wedgeprops={'width': 1}
                     )
@@ -1575,7 +1249,7 @@ class SalesSystemApp:
                         labels=[bidi_text1, bidi_text2],
                         autopct='%1.1f%%',
                         colors=['#28B463', '#E74C3C'],
-                        textprops={'color': COLORS["text"], 'fontsize': 16, 'fontname': 'Arial'},
+                        textprops={'color': config.COLORS["text"], 'fontsize': 16, 'fontname': 'Arial'},
                         wedgeprops={'width': 1}
                     )
                 ax1.axis('equal')  # Ensures the pie is drawn as a circle
@@ -1583,8 +1257,8 @@ class SalesSystemApp:
                 arabic_title = self.t("Sales vs Purchases")
                 reshaped_text = arabic_reshaper.reshape(arabic_title)
                 bidi_text = get_display(reshaped_text)
-                ax1.set_title(bidi_text, fontsize=20, color=COLORS["text"], fontname="Arial")  # Use a font that supports Arabic
-                # ax1.set_title(self.t("المبيعات مقابل المشتريات"), fontsize=14, color=COLORS["text"])
+                ax1.set_title(bidi_text, fontsize=20, color=config.COLORS["text"], fontname="Arial")  # Use a font that supports Arabic
+                # ax1.set_title(self.t("المبيعات مقابل المشتريات"), fontsize=14, color=config.COLORS["text"])
             except Exception as pie_error:
                 print(f"Pie chart error: {pie_error}")
             # ...existing code...
@@ -1601,25 +1275,25 @@ class SalesSystemApp:
                     for label in ax2.get_xticklabels():
                         label.set_fontsize(18)     
                         label.set_fontname("Arial")    # Font family (supports Arabic)
-                        label.set_color(COLORS["text"])   
+                        label.set_color(config.COLORS["text"])   
                         label.set_weight("bold")  # Font size
                     arabic_title3 = self.t("Top Client")
                     reshaped_text3 = arabic_reshaper.reshape(arabic_title3)
                     bidi_text3 = get_display(reshaped_text3)
-                    ax2.set_title(bidi_text3, fontsize=20,color=COLORS["text"],fontname="Arial")  # Use a font that supports Arabic
-                    ax2.set_facecolor(COLORS["text"])
-                    ax2.tick_params(colors=COLORS["text"])
+                    ax2.set_title(bidi_text3, fontsize=20,color=config.COLORS["text"],fontname="Arial")  # Use a font that supports Arabic
+                    ax2.set_facecolor(config.COLORS["text"])
+                    ax2.tick_params(colors=config.COLORS["text"])
                     arabic_title4 = self.t("Amount")
                     reshaped_text4 = arabic_reshaper.reshape(arabic_title4)
                     bidi_text4 = get_display(reshaped_text4)
-                    ax2.set_ylabel(bidi_text4,fontsize=18,color=COLORS["text"],fontname="Arial")
+                    ax2.set_ylabel(bidi_text4,fontsize=18,color=config.COLORS["text"],fontname="Arial")
                     # Add value label
                     for rect in bar:
                         height = rect.get_height()
                         ax2.text(rect.get_x() + rect.get_width()/2., height,
                                 f'${height:.2f}',
                                 ha='center', va='bottom',
-                                color=COLORS["text"], fontsize=10)
+                                color=config.COLORS["text"], fontsize=10)
                 else:
                     ax2.text(0.5, 0.5, 'No client data',
                             ha='center', va='center',
@@ -1637,8 +1311,8 @@ class SalesSystemApp:
             tk.Label(parent, text="Right visualization unavailable", fg="red").pack()
     
     def create_card_frame(self, parent, padding=0):
-        frame = tk.Frame(parent, bg=COLORS["card"], bd=0,
-                        highlightbackground=COLORS["main_frame"],
+        frame = tk.Frame(parent, bg=config.COLORS["card"], bd=0,
+                        highlightbackground=config.COLORS["main_frame"],
                         highlightthickness=3)
         if padding:
             frame.grid_propagate(False)
@@ -1671,10 +1345,10 @@ class SalesSystemApp:
                 row = index // columns_per_row
                 column = index % columns_per_row
 
-                btn_frame = tk.Frame(parent, bg=COLORS["card"])
+                btn_frame = tk.Frame(parent, bg=config.COLORS["card"])
                 btn_frame.grid(row=row, column=column, padx=15, pady=15)
 
-                # button_frame = tk.Frame(parent, bg=COLORS["card"])
+                # button_frame = tk.Frame(parent, bg=config.COLORS["card"])
                 # button_frame.pack(pady=30)
                 
                 # Load and process image
@@ -1687,9 +1361,9 @@ class SalesSystemApp:
                             image=photo_img,
                             text=btn_info["text"],
                             compound=tk.TOP,
-                            bg=COLORS["card"],
-                            fg=COLORS["text"],
-                            activebackground=COLORS["highlight"],
+                            bg=config.COLORS["card"],
+                            fg=config.COLORS["text"],
+                            activebackground=config.COLORS["highlight"],
                             font=("Segoe UI", 10),
                             borderwidth=0,
                             command=btn_info["command"])
@@ -1697,8 +1371,8 @@ class SalesSystemApp:
                 btn.pack()
 
                 # Hover effect
-                btn.bind("<Enter>", lambda e, b=btn: b.config(bg=COLORS["primary"]))
-                btn.bind("<Leave>", lambda e, b=btn: b.config(bg=COLORS["card"]))
+                btn.bind("<Enter>", lambda e, b=btn: b.config(bg=config.COLORS["primary"]))
+                btn.bind("<Leave>", lambda e, b=btn: b.config(bg=config.COLORS["card"]))
                 
         except Exception as e:
             print(f"Button error: {e}")
@@ -1772,7 +1446,7 @@ class SalesSystemApp:
             widget.destroy()
         print(1)
         # Create the top bar
-        self.topbar(show_back_button=True)
+        self.topbar.topbar(show_back_button=True)
         print(1)
         try:
             print(1)
@@ -1857,12 +1531,12 @@ class SalesSystemApp:
                 # Clear current window
         for widget in self.root.winfo_children():
             widget.destroy()
-        self.root.configure(bg=COLORS["background"])
+        self.root.configure(bg=config.COLORS["background"])
         # Create the top bar
-        self.topbar(show_back_button=True)
+        self.topbar.topbar(show_back_button=True)
 
         # Main button frame
-        button_frame = tk.Frame(self.root, bg=COLORS["background"])
+        button_frame = tk.Frame(self.root, bg=config.COLORS["background"])
         button_frame.pack(pady=30)
 
         # Define buttons with images, text, and commands
@@ -1897,7 +1571,7 @@ class SalesSystemApp:
                 column = index % columns_per_row
 
                 # Create sub-frame for each button
-                sub_frame = tk.Frame(button_frame, bg=COLORS["background"])
+                sub_frame = tk.Frame(button_frame, bg=config.COLORS["background"])
                 sub_frame.grid(row=row, column=column, padx=20, pady=20)
 
                 # Image button
@@ -1905,25 +1579,25 @@ class SalesSystemApp:
                                 text=btn_info["text"], 
                                 font=("Arial", 15, "bold"),
                                 compound=tk.TOP,
-                                bg=COLORS["background"],
-                                fg=COLORS["text"],
-                                activebackground=COLORS["highlight"],
+                                bg=config.COLORS["background"],
+                                fg=config.COLORS["text"],
+                                activebackground=config.COLORS["highlight"],
                                 command=btn_info["command"])
                 btn.image = photo_img  # Keep reference
                 btn.pack(expand=True, fill=tk.BOTH)  # Make button expand to fill frame
                 
-                btn.bind("<Enter>", lambda e, b=btn: b.config(bg=COLORS["primary"]))
-                btn.bind("<Leave>", lambda e, b=btn: b.config(bg=COLORS["background"]))
+                btn.bind("<Enter>", lambda e, b=btn: b.config(bg=config.COLORS["primary"]))
+                btn.bind("<Leave>", lambda e, b=btn: b.config(bg=config.COLORS["background"]))
 
                 # # Text label
                 # lbl = tk.Label(sub_frame, text=btn_info["text"], 
-                #             font=("Arial", 15, "bold"), bg=COLORS["background"], fg=COLORS["text"])
+                #             font=("Arial", 15, "bold"), bg=config.COLORS["background"], fg=config.COLORS["text"])
                 # lbl.pack(pady=5)
 
         except Exception as e:
             print(f"Error loading images: {e}")
             # Fallback to text buttons if images fail
-            fallback_frame = tk.Frame(self.root, bg=COLORS["background"])
+            fallback_frame = tk.Frame(self.root, bg=config.COLORS["background"])
             fallback_frame.pack(pady=20)
             for btn_info in buttons:
                 tk.Button(fallback_frame, text=btn_info["text"], 
@@ -1933,12 +1607,12 @@ class SalesSystemApp:
                 # Clear current window
         for widget in self.root.winfo_children():
             widget.destroy()
-        self.root.configure(bg=COLORS["background"])
+        self.root.configure(bg=config.COLORS["background"])
         # Create the top bar
-        self.topbar(show_back_button=True)
+        self.topbar.topbar(show_back_button=True)
 
         # Main button frame
-        button_frame = tk.Frame(self.root, bg=COLORS["background"])
+        button_frame = tk.Frame(self.root, bg=config.COLORS["background"])
         button_frame.pack(pady=30)
 
         # Define buttons with images, text, and commands
@@ -1973,7 +1647,7 @@ class SalesSystemApp:
                 column = index % columns_per_row
 
                 # Create sub-frame for each button
-                sub_frame = tk.Frame(button_frame, bg=COLORS["background"])
+                sub_frame = tk.Frame(button_frame, bg=config.COLORS["background"])
                 sub_frame.grid(row=row, column=column, padx=20, pady=20)
 
                 # Image button
@@ -1981,25 +1655,25 @@ class SalesSystemApp:
                                 text=btn_info["text"], 
                                 font=("Arial", 15, "bold"),
                                 compound=tk.TOP,
-                                bg=COLORS["background"],
-                                fg=COLORS["text"],
-                                activebackground=COLORS["highlight"],
+                                bg=config.COLORS["background"],
+                                fg=config.COLORS["text"],
+                                activebackground=config.COLORS["highlight"],
                                 command=btn_info["command"])
                 btn.image = photo_img  # Keep reference
                 btn.pack()
                 
-                btn.bind("<Enter>", lambda e, b=btn: b.config(bg=COLORS["primary"]))
-                btn.bind("<Leave>", lambda e, b=btn: b.config(bg=COLORS["background"]))
+                btn.bind("<Enter>", lambda e, b=btn: b.config(bg=config.COLORS["primary"]))
+                btn.bind("<Leave>", lambda e, b=btn: b.config(bg=config.COLORS["background"]))
 
                 # # Text label
                 # lbl = tk.Label(sub_frame, text=btn_info["text"], 
-                #             font=("Arial", 15, "bold"), bg=COLORS["background"], fg="#003366")
+                #             font=("Arial", 15, "bold"), bg=config.COLORS["background"], fg="#003366")
                 # lbl.pack(pady=5)
 
         except Exception as e:
             print(f"Error loading images: {e}")
             # Fallback to text buttons if images fail
-            fallback_frame = tk.Frame(self.root, bg=COLORS["background"])
+            fallback_frame = tk.Frame(self.root, bg=config.COLORS["background"])
             fallback_frame.pack(pady=20)
             for btn_info in buttons:
                 tk.Button(fallback_frame, text=btn_info["text"], 
@@ -2010,12 +1684,12 @@ class SalesSystemApp:
                 # Clear current window
         for widget in self.root.winfo_children():
             widget.destroy()
-        self.root.configure(bg=COLORS["background"])
+        self.root.configure(bg=config.COLORS["background"])
         # Create the top bar
-        self.topbar(show_back_button=True)
+        self.topbar.topbar(show_back_button=True)
 
         # Main button frame
-        button_frame = tk.Frame(self.root, bg=COLORS["background"])
+        button_frame = tk.Frame(self.root, bg=config.COLORS["background"])
         button_frame.pack(pady=30)
 
         # Define buttons with images, text, and commands
@@ -2106,7 +1780,7 @@ class SalesSystemApp:
                 column = index % columns_per_row
 
                 # Create sub-frame for each button
-                sub_frame = tk.Frame(button_frame, bg=COLORS["background"])
+                sub_frame = tk.Frame(button_frame, bg=config.COLORS["background"])
                 sub_frame.grid(row=row, column=column, padx=20, pady=20)
 
                 # Image button
@@ -2114,25 +1788,25 @@ class SalesSystemApp:
                                 text=btn_info["text"], 
                                 font=("Arial", 15, "bold"),
                                 compound=tk.TOP,
-                                bg=COLORS["background"],
-                                fg=COLORS["text"],
-                                activebackground=COLORS["highlight"],
+                                bg=config.COLORS["background"],
+                                fg=config.COLORS["text"],
+                                activebackground=config.COLORS["highlight"],
                                 command=btn_info["command"])
                 btn.image = photo_img  # Keep reference
                 btn.pack()
                 
-                btn.bind("<Enter>", lambda e, b=btn: b.config(bg=COLORS["primary"]))
-                btn.bind("<Leave>", lambda e, b=btn: b.config(bg=COLORS["background"]))
+                btn.bind("<Enter>", lambda e, b=btn: b.config(bg=config.COLORS["primary"]))
+                btn.bind("<Leave>", lambda e, b=btn: b.config(bg=config.COLORS["background"]))
 
                 # Text label
                 # lbl = tk.Label(sub_frame, text=btn_info["text"], 
-                #             font=("Arial", 15, "bold"), bg=COLORS["background"], fg="#003366")
+                #             font=("Arial", 15, "bold"), bg=config.COLORS["background"], fg="#003366")
                 # lbl.pack(pady=5)
 
         except Exception as e:
             print(f"Error loading images: {e}")
             # Fallback to text buttons if images fail
-            fallback_frame = tk.Frame(self.root, bg=COLORS["background"])
+            fallback_frame = tk.Frame(self.root, bg=config.COLORS["background"])
             fallback_frame.pack(pady=20)
             for btn_info in buttons:
                 tk.Button(fallback_frame, text=btn_info["text"], 
@@ -2143,14 +1817,12 @@ class SalesSystemApp:
                 # Clear current window
         for widget in self.root.winfo_children():
             widget.destroy()
-        self.root.configure(bg=COLORS["background"])
+        self.root.configure(bg=config.COLORS["background"])
         # Create the top bar
-        self.topbar(show_back_button=True)
+        self.topbar.topbar(show_back_button=True)
 
-        button_frame = tk.Frame(self.root, bg=COLORS["background"])
+        button_frame = tk.Frame(self.root, bg=config.COLORS["background"])
         button_frame.pack(pady=30)
-
-
 
         # Define buttons with images, text, and commands
         if self.light:
@@ -2198,7 +1870,7 @@ class SalesSystemApp:
                 column = index % columns_per_row
 
                 # Create sub-frame for each button
-                sub_frame = tk.Frame(button_frame, bg=COLORS["background"])
+                sub_frame = tk.Frame(button_frame, bg=config.COLORS["background"])
                 sub_frame.grid(row=row, column=column, padx=20, pady=20)
 
                 # Image button
@@ -2206,143 +1878,31 @@ class SalesSystemApp:
                                 text=btn_info["text"], 
                                 font=("Arial", 15, "bold"),
                                 compound=tk.TOP,
-                                bg=COLORS["background"],
-                                fg=COLORS["text"],
-                                activebackground=COLORS["highlight"],
+                                bg=config.COLORS["background"],
+                                fg=config.COLORS["text"],
+                                activebackground=config.COLORS["highlight"],
                                 command=btn_info["command"])
                 btn.image_transparent = photo_transparent
                 btn.image_with_bg = photo_with_bg
                 btn.pack()
                 
-                btn.bind("<Enter>", lambda e, b=btn: b.config(bg=COLORS["primary"]))
-                btn.bind("<Leave>", lambda e, b=btn: b.config(bg=COLORS["background"]))
+                btn.bind("<Enter>", lambda e, b=btn: b.config(bg=config.COLORS["primary"]))
+                btn.bind("<Leave>", lambda e, b=btn: b.config(bg=config.COLORS["background"]))
 
                 # # Text label
                 # lbl = tk.Label(sub_frame, text=btn_info["text"], 
-                #             font=("Arial", 15, "bold"), bg=COLORS["background"], fg="#003366")
+                #             font=("Arial", 15, "bold"), bg=config.COLORS["background"], fg="#003366")
                 # lbl.pack(pady=5)
 
         except Exception as e:
             print(f"Error loading images: {e}")
             # Fallback to text buttons if images fail
-            fallback_frame = tk.Frame(self.root, bg=COLORS["background"])
+            fallback_frame = tk.Frame(self.root, bg=config.COLORS["background"])
             fallback_frame.pack(pady=20)
             for btn_info in buttons:
                 tk.Button(fallback_frame, text=btn_info["text"], 
                         command=btn_info["command"]).pack(side="left", padx=10)
-    def manage_Reports_window(self):
-                # Clear current window
-        for widget in self.root.winfo_children():
-            widget.destroy()
-        self.root.configure(bg=COLORS["background"])
-        # Create the top bar
-        self.topbar(show_back_button=True)
 
-        button_frame = tk.Frame(self.root, bg=COLORS["background"])
-        button_frame.pack(pady=30)
-
-        # Define buttons with images, text, and commands
-        if self.light:
-            buttons = [
-                {"text": self.t("Sales Report"), "image": "sales_rep-dark.png", 
-                "command": lambda: self.sales_report(self.user_role)},
-                {"text": self.t("Purchase Report"), "image": "Purchase_rep-dark.png", 
-                "command": lambda: self.trash(self.user_role)},
-                {"text": self.t("Profit and Loss (P&L) Report"), "image": "p&l_repo-dark.png", 
-                "command": lambda: self.trash(self.user_role)},
-                {"text": self.t("Customer Reports"), "image": "Customer_repo-dark.png", 
-                "command": lambda: self.trash(self.user_role)},
-                {"text": self.t("Supplier Reports"), "image": "Supplier_repo-dark.png", 
-                "command": lambda: self.trash(self.user_role)},
-                {"text": self.t("Inventory Report"), "image": "Inventory_repo-dark.png", 
-                "command": lambda: self.trash(self.user_role)},
-                {"text": self.t("Payment & Collection Report"), "image": "payment_repo-dark.png", 
-                "command": lambda: self.trash(self.user_role)},
-                {"text": self.t("General Expenses Report"), "image": "General Expenses_repo-dark.png", 
-                "command": lambda: self.trash(self.user_role)},
-                {"text": self.t("Employee Performance Report"), "image": "Employee_Performance_repo-dark.png", 
-                "command": lambda: self.trash(self.user_role)},
-            ]
-        elif not self.light:
-            buttons = [
-                {"text": self.t("Sales Report"), "image": "sales_rep-light.png", 
-                "command": lambda: self.sales_report(self.user_role)},
-                {"text": self.t("Purchase Report"), "image": "Purchase_rep-light.png", 
-                "command": lambda: self.trash(self.user_role)},
-                {"text": self.t("Profit and Loss (P&L) Report"), "image": "p&l_repo-light.png", 
-                "command": lambda: self.trash(self.user_role)},
-                {"text": self.t("Customer Reports"), "image": "Customer_repo-light.png", 
-                "command": lambda: self.trash(self.user_role)},
-                {"text": self.t("Supplier Reports"), "image": "Supplier_repo-light.png", 
-                "command": lambda: self.trash(self.user_role)},
-                {"text": self.t("Inventory Report"), "image": "Inventory_repo-light.png", 
-                "command": lambda: self.trash(self.user_role)},
-                {"text": self.t("Payment & Collection Report"), "image": "payment_repo-light.png", 
-                "command": lambda: self.trash(self.user_role)},
-                {"text": self.t("General Expenses Report"), "image": "General Expenses_repo-light.png", 
-                "command": lambda: self.trash(self.user_role)},
-                {"text": self.t("Employee Performance Report"), "image": "Employee_Performance_repo-light.png", 
-                "command": lambda: self.trash(self.user_role)},
-            ]
-        images = []  # Keep references to prevent garbage collection
-        columns_per_row = 3  # Number of buttons per row
-        button_size = 120
-        try:
-            for index, btn_info in enumerate(buttons):
-                # Default transparent image
-                img_path = os.path.join(BASE_DIR, "Static", "images", btn_info["image"])
-                original_img = Image.open(img_path).convert("RGBA")
-                transparent_img = original_img.resize((button_size, button_size), Image.LANCZOS)
-                photo_transparent = ImageTk.PhotoImage(transparent_img)
-
-                # Image with background
-                bg_color = (0,0,0,0)  # F5F7FA in RGBA
-                bg_img = Image.new("RGBA", original_img.size, bg_color)
-                composited_img = Image.alpha_composite(bg_img, original_img)
-                resized_composited = composited_img.resize((button_size, button_size), Image.LANCZOS)
-                photo_with_bg = ImageTk.PhotoImage(resized_composited)
-
-                # Save both images
-                images.append(photo_transparent)
-                images.append(photo_with_bg)
-
-                # Calculate grid position
-                row = index // columns_per_row
-                column = index % columns_per_row
-
-                # Create sub-frame for each button
-                sub_frame = tk.Frame(button_frame, bg=COLORS["background"])
-                sub_frame.grid(row=row, column=column, padx=20, pady=20)
-
-                # Image button
-                btn = tk.Button(sub_frame, image=photo_transparent, bd=0,
-                                text=btn_info["text"], 
-                                font=("Arial", 15, "bold"),
-                                compound=tk.TOP,
-                                bg=COLORS["background"],
-                                fg=COLORS["text"],
-                                activebackground=COLORS["highlight"],
-                                command=btn_info["command"])
-                btn.image_transparent = photo_transparent
-                btn.image_with_bg = photo_with_bg
-                btn.pack()
-                
-                btn.bind("<Enter>", lambda e, b=btn: b.config(bg=COLORS["primary"]))
-                btn.bind("<Leave>", lambda e, b=btn: b.config(bg=COLORS["background"]))
-
-                # # Text label
-                # lbl = tk.Label(sub_frame, text=btn_info["text"], 
-                #             font=("Arial", 15, "bold"), bg=COLORS["background"], fg="#003366")
-                # lbl.pack(pady=5)
-
-        except Exception as e:
-            print(f"Error loading images: {e}")
-            # Fallback to text buttons if images fail
-            fallback_frame = tk.Frame(self.root, bg=COLORS["background"])
-            fallback_frame.pack(pady=20)
-            for btn_info in buttons:
-                tk.Button(fallback_frame, text=btn_info["text"], 
-                        command=btn_info["command"]).pack(side="left", padx=10)
 
     def employee_hours_window(self, user_role):
         # Clear current window
@@ -2350,7 +1910,7 @@ class SalesSystemApp:
             widget.destroy()
         
 
-        self.topbar(show_back_button=True, Back_to_Employee_Window=True)
+        self.topbar.topbar(show_back_button=True, Back_to_Employee_Window=True)
         
         # Database collections
         employees_col = self.get_collection_by_name("Employees")
@@ -2517,7 +2077,7 @@ class SalesSystemApp:
         for widget in self.root.winfo_children():
             widget.destroy()
 
-        self.topbar(show_back_button=True, Back_to_Employee_Window=True)
+        self.topbar.topbar(show_back_button=True, Back_to_Employee_Window=True)
 
         # Database collections
         employees_col = self.get_collection_by_name("Employees")
@@ -2716,7 +2276,7 @@ class SalesSystemApp:
         for widget in self.root.winfo_children():
             widget.destroy()
         
-        self.topbar(show_back_button=True, Back_to_Employee_Window=True)
+        self.topbar.topbar(show_back_button=True, Back_to_Employee_Window=True)
         
         # Database connections
         employees_col = self.get_collection_by_name("Employees")
@@ -3125,7 +2685,7 @@ class SalesSystemApp:
             widget.destroy()
 
         # تحميل صورة الخلفية
-        self.topbar(show_back_button=True)
+        self.topbar.topbar(show_back_button=True)
 
         tk.Label(self.root, text="Select Table:", bg="#4a90e2", fg="white", font=("Arial", 12)).place(x=130, y=110)
         table_dropdown = ttk.Combobox(self.root, textvariable=self.table_name, values=["Employees", "Products", "Sales", "Customers","Suppliers","Shipping","Orders","Expenses","Employee_appointments","Daily_shifts","Accounts","Transactions","Big_deals","TEX_Calculations"])
@@ -3165,7 +2725,7 @@ class SalesSystemApp:
         for widget in self.root.winfo_children():
             widget.destroy()
 
-        self.topbar(show_back_button=True)
+        self.topbar.topbar(show_back_button=True)
         
         # Create main container frame
         main_frame = tk.Frame(self.root, padx=20, pady=20)
@@ -3316,7 +2876,7 @@ class SalesSystemApp:
         for widget in self.root.winfo_children():
             widget.destroy()
 
-        self.topbar(show_back_button=True)
+        self.topbar.topbar(show_back_button=True)
 
         # Main container
         main_frame = tk.Frame(self.root, padx=20, pady=20)
@@ -3677,7 +3237,7 @@ class SalesSystemApp:
         self.name_to_code = {}
         
         # Create top bar
-        self.topbar(show_back_button=True, Back_to_Sales_Window=True)
+        self.topbar.topbar(show_back_button=True, Back_to_Sales_Window=True)
 
         # MongoDB collections
         customers_col = self.get_collection_by_name("Customers")
@@ -4361,7 +3921,7 @@ class SalesSystemApp:
         self.name_to_code = {}
         
         # Create top bar
-        self.topbar(show_back_button=True,Back_to_Purchases_Window=True)
+        self.topbar.topbar(show_back_button=True,Back_to_Purchases_Window=True)
 
         # MongoDB collections
         suppliers_col = self.get_collection_by_name("Suppliers")
@@ -4836,7 +4396,7 @@ class SalesSystemApp:
         self.product_name_map = {}   # name -> {code, stock}
 
         # Create top bar
-        self.topbar(show_back_button=True)
+        self.topbar.topbar(show_back_button=True)
 
         # Database collections
         materials_col = self.get_collection_by_name("Materials")
@@ -5368,14 +4928,14 @@ class SalesSystemApp:
         for widget in self.root.winfo_children():
             widget.destroy()
         # تحميل صورة الخلفية
-        self.topbar(show_back_button=True,Back_to_Database_Window=True)
+        self.topbar.topbar(show_back_button=True,Back_to_Database_Window=True)
         self.display_general_table(self.employees_collection, "Employees")
     
     def new_supplier(self, user_role):
         self.table_name.set("Suppliers")
         for widget in self.root.winfo_children():
             widget.destroy()
-        self.topbar(show_back_button=True,Back_to_Database_Window=True)
+        self.topbar.topbar(show_back_button=True,Back_to_Database_Window=True)
         self.display_general_table(self.suppliers_collection, "Suppliers")
     
     def new_customer(self, user_role):
@@ -5383,7 +4943,7 @@ class SalesSystemApp:
         for widget in self.root.winfo_children():
             widget.destroy()
 
-        self.topbar(show_back_button=True,Back_to_Database_Window=True)
+        self.topbar.topbar(show_back_button=True,Back_to_Database_Window=True)
         self.display_general_table(self.customers_collection, "Customers")
 
     def new_products(self, user_role):
@@ -5391,7 +4951,7 @@ class SalesSystemApp:
         for widget in self.root.winfo_children():
             widget.destroy()
     
-        self.topbar(show_back_button=True,Back_to_Database_Window=True)
+        self.topbar.topbar(show_back_button=True,Back_to_Database_Window=True)
         self.display_general_table(self.products_collection, "Products")
     
     def new_material(self, user_role):
@@ -5399,7 +4959,7 @@ class SalesSystemApp:
         for widget in self.root.winfo_children():
             widget.destroy()
     
-        self.topbar(show_back_button=True,Back_to_Database_Window=True)
+        self.topbar.topbar(show_back_button=True,Back_to_Database_Window=True)
         self.display_general_table(self.materials_collection, "Materials")
     
     def new_sales(self,user_role):
@@ -5407,7 +4967,7 @@ class SalesSystemApp:
         for widget in self.root.winfo_children():
             widget.destroy()
 
-        self.topbar(show_back_button=True,Back_to_Database_Window=True)
+        self.topbar.topbar(show_back_button=True,Back_to_Database_Window=True)
         self.display_general_table(self.sales_collection, "Sales")
 
     def new_purchases(self,user_role):
@@ -5415,7 +4975,7 @@ class SalesSystemApp:
         for widget in self.root.winfo_children():
             widget.destroy()
 
-        self.topbar(show_back_button=True,Back_to_Database_Window=True)
+        self.topbar.topbar(show_back_button=True,Back_to_Database_Window=True)
         self.display_general_table(self.purchases_collection, "Purchases")
     
     def new_customer_payment(self,user_role):
@@ -5423,7 +4983,7 @@ class SalesSystemApp:
         for widget in self.root.winfo_children():
             widget.destroy()
     
-        self.topbar(show_back_button=True,Back_to_Database_Window=True)
+        self.topbar.topbar(show_back_button=True,Back_to_Database_Window=True)
         self.display_general_table(self.customer_payments, "Customer_Payments")
     
     def new_supplier_payment(self,user_role):
@@ -5431,7 +4991,7 @@ class SalesSystemApp:
         for widget in self.root.winfo_children():
             widget.destroy()
     
-        self.topbar(show_back_button=True,Back_to_Database_Window=True)
+        self.topbar.topbar(show_back_button=True,Back_to_Database_Window=True)
         self.display_general_table(self.supplier_payments, "Supplier_Payments")
     
     def new_emp_salary(self,user_role):
@@ -5439,7 +4999,7 @@ class SalesSystemApp:
         for widget in self.root.winfo_children():
             widget.destroy()
 
-        self.topbar(show_back_button=True,Back_to_Database_Window=True)
+        self.topbar.topbar(show_back_button=True,Back_to_Database_Window=True)
         self.display_general_table(self.employee_salary_collection, "Employee_Salary")
     
     def new_emp_appointment(self,user_role):
@@ -5447,7 +5007,7 @@ class SalesSystemApp:
         for widget in self.root.winfo_children():
             widget.destroy()
     
-        self.topbar(show_back_button=True,Back_to_Database_Window=True)
+        self.topbar.topbar(show_back_button=True,Back_to_Database_Window=True)
         self.display_general_table(self.employees_appointments_collection, "Employee_appointimets")
     
     def new_emp_withdrawal(self,user_role):
@@ -5455,7 +5015,7 @@ class SalesSystemApp:
         for widget in self.root.winfo_children():
             widget.destroy()
     
-        self.topbar(show_back_button=True,Back_to_Database_Window=True)
+        self.topbar.topbar(show_back_button=True,Back_to_Database_Window=True)
         self.display_general_table(self.employee_withdrawls_collection, "Employee_withdrawls")
     
     def new_production(self,user_role):
@@ -5463,7 +5023,7 @@ class SalesSystemApp:
         for widget in self.root.winfo_children():
             widget.destroy()
 
-        self.topbar(show_back_button=True,Back_to_Database_Window=True)
+        self.topbar.topbar(show_back_button=True,Back_to_Database_Window=True)
         self.display_general_table(self.production_collection, "Production")
 
     def new_general_exp(self,user_role):
@@ -5471,14 +5031,14 @@ class SalesSystemApp:
         for widget in self.root.winfo_children():
             widget.destroy()
 
-        self.topbar(show_back_button=True,Back_to_Database_Window=True)
+        self.topbar.topbar(show_back_button=True,Back_to_Database_Window=True)
         self.display_general_table(self.general_exp_rev_collection, "general_exp_rev")
 
     def supplier_interactions(self, user_role):
         for widget in self.root.winfo_children():
             widget.destroy()
 
-        self.topbar(show_back_button=True, Back_to_Database_Window=False)
+        self.topbar.topbar(show_back_button=True, Back_to_Database_Window=False)
         
         self.supplier_collection = self.get_collection_by_name("Suppliers")
         self.supplier_payment_collection = self.get_collection_by_name("Supplier_Payments")
@@ -6031,7 +5591,7 @@ class SalesSystemApp:
         for widget in self.root.winfo_children():
             widget.destroy()
 
-        self.topbar(show_back_button=True,Back_to_Database_Window=False)
+        self.topbar.topbar(show_back_button=True,Back_to_Database_Window=False)
         
         self.customer_collection         = self.get_collection_by_name("Customers")
         self.customer_payment_collection = self.get_collection_by_name("Customer_Payments")
@@ -6487,7 +6047,7 @@ class SalesSystemApp:
 
         # Load initial table content
         self.refresh_generic_table(tree, current_collection, collection_name, search_text="")
-        # self.root.configure(bg=COLORS["background"])
+        # self.root.configure(bg=config.COLORS["background"])
 
     def on_tree_selection(self, event, tree, columns, collection_name, img_label):
         first_document = None
@@ -9968,38 +9528,38 @@ class SalesSystemApp:
             self.light = False
         elif not self.light:
             self.light = True
-        if COLORS["background"] == "#F5F7FA":
-            COLORS["background"]    = "#121212"   # Dark background (not pure black)
-            COLORS["primary"]       = "#3B82F6"   # Soft light text (from light mode #2A3F5F)
-            COLORS["main_frame"]    = "#2A3F5F"   # Soft light text (from light mode #2A3F5F)
-            COLORS["secondary"]     = "#00C0A3"   # Keep same – good contrast on dark
-            COLORS["accent"]        = "#FF6F61"   # Keep same – bright accent
-            COLORS["text"]          = "#FFFFFF"   # Bright white for main text
-            COLORS["card"]          = "#1E1E1E"   # Dark card background (soft contrast)
-            COLORS["chart1"]        = "#00C0A3"   # Same – stands out on dark
-            COLORS["chart2"]        = "#FF6F61"   # Same – bright red works well
-            COLORS["highlight"]     = "#9B6EF3"   # Softer version of #6C5CE7 for dark
-            COLORS["table_header"]  = "#2C2C2C"   # Dark header with slight elevation
-            COLORS["positive"]      = "#03DAC6"   # Material-style teal (greenish)
-            COLORS["neutral"]       = "#888888"   # Neutral gray for muted UI
-            COLORS["top_bar"]       = "#23272A"   # <-- New dark mode top bar color
-            COLORS["top_bar_icons"] = "#fbd307"   # <-- New dark mode user info color
+        if config.COLORS["background"] == "#F5F7FA":
+            config.COLORS["background"]    = "#121212"   # Dark background (not pure black)
+            config.COLORS["primary"]       = "#3B82F6"   # Soft light text (from light mode #2A3F5F)
+            config.COLORS["main_frame"]    = "#2A3F5F"   # Soft light text (from light mode #2A3F5F)
+            config.COLORS["secondary"]     = "#00C0A3"   # Keep same – good contrast on dark
+            config.COLORS["accent"]        = "#FF6F61"   # Keep same – bright accent
+            config.COLORS["text"]          = "#FFFFFF"   # Bright white for main text
+            config.COLORS["card"]          = "#1E1E1E"   # Dark card background (soft contrast)
+            config.COLORS["chart1"]        = "#00C0A3"   # Same – stands out on dark
+            config.COLORS["chart2"]        = "#FF6F61"   # Same – bright red works well
+            config.COLORS["highlight"]     = "#9B6EF3"   # Softer version of #6C5CE7 for dark
+            config.COLORS["table_header"]  = "#2C2C2C"   # Dark header with slight elevation
+            config.COLORS["positive"]      = "#03DAC6"   # Material-style teal (greenish)
+            config.COLORS["neutral"]       = "#888888"   # Neutral gray for muted UI
+            config.COLORS["top_bar"]       = "#23272A"   # <-- New dark mode top bar color
+            config.COLORS["top_bar_icons"] = "#fbd307"   # <-- New dark mode user info color
         else:
-            COLORS["background"]    = "#F5F7FA"
-            COLORS["primary"]       = "#3B82F6"
-            COLORS["main_frame"]    = "#2A3F5F"
-            COLORS["secondary"]     = "#00C0A3"
-            COLORS["accent"]        = "#FF6F61"
-            COLORS["text"]          = "#2A3F5F"
-            COLORS["card"]          = "#FFFFFF"
-            COLORS["chart1"]        = "#00C0A3"
-            COLORS["chart2"]        = "#FF6F61"
-            COLORS["highlight"]     = "#6C5CE7"
-            COLORS["table_header"]  = "#2A3F5F"
-            COLORS["positive"]      = "#00C0A3"
-            COLORS["neutral"]       = "#A0AEC0"
-            COLORS["top_bar"]       = "#dbb40f"   # <-- Original light mode top bar color
-            COLORS["top_bar_icons"] = "#000000"   # <-- Original light mode user info color
+            config.COLORS["background"]    = "#F5F7FA"
+            config.COLORS["primary"]       = "#3B82F6"
+            config.COLORS["main_frame"]    = "#2A3F5F"
+            config.COLORS["secondary"]     = "#00C0A3"
+            config.COLORS["accent"]        = "#FF6F61"
+            config.COLORS["text"]          = "#2A3F5F"
+            config.COLORS["card"]          = "#FFFFFF"
+            config.COLORS["chart1"]        = "#00C0A3"
+            config.COLORS["chart2"]        = "#FF6F61"
+            config.COLORS["highlight"]     = "#6C5CE7"
+            config.COLORS["table_header"]  = "#2A3F5F"
+            config.COLORS["positive"]      = "#00C0A3"
+            config.COLORS["neutral"]       = "#A0AEC0"
+            config.COLORS["top_bar"]       = "#dbb40f"   # <-- Original light mode top bar color
+            config.COLORS["top_bar_icons"] = "#000000"   # <-- Original light mode user info color
         self.main_menu()
 
     #Function to update the time 
@@ -10026,127 +9586,7 @@ class SalesSystemApp:
                 }})
         self.root.quit()
 
-    # Function to make the top bar part
-    def topbar(
-            self,
-            show_back_button=False, 
-            Back_to_Database_Window = False, 
-            Back_to_Employee_Window = False, 
-            Back_to_Sales_Window = False,
-            Back_to_Purchases_Window = False,
-            Back_to_Reports_Window = False
-            ):
-        # Top Bar
-        top_bar = tk.Frame(self.root, bg=COLORS["top_bar"], height=60)
-        top_bar.pack(fill="x")
-        # Exit icon
-        try:    
-            if self.light:
-                self.exit_icon_path     = os.path.join(BASE_DIR, "Static", "images", "exit-dark.png")
-            elif not self.light:
-                self.exit_icon_path     = os.path.join(BASE_DIR, "Static", "images", "exit-light.png")
-            exit_image = Image.open(self.exit_icon_path)
-            exit_image = exit_image.resize((35, 35), Image.LANCZOS)
-            self.exit_photo = ImageTk.PhotoImage(exit_image)
-            exit_icon = tk.Label(top_bar, image=self.exit_photo, bg=COLORS["top_bar"])
-            exit_icon.pack(side="right", padx=10)
-            exit_icon.bind("<Button-1>", lambda e: self.on_app_exit())
-        except Exception as e:
-            self.silent_popup("Error", "Error loading exit icon: {e}", self.play_Error)
 
-        # Logout icon
-        try:
-            # login_window_instance = LoginWindow()
-            if self.light:
-                self.logout_icon_path = os.path.join(BASE_DIR, "Static", "images", "logout-dark.png")
-            elif not self.light:
-                self.logout_icon_path = os.path.join(BASE_DIR, "Static", "images", "logout-light.png")
-            logout_image = Image.open(self.logout_icon_path)
-            logout_image = logout_image.resize((40, 40), Image.LANCZOS)
-            self.logout_photo = ImageTk.PhotoImage(logout_image)
-            logout_icon = tk.Button(top_bar, image=self.logout_photo, bg=COLORS["top_bar"], bd=0, command=self.handle_logout)
-            logout_icon.pack(side="right", padx=10)
-        except Exception as e:
-            self.silent_popup("Error", "Error loading Logout icon: {e}", self.play_Error)
-        # Minimize icon
-        try:
-            if self.light:
-                self.minimize_icon_path = os.path.join(BASE_DIR, "Static", "images", "minus-dark.png")
-            elif not self.light:
-                self.minimize_icon_path = os.path.join(BASE_DIR, "Static", "images", "minus-light.png")
-            minimze_image = Image.open(self.minimize_icon_path)
-            minimze_image = minimze_image.resize((40, 40), Image.LANCZOS)
-            self.minimize_photo = ImageTk.PhotoImage(minimze_image)
-            minimize_icon = tk.Button(top_bar, image=self.minimize_photo, bg=COLORS["top_bar"], bd=0, command=root.iconify)
-            minimize_icon.pack(side="right", padx=10)
-        except Exception as e:
-            self.silent_popup("Error", "Error loading Minimize icon: {e}", self.play_Error)
-
-
-        if show_back_button:
-            try:
-                if self.light:
-                    self.back_icon_path = os.path.join(BASE_DIR, "Static", "images", "left-arrow-dark.png")
-                elif not self.light:
-                    self.back_icon_path = os.path.join(BASE_DIR, "Static", "images", "left-arrow-light.png")
-                back_image = Image.open(self.back_icon_path)
-                back_image = back_image.resize((40, 40), Image.LANCZOS)
-                self.back_photo = ImageTk.PhotoImage(back_image)
-                if Back_to_Database_Window:
-                    back_icon = tk.Button(top_bar, image=self.back_photo, bg=COLORS["top_bar"], bd=0, command=self.manage_database_window)
-                elif Back_to_Employee_Window:
-                    back_icon = tk.Button(top_bar, image=self.back_photo, bg=COLORS["top_bar"], bd=0, command=self.manage_Employees_window)
-                elif Back_to_Sales_Window:
-                    back_icon = tk.Button(top_bar, image=self.back_photo, bg=COLORS["top_bar"], bd=0, command=self.manage_sales_invoices_window)
-                elif Back_to_Purchases_Window:
-                    back_icon = tk.Button(top_bar, image=self.back_photo, bg=COLORS["top_bar"], bd=0, command=self.manage_purchases_invoices_window)
-                elif Back_to_Reports_Window:
-                    back_icon = tk.Button(top_bar, image=self.back_photo, bg=COLORS["top_bar"], bd=0, command=self.manage_Reports_window)
-                else:
-                    back_icon = tk.Button(top_bar, image=self.back_photo, bg=COLORS["top_bar"], bd=0, command=self.main_menu)
-                back_icon.pack(side="left", padx=10)
-            except Exception as e:
-                self.silent_popup("Error", "Error loading back icon: {e}", self.play_Error)
-        else:
-            lang_btn = tk.Button(top_bar, text=self.t("Change Language"), bg=COLORS["top_bar"], fg=COLORS["top_bar_icons"],
-                                font=("Arial", 10, "bold"), bd=0, command=self.toggle_language)
-            lang_btn.pack(side="left", padx=10)
-            if self.light:
-                lang_image = Image.open(self.dark_mode_img)
-            elif not self.light:
-                lang_image = Image.open(self.light_mode_img)
-            lang_image = lang_image.resize((40, 40), Image.LANCZOS)
-            self.lang_photo = ImageTk.PhotoImage(lang_image)
-            lang_btn = tk.Button(top_bar, text=self.t("Change Language"),image=self.lang_photo, bg=COLORS["top_bar"], fg="black",
-                                font=("Arial", 10, "bold"), bd=0, command=self.toggle_theme)
-            lang_btn.pack(side="left", padx=10)
-
-        # Left side: Language or Back button
-        # tk.Button(top_bar, text="Open Calculator", command=open_calculator, font=("Arial", 14)).pack(side="left", padx=10)
-        if self.light:
-            self.calc_icon_path = os.path.join(BASE_DIR, "Static", "images", "calculator-dark.png")
-        elif not self.light:
-            self.calc_icon_path = os.path.join(BASE_DIR, "Static", "images", "calculator-light.png")
-        calc_image = Image.open(self.calc_icon_path)
-        calc_image = calc_image.resize((35, 35), Image.LANCZOS)
-        self.calc_photo = ImageTk.PhotoImage(calc_image)
-        calc_icon = tk.Label(top_bar, image=self.calc_photo, bg=COLORS["top_bar"])
-        calc_icon.pack(side="left", padx=10)
-        calc_icon.bind("<Button-1>", lambda event: open_calculator())
-        
-        # Time label
-        time_label = tk.Label(top_bar, text=datetime.now().strftime('%B %d, %Y %I:%M %p'),
-                            font=("Arial", 20, "bold"), fg=COLORS["top_bar_icons"], bg=COLORS["top_bar"])
-
-        time_label.place(relx=0.5, rely=0.5, anchor="center")
-        # self.update_time(time_label)
-        #TODO
-        # User info frame
-        user_frame = tk.Frame(top_bar, bg=COLORS["top_bar"])
-        user_frame.pack(side="right", padx=10)
-
-        username_label = tk.Label(user_frame, text=self.user_name, font=("Arial", 20), fg=COLORS["top_bar_icons"], bg=COLORS["top_bar"])
-        username_label.pack(side="left")
     
     def generate_report_data(self):
         return [
@@ -10456,7 +9896,7 @@ class SalesSystemApp:
         for widget in self.root.winfo_children():
             widget.destroy()
 
-        self.topbar(show_back_button=True, Back_to_Reports_Window=True)
+        self.topbar.topbar(show_back_button=True, Back_to_Reports_Window=True)
 
         # === Filters ===
         filter_frame = ttk.Frame(self.root)
@@ -10499,7 +9939,7 @@ class SalesSystemApp:
             widget.destroy()
 
         # make the top bar with change language button
-        self.topbar(show_back_button=True)
+        self.topbar.topbar(show_back_button=True)
         
         # Create a main frame to center the message
         main_frame = tk.Frame(self.root)
@@ -10575,102 +10015,6 @@ class SalesSystemApp:
         popup.wait_window()  # Blocks further execution until the popup is closed
         self.stop_sound()
 
-# class CalculatorPopup(tk.Toplevel):
-#     def __init__(self, parent, target_entry=None):
-#         super().__init__(parent)
-#         self.title("Calculator")
-#         self.target_entry = target_entry
-#         self.geometry("300x400")
-
-#         # Set window icon (shows in title bar and taskbar)
-#         icon_path = os.path.join(BASE_DIR, "Static", "images", "Calculator.ico")
-#         try:
-#             if os.path.exists(icon_path):
-#                 self.iconbitmap(icon_path)
-#         except Exception as e:
-#             print(f"Calculator icon error: {e}")
-
-#         # Add a label at the top (with icon and text)
-#         label_frame = tk.Frame(self)
-#         label_frame.pack(fill="x", pady=8)
-
-#         if os.path.exists(icon_path):
-#             try:
-#                 icon_img = Image.open(icon_path).resize((32, 32), Image.LANCZOS)
-#                 icon_photo = ImageTk.PhotoImage(icon_img)
-#                 icon_label = tk.Label(label_frame, image=icon_photo, bg="#fbd307")
-#                 icon_label.image = icon_photo
-#                 icon_label.pack(side="left", padx=5)
-#             except Exception as e:
-#                 print(f"Calculator icon image error: {e}")
-
-#         title_label = tk.Label(label_frame, text="الآلة الحاسبة", font=("Arial", 16, "bold"), fg="#23272A", bg="#fbd307")
-#         title_label.pack(side="left", padx=5)
-
-#         self.create_widgets()
-#         # ...existing code...
-        
-#     def create_widgets(self):
-#         # Display
-#         self.display = tk.Entry(self, font=('Arial', 24), justify='right', bd=10, bg="#23272A", fg="#FFFFFF")
-#         self.display.grid(row=0, column=0, columnspan=4, sticky="nsew")
-    
-#         # Button layout with colors
-#         buttons = [
-#             # text, row, col, bg, fg
-#             ('C', 1, 0, '#e74c3c', '#fff'),
-#             ('(', 1, 1, '#ffa500', '#23272A'),
-#             (')', 1, 2, '#ffa500', '#23272A'),
-#             ('÷', 1, 3, '#ffa500', '#23272A'),
-#             ('7', 2, 0, '#444', '#fff'),
-#             ('8', 2, 1, '#444', '#fff'),
-#             ('9', 2, 2, '#444', '#fff'),
-#             ('x', 2, 3, '#ffa500', '#23272A'),
-#             ('4', 3, 0, '#444', '#fff'),
-#             ('5', 3, 1, '#444', '#fff'),
-#             ('6', 3, 2, '#444', '#fff'),
-#             ('-', 3, 3, '#ffa500', '#23272A'),
-#             ('1', 4, 0, '#444', '#fff'),
-#             ('2', 4, 1, '#444', '#fff'),
-#             ('3', 4, 2, '#444', '#fff'),
-#             ('+', 4, 3, '#ffa500', '#23272A'),
-#             ('+/-', 5, 0, '#444', '#fff'),
-#             ('0', 5, 1, '#444', '#fff'),
-#             ('.', 5, 2, '#444', '#fff'),
-#             ('=', 5, 3, '#27ae60', '#fff'),
-#         ]
-    
-#         # Create buttons
-#         for (text, row, col, bg, fg) in buttons:
-#             btn = tk.Button(self, text=text, font=('Arial', 18, 'bold'), bg=bg, fg=fg,
-#                             bd=0, activebackground=bg, activeforeground=fg,
-#                             command=lambda t=text: self.on_button_click(t))
-#             btn.grid(row=row, column=col, sticky="nsew", padx=2, pady=2)
-    
-#         # Configure grid weights
-#         for i in range(6):
-#             self.grid_rowconfigure(i, weight=1)
-#         for i in range(4):
-#             self.grid_columnconfigure(i, weight=1)
-    
-#     def on_button_click(self, text):
-#         current = self.display.get()
-        
-#         if text == '=':
-#             try:
-#                 result = str(eval(current))
-#                 self.display.delete(0, tk.END)
-#                 self.display.insert(0, result)
-#                 if self.target_entry:
-#                     self.target_entry.delete(0, tk.END)
-#                     self.target_entry.insert(0, result)
-#             except:
-#                 self.display.delete(0, tk.END)
-#                 self.display.insert(0, "Error")
-#         elif text == 'C':
-#             self.display.delete(0, tk.END)
-#         else:
-#             self.display.insert(tk.END, text)
 
 def upload_file_to_cloudinary(file_path_param):
     # import cloudinary.uploader
@@ -10763,151 +10107,7 @@ class AlwaysOnTopInputDialog(tk.Toplevel):
         return self.result
 
 
-def open_calculator():
-    calc_win = tk.Toplevel()
-    calc_win.title("Calculator")
-    calc_win.configure(bg="#2e2e2e")
-    calc_win.resizable(False, False)
 
-    # Set window icon (shows in title bar and taskbar)
-    icon_path = os.path.join(BASE_DIR, "Static", "images", "calculator-1.ico")
-    if os.path.exists(icon_path):
-        try:
-            calc_win.iconbitmap(icon_path)
-        except Exception as e:
-            print(f"Calculator icon error: {e}")
-
-    # ...rest of your calculator code...
-
-    entry = tk.Entry(calc_win, width=18, font=('Helvetica', 28), bd=0, bg="#1e1e1e", fg="white", justify='right')
-    entry.grid(row=0, column=0, columnspan=4, pady=(10, 20), padx=10, ipady=20)
-
-    # Button styles
-    btn_config = {
-        "font": ('Helvetica', 18),
-        "bd": 0,
-        "width": 5,
-        "height": 2,
-        "bg": "#3c3f41",
-        "fg": "white",
-        "activebackground": "#505354",
-        "activeforeground": "white"
-    }
-
-    special_btn_config = {
-        "=": {"bg": "#4caf50", "activebackground": "#45a049"},
-        "C": {"bg": "#f44336", "activebackground": "#e53935"},
-        "÷": {"bg": "#ff9800"},
-        "x": {"bg": "#ff9800"},
-        "-": {"bg": "#ff9800"},
-        "+": {"bg": "#ff9800"},
-        "()": {"bg": "#ff9800"},
-        "%": {"bg": "#ff9800"},
-    }
-
-    def calculate(expression):
-        """Safely evaluate a mathematical expression with percentage support"""
-        try:
-            # Replace symbols with Python operators
-            expression = expression.replace('x', '*').replace('÷', '/')
-            
-            # Handle percentages by replacing them with their decimal equivalents
-            # This needs to handle cases where % follows a number in an expression
-            tokens = []
-            current_token = ''
-            
-            for char in expression:
-                if char.isdigit() or char == '.':
-                    current_token += char
-                else:
-                    if current_token:
-                        tokens.append(current_token)
-                        current_token = ''
-                    tokens.append(char)
-            
-            if current_token:
-                tokens.append(current_token)
-            
-            # Process the tokens to handle percentages
-            processed_tokens = []
-            i = 0
-            while i < len(tokens):
-                token = tokens[i]
-                if token == '%':
-                    if i > 0 and tokens[i-1].replace('.', '').isdigit():
-                        # Convert the previous number to percentage (divide by 100)
-                        num = float(tokens[i-1]) / 100
-                        processed_tokens[-1] = str(num)
-                    else:
-                        processed_tokens.append(token)
-                else:
-                    processed_tokens.append(token)
-                i += 1
-            
-            # Rebuild the expression
-            processed_expr = ''.join(processed_tokens)
-            
-            # Evaluate the expression
-            return str(eval(processed_expr))
-        except:
-            return "Error"
-
-    def on_click(value):
-        current = entry.get()
-        
-        if value == '=':
-            try:
-                result = calculate(current)
-                entry.delete(0, tk.END)
-                entry.insert(tk.END, result)
-            except:
-                entry.delete(0, tk.END)
-                entry.insert(tk.END, "Error")
-        elif value == 'C':
-            entry.delete(0, tk.END)
-        elif value == '()':
-            if '(' not in current:
-                entry.insert(tk.END, '(')
-            elif ')' not in current[current.index('('):]:
-                entry.insert(tk.END, ')')
-            else:
-                entry.insert(tk.END, 'x(')
-        elif value == '+/-':
-            if current.startswith('-'):
-                entry.delete(0)
-            else:
-                entry.insert(0, '-')
-        elif value == '%':
-            entry.insert(tk.END, '%')
-        else:
-            entry.insert(tk.END, value)
-
-    buttons = [
-        'C'  , '()', '%', '÷',
-        '7'  , '8' , '9', 'x',
-        '4'  , '5' , '6', '-',
-        '1'  , '2' , '3', '+',
-        '+/-', '0' , '.', '='
-    ]
-
-    row, col = 1, 0
-    for btn in buttons:
-        style = btn_config.copy()
-        if btn in special_btn_config:
-            style.update(special_btn_config[btn])
-
-        pady_val = 5
-        if row == 5:
-            pady_val = 20  
-
-        tk.Button(calc_win, text=btn, command=lambda b=btn: on_click(b), **style).grid(
-            row=row, column=col, padx=5, pady=pady_val
-        )
-
-        col += 1
-        if col >3:
-            col = 0
-            row += 1
 
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and PyInstaller """
