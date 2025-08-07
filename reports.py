@@ -7,40 +7,21 @@ import tkinter as tk
 import re
 import os
 import pytz
-
+import config
 import sys
 
 import matplotlib
-import matplotlib.pyplot as plt
 
 
-from tkinter import filedialog, ttk, messagebox
-from PIL import Image, ImageTk, ImageDraw  # Import Pillow classes
-from datetime import datetime,time , time, timedelta, date
-from tkcalendar import DateEntry  # Import DateEntry
-from playsound import playsound
-from pymongo import MongoClient
-from urllib.parse import quote_plus
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from pymongo import MongoClient
-from pymongo.errors import PyMongoError
-from collections import defaultdict
-from bidi.algorithm import get_display
-from matplotlib.figure import Figure    
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter,A5
-from reportlab.lib import colors
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.lib.units import inch
+from tkinter import ttk
+from PIL import Image, ImageTk
+from datetime import datetime
 matplotlib.use('TkAgg')  # Set the backend before importing pyplot
 
 # ======================
 # Files Imports
 # ======================
-import config
+
 
 # Determine the base directory
 if getattr(sys, "frozen", False):

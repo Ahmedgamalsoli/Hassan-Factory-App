@@ -95,7 +95,7 @@ class topbar:
                 elif Back_to_Employee_Window:
                     back_icon = tk.Button(top_bar, image=self.app.back_photo, bg=config.COLORS["top_bar"], bd=0, command=self.app.manage_Employees_window)
                 elif Back_to_Sales_Window:
-                    back_icon = tk.Button(top_bar, image=self.app.back_photo, bg=config.COLORS["top_bar"], bd=0, command=self.app.manage_sales_invoices_window)
+                    back_icon = tk.Button(top_bar, image=self.app.back_photo, bg=config.COLORS["top_bar"], bd=0, command=self.app.SalesInvoice.manage_sales_invoices_window)
                 elif Back_to_Purchases_Window:
                     back_icon = tk.Button(top_bar, image=self.app.back_photo, bg=config.COLORS["top_bar"], bd=0, command=self.app.manage_purchases_invoices_window)
                 elif Back_to_Reports_Window:
