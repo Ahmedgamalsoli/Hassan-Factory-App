@@ -6719,7 +6719,7 @@ class SalesSystemApp:
             return ["employee_code", "employee_name", "previous_withdrawls", "amount_withdrawls", "payment_method", "timestamp"]
 
         elif collection_name == "general_exp_rev":
-            return ["code", "type", "amount", "payment_method", self.t("description"), "date"]
+            return ["code", "type", "amount", "payment_method", "description", "date"]
         
         else:
             print(f"Warning: Collection name '{collection_name}' not recognized.")
