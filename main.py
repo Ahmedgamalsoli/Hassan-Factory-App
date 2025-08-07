@@ -580,7 +580,7 @@ class SalesSystemApp:
             "Export to Excel":{"Arabic":"تحويل الي اكسل","English":"Export to Excel"},
             "Export to PDF":{"Arabic":"حفظ الملف","English":"Save as PDF"},
             "Daily treasury report":{"Arabic":"تقرير الخزنة اليومية","English":"Daily treasury report"},
-            # "":{"Arabic":"","English":""},
+            "Please select month and year":{"Arabic":"الرجاء تحديد الشهر والسنة","English":"Please select month and year"},
             # "":{"Arabic":"","English":""},
             # "":{"Arabic":"","English":""},
             # "":{"Arabic":"","English":""},
@@ -2336,6 +2336,13 @@ class SalesSystemApp:
                                 width=6)
         self.year_cb.grid(row=0, column=3, padx=5, sticky='w')
 
+        ttk.Label(date_frame, text=self.t("From Date:")).grid(row=0, column=4, padx=5, sticky='e')
+        self.from_date_var = tk.StringVar()
+        self.to_date_var = tk.StringVar()
+        # Replace the Entry widgets with:
+        DateEntry(date_frame, textvariable=self.from_date_var, date_pattern='dd-mm-yyyy').grid(row=0, column=5)
+        ttk.Label(date_frame, text=self.t("To Date:")).grid(row=0, column=6, padx=5, sticky='e')
+        DateEntry(date_frame, textvariable=self.to_date_var, date_pattern='dd-mm-yyyy').grid(row=0, column=7)
         # Working Hours
         hours_frame = ttk.LabelFrame(main_frame, text=self.t("Working Hours"), padding=10)
         hours_frame.grid(row=2, column=0, sticky='ew', pady=5)
@@ -2418,8 +2425,8 @@ class SalesSystemApp:
         # Bind events
         # self.emp_name_var.trace_add('write', self.update_employee_info)
         # self.emp_code_var.trace_add('write', self.update_employee_info)
-        self.month_var.trace_add('write', self.load_attendance_data)
-        self.year_var.trace_add('write', self.load_attendance_data)
+        self.from_date_var.trace_add('write', self.load_attendance_data)
+        self.to_date_var.trace_add('write', self.load_attendance_data)
         self.delay_amount.bind('<KeyRelease>', self.calculate_net_salary)
         self.overtime_amount.bind('<KeyRelease>', self.calculate_net_salary)
         self.start_time_var.trace_add('write', self.load_attendance_data)
@@ -2470,31 +2477,35 @@ class SalesSystemApp:
     def load_attendance_data(self, *args):
         self.table.delete(*self.table.get_children())
         
-        # Get selected month/year
-        month = self.month_var.get()
-        year = self.year_var.get()
+        # Get selected dates
+        from_date_str = self.from_date_var.get()
+        to_date_str = self.to_date_var.get()
         employee_code = self.emp_code_var.get()
         
-        if not all([month, year, employee_code]):
+        if not all([from_date_str, to_date_str, employee_code]):
             return
         
-        # Get date range
-        start_date = datetime.strptime(f"1 {month} {year}", "%d %B %Y")
-        end_date = (start_date + timedelta(days=32)).replace(day=1)
+        # Parse dates (assuming format DD-MM-YYYY as in your image)
+        try:
+            from_date = datetime.strptime(from_date_str, "%d-%m-%Y")
+            to_date = datetime.strptime(to_date_str, "%d-%m-%Y")
+        except ValueError:
+            messagebox.showerror("Error", "Invalid date format. Please use DD-MM-YYYY")
+            return
         
         # Get collections
         withdrawals_col = self.get_collection_by_name("Employee_withdrawls")
-        hours_col = self.get_collection_by_name("Employee_appointimets")  # Fixed typo
+        hours_col = self.get_collection_by_name("Employee_appointimets")
         
-        # Get data
+        # Get data - include end date by adding 1 day to to_date
         withdrawals = list(withdrawals_col.find({
             'employee_code': employee_code,
-            'timestamp': {'$gte': start_date, '$lt': end_date}
+            'timestamp': {'$gte': from_date, '$lte': to_date + timedelta(days=1)}
         }))
         
         attendance = list(hours_col.find({
             'employee_code': employee_code,
-            'check_in': {'$gte': start_date, '$lt': end_date}
+            'check_in': {'$gte': from_date, '$lte': to_date + timedelta(days=1)}
         }))
         
         # Get scheduled hours
@@ -2513,8 +2524,8 @@ class SalesSystemApp:
             total_withdrawls += amount
 
         # Generate daily records
-        current_date = start_date
-        while current_date < end_date:
+        current_date = from_date
+        while current_date <= to_date:
             current_date_date = current_date.date()
             current_date_str = current_date.strftime("%Y-%m-%d")
             
@@ -2538,7 +2549,6 @@ class SalesSystemApp:
                 check_in = daily_attendance.get('check_in')
                 check_out = daily_attendance.get('check_out')
                 
-                # With this:
                 from_time = check_in.strftime("%H:%M") if check_in else "--"
                 to_time = check_out.strftime("%H:%M") if check_out else "--"
                 
@@ -2660,11 +2670,14 @@ class SalesSystemApp:
                 "employee_code": salary_data["employee_code"],
                 "month_year": salary_data["month_year"]
             })
-            
+            if not self.month_var.get() or not self.year_var.get():
+                messagebox.showinfo(self.t("Warning"), self.t("Please select month and year")) 
+                return           
             if existing:
                 messagebox.showwarning(self.t("Warning"), 
                     self.t("Employee already took the salary in this month"))
                 return
+
             if not self.payment_method.get():
                 messagebox.showinfo(self.t("Warning"),self.t("Enter the payment Method"))
                 return
@@ -4333,61 +4346,6 @@ class SalesSystemApp:
                 row_entries.append(entry)
         
         return row_entries
-        #     if col == "Material_code":
-        #         var = tk.StringVar(value=value)
-        #         row_entry_vars.append(vars)
-        #         var = tk.StringVar(value=value)
-        #         print(1111111111111)
-        #         cb = ttk.Combobox(row_frame, textvariable=var, values=self.product_codes)
-        #         cb.bind('<<ComboboxSelected>>', lambda e, r=row_number: self.update_material_info(r, "code"))
-        #         cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_combobox_change_purchase(e, r, "code"))
-        #         cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
-        #         row_entries.append(cb)
-        #         value = value.strip()
-        #         cb.set(value)
-        #         row_entries.append(vars)
-        #     elif col == "Material_name":
-        #         var = tk.StringVar(value=value)
-        #         row_entry_vars.append(vars)
-        #         cb = ttk.Combobox(row_frame, textvariable=var, values=self.product_names)
-        #         cb.bind('<<ComboboxSelected>>', lambda e, r=row_number: self.update_material_info(r, "name"))
-        #         cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_combobox_change_purchase(e, r, "name"))
-        #         cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
-        #         row_entries.append(cb)
-        #         value = value.strip()
-        #         cb.set(value)
-        #         row_entries.append(var)
-        #     elif col == "unit":
-        #         var = tk.StringVar()
-        #         cb = ttk.Combobox(row_frame, textvariable=var, values=[])
-        #         cb.bind('<KeyRelease>', lambda e, r=row_number: self.handle_unit_change(e, r))
-        #         cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
-        #         row_entries.append(cb)
-        #     elif col == "Discount Type":
-        #         var = tk.StringVar()
-        #         cb = ttk.Combobox(row_frame, textvariable=var, 
-        #                         values=["Percentage", "Value"], 
-        #                         state="readonly")
-        #         cb.current(0)
-        #         cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
-        #         row_entries.append(cb)
-        #     elif col == "Discount Value":
-        #         var = tk.StringVar()
-        #         entry = tk.Entry(row_frame, textvariable=var)
-        #         entry.bind('<KeyRelease>', lambda e, r=row_number: self.calculate_totals(r))
-        #         entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
-        #         row_entries.append(entry)
-        #     elif col in ["Unit_Price", "Total_QTY", "Total_Price"]:
-        #         entry = tk.Entry(row_frame, relief='flat', state='readonly')
-        #         entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
-        #         row_entries.append(entry)
-        #     else:
-        #         entry = tk.Entry(row_frame, relief='sunken')
-        #         entry.bind('<KeyRelease>', lambda e, r=row_number: self.calculate_totals(r))
-        #         entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
-        #         row_entries.append(entry)
-        
-        # return row_entries
     
     def new_production_order(self, user_role):
         # Clear current window
@@ -8606,30 +8564,6 @@ class SalesSystemApp:
                     self.sales_invoice(self.user_role,"update")
                 else:
                     self.sales_invoice(self.user_role,"add")
-            except Exception as e:
-                messagebox.showerror("خطأ", f"فشل في تنظيف الحقول: {str(e)}")
-    def clear_invoice_form_purchase(self):
-            """تنظيف جميع حقول الفاتورة"""
-            try:
-                # تنظيف Combobox العميل
-                self.supplier_name_var.set('')
-                
-                # تنظيف حقول العناصر
-                for row in self.entries:
-                    for entry in row:
-                        if isinstance(entry, ttk.Combobox):
-                            entry.set('')
-                        elif isinstance(entry, tk.Entry):
-                            entry.delete(0, tk.END)
-                
-                # إعادة تعيين القائمة
-                self.entries = []
-                # إعادة إنشاء الصفوف الأساسية
-                # إذا كنت تستخدم دالة لإضافة الصفوف
-                if self.update_purchase:
-                    self.new_Purchase_invoice(self.user_role,"update")
-                else:
-                    self.new_Purchase_invoice(self.user_role,"add")
             except Exception as e:
                 messagebox.showerror("خطأ", f"فشل في تنظيف الحقول: {str(e)}")
                 
