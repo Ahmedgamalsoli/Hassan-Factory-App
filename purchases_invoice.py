@@ -1007,8 +1007,8 @@ class PurchaseInvoice:
                 return
                 
             # 4. Save invoice with PDF path
-            if self.update_purchase:
-                purchase_col.delete_one({"Receipt_Number":self.invoice_var.get()})
+            if self.app.update_purchase:
+                purchase_col.delete_one({"Receipt_Number":self.app.invoice_var.get()})
                 config.report_log(self.app.logs_collection, self.app.user_name, purchase_col, "Updated new invoice to", invoice_data)
                 flag=1
             invoice_data["PDF_Path"] = pdf_path
