@@ -43,10 +43,10 @@ def report_log(logs_collection, user_name, current_collection, msg, entry_doc=No
         action_text = f"{msg} {current_collection.name} Database with Unique Id {unique_id}"
     else:
         action_text = msg
-
+    name = user_name if user_name else "Unknown"
     new_log = {
         "date": datetime.now(),
-        "employee_name": user_name,
+        "employee_name": name,
         "action": action_text
         # "action": f"Added new record to {collection_name} Database with unique Id {unique_id if unique_id else 'N/A'}",
     }
