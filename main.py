@@ -2947,7 +2947,7 @@ class SalesSystemApp:
                                                                     f"{self.t("Total Credit:")} {str(self.total_credit_var.get())}",
                                                                     f"{self.t("Total Debit:")} {str(self.total_debit_var.get())}",
                                                                     f"{self.t("Balance:")} {str(self.balance_var.get())}"
-                                                                ]
+                                                                ], source= "Treasury"
                                                                  ),bg="#21F35D", fg='white')
         pdf_btn   = tk.Button(totals_frame, 
                             text=self.t("Export to PDF"),
@@ -2959,7 +2959,7 @@ class SalesSystemApp:
                                                                     f"إجمالي دائن: {str(self.total_credit_var.get())}",
                                                                     f"إجمالي مدين: {str(self.total_debit_var.get())}",
                                                                     f"الرصيد: {str(self.balance_var.get())}"
-                                                                ]
+                                                                ], source= "Treasury"
                                                                 ),bg="#2144F3", fg='white')
         excel_btn.pack(side=tk.LEFT, padx=10, pady=5)
         pdf_btn.pack(side=tk.LEFT, padx=10, pady=5)
