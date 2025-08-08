@@ -568,7 +568,7 @@ class SalesInvoice:
         if source == "sales":
             self.sales_invoice(self.app.user_role,"update")
         else:
-            self.app.new_Purchase_invoice(self.app.user_role,"update")
+            self.app.PurchaseInvoice.new_Purchase_invoice(self.app.user_role,"update")
 
     def add_three_rows(self, initial_data=None):
         current_row_count = len(self.app.entries)
