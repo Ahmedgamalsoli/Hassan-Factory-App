@@ -6782,8 +6782,8 @@ class AlwaysOnTopInputDialog(tk.Toplevel):
 if __name__ == "__main__":
     root = tk.Tk()
     app = SalesSystemApp(root)       # Create main app first
-    # app.start_without_login()
-    app.start_with_login()     # Then launch the login screen through app
+    app.start_without_login()
+    # app.start_with_login()     # Then launch the login screen through app
 
     try:
         root.mainloop()
