@@ -6,6 +6,7 @@ import tkinter as tk
 import io
 import re
 import os
+from annotated_types import doc
 import pytz
 import threading  # To play sound without freezing the GUI
 import sys
@@ -582,6 +583,7 @@ class SalesSystemApp:
             "Export to PDF":{"Arabic":"حفظ الملف","English":"Save as PDF"},
             "Daily treasury report":{"Arabic":"تقرير الخزنة اليومية","English":"Daily treasury report"},
             "Please select month and year":{"Arabic":"الرجاء تحديد الشهر والسنة","English":"Please select month and year"},
+            "Logs":{"Arabic":"سجلات","English":"Logs"},
             # "":{"Arabic":"","English":""},
             # "":{"Arabic":"","English":""},
             # "":{"Arabic":"","English":""},
@@ -825,6 +827,7 @@ class SalesSystemApp:
         self.supplier_payments                = db["Supplier_Payments"]
         self.general_exp_rev_collection       = db["general_exp_rev"]
         self.messages_collection              = db["Messages"]
+        self.logs_collection                  = db["Logs"]
 
 ############################################ Windows ########################################### 
 
@@ -887,6 +890,8 @@ class SalesSystemApp:
                 "command": lambda: self.general_exp_rev(self.user_role)},
                 {"text": self.t("Reports"), "image": "report-dark.png", 
                 "command": lambda: self.reports.manage_Reports_window()},
+                {"text": self.t("Logs"), "image": "report-dark.png", 
+                "command": lambda: self.Logs_window()},
             ]
             
             if self.user_role == "admin" or self.user_role == "developer":
@@ -919,6 +924,8 @@ class SalesSystemApp:
                 "command": lambda: self.general_exp_rev(self.user_role)},
                 {"text": self.t("Reports"), "image": "report-light.png", 
                 "command": lambda: self.reports.manage_Reports_window()},
+                {"text": self.t("Logs"), "image": "report-dark.png", 
+                "command": lambda: self.Logs_window()},
             ]
 
             if self.user_role == "admin" or self.user_role == "developer":
@@ -2114,6 +2121,9 @@ class SalesSystemApp:
             )
 
             messagebox.showinfo(self.t("Success"), self.t("Withdrawal recorded successfully"))
+            
+            config.report_log(self.logs_collection, self.user_name, None, f"Completed withdrawal in Employee_withdrawls Database for {withdrawal_data['employee_name']} with Id {withdrawal_data['employee_code']}", None)
+
             self.amount_entry.delete(0, tk.END)
             self.payment_method.set('')
             self.update_previous_withdrawals()
@@ -2505,8 +2515,6 @@ class SalesSystemApp:
             }
             
             
-
-            
             # Input validation
             if not all([salary_data['employee_code'], salary_data['month_year']]):
                 raise ValueError("Missing required fields")
@@ -2536,6 +2544,7 @@ class SalesSystemApp:
             withdrawals_col.insert_one(withdrawal_data)
             # self.save_withdrawal(withdrawals_col,employees_col)
             messagebox.showinfo(self.t("Success"), self.t("Salary record saved successfully"))
+            config.report_log(self.logs_collection, self.user_name, None, f"Paid salary for {salary_data['employee_name']} with code {salary_data['employee_code']}", None)
             
         except Exception as e:
             messagebox.showerror(self.t("Error"), f"{self.t("Failed to save salary:")} {str(e)}")
@@ -2720,7 +2729,8 @@ class SalesSystemApp:
             collection = self.general_exp_rev_collection
             collection.insert_one(transaction)
             messagebox.showinfo(self.t("Success"), f"{transaction_type} {self.t("recorded successfully!")}")
-            
+            config.report_log(self.logs_collection, self.user_name, None, f"Recorded {transaction_type} of {amount} in {self.general_exp_rev_collection.name} Database", None)
+
             # Clear fields
             if transaction_type == "Expense":
                 self.expense_amount.set(0)
@@ -2733,7 +2743,76 @@ class SalesSystemApp:
                 
         except Exception as e:
             messagebox.showerror(self.t("Database Error"), f"{self.t("Failed to save transaction:")} {str(e)}")
+    
+    def Logs_window(self):
+        # Clear current window
+        for widget in self.root.winfo_children():
+            widget.destroy()
 
+        self.topbar.topbar(show_back_button=True)
+
+        main_frame = tk.Frame(self.root, padx=20, pady=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Filters section
+        filter_frame = tk.Frame(main_frame)
+        filter_frame.pack(fill=tk.X, pady=10)
+
+        tk.Label(filter_frame, text=self.t("From Date:")).pack(side=tk.LEFT)
+        from_date = DateEntry(filter_frame, date_pattern="dd/mm/yyyy")
+        from_date.pack(side=tk.LEFT, padx=5)
+        
+        # self.end_date_entry = DateEntry(right_frame, font=("Arial", 12), date_pattern='dd-MM-yyyy', width=14)
+        
+        tk.Label(filter_frame, text=self.t("To Date:")).pack(side=tk.LEFT)
+        to_date = DateEntry(filter_frame, date_pattern="dd/mm/yyyy")
+        to_date.pack(side=tk.LEFT, padx=5)
+
+        employees_names = self.employees_collection.find({}, {"Name": 1})
+        names = [doc.get("Name", "") for doc in employees_names]
+        
+        tk.Label(filter_frame, text=self.t("Employee:")).pack(side=tk.LEFT)
+        employee_var = tk.StringVar()
+        employee_cb = ttk.Combobox(filter_frame, textvariable=employee_var, values= names)
+        employee_cb.pack(side=tk.LEFT, padx=5)
+
+        search_btn = tk.Button(filter_frame, text=self.t("Search"), command=lambda: self.load_logs(tree, from_date.get_date(), to_date.get_date(), employee_var.get()))
+        search_btn.pack(side=tk.LEFT, padx=10)
+
+        # Logs Table
+        columns = ("date", "employee_name", "action")
+        tree = ttk.Treeview(main_frame, columns=columns, show="headings")
+        for col in columns:
+            tree.heading(col, text=self.t(col.replace("_", " ").title()))
+            if col in ["date","employee_name"]:
+                tree.column(col, width=100, anchor="center")
+            else:
+                tree.column(col, width=400, anchor="center")
+
+        tree.pack(fill=tk.BOTH, expand=True, pady=10)
+        self.load_logs(tree, from_date.get_date(), to_date.get_date(), None)
+    
+    def load_logs(self, tree, from_date, to_date, employee_name):
+        query = {}
+        
+        if isinstance(from_date, date) and not isinstance(from_date, datetime):
+            from_date = datetime.combine(from_date, datetime.min.time())
+        if isinstance(to_date, date) and not isinstance(to_date, datetime):
+            to_date = datetime.combine(to_date, datetime.max.time())
+
+        if from_date and to_date:
+            query["date"] = {"$gte": from_date, "$lte": to_date}
+        if employee_name:
+            query["employee_name"] = employee_name
+        logs = self.logs_collection.find(query).sort("date", -1)
+        tree.delete(*tree.get_children())
+        for log in logs:
+            tree.insert("", "end", values=(
+                log.get("date", "").strftime("%Y-%m-%d %H:%M") if log.get("date") else "",
+                log.get("employee_name", ""),
+                log.get("action", "")
+            ))
+    
     def Treasury_window(self, user_role):
         # Clear current window
         for widget in self.root.winfo_children():
@@ -3357,7 +3436,9 @@ class SalesSystemApp:
             # Insert production records
             if orders:
                 production_col.insert_many(orders)
-            
+                for order in orders:
+                    config.report_log(self.logs_collection, self.user_name, production_col, "Added new record in", order)
+
             messagebox.showinfo(self.t("Success"), self.t("Production order saved successfully"))
             self.new_production_order(None)  # Refresh form
 
@@ -3666,7 +3747,7 @@ class SalesSystemApp:
                                                                     f"إجمالي دائن: {str(self.total_credit_entry.get())}",
                                                                     f"إجمالي مدين: {str(self.total_debit_entry.get())}",
                                                                     f"الرصيد: {str(self.balance_entry.get())}"
-                                                                ]
+                                                                ], source="Supplier Interaction"
                                                                  ),bg="#21F35D", fg='white').grid(row=13, column=9, sticky="w")
         tk.Button(right_frame, 
                             text=self.t("Export to PDF"),
@@ -3678,7 +3759,7 @@ class SalesSystemApp:
                                                                     f"إجمالي دائن: {str(self.total_credit_entry.get())}",
                                                                     f"إجمالي مدين: {str(self.total_debit_entry.get())}",
                                                                     f"الرصيد: {str(self.balance_entry.get())}"
-                                                                ]
+                                                                ], source="Supplier Interaction"
                                                                 ),bg="#2144F3", fg='white').grid(row=13, column=10, sticky="w", padx=10)
     def add_supplier_payment(self, tree):
         debit = self.cash_entry.get().strip()
@@ -3739,7 +3820,7 @@ class SalesSystemApp:
             field_path="supplier_info.code",
             tree=tree
         )
-
+        config.report_log(self.logs_collection, self.user_name, supplier_payment_collection, "Added new record to", doc)
         messagebox.showinfo(self.t("Success"), f"{self.t("Entry")} {operation_number} {self.t("added.")}")
 
     def get_next_operation_number(self, payment_collection):
@@ -3842,7 +3923,7 @@ class SalesSystemApp:
             field_path="Customer_info.code",
             tree=tree
         )
-
+        config.report_log(self.logs_collection, self.user_name, customer_payment_collection, "Added new record to", doc)
         messagebox.showinfo(self.t("Success"), f"{self.t("Entry")} {operation_number} {self.t("added.")}")
         #TODO Block of code to preview invoice to be generated + generate invoice as pdf
 
@@ -4215,7 +4296,7 @@ class SalesSystemApp:
                                                                     f"إجمالي دائن: {str(self.total_credit_entry.get())}",
                                                                     f"إجمالي مدين: {str(self.total_debit_entry.get())}",
                                                                     f"الرصيد: {str(self.balance_entry.get())}"
-                                                                ]
+                                                                ], source="Customer Interaction"
                                                                  ),bg="#21F35D", fg='white').grid(row=13, column=9, sticky="w")
         tk.Button(right_frame, 
                             text=self.t("Export to PDF"),
@@ -4227,7 +4308,7 @@ class SalesSystemApp:
                                                                     f"إجمالي دائن: {str(self.total_credit_entry.get())}",
                                                                     f"إجمالي مدين: {str(self.total_debit_entry.get())}",
                                                                     f"الرصيد: {str(self.balance_entry.get())}"
-                                                                ]
+                                                                ], source="Customer Interaction"
                                                                 ),bg="#2144F3", fg='white').grid(row=13, column=10, sticky="w", padx=10)
 
 
@@ -4880,6 +4961,7 @@ class SalesSystemApp:
                 material_codes     = split_entry("material_code")
                 material_names     = split_entry("material_name")
                 var=material_names
+            
             Units             = split_entry("Unit")
             QTYs              = split_entry("QTY")
             Total_QTYs        = split_entry("Total_QTY")
@@ -4955,6 +5037,7 @@ class SalesSystemApp:
                 "supplier_phone1","supplier_phone2","supplier_address","material_code","material_name"
                 ] and collection_name in ["Sales","Purchases","Customer_Payments", "Supplier_Payments"]:
                 value = widget.get()
+                
                 if not str(value).strip():
                     messagebox.showerror(self.t("Validation Error"), f"{self.t("Field")} '{field}' {self.t("cannot be empty.")}")
                     return  # stop processing if any critical field is empty
@@ -5053,6 +5136,8 @@ class SalesSystemApp:
                 new_entry["Financials"] = financials_obj
 
             current_collection.insert_one(new_entry)
+            config.report_log(self.logs_collection, self.user_name, current_collection, "Added new record to", new_entry)
+    
             self.refresh_generic_table(tree, current_collection, collection_name, search_text="")
             messagebox.showinfo(self.t("Success"), self.t("Record added successfully"))
 
@@ -5113,7 +5198,7 @@ class SalesSystemApp:
         if not existing_record: #recheck existing record after potential update
             messagebox.showerror(self.t("Error"), self.t("Could not find record in database"))
             return
-
+        
         updated_entry = {}
         prefix = ""
         # Handle special cases for Customer_Payments and Supplier_Payments
@@ -5298,6 +5383,7 @@ class SalesSystemApp:
             result = current_collection.update_one({identifier_field: record_id}, {"$set": updated_entry})
             
             if result.modified_count > 0:
+                config.report_log(self.logs_collection, self.user_name, current_collection, "Updated a record in" ,existing_record)
                 messagebox.showinfo(self.t("Success"), self.t("Record updated successfully"))
             else:
                 messagebox.showinfo(self.t("Info"), self.t("No changes were made (record was identical)"))
@@ -5472,6 +5558,7 @@ class SalesSystemApp:
                         {"$pull": {'Units': unit_value}}
                     )
                     if update_result.modified_count > 0:
+                        config.report_log(self.logs_collection, self.user_name, current_collection, "Deleted a record from", document)
                         self.deselect_entry(tree)
                         self.refresh_generic_table(tree, current_collection, self.table_name.get(), search_text="")
                         messagebox.showinfo(self.t("Success"), f"{self.t("Unit")} '{unique_id}' {self.t("removed from record.")}")
@@ -5494,6 +5581,7 @@ class SalesSystemApp:
                         }
                     )                  
                     if update_result.modified_count > 0:
+                        config.report_log(self.logs_collection, self.user_name, current_collection, "Deleted a record from", document)
                         self.deselect_entry(tree)
                         self.refresh_generic_table(tree, current_collection, self.table_name.get(), search_text="")
                         messagebox.showinfo(self.t("Success"), f"{self.t("Unit")} '{unique_id}' {self.t("removed from record.")}")
@@ -5503,6 +5591,7 @@ class SalesSystemApp:
                 else:
                     delete_result = current_collection.delete_one({"_id": document["_id"]})
                     if delete_result.deleted_count > 0:
+                        config.report_log(self.logs_collection, self.user_name, current_collection, "Deleted a record from", document)
                         self.deselect_entry(tree)
                         self.refresh_generic_table(tree, current_collection, self.table_name.get(), search_text="")
                         messagebox.showinfo(self.t("Success"), self.t("Record deleted successfully."))
@@ -5514,6 +5603,7 @@ class SalesSystemApp:
             if not handled:
                 delete_result = current_collection.delete_one(query)
                 if delete_result.deleted_count > 0:
+                    config.report_log(self.logs_collection, self.user_name, current_collection, "Deleted a record from", document)
                     self.deselect_entry(tree) 
                     self.refresh_generic_table(tree, current_collection, self.table_name.get(), search_text="")
                     messagebox.showinfo(self.t("Success"), self.t("Record deleted successfully."))
@@ -6169,7 +6259,7 @@ class SalesSystemApp:
         ]
         
     def export_to_excel(self, data, headers=None, title="Report", filename="report.xlsx", report_folder="reports",
-                    startdate=None, enddate=None, footerline_out_of_table=None):
+                    startdate=None, enddate=None, footerline_out_of_table=None, source= None):
         """
         Enhanced Excel export function with date range display and comprehensive error handling
         
@@ -6280,6 +6370,8 @@ class SalesSystemApp:
             # Save and open the file
             wb.save(file_path)
             
+            config.report_log(self.logs_collection, self.user_name, None, f"Generated Excel {source} report", None) 
+            
             # Open the file if supported by OS
             if os.name == 'nt':  # Windows
                 os.startfile(file_path)
@@ -6296,9 +6388,9 @@ class SalesSystemApp:
             return None
 
     def export_to_pdf(self, data, headers=None, title="Report", filename="report.pdf", report_folder="reports",
-                    page_size=letter, font_size=12, startdate=None, enddate=None, footerline_out_of_table=None):
+                    page_size=letter, font_size=12, startdate=None, enddate=None, footerline_out_of_table=None, source= None):
         """
-        Enhanced PDF export function with PyInstaller-compatible font handling
+        Enhanced PDF export function with PyInstaller-compatible font handlingz
         """
         def get_font_path():
             """Get the correct font path for both development and EXE"""
@@ -6443,7 +6535,7 @@ class SalesSystemApp:
 
             # Generate PDF
             doc.build(elements)
-            
+            config.report_log(self.logs_collection, self.user_name, None, f"Generated PDF {source} report", None) 
             # Try to open/print
             try:
                 if os.name == 'nt':

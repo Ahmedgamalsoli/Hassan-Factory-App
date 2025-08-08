@@ -561,6 +561,7 @@ class SalesInvoice:
         sales_col.delete_one({"Receipt_Number": invoice_number})
         
         messagebox.showinfo(self.app.t("Success"), self.app.t("Invoice deleted successfully"))
+        config.report_log(self.app.logs_collection, self.app.user_name, sales_col, f"Deleted {capitalize_first_letter(source)} Invoice in", invoice_data)
         # Clear the form or reset UI as needed
         self.app.invoice_var.set("")
         self.app.selected_invoice_id = None
@@ -582,6 +583,7 @@ class SalesInvoice:
             if row_data: #Seif: row_data is always empty
                 # Calculate totals for this row
                 self.calculate_totals(current_row_count + i)
+    
 
 
     def save_invoice(self, sales_col, customers_col, products_col):
@@ -922,6 +924,9 @@ class SalesInvoice:
 
     def finalize_invoice_save(self, preview_window):
         """Finalize invoice saving process and generate PDF"""
+        
+        flag = 0
+
         if not hasattr(self.app, 'pending_invoice_data') or not self.app.pending_invoice_data:
             messagebox.showerror("خطأ", "لا توجد بيانات فاتورة معلقة!")
             preview_window.destroy()
@@ -1010,6 +1015,8 @@ class SalesInvoice:
             invoice_data["PDF_Path"] = pdf_path
             if self.app.update:
                 sales_col.delete_one({"Receipt_Number":self.app.invoice_var.get()})
+                config.report_log(self.app.logs_collection, self.app.user_name, sales_col, "Updated invoice to", invoice_data)
+                flag=1
             sales_col.insert_one(invoice_data)
             
             
@@ -1017,6 +1024,10 @@ class SalesInvoice:
             messagebox.showinfo("نجاح", f"تم حفظ فاتورة البيع رقم {invoice_data['Receipt_Number']}")
             self.clear_invoice_form()
             
+            if not flag:
+                config.report_log(self.app.logs_collection, self.app.user_name, sales_col, "Added new invoice to", invoice_data)
+            
+
             # 6. Clear pending data
             del self.app.pending_invoice_data
             del self.app.pending_stock_updates
@@ -1403,9 +1414,9 @@ class SalesInvoice:
             c.setFont("Arabic", 10)
             c.drawRightString(width - 2.2*cm, totals_y - 0.25*cm, format_arabic("____________________"))
             c.drawString(1.5*cm, totals_y - 0.25*cm, format_arabic("____________________"))
-            
+
             c.save()
-            
+            config.report_log(self.app.logs_collection, self.app.user_name, None, f"Generated Pdf Sales Invoice with Id {invoice_data['Receipt_Number']} for Customer {invoice_data['Customer_info']['code']}", None)
             try:
                 os.startfile(pdf_path, "print")
             except OSError as e:
@@ -1673,3 +1684,10 @@ class SalesInvoice:
         except Exception as e:
             messagebox.showerror(self.app.t("Update Error"), f"{self.app.t("Failed to update Material info:")} {str(e)}")
             self.clear_row_fields(row_idx)
+
+
+
+def capitalize_first_letter(text):
+    if not text:
+        return text
+    return text[0].upper() + text[1:]

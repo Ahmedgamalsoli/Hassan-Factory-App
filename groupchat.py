@@ -63,10 +63,9 @@ class GroupChat:
             chat_win.iconbitmap(icon_path)
 
         # Group chat icon (draggable)
-        icon_frame = tk.Frame(chat_win, width=180, height=120)
+        icon_frame = tk.Frame(chat_win, width=200, height=120)
         icon_frame.place(x=10, y=10)
-        # icon_frame = tk.Frame(chat_win, width=60, height=60)
-        # icon_frame.place(x=10, y=10)
+
         icon_img_path = os.path.join(BASE_DIR, "Static", "images", "groupchat.ico")
         if os.path.exists(icon_img_path):
             icon_img = Image.open(icon_img_path).resize((50, 50), Image.LANCZOS)
@@ -104,10 +103,10 @@ class GroupChat:
             dot_label = tk.Label(row, text="●", fg="green", font=("Arial", 12, "bold"))
             dot_label.pack(side=tk.LEFT)
             name_label = tk.Label(row, text=name, font=("Arial", 12))
-            name_label.pack(side=tk.LEFT, padx=2)
+            name_label.pack(side=tk.LEFT, padx=1)
         
         chat_frame = tk.Frame(chat_win)
-        chat_frame.place(x=80, y=10, width=310, height=420)
+        chat_frame.place(x=100, y=10, width=300, height=420)
         chat_display = tk.Text(chat_frame, state="disabled", wrap="word", font=("Arial", 12))
         chat_display.pack(fill="both", expand=True)
         

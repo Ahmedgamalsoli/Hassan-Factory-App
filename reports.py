@@ -228,7 +228,7 @@ class reports:
                                                                     f"{self.app.t("Total Credit:")} {str(self.total_credit_var.get())}",
                                                                     f"{self.app.t("Total Debit:")} {str(self.total_debit_var.get())}",
                                                                     f"{self.app.t("Balance:")} {str(self.balance_var.get())}"
-                                                                ]
+                                                                ], source="Treasury"
                                                                  ),bg="#21F35D", fg='white')
         pdf_btn   = tk.Button(totals_frame, 
                             text=self.app.t("Export to PDF"),
@@ -240,7 +240,7 @@ class reports:
                                                                     f"إجمالي دائن: {str(self.total_credit_var.get())}",
                                                                     f"إجمالي مدين: {str(self.total_debit_var.get())}",
                                                                     f"الرصيد: {str(self.balance_var.get())}"
-                                                                ]
+                                                                ], source="Treasury"
                                                                 ),bg="#2144F3", fg='white')
         excel_btn.pack(side=tk.LEFT, padx=10, pady=5)
         pdf_btn.pack(side=tk.LEFT, padx=10, pady=5)

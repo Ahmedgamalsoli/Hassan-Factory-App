@@ -919,6 +919,8 @@ class PurchaseInvoice:
 
     def finalize_purchase_invoice(self, preview_window):
         """Finalize purchase invoice saving process and generate PDF"""
+        flag = 0
+
         if not hasattr(self.app, 'pending_invoice_data') or not self.app.pending_invoice_data:
             messagebox.showerror("خطأ", "لا توجد بيانات فاتورة معلقة!")
             preview_window.destroy()
@@ -1005,14 +1007,19 @@ class PurchaseInvoice:
                 return
                 
             # 4. Save invoice with PDF path
-            if self.app.update_purchase:
-                purchase_col.delete_one({"Receipt_Number":self.app.invoice_var.get()})
+            if self.update_purchase:
+                purchase_col.delete_one({"Receipt_Number":self.invoice_var.get()})
+                config.report_log(self.app.logs_collection, self.app.user_name, purchase_col, "Updated new invoice to", invoice_data)
+                flag=1
             invoice_data["PDF_Path"] = pdf_path
             purchase_col.insert_one(invoice_data)
             
             # 5. Show success and clean up
             messagebox.showinfo("نجاح", f"تم حفظ فاتورة الشراء رقم {invoice_data['Receipt_Number']}")
             self.clear_invoice_form_purchase()
+            
+            if not flag:
+                config.report_log(self.app.logs_collection, self.app.user_name, purchase_col, "Added invoice to", invoice_data)
             
             # 6. Clear pending data
             del self.app.pending_invoice_data
@@ -1280,6 +1287,8 @@ class PurchaseInvoice:
             c.drawString(1.5*cm, totals_y - 0.5*cm, format_arabic("____________________"))
             
             c.save()
+
+            config.report_log(self.app.logs_collection, self.app.user_name, None, f"Generated Pdf Purchase Invoice with Id {invoice_data['Receipt_Number']} for supplier {invoice_data['supplier_info']['code']}", None)
 
             try:
                 os.startfile(pdf_path, "print")
