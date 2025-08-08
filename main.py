@@ -890,7 +890,7 @@ class SalesSystemApp:
                 "command": lambda: self.general_exp_rev(self.user_role)},
                 {"text": self.t("Reports"), "image": "report-dark.png", 
                 "command": lambda: self.reports.manage_Reports_window()},
-                {"text": self.t("Logs"), "image": "report-dark.png", 
+                {"text": self.t("Logs"), "image": "logs-dark.png", 
                 "command": lambda: self.Logs_window()},
             ]
             
@@ -924,7 +924,7 @@ class SalesSystemApp:
                 "command": lambda: self.general_exp_rev(self.user_role)},
                 {"text": self.t("Reports"), "image": "report-light.png", 
                 "command": lambda: self.reports.manage_Reports_window()},
-                {"text": self.t("Logs"), "image": "report-dark.png", 
+                {"text": self.t("Logs"), "image": "logs-light.png", 
                 "command": lambda: self.Logs_window()},
             ]
 
@@ -6782,8 +6782,8 @@ class AlwaysOnTopInputDialog(tk.Toplevel):
 if __name__ == "__main__":
     root = tk.Tk()
     app = SalesSystemApp(root)       # Create main app first
-    app.start_without_login()
-    # app.start_with_login()     # Then launch the login screen through app
+    # app.start_without_login()
+    app.start_with_login()     # Then launch the login screen through app
 
     try:
         root.mainloop()
