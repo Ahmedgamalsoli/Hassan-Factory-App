@@ -700,6 +700,25 @@ class SalesSystemApp:
 
             "Expenses":{"Arabic": "مصروفات", "English": "Expenses"},
             "Revenues":{"Arabic": "إيرادات", "English": "Revenues"},
+            
+            "Checked out with Id":{"Arabic": "تسجيل انصراف ب كود ", "English": "Checked out with Id"},
+            "Checked in with Id":{"Arabic": "تسجيل دخول ب كود ", "English": "Checked in with Id"},
+            "Generated PDF":{"Arabic": "توليد PDF", "English": "Generated PDF"},
+            "Generated Excel":{"Arabic": "توليد Excel", "English": "Generated Excel"},
+            "report":{"Arabic": "تقرير", "English": "report"},
+            "Deleted a record from":{"Arabic": "حذف سجل من", "English": "Deleted a record from"},
+            "Updated a record in":{"Arabic": "تحديث سجل في", "English": "Updated a record in"},
+            "Added new record to":{"Arabic": "إضافة سجل جديد إلى", "English": "Added new record to"},
+            "Added new record in":{"Arabic": "إضافة سجل جديد في", "English": "Added new record in"},
+
+            "Recorded Expense of":{"Arabic": "تسجيل مصروفات", "English": "Recorded Expense of"},
+            "Recorded Revenue of":{"Arabic": "تسجيل إيرادات", "English": "Recorded Revenue of"},
+            "in general_exp_rev Database":{"Arabic": "في قاعدة بيانات general_exp_rev", "English": "in general_exp_rev Database"},
+
+            "Paid salary for":{"Arabic": "تم دفع المرتب إلى", "English": "Paid salary for"},
+            "with code":{"Arabic": "ب كود", "English": "with code"},
+            "Completed withdrawal in Employee_withdrawls Database for":{"Arabic": "تم إتمام", "English": "Completed withdrawal in Employee_withdrawls Database for"},
+            "with Id":{"Arabic": "ب كود", "English": "with Id"}
         }        
         
         self.keys = [
@@ -1863,7 +1882,6 @@ class SalesSystemApp:
         try:
             if existing:
                 # Check out
-                print("out")
                 check_out_time = datetime.now()
                 duration = check_out_time - existing['check_in']
                 
@@ -1874,11 +1892,10 @@ class SalesSystemApp:
                         'duration': duration.total_seconds() / 3600  # in hours
                     }}
                 )
-                config.report_log(self.logs_collection, self.user_name, None, f"{existing['employee_name']} Checked out with Id {existing['employee_code']}", None)
+                config.report_log(self.logs_collection, self.user_name, None, f"{existing['employee_name']} {self.t("Checked out with Id")} {existing['employee_code']}", None)
 
             else:
                 # Check in
-                print("in")
                 appointments_col.insert_one({
                     'employee_code': code,
                     'employee_name': name,
@@ -1886,9 +1903,8 @@ class SalesSystemApp:
                     'check_out': None,
                     'duration': None
                 })
-                config.report_log(self.logs_collection, self.user_name, None, f"{name} Checked in with Id {code}", None)
+                config.report_log(self.logs_collection, self.user_name, None, f"{name} {self.t("Checked in with Id")} {code}", None)
 
-            print("sss")
             self.update_checkin_tree(appointments_col)
             messagebox.showinfo(self.t("Success"), f"{name} {self.t("checked")} {self.t('out') if existing else self.t('in')} {self.t("successfully")}")
             
@@ -2126,7 +2142,7 @@ class SalesSystemApp:
 
             messagebox.showinfo(self.t("Success"), self.t("Withdrawal recorded successfully"))
             
-            config.report_log(self.logs_collection, self.user_name, None, f"Completed withdrawal in Employee_withdrawls Database for {withdrawal_data['employee_name']} with Id {withdrawal_data['employee_code']}", None)
+            config.report_log(self.logs_collection, self.user_name, None, f"{self.t("Completed withdrawal in Employee_withdrawls Database for")} {withdrawal_data['employee_name']} {self.t("with Id")} {withdrawal_data['employee_code']}", None)
 
             self.amount_entry.delete(0, tk.END)
             self.payment_method.set('')
@@ -2548,7 +2564,7 @@ class SalesSystemApp:
             withdrawals_col.insert_one(withdrawal_data)
             # self.save_withdrawal(withdrawals_col,employees_col)
             messagebox.showinfo(self.t("Success"), self.t("Salary record saved successfully"))
-            config.report_log(self.logs_collection, self.user_name, None, f"Paid salary for {salary_data['employee_name']} with code {salary_data['employee_code']}", None)
+            config.report_log(self.logs_collection, self.user_name, None, f"{self.t("Paid salary for")} {salary_data['employee_name']} {self.t("with code")} {salary_data['employee_code']}", None)
             
         except Exception as e:
             messagebox.showerror(self.t("Error"), f"{self.t("Failed to save salary:")} {str(e)}")
@@ -2732,8 +2748,8 @@ class SalesSystemApp:
         try:
             collection = self.general_exp_rev_collection
             collection.insert_one(transaction)
-            messagebox.showinfo(self.t("Success"), f"{transaction_type} {self.t("recorded successfully!")}")
-            config.report_log(self.logs_collection, self.user_name, None, f"Recorded {transaction_type} of {amount} in {self.general_exp_rev_collection.name} Database", None)
+            messagebox.showinfo(self.t("Success"), f"{self.t(transaction_type)} {self.t("recorded successfully!")}")
+            config.report_log(self.logs_collection, self.user_name, None, f"{self.t(f"Recorded {transaction_type} of")} {amount} {self.t(f"in {self.general_exp_rev_collection.name} Database")}", None)
 
             # Clear fields
             if transaction_type == "Expense":
@@ -3441,7 +3457,7 @@ class SalesSystemApp:
             if orders:
                 production_col.insert_many(orders)
                 for order in orders:
-                    config.report_log(self.logs_collection, self.user_name, production_col, "Added new record in", order)
+                    config.report_log(self.logs_collection, self.user_name, production_col, f"{self.t("Added new record in")}", order)
 
             messagebox.showinfo(self.t("Success"), self.t("Production order saved successfully"))
             self.new_production_order(None)  # Refresh form
@@ -3824,7 +3840,7 @@ class SalesSystemApp:
             field_path="supplier_info.code",
             tree=tree
         )
-        config.report_log(self.logs_collection, self.user_name, supplier_payment_collection, "Added new record to", doc)
+        config.report_log(self.logs_collection, self.user_name, supplier_payment_collection, f"{self.t("Added new record to")}", doc)
         messagebox.showinfo(self.t("Success"), f"{self.t("Entry")} {operation_number} {self.t("added.")}")
 
     def get_next_operation_number(self, payment_collection):
@@ -3927,7 +3943,7 @@ class SalesSystemApp:
             field_path="Customer_info.code",
             tree=tree
         )
-        config.report_log(self.logs_collection, self.user_name, customer_payment_collection, "Added new record to", doc)
+        config.report_log(self.logs_collection, self.user_name, customer_payment_collection, f"{self.t("Added new record to")}", doc)
         messagebox.showinfo(self.t("Success"), f"{self.t("Entry")} {operation_number} {self.t("added.")}")
         #TODO Block of code to preview invoice to be generated + generate invoice as pdf
 
@@ -4672,8 +4688,6 @@ class SalesSystemApp:
             else:
                 unique_id = tree.item(selected_item)["values"][id_index]
 
-
-
             first_document = current_collection.find_one({columns[id_index]: unique_id})
 
             if not first_document and isinstance(unique_id, str):
@@ -5176,8 +5190,8 @@ class SalesSystemApp:
                 new_entry["Financials"] = financials_obj
 
             current_collection.insert_one(new_entry)
-            config.report_log(self.logs_collection, self.user_name, current_collection, "Added new record to", new_entry)
-    
+            config.report_log(self.logs_collection, self.user_name, current_collection, f"{self.t("Added new record to")}", new_entry)
+
             self.refresh_generic_table(tree, current_collection, collection_name, search_text="")
             messagebox.showinfo(self.t("Success"), self.t("Record added successfully"))
 
@@ -5435,7 +5449,7 @@ class SalesSystemApp:
             result = current_collection.update_one({identifier_field: unique_id}, {"$set": updated_entry})
             
             if result.modified_count > 0:
-                config.report_log(self.logs_collection, self.user_name, current_collection, "Updated a record in" ,existing_record)
+                config.report_log(self.logs_collection, self.user_name, current_collection, f"{self.t("Updated a record in")}", existing_record)
                 messagebox.showinfo(self.t("Success"), self.t("Record updated successfully"))
             else:
                 messagebox.showinfo(self.t("Info"), self.t("No changes were made (record was identical)"))
@@ -5610,7 +5624,7 @@ class SalesSystemApp:
                         {"$pull": {'Units': unit_value}}
                     )
                     if update_result.modified_count > 0:
-                        config.report_log(self.logs_collection, self.user_name, current_collection, "Deleted a record from", document)
+                        config.report_log(self.logs_collection, self.user_name, current_collection, f"{self.t("Deleted a record from")}", document)
                         self.deselect_entry(tree)
                         self.refresh_generic_table(tree, current_collection, self.table_name.get(), search_text="")
                         messagebox.showinfo(self.t("Success"), f"{self.t("Unit")} '{unique_id}' {self.t("removed from record.")}")
@@ -5633,7 +5647,7 @@ class SalesSystemApp:
                         }
                     )                  
                     if update_result.modified_count > 0:
-                        config.report_log(self.logs_collection, self.user_name, current_collection, "Deleted a record from", document)
+                        config.report_log(self.logs_collection, self.user_name, current_collection, f"{self.t("Deleted a record from")}", document)
                         self.deselect_entry(tree)
                         self.refresh_generic_table(tree, current_collection, self.table_name.get(), search_text="")
                         messagebox.showinfo(self.t("Success"), f"{self.t("Unit")} '{unique_id}' {self.t("removed from record.")}")
@@ -5643,7 +5657,7 @@ class SalesSystemApp:
                 else:
                     delete_result = current_collection.delete_one({"_id": document["_id"]})
                     if delete_result.deleted_count > 0:
-                        config.report_log(self.logs_collection, self.user_name, current_collection, "Deleted a record from", document)
+                        config.report_log(self.logs_collection, self.user_name, current_collection, f"{self.t("Deleted a record from")}", document)
                         self.deselect_entry(tree)
                         self.refresh_generic_table(tree, current_collection, self.table_name.get(), search_text="")
                         messagebox.showinfo(self.t("Success"), self.t("Record deleted successfully."))
@@ -5655,8 +5669,8 @@ class SalesSystemApp:
             if not handled:
                 delete_result = current_collection.delete_one(query)
                 if delete_result.deleted_count > 0:
-                    config.report_log(self.logs_collection, self.user_name, current_collection, "Deleted a record from", document)
-                    self.deselect_entry(tree) 
+                    config.report_log(self.logs_collection, self.user_name, current_collection, f"{self.t("Deleted a record from")}", document)
+                    self.deselect_entry(tree)
                     self.refresh_generic_table(tree, current_collection, self.table_name.get(), search_text="")
                     messagebox.showinfo(self.t("Success"), self.t("Record deleted successfully."))
                 else:
@@ -6421,9 +6435,9 @@ class SalesSystemApp:
             
             # Save and open the file
             wb.save(file_path)
-            
-            config.report_log(self.logs_collection, self.user_name, None, f"Generated Excel {source} report", None) 
-            
+
+            config.report_log(self.logs_collection, self.user_name, None, f"{self.t('Generated Excel')} {source} {self.t('report')}", None)
+
             # Open the file if supported by OS
             if os.name == 'nt':  # Windows
                 os.startfile(file_path)
@@ -6587,7 +6601,7 @@ class SalesSystemApp:
 
             # Generate PDF
             doc.build(elements)
-            config.report_log(self.logs_collection, self.user_name, None, f"Generated PDF {source} report", None) 
+            config.report_log(self.logs_collection, self.user_name, None, f"{self.t('Generated PDF')} {source} {self.t('report')}", None)
             # Try to open/print
             try:
                 if os.name == 'nt':
