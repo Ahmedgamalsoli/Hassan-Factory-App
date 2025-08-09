@@ -4,23 +4,46 @@
 # ======================
 
 import tkinter as tk
+import io
 import re
 import os
-import pytz
 import config
+from annotated_types import doc
+import pytz
+import threading  # To play sound without freezing the GUI
 import sys
-
+import cloudinary
+import cloudinary.uploader
+import urllib.request
 import matplotlib
+import matplotlib.pyplot as plt
+import random
+import arabic_reshaper
+import openpyxl
 
-
-from tkinter import ttk
-from PIL import Image, ImageTk
-from datetime import datetime
+from tkinter import filedialog, ttk, messagebox
+from PIL import Image, ImageTk, ImageDraw  # Import Pillow classes
+from datetime import datetime,time , time, timedelta, date
+from tkcalendar import DateEntry  # Import DateEntry
+from playsound import playsound
+from pymongo import MongoClient
+from urllib.parse import quote_plus
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from pymongo import MongoClient
+from pymongo.errors import PyMongoError
+from collections import defaultdict
+from bidi.algorithm import get_display
+from matplotlib.figure import Figure    
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter,A5
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.lib.units import inch
 matplotlib.use('TkAgg')  # Set the backend before importing pyplot
 
-# ======================
-# Files Imports
-# ======================
 
 
 # Determine the base directory
@@ -504,3 +527,62 @@ class reports:
         self.total_debit_var.set(f"{self.totals['debit']:,.2f} ج.م")
         balance = self.totals['credit'] - self.totals['debit']
         self.balance_var.set(f"{balance:,.2f} ج.م")
+
+
+    def show_sales_chart(self,container, labels, values):
+        fig = Figure(figsize=(4, 3))
+        ax = fig.add_subplot(111)
+        ax.bar(labels, values, color='orange')
+        ax.set_title("Top Customers")
+        chart = FigureCanvasTkAgg(fig, master=container)
+        chart.get_tk_widget().pack()
+
+
+    def sales_report(self, user_role):
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        self.app.topbar.topbar(show_back_button=True, Back_to_Reports_Window=True)
+
+        # === Filters ===
+        filter_frame = ttk.Frame(self.root)
+        filter_frame.pack(pady=10)
+
+        ttk.Label(filter_frame, text="Start Date:").grid(row=0, column=0)
+        start_date = DateEntry(filter_frame)
+        start_date.grid(row=0, column=1, padx=5)
+
+        ttk.Label(filter_frame, text="End Date:").grid(row=0, column=2)
+        end_date = DateEntry(filter_frame)
+        end_date.grid(row=0, column=3, padx=5)
+
+        # === Table ===
+        table = ttk.Treeview(self.root, columns=("A", "B", "C"), show="headings", height=6)
+        table.heading("A", text="Metric")
+        table.heading("B", text="Value")
+        table.heading("C", text="Details")
+        table.pack(pady=10)
+
+        data = self.generate_report_data()
+        for row in data:
+            table.insert("", "end", values=row)
+
+        # === Chart ===
+        chart_frame = tk.Frame(self.root)
+        chart_frame.pack()
+        self.show_sales_chart(chart_frame, ["عماد خطاب", "أحمد سالم"], [70000, 30000])
+
+        # === Export Buttons ===
+        button_frame = ttk.Frame(self.root)
+        button_frame.pack(pady=10)
+        # headers = ["Metric", "Value", "Details", "Date"]
+        
+        ttk.Button(button_frame, text="Export to Excel", command=lambda: self.app.export_to_excel(data)).grid(row=0, column=0, padx=10)
+        ttk.Button(button_frame, text="Export to PDF", command=lambda: self.app.export_to_pdf(data)).grid(row=0, column=1, padx=10)
+
+    def generate_report_data(self):
+        return [
+            ["Total Sales", "72000", "From 45 invoices"],
+            ["Top Customer", "عماد خطاب", "EGP 70,000"],
+            ["Total Items Sold", "320", "25 Products"]
+        ]

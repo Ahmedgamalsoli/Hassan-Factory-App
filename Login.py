@@ -1,20 +1,46 @@
 # ======================
 # Used imports
 # ======================
+
 import tkinter as tk
-import matplotlib
+import io
+import re
 import os
+from annotated_types import doc
+import pytz
+import threading  # To play sound without freezing the GUI
 import sys
+import cloudinary
+import cloudinary.uploader
+import urllib.request
+import matplotlib
+import matplotlib.pyplot as plt
+import random
+import arabic_reshaper
+import openpyxl
 
-from PIL import Image, ImageTk # Import Pillow classes
-
-
+from tkinter import filedialog, ttk, messagebox
+from PIL import Image, ImageTk, ImageDraw  # Import Pillow classes
+from datetime import datetime,time , time, timedelta, date
+from tkcalendar import DateEntry  # Import DateEntry
+from playsound import playsound
+from pymongo import MongoClient
+from urllib.parse import quote_plus
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from pymongo import MongoClient
+from pymongo.errors import PyMongoError
+from collections import defaultdict
+from bidi.algorithm import get_display
+from matplotlib.figure import Figure    
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter,A5
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.lib.units import inch
 matplotlib.use('TkAgg')  # Set the backend before importing pyplot
-
-# ======================
-# Unused imports
-# ======================
-# from reportlab.lib.pagesizes import letter
 
 
 # Determine the base directory
@@ -46,7 +72,7 @@ class LoginWindow:
 
         # Load Circular Logo
         logo_path = os.path.join(BASE_DIR, "Static", "images", "Logo.jpg")  # Change this to your logo path
-        self.app.logo_image = self.app.create_circular_image(logo_path)
+        self.app.logo_image = self.create_circular_image(logo_path)
         if self.app.logo_image:
             self.logo_label = tk.Label(login_frame, image=self.app.logo_image, bg="white")
             self.logo_label.place(x=150, y=10)
@@ -175,3 +201,18 @@ class LoginWindow:
                 self.app.main_menu()
             else:
                 self.app.silent_popup(self.app.t("Unknown role"), self.app.t("Access denied."), self.app.play_Error)
+    # Function to Create Circular Image
+    def create_circular_image(self, image_path, size=(100, 100)):  
+        """Creates a circular version of an image"""
+        if not os.path.exists(image_path):
+            return None  # Return None if the image doesn't exist
+
+        img = Image.open(image_path).resize(size, Image.LANCZOS)  
+        mask = Image.new("L", size, 0)
+        draw = ImageDraw.Draw(mask)
+        draw.ellipse((0, 0, size[0], size[1]), fill=255)
+        
+        circular_img = Image.new("RGBA", size)
+        circular_img.paste(img, (0, 0), mask)
+        return ImageTk.PhotoImage(circular_img)
+    

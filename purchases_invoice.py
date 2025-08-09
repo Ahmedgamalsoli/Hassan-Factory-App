@@ -1355,3 +1355,42 @@ class PurchaseInvoice:
         except Exception as e:
             messagebox.showerror("خطأ", f"فشل توليد الرقم التسلسلي: {str(e)}")
             return None
+    def update_search_purchase(self, event, collection):
+        # Cancel any previous scheduled search **only if valid**
+        if hasattr(self.app, '_after_id') and self.app._after_id is not None:
+            try:
+                self.root.after_cancel(self.app._after_id)
+            except ValueError:
+                pass  # Ignore if it was already canceled
+        
+        # Mark that user is typing
+        self.app.is_typing = True
+        
+        # Schedule the search with the current text
+        self.app._after_id = self.root.after(300, self.perform_search_purchase, collection)
+
+
+    def perform_search_purchase(self, collection):
+        # Mark that user is not typing anymore
+        self.app.is_typing = False
+
+        search_term = self.app.supplier_name_var.get()
+
+        # If search term is empty, you can clear the combobox
+        if search_term == "":
+            self.app.supplier_cb['values'] = []
+            return
+
+        # Perform search
+        filtered_suppliers = [supp['Name'] for supp in collection.find(
+            {"Name": {"$regex": f"^{search_term}", "$options": "i"}}
+        )]
+        
+        # Update combobox values only if user is not typing
+        if not self.app.is_typing:
+            self.app.supplier_cb['values'] = filtered_suppliers
+            
+            if filtered_suppliers:
+                self.app.supplier_cb.event_generate('<Down>')
+            else:
+                self.app.supplier_cb.event_generate('<Up>')  # Close dropdown

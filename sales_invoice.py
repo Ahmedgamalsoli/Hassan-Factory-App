@@ -1684,10 +1684,46 @@ class SalesInvoice:
         except Exception as e:
             messagebox.showerror(self.app.t("Update Error"), f"{self.app.t("Failed to update Material info:")} {str(e)}")
             self.clear_row_fields(row_idx)
+    def update_search(self, event, collection):
+        # Cancel any previous scheduled search **only if valid**
+        if hasattr(self.app, '_after_id') and self.app._after_id is not None:
+            try:
+                self.root.after_cancel(self.app._after_id)
+            except ValueError:
+                pass  # Ignore if it was already canceled
+        
+        # Mark that user is typing
+        self.app.is_typing = True
+        
+        # Schedule the search with the current text
+        self.app._after_id = self.root.after(300, self.perform_search, collection)
+    def perform_search(self, collection):
+        # Mark that user is not typing anymore
+        self.app.is_typing = False
 
+        search_term = self.app.customer_name_var.get()
 
+        # If search term is empty, you can clear the combobox
+        if search_term == "":
+            self.app.customer_cb['values'] = []
+            return
+
+        # Perform search
+        filtered_customers = [cust['Name'] for cust in collection.find(
+            {"Name": {"$regex": f"^{search_term}", "$options": "i"}}
+        )]
+        
+        # Update combobox values only if user is not typing
+        if not self.app.is_typing:
+            self.app.customer_cb['values'] = filtered_customers
+            
+            if filtered_customers:
+                self.app.customer_cb.event_generate('<Down>')
+            else:
+                self.app.customer_cb.event_generate('<Up>')  # Close dropdown
 
 def capitalize_first_letter(text):
     if not text:
         return text
     return text[0].upper() + text[1:]
+
