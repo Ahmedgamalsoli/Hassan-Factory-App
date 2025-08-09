@@ -1874,6 +1874,8 @@ class SalesSystemApp:
                         'duration': duration.total_seconds() / 3600  # in hours
                     }}
                 )
+                config.report_log(self.logs_collection, self.user_name, None, f"{existing['employee_name']} Checked out with Id {existing['employee_code']}", None)
+
             else:
                 # Check in
                 print("in")
@@ -1884,6 +1886,8 @@ class SalesSystemApp:
                     'check_out': None,
                     'duration': None
                 })
+                config.report_log(self.logs_collection, self.user_name, None, f"{name} Checked in with Id {code}", None)
+
             print("sss")
             self.update_checkin_tree(appointments_col)
             messagebox.showinfo(self.t("Success"), f"{name} {self.t("checked")} {self.t('out') if existing else self.t('in')} {self.t("successfully")}")
@@ -4601,7 +4605,7 @@ class SalesSystemApp:
 
     def on_tree_selection(self, event, tree, columns, collection_name, img_label):
         first_document = None
-        current_collection = None
+        current_collection = self.get_collection_by_name(collection_name)
         id_index = 0
         selected_item = tree.selection()
         if not selected_item:
@@ -4624,16 +4628,52 @@ class SalesSystemApp:
             return
         try:
             lower_columns = [col.lower() for col in columns]
-            if "id" in lower_columns:
-                id_index = columns.index("Id")  # Dynamically get the index of "Id" #TODO need something different to loop on
-            elif any(('code' in col) or ('receipt_number' in col) for col in lower_columns):
-                for idx, col in enumerate(lower_columns):
-                    if 'code' in col or 'receipt_number' in col:
+            # if "id" in lower_columns:
+            #     id_index = columns.index("Id")  # Dynamically get the index of "Id" #TODO need something different to loop on
+            # elif any(('code' in col) or ('receipt_number' in col) for col in lower_columns):
+            #     for idx, col in enumerate(lower_columns):
+            #         if 'code' in col or 'receipt_number' in col:
+            #             id_index = idx
+            #             break
+
+
+            # Find which column is used as identifier (id / code)
+            if current_collection.name in ["Customer_Payments","Supplier_Payments", "Sales", "Purchases"]:
+                id_index = 0
+            elif current_collection.name in ["Production", "Employee_Salary", "Employee_withdrawls"]:
+                id_index = columns.index("timestamp")
+
+            elif current_collection.name in ["Employee_appointimets"]:
+                id_index = columns.index("duration")
+            elif "id" in [col.lower() for col in columns]:
+                id_index = columns.index("Id")
+            elif any('code' in col.lower() for col in columns):
+                for idx, col in enumerate(columns):
+                    if 'code' in col.lower():
                         id_index = idx
                         break
-            unique_id = tree.item(selected_item)['values'][id_index]
+            else:
+                messagebox.showerror(self.t("Error"), self.t("Unable to determine identifier column."))
+                return
 
-            current_collection = self.get_collection_by_name(collection_name)
+            if id_index is None:
+                messagebox.showerror(self.t("Error"), self.t("Unable to determine identifier column."))
+                return
+
+            # unique_id = tree.item(selected_item)['values'][id_index]
+
+            field_name = columns[id_index]
+            if field_name == "timestamp":
+                #change to datetime obj
+                raw_unique_id = tree.item(selected_item)["values"][id_index]
+                unique_id = datetime.strptime(raw_unique_id, "%Y-%m-%d %H:%M:%S.%f")
+            elif field_name == "duration":
+                unique_id = float(tree.item(selected_item)["values"][id_index])
+            else:
+                unique_id = tree.item(selected_item)["values"][id_index]
+
+
+
             first_document = current_collection.find_one({columns[id_index]: unique_id})
 
             if not first_document and isinstance(unique_id, str):
@@ -5173,6 +5213,8 @@ class SalesSystemApp:
             lower_columns = [col.lower() for col in columns]
             if current_collection.name in ["Customer_Payments","Supplier_Payments","Sales", "Purchases"]:
                 id_index = 0
+            elif current_collection.name in ["Production", "Employee_Salary", "Employee_withdrawls"]:
+                id_index = columns.index("timestamp")
             elif "id" in lower_columns:
                 id_index = columns.index("Id")  # Dynamically get the index of "Id" #TODO need something different to loop on
             elif any('code' in col for col in lower_columns):
@@ -5184,13 +5226,23 @@ class SalesSystemApp:
             messagebox.showerror(self.t("Error"), self.t("'Id' field not found in table columns"))
             return
 
-        record_id = selected_data[id_index]
-        existing_record = current_collection.find_one({columns[id_index]: record_id})
+        field_name = columns[id_index]
+        if field_name == "timestamp":
+            #change to datetime obj
+            raw_unique_id = tree.item(selected_item)["values"][id_index]
+            unique_id = datetime.strptime(raw_unique_id, "%Y-%m-%d %H:%M:%S.%f")
+        elif field_name == "duration":
+            unique_id = float(tree.item(selected_item)["values"][id_index])
+        else:
+            unique_id = tree.item(selected_item)["values"][id_index]
+
+
+        existing_record = current_collection.find_one({columns[id_index]: unique_id})
 
         if not existing_record:
             try:
-                record_id = str(record_id)
-                existing_record = current_collection.find_one({columns[id_index]: record_id})
+                unique_id = str(unique_id)
+                existing_record = current_collection.find_one({columns[id_index]: unique_id})
                 existing_record.pop("_id", None)
             except ValueError:
                 pass
@@ -5380,7 +5432,7 @@ class SalesSystemApp:
             self.revert_locked_fields(existing_record, updated_entry)
 
             identifier_field = columns[id_index]
-            result = current_collection.update_one({identifier_field: record_id}, {"$set": updated_entry})
+            result = current_collection.update_one({identifier_field: unique_id}, {"$set": updated_entry})
             
             if result.modified_count > 0:
                 config.report_log(self.logs_collection, self.user_name, current_collection, "Updated a record in" ,existing_record)
