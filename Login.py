@@ -5,15 +5,42 @@
 import tkinter as tk
 import io
 import re
-import os
 import config
+import os
 from annotated_types import doc
 import pytz
 import threading  # To play sound without freezing the GUI
 import sys
-from PIL import Image, ImageTk, ImageDraw # Import Pillow classes
+import cloudinary
+import cloudinary.uploader
+import urllib.request
+import matplotlib
+import matplotlib.pyplot as plt
+import random
+import arabic_reshaper
+import openpyxl
 
-
+from tkinter import filedialog, ttk, messagebox
+from PIL import Image, ImageTk, ImageDraw  # Import Pillow classes
+from datetime import datetime,time , time, timedelta, date
+from tkcalendar import DateEntry  # Import DateEntry
+from playsound import playsound
+from pymongo import MongoClient
+from urllib.parse import quote_plus
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from pymongo import MongoClient
+from pymongo.errors import PyMongoError
+from collections import defaultdict
+from bidi.algorithm import get_display
+from matplotlib.figure import Figure    
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter,A7,A6,A5,A4,A3,A2,A1
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.lib.units import inch
 matplotlib.use('TkAgg')  # Set the backend before importing pyplot
 
 
