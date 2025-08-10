@@ -891,11 +891,17 @@ class PurchaseInvoice:
             padx=15,
             pady=5
         ).pack(side=tk.LEFT, padx=10)
-        
+        # Create a variable to hold the selected page size
+        self.page_size_var = tk.StringVar(value="A5")  # Default value
+
+        # Create the OptionMenu (drop-down list)
+        page_sizes = ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]
+        page_size_menu = tk.OptionMenu(btn_frame, self.page_size_var, *page_sizes)
+        page_size_menu.pack(side=tk.RIGHT, padx=10)       
         tk.Button(
             btn_frame, 
-            text="حفظ الفاتورة", 
-            command=lambda: self.finalize_purchase_invoice(preview_win),
+            text="حفظ و طباعة الفاتورة", 
+            command=lambda: self.finalize_purchase_invoice(preview_win,page_size=config.PAGE_SIZES[self.page_size_var.get()]),
             bg="#27ae60",
             fg="white",
             font=("Arial", 12, "bold"),
@@ -917,7 +923,7 @@ class PurchaseInvoice:
         
         canvas.bind_all("<MouseWheel>", _on_mousewheel)
 
-    def finalize_purchase_invoice(self, preview_window):
+    def finalize_purchase_invoice(self, preview_window,page_size):
         """Finalize purchase invoice saving process and generate PDF"""
         flag = 0
 
@@ -1001,7 +1007,7 @@ class PurchaseInvoice:
             )
             
             # 3. Generate PDF
-            pdf_path = self.generate_pdf_purchase(invoice_data)
+            pdf_path = self.generate_pdf_purchase(invoice_data,page_size=page_size)
             if not pdf_path:
                 preview_window.destroy()
                 return
@@ -1009,7 +1015,7 @@ class PurchaseInvoice:
             # 4. Save invoice with PDF path
             if self.app.update_purchase:
                 purchase_col.delete_one({"Receipt_Number":self.app.invoice_var.get()})
-                config.report_log(self.app.logs_collection, self.app.user_name, purchase_col, "Updated new invoice to", invoice_data)
+                config.report_log(self.app.logs_collection, self.app.user_name, purchase_col, self.app.t("Updated new invoice to"), invoice_data)
                 flag=1
             invoice_data["PDF_Path"] = pdf_path
             purchase_col.insert_one(invoice_data)
@@ -1019,7 +1025,7 @@ class PurchaseInvoice:
             self.clear_invoice_form_purchase()
             
             if not flag:
-                config.report_log(self.app.logs_collection, self.app.user_name, purchase_col, "Added invoice to", invoice_data)
+                config.report_log(self.app.logs_collection, self.app.user_name, purchase_col, self.app.t("Added invoice to"), invoice_data)
             
             # 6. Clear pending data
             del self.app.pending_invoice_data
@@ -1061,7 +1067,7 @@ class PurchaseInvoice:
             messagebox.showerror("خطأ", f"فشل في تنظيف الحقول: {str(e)}")
 
 
-    def generate_pdf_purchase(self, invoice_data):
+    def generate_pdf_purchase(self, invoice_data,page_size):
         """توليد ملف PDF بحجم A5 بتنسيق عربي مطابق للنموذج"""
         try:
             from reportlab.lib.pagesizes import A5
@@ -1109,7 +1115,7 @@ class PurchaseInvoice:
             pdf_path = os.path.join(invoice_folder, file_name)
 
             # إعداد مستند PDF
-            c = canvas.Canvas(pdf_path, pagesize=A5)
+            c = canvas.Canvas(pdf_path, pagesize=page_size)
             width, height = A5
             c.setFont("Arabic", 12)
 
@@ -1288,7 +1294,7 @@ class PurchaseInvoice:
             
             c.save()
 
-            config.report_log(self.app.logs_collection, self.app.user_name, None, f"Generated Pdf Purchase Invoice with Id {invoice_data['Receipt_Number']} for supplier {invoice_data['supplier_info']['code']}", None)
+            config.report_log(self.app.logs_collection, self.app.user_name, None, f"{self.app.t("Generated Pdf Purchase Invoice with Id")} {invoice_data['Receipt_Number']} {self.app.t("for supplier")} {invoice_data['supplier_info']['code']}", None)
 
             try:
                 os.startfile(pdf_path, "print")

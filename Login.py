@@ -6,6 +6,7 @@ import tkinter as tk
 import io
 import re
 import os
+import config
 from annotated_types import doc
 import pytz
 import threading  # To play sound without freezing the GUI
@@ -117,6 +118,7 @@ class LoginWindow:
                     self.app.employees_collection.update_one({"_id": self.app.user_id}, {"$set": {"logged_in": True}})
 
                     self.app.last_number_of_msgs = user.get("last_number_of_msgs", 0)
+                    config.report_log(self.app.logs_collection, self.app.user_name, None, f"{self.app.user_name} {self.app.t("login to the application")}", None)
                     # messagebox.showinfo("Success", f"Login successful! Role: {self.user_role}")
                     self.app.silent_popup(self.app.t("Success"), f"{self.app.t("Login successful! Role:")} {self.app.user_role}",self.app.play_success)
                     # open_main_menu(self.app.user_role)

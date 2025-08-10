@@ -6,6 +6,7 @@ import tkinter as tk
 import io
 import re
 import os
+import config
 from annotated_types import doc
 import pytz
 import threading  # To play sound without freezing the GUI
@@ -161,8 +162,15 @@ class TreasuryWindow:
                                                                     f"{self.app.t("Balance:")} {str(self.app.balance_var.get())}"
                                                                 ], source= "Treasury"
                                                                  ),bg="#21F35D", fg='white')
+        # Create a variable to hold the selected page size
+        self.page_size_var = tk.StringVar(value="A4")  # Default value
+
+        # Create the OptionMenu (drop-down list)
+        page_sizes = ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]
+        page_size_menu = tk.OptionMenu(totals_frame, self.page_size_var, *page_sizes)
+        
         pdf_btn   = tk.Button(totals_frame, 
-                            text=self.app.t("Export to PDF"),
+                            text=self.app.t("Export to PDF and Print"),
                             command=lambda: self.app.export_to_pdf(self.app.filtered_transactions_table,headers=headers,filename=filename_pdf,
                                                                 report_folder=report_folder,title=report_folder,
                                                                 startdate=self.app.from_date.get() if hasattr(self.app.from_date, 'get') else str(self.app.from_date),
@@ -171,10 +179,12 @@ class TreasuryWindow:
                                                                     f"إجمالي دائن: {str(self.app.total_credit_var.get())}",
                                                                     f"إجمالي مدين: {str(self.app.total_debit_var.get())}",
                                                                     f"الرصيد: {str(self.app.balance_var.get())}"
-                                                                ], source= "Treasury"
+                                                                ], source= "Treasury",page_size=config.PAGE_SIZES[self.page_size_var.get()]
                                                                 ),bg="#2144F3", fg='white')
         excel_btn.pack(side=tk.LEFT, padx=10, pady=5)
         pdf_btn.pack(side=tk.LEFT, padx=10, pady=5)
+        page_size_menu.pack(side=tk.LEFT, padx=10, pady=5)
+
     def parse_date(self, date_str):
         # print(date_str)
         if not date_str:

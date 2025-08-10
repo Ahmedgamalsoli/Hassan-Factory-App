@@ -33,7 +33,7 @@ from collections import defaultdict
 from bidi.algorithm import get_display
 from matplotlib.figure import Figure    
 from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter,A5
+from reportlab.lib.pagesizes import letter,A7,A6,A5,A4,A3,A2,A1
 from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
@@ -86,7 +86,15 @@ dialog_height = 150 # Same height as AlwaysOnTopInputDialog
 
 ARRAY_FIELDS = ['Units', 'Items'] #Must be lower case
 
-
+# PAGE_SIZES = {
+#     "A1": A1,
+#     "A2": A2,
+#     "A3": A3,
+#     "A4": A4,
+#     "A5": A5,
+#     "A6": A6,
+#     "A7": A7,
+# }
 
 # Determine the base directory
 if getattr(sys, "frozen", False):
@@ -585,7 +593,7 @@ class SalesSystemApp:
             "General Expenses Report":{"Arabic":"تقرير المصروفات العامة","English":"General Expenses Report"},
             "Employee Performance Report":{"Arabic":"تقرير أداء الموظفين","English":"Employee Performance Report"},
             "Export to Excel":{"Arabic":"تحويل الي اكسل","English":"Export to Excel"},
-            "Export to PDF":{"Arabic":"حفظ الملف","English":"Save as PDF"},
+            "Export to PDF and Print":{"Arabic":"حفظ الملف وطباعته","English":"Export to PDF and Print"},
             "Daily treasury report":{"Arabic":"تقرير الخزنة اليومية","English":"Daily treasury report"},
             "Please select month and year":{"Arabic":"الرجاء تحديد الشهر والسنة","English":"Please select month and year"},
             "Logs":{"Arabic":"سجلات","English":"Logs"},
@@ -725,7 +733,27 @@ class SalesSystemApp:
             "Paid salary for":{"Arabic": "تم دفع المرتب إلى", "English": "Paid salary for"},
             "with code":{"Arabic": "ب كود", "English": "with code"},
             "Completed withdrawal in Employee_withdrawls Database for":{"Arabic": "تم إتمام عملية السحب في قاعدة بيانات المسحوبات إلى", "English": "Completed withdrawal in Employee_withdrawls Database for"},
-            "with Id":{"Arabic": "ب كود", "English": "with Id"}
+            "with Id":{"Arabic": "ب كود", "English": "with Id"},
+
+            "Exit the application":{"Arabic": "قفل التطبيق", "English": "Exit the application"},
+            "logout from the application":{"Arabic": "سجل خروج من التطبيق", "English": "logout from the application"},
+            "login to the application":{"Arabic": "سجل دخول الي التطبيق", "English": "login to the application"},
+
+
+
+            "Updated new invoice to":{"Arabic": "تم تحديث الفاتورة الجديدة إلى", "English": "Updated new invoice to"},
+            "Added invoice to":{"Arabic": "تمت إضافة الفاتورة إلى", "English": "Added invoice to"},
+            "Generated Pdf Purchase Invoice with Id":{"Arabic": "فاتورة شراء تم إنشاؤها بصيغة PDF مع معرف", "English": "Generated Pdf Purchase Invoice with Id"},
+            "for supplier":{"Arabic": "للمورد", "English": "for supplier"},
+            "Deleted":{"Arabic": "تم الحذف", "English": "Deleted"},
+
+
+            "Updated invoice to":{"Arabic": "تم تحديث الفاتورة إلى", "English": "Updated invoice to"},
+            "Added new invoice to":{"Arabic": "تمت إضافة فاتورة جديدة إلى", "English": "Added new invoice to"},
+            "Generated Pdf Sales Invoice with Id":{"Arabic": "فاتورة مبيعات مُنشأة بصيغة PDF مع رقم تعريفي", "English": "Generated Pdf Sales Invoice with Id"},
+            "for Customer":{"Arabic": "للعميل", "English": "for Customer"}
+
+
         }        
         
         self.keys = [
@@ -1638,8 +1666,16 @@ class SalesSystemApp:
                                                                     f"الرصيد: {str(self.balance_entry.get())}"
                                                                 ], source="Supplier Interaction"
                                                                  ),bg="#21F35D", fg='white').grid(row=13, column=9, sticky="w")
+
+        # Create a variable to hold the selected page size
+        self.page_size_var = tk.StringVar(value="A4")  # Default value
+
+        # Create the OptionMenu (drop-down list)
+        page_sizes = ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]
+        page_size_menu = tk.OptionMenu(right_frame, self.page_size_var, *page_sizes)
+        page_size_menu.grid(row=13, column=11, sticky="w", padx=5)  # Placed before the button
         tk.Button(right_frame, 
-                            text=self.t("Export to PDF"),
+                            text=self.t("Export to PDF and Print"),
                             command=lambda: self.export_to_pdf(self.raw_tree_data,headers=headers,filename= f"كشف_حساب_للعميل_{clean_filename(self.report_customer_name)}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
                                                                 report_folder=report_folder,title=report_folder,
                                                                 startdate=self.start_date_entry.get() if hasattr(self.start_date_entry, 'get') else str(self.start_date_entry),
@@ -1648,7 +1684,7 @@ class SalesSystemApp:
                                                                     f"إجمالي دائن: {str(self.total_credit_entry.get())}",
                                                                     f"إجمالي مدين: {str(self.total_debit_entry.get())}",
                                                                     f"الرصيد: {str(self.balance_entry.get())}"
-                                                                ], source="Supplier Interaction"
+                                                                ], source="Supplier Interaction",page_size=config.PAGE_SIZES[self.page_size_var.get()]
                                                                 ),bg="#2144F3", fg='white').grid(row=13, column=10, sticky="w", padx=10)
     def add_supplier_payment(self, tree):
         debit = self.cash_entry.get().strip()
@@ -2187,8 +2223,15 @@ class SalesSystemApp:
                                                                     f"الرصيد: {str(self.balance_entry.get())}"
                                                                 ], source="Customer Interaction"
                                                                  ),bg="#21F35D", fg='white').grid(row=13, column=9, sticky="w")
+        # Create a variable to hold the selected page size
+        self.page_size_var = tk.StringVar(value="A4")  # Default value
+
+        # Create the OptionMenu (drop-down list)
+        page_sizes = ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]
+        page_size_menu = tk.OptionMenu(right_frame, self.page_size_var, *page_sizes)
+        page_size_menu.grid(row=13, column=11, sticky="w", padx=5)  # Placed before the button
         tk.Button(right_frame, 
-                            text=self.t("Export to PDF"),
+                            text=self.t("Export to PDF and Print"),
                             command=lambda: self.export_to_pdf(self.raw_tree_data,headers=headers,filename= f"كشف_حساب_للعميل_{clean_filename(self.report_customer_name)}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
                                                                 report_folder=report_folder,title=report_folder,
                                                                 startdate=self.start_date_entry.get() if hasattr(self.start_date_entry, 'get') else str(self.start_date_entry),
@@ -2197,7 +2240,7 @@ class SalesSystemApp:
                                                                     f"إجمالي دائن: {str(self.total_credit_entry.get())}",
                                                                     f"إجمالي مدين: {str(self.total_debit_entry.get())}",
                                                                     f"الرصيد: {str(self.balance_entry.get())}"
-                                                                ], source="Customer Interaction"
+                                                                ], source="Customer Interaction",page_size=config.PAGE_SIZES[self.page_size_var.get()]
                                                                 ),bg="#2144F3", fg='white').grid(row=13, column=10, sticky="w", padx=10)
 
 
@@ -4040,6 +4083,7 @@ class SalesSystemApp:
                     "logged_in": False,
                     "last_number_of_msgs": self.last_number_of_msgs
                 }})
+        config.report_log(self.logs_collection, self.user_name, None, f"{self.user_name} {self.t("logout from the application")}", None)
         self.login_window.open_login_window()
 
     def on_app_exit(self):
@@ -4050,6 +4094,7 @@ class SalesSystemApp:
                     "logged_in": False,
                     "last_number_of_msgs": self.last_number_of_msgs
                 }})
+        config.report_log(self.logs_collection, self.user_name, None, f"{self.user_name} {self.t("Exit the application")}", None)
         self.root.quit()
 
         
@@ -4242,7 +4287,7 @@ class SalesSystemApp:
             pdf_path = os.path.join(report_path, filename)
 
             # Prepare PDF document
-            doc = SimpleDocTemplate(pdf_path, pagesize=A5)
+            doc = SimpleDocTemplate(pdf_path, pagesize=page_size)
             elements = []
             styles = getSampleStyleSheet()
 
@@ -4528,8 +4573,9 @@ if __name__ == "__main__":
     app = SalesSystemApp(root)       # Create main app first
     app.start_without_login()
     app.start_with_login()     # Then launch the login screen through app
-
+    
     try:
         root.mainloop()
+    
     except Exception as e:
         print("Error during mainloop:", e)

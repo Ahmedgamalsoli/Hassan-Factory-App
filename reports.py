@@ -253,8 +253,14 @@ class reports:
                                                                     f"{self.app.t("Balance:")} {str(self.balance_var.get())}"
                                                                 ], source="Treasury"
                                                                  ),bg="#21F35D", fg='white')
+        # Create a variable to hold the selected page size
+        self.page_size_var = tk.StringVar(value="A4")  # Default value
+
+        # Create the OptionMenu (drop-down list)
+        page_sizes = ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]
+        page_size_menu = tk.OptionMenu(totals_frame, self.page_size_var, *page_sizes)
         pdf_btn   = tk.Button(totals_frame, 
-                            text=self.app.t("Export to PDF"),
+                            text=self.app.t("Export to PDF and Print"),
                             command=lambda: self.app.export_to_pdf(self.filtered_transactions_table,headers=headers,filename=filename_pdf,
                                                                 report_folder=report_folder,title=report_folder,
                                                                 startdate =date,
@@ -263,10 +269,12 @@ class reports:
                                                                     f"إجمالي دائن: {str(self.total_credit_var.get())}",
                                                                     f"إجمالي مدين: {str(self.total_debit_var.get())}",
                                                                     f"الرصيد: {str(self.balance_var.get())}"
-                                                                ], source="Treasury"
+                                                                ], source="Treasury",page_size=config.PAGE_SIZES[self.page_size_var.get()]
                                                                 ),bg="#2144F3", fg='white')
         excel_btn.pack(side=tk.LEFT, padx=10, pady=5)
         pdf_btn.pack(side=tk.LEFT, padx=10, pady=5)
+        page_size_menu.pack(side=tk.LEFT, padx=10, pady=5)
+
     def parse_date(self, date_str):
         # print(date_str)
         if not date_str:
@@ -578,7 +586,7 @@ class reports:
         # headers = ["Metric", "Value", "Details", "Date"]
         
         ttk.Button(button_frame, text="Export to Excel", command=lambda: self.app.export_to_excel(data)).grid(row=0, column=0, padx=10)
-        ttk.Button(button_frame, text="Export to PDF", command=lambda: self.app.export_to_pdf(data)).grid(row=0, column=1, padx=10)
+        ttk.Button(button_frame, text="Export to PDF and Print", command=lambda: self.app.export_to_pdf(data)).grid(row=0, column=1, padx=10)
 
     def generate_report_data(self):
         return [
