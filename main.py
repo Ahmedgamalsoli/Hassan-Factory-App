@@ -598,7 +598,7 @@ class SalesSystemApp:
             "Please select month and year":{"Arabic":"الرجاء تحديد الشهر والسنة","English":"Please select month and year"},
             "Logs":{"Arabic":"سجلات","English":"Logs"},
             "action":{"Arabic":"العملية","English":"Action"},
-            # "":{"Arabic":"","English":""},
+            "Action":{"Arabic":"العملية","English":"Action"},
             # "":{"Arabic":"","English":""},
             # "":{"Arabic":"","English":""},
             # "":{"Arabic":"","English":""},
@@ -751,7 +751,14 @@ class SalesSystemApp:
             "Updated invoice to":{"Arabic": "تم تحديث الفاتورة إلى", "English": "Updated invoice to"},
             "Added new invoice to":{"Arabic": "تمت إضافة فاتورة جديدة إلى", "English": "Added new invoice to"},
             "Generated Pdf Sales Invoice with Id":{"Arabic": "فاتورة مبيعات مُنشأة بصيغة PDF مع رقم تعريفي", "English": "Generated Pdf Sales Invoice with Id"},
-            "for Customer":{"Arabic": "للعميل", "English": "for Customer"}
+            "for Customer":{"Arabic": "للعميل", "English": "for Customer"},
+
+            "Employee:":{"Arabic": "الموظف:", "English": "Employee:"},
+            # "":{"Arabic": "", "English": ""},
+            # "":{"Arabic": "", "English": ""},
+            # "":{"Arabic": "", "English": ""},
+
+
 
 
         }        
