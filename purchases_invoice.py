@@ -1302,7 +1302,7 @@ class PurchaseInvoice:
             except OSError as e:
                 messagebox.showerror(self.app.t("Print Error"), f"{self.app.t("Failed to print PDF:")}\n{e}")
 
-            pdf_path = self.app.upload_pdf_to_cloudinary(pdf_path)
+            pdf_path = config.upload_pdf_to_cloudinary(pdf_path)
             return pdf_path
 
         except Exception as e:

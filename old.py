@@ -257,3 +257,47 @@
     #                 messagebox.showinfo(self.t("Success"), self.t("Record deleted successfully"))
     #         except Exception as e:
     #             messagebox.showerror(self.t("Error"), f"{self.t("Error deleting record:")} {e}")
+
+
+
+    # def manage_old_database_window(self, db_name=None, table_name=None):
+    #     # self.db_name.set(db_name if db_name else "")
+    #     self.table_name.set(table_name if table_name else "")
+
+    #     for widget in self.root.winfo_children():
+    #         widget.destroy()
+
+    #     # تحميل صورة الخلفية
+    #     self.topbar.topbar(show_back_button=True)
+
+    #     tk.Label(self.root, text="Select Table:", bg="#4a90e2", fg="white", font=("Arial", 12)).place(x=130, y=110)
+    #     table_dropdown = ttk.Combobox(self.root, textvariable=self.table_name, values=["Employees", "Products", "Sales", "Customers","Suppliers","Shipping","Orders","Expenses","Employee_appointments","Daily_shifts","Accounts","Transactions","Big_deals","TEX_Calculations"])
+    #     table_dropdown.place(x=250, y=110)
+    #     table_dropdown.bind("<<ComboboxSelected>>", lambda e: self.display_table())
+
+    #     tk.Label(self.root, text="Search:", bg="#4a90e2", fg="white", font=("Arial", 12)).place(x=140, y=150)
+    #     search_entry = tk.Entry(self.root, textvariable=self.search_query)
+    #     search_entry.place(x=250, y=150)
+    #     tk.Button(self.root, text="Search", command=self.display_table).place(x=410, y=145)
+
+    #     self.tree = ttk.Treeview(self.root, show="headings")
+    #     self.tree.place(x=50, y=190)
+
+    #     # # Create scrollbars inside frame
+    #     # self.tree_xscroll = ttk.Scrollbar(self.tree_frame, orient="horizontal", command=self.tree.xview)
+    #     # self.tree_yscroll = ttk.Scrollbar(self.tree_frame, orient="vertical", command=self.tree.yview)
+
+    #     # # Attach scrollbars to tree
+    #     # self.tree.configure(xscrollcommand=self.tree_xscroll.set, yscrollcommand=self.tree_yscroll.set)
+
+    #     # # Place them manually
+    #     # self.tree.place(x=0, y=0, width=780, height=230)  # little smaller so scrollbars fit
+    #     # self.tree_xscroll.place(x=0, y=230, width=780, height=20)
+    #     # self.tree_yscroll.place(x=780, y=0, width=20, height=230)
+
+
+    #     tk.Button(self.root, text="Add Record", command=self.add_entry).place(width=120, height=40, x=100, y=550)
+    #     tk.Button(self.root, text="Edit Record", command=self.edit_entry).place(width=120, height=40, x=250, y=550)
+    #     tk.Button(self.root, text="Delete Record", command=self.delete_entry).place(width=120, height=40, x=400, y=550)
+
+    #     self.display_table()
