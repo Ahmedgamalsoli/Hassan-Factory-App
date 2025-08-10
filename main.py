@@ -3015,8 +3015,8 @@ class SalesSystemApp:
             return None
 
     def get_mongo_field_path(self, key):
-        if key in search_field_mapping:
-            parts = search_field_mapping[key]
+        if key in config.search_field_mapping:
+            parts = config.search_field_mapping[key]
             return ".".join(parts)
         return key  # fallback: return as-is if not nested
 

@@ -146,9 +146,9 @@ class EmployeeWindow:
         self.app.topbar.topbar(show_back_button=True, Back_to_Employee_Window=True)
         
         # Database collections
-        employees_col = self.app.get_collection_by_name("Employees")
-        appointments_col = self.app.get_collection_by_name("Employee_appointimets")
-        
+        employees_col = config.get_collection_by_name("Employees")
+        appointments_col = config.get_collection_by_name("Employee_appointments")
+
         # Create mappings
         self.app.employee_code_name = {}
         self.app.employee_name_code = {}
@@ -314,8 +314,8 @@ class EmployeeWindow:
         self.app.topbar.topbar(show_back_button=True, Back_to_Employee_Window=True)
 
         # Database collections
-        employees_col = self.app.get_collection_by_name("Employees")
-        withdrawals_col = self.app.get_collection_by_name("Employee_withdrawls")
+        employees_col = config.get_collection_by_name("Employees")
+        withdrawals_col = config.get_collection_by_name("Employee_withdrawls")
         # Create mappings
         self.app.employee_code_map = {}
         self.app.employee_name_map = {}
@@ -436,7 +436,7 @@ class EmployeeWindow:
             self.app.prev_withdrawals.config(state='readonly')
             
             # Update salary display
-            employees_col = self.app.get_collection_by_name("Employees")
+            employees_col = config.get_collection_by_name("Employees")
             code = int(code)
             emp = employees_col.find_one({'Id': code})
             if emp:
@@ -447,7 +447,7 @@ class EmployeeWindow:
                 self.app.salary_var.set("0.00")
 
     def calculate_previous_withdrawals(self, employee_code):
-        withdrawals_col = self.app.get_collection_by_name("Employee_withdrawls")
+        withdrawals_col = config.get_collection_by_name("Employee_withdrawls")
         total = 0
         for withdrawal in withdrawals_col.find({'employee_code': employee_code}):
             total += withdrawal.get('amount_withdrawls', 0)
@@ -516,7 +516,7 @@ class EmployeeWindow:
         self.app.topbar.topbar(show_back_button=True, Back_to_Employee_Window=True)
         
         # Database connections
-        employees_col = self.app.get_collection_by_name("Employees")
+        employees_col = config.get_collection_by_name("Employees")
         
         # Employee mappings
         self.app.employee_code_map = {}
@@ -731,8 +731,8 @@ class EmployeeWindow:
             return
         
         # Get collections
-        withdrawals_col = self.app.get_collection_by_name("Employee_withdrawls")
-        hours_col = self.app.get_collection_by_name("Employee_appointimets")
+        withdrawals_col = config.get_collection_by_name("Employee_withdrawls")
+        hours_col = config.get_collection_by_name("Employee_appointimets")
         
         # Get data - include end date by adding 1 day to to_date
         withdrawals = list(withdrawals_col.find({
@@ -896,9 +896,9 @@ class EmployeeWindow:
             if not all([salary_data['employee_code'], salary_data['month_year']]):
                 raise ValueError("Missing required fields")
             
-            salary_col = self.app.get_collection_by_name("Employee_Salary")
+            salary_col = config.get_collection_by_name("Employee_Salary")
             # Database collections
-            withdrawals_col = self.app.get_collection_by_name("Employee_withdrawls")
+            withdrawals_col = config.get_collection_by_name("Employee_withdrawls")
             
             # Check for existing salary record
             existing = salary_col.find_one({
