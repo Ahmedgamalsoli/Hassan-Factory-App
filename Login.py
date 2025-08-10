@@ -5,8 +5,7 @@ import tkinter as tk
 import matplotlib
 import os
 import sys
-
-from PIL import Image, ImageTk # Import Pillow classes
+from PIL import Image, ImageTk, ImageDraw # Import Pillow classes
 
 
 matplotlib.use('TkAgg')  # Set the backend before importing pyplot
@@ -46,7 +45,7 @@ class LoginWindow:
 
         # Load Circular Logo
         logo_path = os.path.join(BASE_DIR, "Static", "images", "Logo.jpg")  # Change this to your logo path
-        self.app.logo_image = self.app.create_circular_image(logo_path)
+        self.app.logo_image = self.create_circular_image(logo_path)
         if self.app.logo_image:
             self.logo_label = tk.Label(login_frame, image=self.app.logo_image, bg="white")
             self.logo_label.place(x=150, y=10)
@@ -119,6 +118,21 @@ class LoginWindow:
             self.root.after(10, lambda: self.animate_image_slide_in(x + 15))
         else:
             self.logo_label.place(x=100)
+
+        # Function to Create Circular Image
+    def create_circular_image(self, image_path, size=(100, 100)):  
+        """Creates a circular version of an image"""
+        if not os.path.exists(image_path):
+            return None  # Return None if the image doesn't exist
+
+        img = Image.open(image_path).resize(size, Image.LANCZOS)  
+        mask = Image.new("L", size, 0)
+        draw = ImageDraw.Draw(mask)
+        draw.ellipse((0, 0, size[0], size[1]), fill=255)
+        
+        circular_img = Image.new("RGBA", size)
+        circular_img.paste(img, (0, 0), mask)
+        return ImageTk.PhotoImage(circular_img)
 
     def show_logo_transition(self, role):
         for widget in self.app.root.winfo_children():

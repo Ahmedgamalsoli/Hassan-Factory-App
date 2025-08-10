@@ -45,6 +45,7 @@ class SalesInvoice:
     def __init__(self, root, app):
         self.root = root
         self.app = app  # save reference to SalesSystemApp
+        self.t = self.app.t
 
     def manage_sales_invoices_window(self):
                 # Clear current window
@@ -136,9 +137,9 @@ class SalesInvoice:
         self.app.topbar.topbar(show_back_button=True, Back_to_Sales_Window=True)
 
         # MongoDB collections
-        customers_col = self.app.get_collection_by_name("Customers")
-        sales_col = self.app.get_collection_by_name("Sales")
-        products_col = self.app.get_collection_by_name("Products")
+        customers_col = config.get_collection_by_name("Customers")
+        sales_col = config.get_collection_by_name("Sales")
+        products_col = config.get_collection_by_name("Products")
 
         # Main form frame with responsive sizing
         form_frame = tk.Frame(self.root, padx=20, pady=20)
@@ -355,7 +356,7 @@ class SalesInvoice:
         form_frame.grid_rowconfigure(current_row + 1, weight=1)
         
         # Invoice Items Grid
-        columns = self.app.get_fields_by_name("Sales_Header")
+        columns = config.get_fields_by_name("Sales_Header")
         num_columns = len(columns)
         
         # Create header frame
@@ -561,7 +562,7 @@ class SalesInvoice:
         sales_col.delete_one({"Receipt_Number": invoice_number})
         
         messagebox.showinfo(self.app.t("Success"), self.app.t("Invoice deleted successfully"))
-        config.report_log(self.app.logs_collection, self.app.user_name, sales_col, f"Deleted {capitalize_first_letter(source)} Invoice in", invoice_data)
+        config.report_log(self.app.logs_collection, self.app.user_name, sales_col, f"Deleted {capitalize_first_letter(source)} Invoice in", invoice_data, self.t)
         # Clear the form or reset UI as needed
         self.app.invoice_var.set("")
         self.app.selected_invoice_id = None
@@ -1015,7 +1016,7 @@ class SalesInvoice:
             invoice_data["PDF_Path"] = pdf_path
             if self.app.update:
                 sales_col.delete_one({"Receipt_Number":self.app.invoice_var.get()})
-                config.report_log(self.app.logs_collection, self.app.user_name, sales_col, "Updated invoice to", invoice_data)
+                config.report_log(self.app.logs_collection, self.app.user_name, sales_col, "Updated invoice to", invoice_data, self.t)
                 flag=1
             sales_col.insert_one(invoice_data)
             
@@ -1025,7 +1026,7 @@ class SalesInvoice:
             self.clear_invoice_form()
             
             if not flag:
-                config.report_log(self.app.logs_collection, self.app.user_name, sales_col, "Added new invoice to", invoice_data)
+                config.report_log(self.app.logs_collection, self.app.user_name, sales_col, "Added new invoice to", invoice_data, self.t)
             
 
             # 6. Clear pending data
@@ -1041,7 +1042,7 @@ class SalesInvoice:
             preview_window.destroy()
 
     def create_row(self, parent, row_number, bg_color, initial_values=None):
-        columns = self.app.get_fields_by_name("Sales_Header")
+        columns = config.get_fields_by_name("Sales_Header")
         num_columns = len(columns)
         row_frame = tk.Frame(parent, bg=bg_color)
         row_frame.pack(fill=tk.X)
@@ -1152,7 +1153,7 @@ class SalesInvoice:
         """توليد رقم فاتورة تسلسلي"""
         try:
             print(0)
-            sales_col = self.app.get_collection_by_name('Sales')
+            sales_col = config.get_collection_by_name('Sales')
             print(10)
             last_invoice = sales_col.find_one(sort=[("Receipt_Number", -1)])
             print(20)
@@ -1422,7 +1423,7 @@ class SalesInvoice:
             except OSError as e:
                 messagebox.showerror(self.app.t("Print Error"), f"{self.app.t("Failed to print PDF:")}\n{e}")
 
-            pdf_path = self.app.upload_pdf_to_cloudinary(pdf_path)
+            pdf_path = config.upload_pdf_to_cloudinary(pdf_path)
             return pdf_path
 
         except Exception as e:

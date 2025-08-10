@@ -45,6 +45,7 @@ class PurchaseInvoice:
     def __init__(self, root, app):
         self.root = root
         self.app = app  # save reference to SalesSystemApp
+        self.t = self.app.t
 
     def manage_purchases_invoices_window(self):
                 # Clear current window
@@ -1009,7 +1010,7 @@ class PurchaseInvoice:
             # 4. Save invoice with PDF path
             if self.app.update_purchase:
                 purchase_col.delete_one({"Receipt_Number":self.app.invoice_var.get()})
-                config.report_log(self.app.logs_collection, self.app.user_name, purchase_col, "Updated new invoice to", invoice_data)
+                config.report_log(self.app.logs_collection, self.app.user_name, purchase_col, "Updated new invoice to", invoice_data, self.t)
                 flag=1
             invoice_data["PDF_Path"] = pdf_path
             purchase_col.insert_one(invoice_data)
@@ -1019,7 +1020,7 @@ class PurchaseInvoice:
             self.clear_invoice_form_purchase()
             
             if not flag:
-                config.report_log(self.app.logs_collection, self.app.user_name, purchase_col, "Added invoice to", invoice_data)
+                config.report_log(self.app.logs_collection, self.app.user_name, purchase_col, "Added invoice to", invoice_data, self.t)
             
             # 6. Clear pending data
             del self.app.pending_invoice_data
@@ -1288,7 +1289,7 @@ class PurchaseInvoice:
             
             c.save()
 
-            config.report_log(self.app.logs_collection, self.app.user_name, None, f"Generated Pdf Purchase Invoice with Id {invoice_data['Receipt_Number']} for supplier {invoice_data['supplier_info']['code']}", None)
+            config.report_log(self.app.logs_collection, self.app.user_name, None, f"{self.app.t('Generated Pdf Purchase Invoice with Id')} {invoice_data['Receipt_Number']} {self.app.t('for supplier')} {invoice_data['supplier_info']['code']}", None)
 
             try:
                 os.startfile(pdf_path, "print")

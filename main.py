@@ -20,7 +20,7 @@ import arabic_reshaper
 import openpyxl
 
 from tkinter import filedialog, ttk, messagebox
-from PIL import Image, ImageTk, ImageDraw  # Import Pillow classes
+from PIL import Image, ImageTk  # Import Pillow classes
 from datetime import datetime,time , time, timedelta, date
 from tkcalendar import DateEntry  # Import DateEntry
 from playsound import playsound
@@ -53,6 +53,7 @@ from topbar import topbar
 from reports import reports
 from sales_invoice import SalesInvoice
 from purchases_invoice import PurchaseInvoice
+from DB_operations import DBOperations
 # ======================
 # Unused imports
 # ======================
@@ -82,7 +83,6 @@ dialog_height = 150 # Same height as AlwaysOnTopInputDialog
 ARRAY_FIELDS = ['Units', 'Items'] #Must be lower case
 
 
-
 # Determine the base directory
 if getattr(sys, "frozen", False):
     # Running as an executable
@@ -91,125 +91,6 @@ else:
     # Running as a script
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-field_mapping = {
-    # Customer_info
-    'customer_code': ('Customer_info', 'code'),
-    'customer_name': ('Customer_info', 'name'),
-    'customer_phone1': ('Customer_info', 'phone1'),
-    'customer_phone2': ('Customer_info', 'phone2'),
-    'customer_address': ('Customer_info', 'address'),
-    
-    # Financials
-    'Net_total': ('Financials', 'Net_total'),
-    'Previous_balance': ('Financials', 'Previous_balance'),
-    'Total_balance': ('Financials', 'Total_balance'),
-    'Payed_cash': ('Financials', 'Payed_cash'),
-    'Remaining_balance': ('Financials', 'Remaining_balance'),
-    'Payment_method': ('Financials', 'Payment_method'),
-    
-    # Supplier_info
-    'supplier_code': ('supplier_info', 'code'),
-    'supplier_name': ('supplier_info', 'name'),
-    'supplier_phone1': ('supplier_info', 'phone1'),
-    'supplier_phone2': ('supplier_info', 'phone2'),
-    'supplier_address': ('supplier_info', 'address'),
-}
-
-search_field_mapping = {
-    # Customer_info
-    'customer_code': ('Customer_info', 'code'),
-    'customer_name': ('Customer_info', 'name'),
-    'customer_phone1': ('Customer_info', 'phone1'),
-    'customer_phone2': ('Customer_info', 'phone2'),
-    'customer_address': ('Customer_info', 'address'),
-    
-    # Financials
-    'Net_total': ('Financials', 'Net_total'),
-    'Previous_balance': ('Financials', 'Previous_balance'),
-    'Total_balance': ('Financials', 'Total_balance'),
-    'Payed_cash': ('Financials', 'Payed_cash'),
-    'Remaining_balance': ('Financials', 'Remaining_balance'),
-    'Payment_method': ('Financials', 'Payment_method'),
-    'transport_fees' : ('Financials', 'transport_fees'),
-
-    # Supplier_info
-    'supplier_code': ('supplier_info', 'code'),
-    'supplier_name': ('supplier_info', 'name'),
-    'supplier_phone1': ('supplier_info', 'phone1'),
-    'supplier_phone2': ('supplier_info', 'phone2'),
-    'supplier_address': ('supplier_info', 'address'),
-    
-
-    #Items
-    'Product_code': ('Items', 'Product_code'),
-    'product_name': ('Items', 'product_name'),
-    'material_code': ('Items', 'material_code'),
-    'material_name': ('Items', 'material_name'),
-    'Unit': ('Items', 'Unit'),
-    'QTY': ('Items', 'QTY'),
-    'numbering': ('Items', 'numbering'),
-    'Total_QTY': ('Items', 'Total_QTY'),
-    'Unit_price': ('Items', 'Unit_price'),
-    'Discount_Type': ('Items', 'Discount_Type'),
-    'Discount_Value': ('Items', 'Discount_Value'),
-    'Final_Price': ('Items', 'Final_Price'),
-}
-
-
-LOCKED_FIELDS = {
-    "root": [ "Operation_Number","Code","employee_code", "material_code", "product_code", "Receipt_Number", "Operation_Number"],
-    "Customer_info": ["code"],
-    "supplier_info": ["code"],
-    "Items": ["material_code","product_code"]
-}
-
-
-MANDATORTY_FIELDS = { # list all mandatory fields (fields that can't be empty)
-    "Name", "Phone_number1", "Code", "Company_address", "Name", "Password", "Role", "Phone_number", "Address", "Salary",
-    "product_name","category","stock_quantity","Unit_Price","product_code","Units",
-    "material_name","material_code", "employee_code", "employee_name"
-}
-
-MANDATORY_DBS = {
-    "Customers", "Employees", "Materials", "Products", "Suppliers" 
-}
-
-ZEROED_FIELDS = {
-    "Sales_grade", "Growth_grade", "Frequency_grade", "Credit", "Debit", "Balance", "Sales"
-}
-
-PRIMARY_KEYS = {
-    "Employees": "Id",
-    "Products": "product_code",
-    "Materials": "material_code",
-    "Customers": "Code",
-    "Suppliers": "Code",
-    # "Employee_appointimets": "employee_code",
-    "Sales": "Receipt_Number",
-    "Purchases": "Receipt_Number",
-    "Customer_Payments": "Operation_Number",
-    "Supplier_Payments": "Operation_Number",
-    # "Production": "timestamp",
-    # "Employee_Salary": "timestamp",
-    # "Employee_withdrawls": "timestamp",
-    "general_exp_rev": "code",
-}
-
-PRIMARY_KEY_STARTERS = {
-    "Customers": "CU",
-    "Suppliers": "SU",
-    "Products": "PR",
-    "Employees": "EMP",
-    "Sales": "INV",
-    "Materials": "MAT",
-    "Purchases": "INV",
-    "Customer_Payments": "PM",
-    "Supplier_Payments": "PM",
-    # "Production": "PRD",
-    # "Employee_Salary": "SAL",
-    # "Employee_withdrawls": "WD",
-    "general_exp_rev": "GEN",
-}
 
 class SalesSystemApp:
     fields = {
@@ -302,7 +183,7 @@ class SalesSystemApp:
         self.filtered_transactions = []
         self.filtered_transactions_table = []
         self.production_entries = []
-        #         elif collection_name == "Sales_Header":
+        # elif collection_name == "Sales_Header":
         #     return [self.t("Product_code"), self.t("product_name"), self.t("unit"),self.t("numbering"),self.t("QTY"),self.t("Discount Type"),self.t("Discount Value"),self.t("Total_QTY"),self.t("Unit_Price"),self.t("Total_Price")]
        
         # elif collection_name == "Materials_Header":
@@ -704,6 +585,7 @@ class SalesSystemApp:
             "Checked out with Id":{"Arabic": "تسجيل انصراف ب كود ", "English": "Checked out with Id"},
             "Checked in with Id":{"Arabic": "تسجيل دخول ب كود ", "English": "Checked in with Id"},
             "Generated PDF":{"Arabic": "توليد PDF", "English": "Generated PDF"},
+            "Generated Pdf Purchase Invoice with Id":{"Arabic": "تم توليد فاتورة شراء PDF برقم", "English": "Generated Pdf Purchase Invoice with Id"},
             "Generated Excel":{"Arabic": "توليد Excel", "English": "Generated Excel"},
             "report":{"Arabic": "تقرير", "English": "report"},
             "Deleted a record from":{"Arabic": "حذف سجل من", "English": "Deleted a record from"},
@@ -718,7 +600,9 @@ class SalesSystemApp:
             "Paid salary for":{"Arabic": "تم دفع المرتب إلى", "English": "Paid salary for"},
             "with code":{"Arabic": "ب كود", "English": "with code"},
             "Completed withdrawal in Employee_withdrawls Database for":{"Arabic": "تم إتمام", "English": "Completed withdrawal in Employee_withdrawls Database for"},
-            "with Id":{"Arabic": "ب كود", "English": "with Id"}
+            "with Id":{"Arabic": "ب كود", "English": "with Id"},
+
+            "Database with Unique Id": {"Arabic": "قاعدة بيانات ذات معرف فريد", "English": "Database with Unique Id"},
         }        
         
         self.keys = [
@@ -785,6 +669,7 @@ class SalesSystemApp:
         self.light = True  # Default to light mode
         self.update_purchase =False
         self.groupchat = GroupChat(self.root, self)
+        self.db_operations = DBOperations(self.root, self)
         self.chatbot = chatbot(self.root, self)
         self.topbar = topbar(self.root, self)
         self.reports = reports(self.root, self)
@@ -1789,8 +1674,8 @@ class SalesSystemApp:
         self.topbar.topbar(show_back_button=True, Back_to_Employee_Window=True)
         
         # Database collections
-        employees_col = self.get_collection_by_name("Employees")
-        appointments_col = self.get_collection_by_name("Employee_appointimets")
+        employees_col = config.get_collection_by_name("Employees")
+        appointments_col = config.get_collection_by_name("Employee_appointimets")
         
         # Create mappings
         self.employee_code_name = {}
@@ -1957,8 +1842,8 @@ class SalesSystemApp:
         self.topbar.topbar(show_back_button=True, Back_to_Employee_Window=True)
 
         # Database collections
-        employees_col = self.get_collection_by_name("Employees")
-        withdrawals_col = self.get_collection_by_name("Employee_withdrawls")
+        employees_col = config.get_collection_by_name("Employees")
+        withdrawals_col = config.get_collection_by_name("Employee_withdrawls")
         # Create mappings
         self.employee_code_map = {}
         self.employee_name_map = {}
@@ -2079,7 +1964,7 @@ class SalesSystemApp:
             self.prev_withdrawals.config(state='readonly')
             
             # Update salary display
-            employees_col = self.get_collection_by_name("Employees")
+            employees_col = config.get_collection_by_name("Employees")
             code = int(code)
             emp = employees_col.find_one({'Id': code})
             if emp:
@@ -2090,7 +1975,7 @@ class SalesSystemApp:
                 self.salary_var.set("0.00")
 
     def calculate_previous_withdrawals(self, employee_code):
-        withdrawals_col = self.get_collection_by_name("Employee_withdrawls")
+        withdrawals_col = config.get_collection_by_name("Employee_withdrawls")
         total = 0
         for withdrawal in withdrawals_col.find({'employee_code': employee_code}):
             total += withdrawal.get('amount_withdrawls', 0)
@@ -2159,7 +2044,7 @@ class SalesSystemApp:
         self.topbar.topbar(show_back_button=True, Back_to_Employee_Window=True)
         
         # Database connections
-        employees_col = self.get_collection_by_name("Employees")
+        employees_col = config.get_collection_by_name("Employees")
         
         # Employee mappings
         self.employee_code_map = {}
@@ -2374,8 +2259,8 @@ class SalesSystemApp:
             return
         
         # Get collections
-        withdrawals_col = self.get_collection_by_name("Employee_withdrawls")
-        hours_col = self.get_collection_by_name("Employee_appointimets")
+        withdrawals_col = config.get_collection_by_name("Employee_withdrawls")
+        hours_col = config.get_collection_by_name("Employee_appointimets")
         
         # Get data - include end date by adding 1 day to to_date
         withdrawals = list(withdrawals_col.find({
@@ -2539,9 +2424,9 @@ class SalesSystemApp:
             if not all([salary_data['employee_code'], salary_data['month_year']]):
                 raise ValueError("Missing required fields")
             
-            salary_col = self.get_collection_by_name("Employee_Salary")
+            salary_col = config.get_collection_by_name("Employee_Salary")
             # Database collections
-            withdrawals_col = self.get_collection_by_name("Employee_withdrawls")
+            withdrawals_col = config.get_collection_by_name("Employee_withdrawls")
             
             # Check for existing salary record
             existing = salary_col.find_one({
@@ -2733,7 +2618,7 @@ class SalesSystemApp:
         if not payment:
             messagebox.showerror(self.t("Error"), self.t("Please select a payment method"))
             return
-        code = self.get_next_code(self.general_exp_rev_collection)    
+        code = config.get_next_code(self.general_exp_rev_collection)    
         # Create document for MongoDB
         transaction = {
             "type": transaction_type,
@@ -3208,9 +3093,9 @@ class SalesSystemApp:
         self.topbar.topbar(show_back_button=True)
 
         # Database collections
-        materials_col = self.get_collection_by_name("Materials")
-        products_col = self.get_collection_by_name("Products")
-        production_col = self.get_collection_by_name("Production")
+        materials_col = config.get_collection_by_name("Materials")
+        products_col = config.get_collection_by_name("Products")
+        production_col = config.get_collection_by_name("Production")
 
         # Load material data
         for mat in materials_col.find():
@@ -3413,9 +3298,9 @@ class SalesSystemApp:
             self.production_entries[row_idx][6].config(state='readonly')
 
     def save_production_order(self):
-        production_col = self.get_collection_by_name("Production")
-        materials_col = self.get_collection_by_name("Materials")
-        products_col = self.get_collection_by_name("Products")
+        production_col = config.get_collection_by_name("Production")
+        materials_col = config.get_collection_by_name("Materials")
+        products_col = config.get_collection_by_name("Products")
         
         try:
             orders = []
@@ -3457,7 +3342,7 @@ class SalesSystemApp:
             if orders:
                 production_col.insert_many(orders)
                 for order in orders:
-                    config.report_log(self.logs_collection, self.user_name, production_col, f"{self.t("Added new record in")}", order)
+                    config.report_log(self.logs_collection, self.user_name, production_col, f"{self.t("Added new record in")}", order, self.t)
 
             messagebox.showinfo(self.t("Success"), self.t("Production order saved successfully"))
             self.new_production_order(None)  # Refresh form
@@ -3499,14 +3384,14 @@ class SalesSystemApp:
             widget.destroy()
         # تحميل صورة الخلفية
         self.topbar.topbar(show_back_button=True,Back_to_Database_Window=True)
-        self.display_general_table(self.employees_collection, "Employees")
+        self.db_operations.display_general_table(self.employees_collection, "Employees")
     
     def new_supplier(self, user_role):
         self.table_name.set("Suppliers")
         for widget in self.root.winfo_children():
             widget.destroy()
         self.topbar.topbar(show_back_button=True,Back_to_Database_Window=True)
-        self.display_general_table(self.suppliers_collection, "Suppliers")
+        self.db_operations.display_general_table(self.suppliers_collection, "Suppliers")
     
     def new_customer(self, user_role):
         self.table_name.set("Customers")
@@ -3514,7 +3399,7 @@ class SalesSystemApp:
             widget.destroy()
 
         self.topbar.topbar(show_back_button=True,Back_to_Database_Window=True)
-        self.display_general_table(self.customers_collection, "Customers")
+        self.db_operations.display_general_table(self.customers_collection, "Customers")
 
     def new_products(self, user_role):
         self.table_name.set("Products")
@@ -3522,7 +3407,7 @@ class SalesSystemApp:
             widget.destroy()
     
         self.topbar.topbar(show_back_button=True,Back_to_Database_Window=True)
-        self.display_general_table(self.products_collection, "Products")
+        self.db_operations.display_general_table(self.products_collection, "Products")
     
     def new_material(self, user_role):
         self.table_name.set("Materials")
@@ -3530,7 +3415,7 @@ class SalesSystemApp:
             widget.destroy()
     
         self.topbar.topbar(show_back_button=True,Back_to_Database_Window=True)
-        self.display_general_table(self.materials_collection, "Materials")
+        self.db_operations.display_general_table(self.materials_collection, "Materials")
     
     def new_sales(self,user_role):
         self.table_name.set("Sales")
@@ -3538,7 +3423,7 @@ class SalesSystemApp:
             widget.destroy()
 
         self.topbar.topbar(show_back_button=True,Back_to_Database_Window=True)
-        self.display_general_table(self.sales_collection, "Sales")
+        self.db_operations.display_general_table(self.sales_collection, "Sales")
 
     def new_purchases(self,user_role):
         self.table_name.set("Purchases")
@@ -3546,7 +3431,7 @@ class SalesSystemApp:
             widget.destroy()
 
         self.topbar.topbar(show_back_button=True,Back_to_Database_Window=True)
-        self.display_general_table(self.purchases_collection, "Purchases")
+        self.db_operations.display_general_table(self.purchases_collection, "Purchases")
     
     def new_customer_payment(self,user_role):
         self.table_name.set("Customer_Payments")
@@ -3554,7 +3439,7 @@ class SalesSystemApp:
             widget.destroy()
     
         self.topbar.topbar(show_back_button=True,Back_to_Database_Window=True)
-        self.display_general_table(self.customer_payments, "Customer_Payments")
+        self.db_operations.display_general_table(self.customer_payments, "Customer_Payments")
     
     def new_supplier_payment(self,user_role):
         self.table_name.set("Supplier_Payments")
@@ -3562,7 +3447,7 @@ class SalesSystemApp:
             widget.destroy()
     
         self.topbar.topbar(show_back_button=True,Back_to_Database_Window=True)
-        self.display_general_table(self.supplier_payments, "Supplier_Payments")
+        self.db_operations.display_general_table(self.supplier_payments, "Supplier_Payments")
     
     def new_emp_salary(self,user_role):
         self.table_name.set("Employee_Salary")
@@ -3570,7 +3455,7 @@ class SalesSystemApp:
             widget.destroy()
 
         self.topbar.topbar(show_back_button=True,Back_to_Database_Window=True)
-        self.display_general_table(self.employee_salary_collection, "Employee_Salary")
+        self.db_operations.display_general_table(self.employee_salary_collection, "Employee_Salary")
     
     def new_emp_appointment(self,user_role):
         self.table_name.set("Employee_appointimets")
@@ -3578,7 +3463,7 @@ class SalesSystemApp:
             widget.destroy()
     
         self.topbar.topbar(show_back_button=True,Back_to_Database_Window=True)
-        self.display_general_table(self.employees_appointments_collection, "Employee_appointimets")
+        self.db_operations.display_general_table(self.employees_appointments_collection, "Employee_appointimets")
     
     def new_emp_withdrawal(self,user_role):
         self.table_name.set("Employee_withdrawls")
@@ -3586,7 +3471,7 @@ class SalesSystemApp:
             widget.destroy()
     
         self.topbar.topbar(show_back_button=True,Back_to_Database_Window=True)
-        self.display_general_table(self.employee_withdrawls_collection, "Employee_withdrawls")
+        self.db_operations.display_general_table(self.employee_withdrawls_collection, "Employee_withdrawls")
     
     def new_production(self,user_role):
         self.table_name.set("Production")
@@ -3594,7 +3479,7 @@ class SalesSystemApp:
             widget.destroy()
 
         self.topbar.topbar(show_back_button=True,Back_to_Database_Window=True)
-        self.display_general_table(self.production_collection, "Production")
+        self.db_operations.display_general_table(self.production_collection, "Production")
 
     def new_general_exp(self,user_role):
         self.table_name.set("general_exp_rev")
@@ -3602,7 +3487,7 @@ class SalesSystemApp:
             widget.destroy()
 
         self.topbar.topbar(show_back_button=True,Back_to_Database_Window=True)
-        self.display_general_table(self.general_exp_rev_collection, "general_exp_rev")
+        self.db_operations.display_general_table(self.general_exp_rev_collection, "general_exp_rev")
 
     def supplier_interactions(self, user_role):
         for widget in self.root.winfo_children():
@@ -3610,9 +3495,9 @@ class SalesSystemApp:
 
         self.topbar.topbar(show_back_button=True, Back_to_Database_Window=False)
         
-        self.supplier_collection = self.get_collection_by_name("Suppliers")
-        self.supplier_payment_collection = self.get_collection_by_name("Supplier_Payments")
-        self.purchases_collection = self.get_collection_by_name("Purchases")
+        self.supplier_collection = config.get_collection_by_name("Suppliers")
+        self.supplier_payment_collection = config.get_collection_by_name("Supplier_Payments")
+        self.purchases_collection = config.get_collection_by_name("Purchases")
 
         supplier_codes = []
         supplier_names = []
@@ -3786,8 +3671,8 @@ class SalesSystemApp:
         payment_method = self.payment_entry.get().strip()
         supplier_code = self.supplier_code_cb.get().strip()
         supplier_name = self.supplier_name_cb.get().strip()
-        supplier_payment_collection = self.get_collection_by_name("Supplier_Payments")
-        purchases_collection = self.get_collection_by_name("Purchases")
+        supplier_payment_collection = config.get_collection_by_name("Supplier_Payments")
+        purchases_collection = config.get_collection_by_name("Purchases")
         
         if not debit or not payment_method or not supplier_code or not supplier_name:
             messagebox.showerror(self.t("Error"), self.t("All fields must be filled!"))
@@ -3799,7 +3684,7 @@ class SalesSystemApp:
             messagebox.showerror(self.t("Error"), self.t("Cash must be a valid number."))
             return
 
-        operation_number = self.get_next_operation_number(supplier_payment_collection)
+        operation_number = config.get_next_operation_number(supplier_payment_collection)
         current_time = datetime.now()
 
         doc = {
@@ -3819,7 +3704,7 @@ class SalesSystemApp:
         supplier_payment_collection.insert_one(doc)
         tree.insert("", tk.END, values=(formatted, operation_number, debit_val, 0.0, payment_method))
 
-        # self.supplier_collection = self.get_collection_by_name("Suppliers")
+        # self.supplier_collection = config.get_collection_by_name("Suppliers")
         self.supplier_collection.update_one(
             {"Code": supplier_code},
             {
@@ -3834,63 +3719,22 @@ class SalesSystemApp:
             event=None,
             code_cb=self.supplier_code_cb,
             name_cb=self.supplier_name_cb,
-            collection=self.get_collection_by_name("Suppliers"),
+            collection=config.get_collection_by_name("Suppliers"),
             invoices_collection=purchases_collection,
             payment_collection=supplier_payment_collection,
             field_path="supplier_info.code",
             tree=tree
         )
-        config.report_log(self.logs_collection, self.user_name, supplier_payment_collection, f"{self.t("Added new record to")}", doc)
+        config.report_log(self.logs_collection, self.user_name, supplier_payment_collection, f"{self.t("Added new record to")}", doc, self.t)
         messagebox.showinfo(self.t("Success"), f"{self.t("Entry")} {operation_number} {self.t("added.")}")
-
-    def get_next_operation_number(self, payment_collection):
-        last_entry = payment_collection.find_one(
-            {"Operation_Number": {"$regex": r"^PM-?\d+"}},
-            sort=[("Operation_Number", -1)]
-        )
-        if last_entry and "Operation_Number" in last_entry:
-            last_num = int(last_entry["Operation_Number"].split("-")[1])
-            return f"PM-{last_num+1:05d}"
-        return "PM-00001"
-
-    def get_next_code(self, payment_collection):
-        last_entry = payment_collection.find_one(
-            {"code": {"$regex": r"^GEN-?\d+"}},
-            sort=[("code", -1)]
-        )
-        if last_entry and "code" in last_entry:
-            last_num = int(last_entry["code"].split("-")[1])
-            return f"GEN-{last_num+1:05d}"
-        return "GEN-00001"
-
-    def get_next_prim_key(self, collection, collection_name):
-        primary_key_field = PRIMARY_KEYS.get(collection_name)
-        prefix = PRIMARY_KEY_STARTERS.get(collection_name)
-
-        # Find the last document sorted by primary key descending
-        last_entry = collection.find_one(
-            {primary_key_field: {"$regex": rf"^{prefix}-?\d+"}},
-            sort=[(primary_key_field, -1)]
-        )
-
-        if last_entry and primary_key_field in last_entry:
-            raw_value = last_entry[primary_key_field]
-            number_part = ''.join(filter(str.isdigit, raw_value))
-            next_number = int(number_part) + 1 if number_part else 1
-        else:
-            next_number = 1
-
-        padded_number = f"{next_number:05d}" if prefix in ["PM", "GEN", "INV", "PR"] else f"{next_number:03d}"
-
-        return f"{prefix}-{padded_number}"
 
     def add_customer_payment(self, tree):
         credit = self.cash_entry.get().strip()
         payment_method = self.payment_entry.get().strip()
         customer_code = self.customer_code_cb.get().strip()
         customer_name = self.customer_name_cb.get().strip()
-        customer_payment_collection = self.get_collection_by_name("Customer_Payments")
-        sales_collection = self.get_collection_by_name("Sales")
+        customer_payment_collection = config.get_collection_by_name("Customer_Payments")
+        sales_collection = config.get_collection_by_name("Sales")
         
         if not credit or not payment_method or not customer_code or not customer_name:
             messagebox.showerror(self.t("Error"), self.t("All fields must be filled!"))
@@ -3902,7 +3746,7 @@ class SalesSystemApp:
             messagebox.showerror(self.t("Error"), self.t("Cash must be a valid number."))
             return
 
-        operation_number = self.get_next_operation_number(customer_payment_collection)
+        operation_number = config.get_next_operation_number(customer_payment_collection)
         # current_time = datetime.now().strftime("%d/%m/%Y %H:%M")
         current_time = datetime.now()
 
@@ -3937,13 +3781,13 @@ class SalesSystemApp:
             event=None,
             code_cb=self.customer_code_cb,
             name_cb=self.customer_name_cb,
-            collection=self.get_collection_by_name("Customers"),
+            collection=config.get_collection_by_name("Customers"),
             invoices_collection=sales_collection,
             payment_collection=customer_payment_collection,
             field_path="Customer_info.code",
             tree=tree
         )
-        config.report_log(self.logs_collection, self.user_name, customer_payment_collection, f"{self.t("Added new record to")}", doc)
+        config.report_log(self.logs_collection, self.user_name, customer_payment_collection, f"{self.t("Added new record to")}", doc, self.t)
         messagebox.showinfo(self.t("Success"), f"{self.t("Entry")} {operation_number} {self.t("added.")}")
         #TODO Block of code to preview invoice to be generated + generate invoice as pdf
 
@@ -4163,9 +4007,9 @@ class SalesSystemApp:
 
         self.topbar.topbar(show_back_button=True,Back_to_Database_Window=False)
         
-        self.customer_collection         = self.get_collection_by_name("Customers")
-        self.customer_payment_collection = self.get_collection_by_name("Customer_Payments")
-        self.sales_collection            = self.get_collection_by_name("Sales")
+        self.customer_collection         = config.get_collection_by_name("Customers")
+        self.customer_payment_collection = config.get_collection_by_name("Customer_Payments")
+        self.sales_collection            = config.get_collection_by_name("Sales")
 
         customer_codes = []
         customer_names = []
@@ -4332,1553 +4176,6 @@ class SalesSystemApp:
                                                                 ),bg="#2144F3", fg='white').grid(row=13, column=10, sticky="w", padx=10)
 
 
-############################ Main Functions ########################################
-    def display_table(self):
-        self.image_refs.clear()
-        collection_name = self.table_name.get()
-        search_query = self.search_query.get()
-        
-        current_collection = self.get_collection_by_name(collection_name)
-
-        for row in self.tree.get_children():
-            self.tree.delete(row)
-        
-        try:
-            # Fetch all documents
-            if search_query:
-                # Create a dynamic query based on the search term
-                first_document = current_collection.find_one()
-                if first_document:
-                    search_fields = self.get_fields_by_name(collection_name)
-                    or_conditions = [{"$expr": {"$regexMatch": {"input": {"$toString": f"${field}"}, "regex": search_query, "options": "i"}}} for field in search_fields]
-                    data = list(current_collection.find({"$or": or_conditions}).sort("Id", 1))
-                else:
-                    data = [] # No documents to search in
-            else:
-                data = list(current_collection.find().sort("Id", 1))
-
-            if data:
-                columns = self.get_fields_by_name(collection_name)
-                self.tree["columns"] = columns
-
-                for col in columns:
-                    self.tree.heading(col, text=col)
-                    self.tree.column(col, width=152, anchor="center", stretch=False)
-
-                self.tree.column("#0", width=152, anchor="center")
-                self.tree.heading("#0", text="Image")
-
-                for row_data in data:
-                    values = []
-                    for col in columns:
-                        val = row_data.get(col, '')
-                        if 'pic' in col.lower():
-                            if isinstance(val, str) and val.startswith("http"):
-                                print(val)  # Optional: print the URL
-                            
-                        if 'date' in col.lower() and isinstance(val, datetime):
-                            val = val.strftime("%d-%m-%Y")
-                        values.append(val)
-                            
-                    self.tree.insert("", "end", values=values)
-            else:
-                # Show placeholder column and row
-                self.tree["columns"] = ("No Data",)
-                self.tree.heading("No Data", text="No Data Available")
-                self.tree.column("No Data", width=300, anchor="center", stretch=True)
-                self.tree.insert("", "end", values=("This collection has no documents.",))
-                return
-
-        except Exception as e:
-            messagebox.showerror(self.t("Error"), f"{self.t("Error displaying data:")}\n{e}")
-
-    def display_general_table(self, current_collection, collection_name):
-        
-        if self.language == "Arabic":
-            alignment = "e"
-            label_col = 1
-            entry_col = 0
-        else:
-            alignment = "w"
-            label_col = 0
-            entry_col = 1
-        
-        img_label= None
-        columns = self.get_fields_by_name(collection_name)
-        
-        normal_fields = [label for label in columns if label != "Id" and "pic" not in label.lower()]
-        pic_fields = [label for label in columns if "pic" in label.lower()]
-        ordered_fields = normal_fields + pic_fields
-
-        main_frame = tk.Frame(root, padx=20, pady=50)
-        main_frame.pack(fill="both", expand=True)
-
-        # ==== 1. Create scrollable form frame ====
-        form_container = tk.Frame(main_frame)
-        form_container.pack(side="left", fill="y", padx=10, pady=10)
-
-        canvas = tk.Canvas(form_container, width=350)   # Set width for form
-        scrollbar = tk.Scrollbar(form_container, orient="vertical", command=canvas.yview)
-        scrollbar.pack(side="right", fill="y")
-
-        canvas.pack(side="left", fill="y", expand=False)
-        canvas.configure(yscrollcommand=scrollbar.set)
-
-        # Frame inside canvas (holds labels + entries)
-        form_frame = tk.Frame(canvas)
-        canvas.create_window((0, 0), window=form_frame, anchor='nw')
-
-        # Ensure scrollregion resizes automatically
-        def on_frame_config(event):
-            canvas.configure(scrollregion=canvas.bbox("all"))
-
-        form_frame.bind("<Configure>", on_frame_config)
-
-        # Optional — enable mousewheel scrolling
-        def _on_mousewheel(event):
-            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
-
-        # Enable scrolling when mouse hovers inside form_frame
-        def enable_scrolling(event):
-            canvas.bind_all("<MouseWheel>", _on_mousewheel)
-                
-        def disable_scrolling(event):
-            canvas.unbind_all("<MouseWheel>")
-
-        # Bind mouse hovering for scroll enable/disable
-        form_container.bind("<Enter>", enable_scrolling)
-        form_container.bind("<Leave>", disable_scrolling)
-
-        if 'Customer_info' in ordered_fields:
-            ordered_fields.remove('Customer_info')
-            if 'customer_code' not in ordered_fields:
-                ordered_fields.append('customer_code')
-            if 'customer_name' not in ordered_fields:
-                ordered_fields.append('customer_name')
-        if 'supplier_info' in ordered_fields:
-            ordered_fields.remove('supplier_info')
-            if 'supplier_code' not in ordered_fields:
-                ordered_fields.append('supplier_code')
-            if 'supplier_name' not in ordered_fields:
-                ordered_fields.append('supplier_name')
-
-        self.entries = {}
-        row_index = 0
-
-        for label in ordered_fields:
-            if label in ["Id", "Operation_Number", "Customer_info", "supplier_info", "Time"]:
-                continue
-            elif label in ["code"] and collection_name == "general_exp_rev":
-                continue
-            
-            #anchor="e" → aligns text to the right within the label ... "w" alternative
-            # justify="right" → right-justifies multi-line text
-            # sticky="e" → aligns the label to the right of the grid cell
-            if label in MANDATORTY_FIELDS and collection_name in MANDATORY_DBS:
-                if self.language == "English":
-                    tk.Label(form_frame, text=f"{self.t(label)}⭐", font=("Arial", 12), anchor=alignment).grid(row=row_index, column=label_col, sticky=alignment, pady=5, padx=2)
-                else:
-                    tk.Label(form_frame, text=f"⭐{self.t(label)}", font=("Arial", 12), anchor=alignment).grid(row=row_index, column=label_col, sticky=alignment, pady=5, padx=2)
-            else:
-                tk.Label(form_frame, text=f"{self.t(label)}", font=("Arial", 12), anchor=alignment).grid(row=row_index, column=label_col, sticky=alignment, pady=5, padx=2)
-
-            if "date" in label.lower() or "timestamp" in label.lower() or "check_out" in label.lower() or "check_in" in label.lower():
-                entry = DateEntry(form_frame, font=("Arial", 12), date_pattern='dd-MM-yyyy', width=18)
-                entry.grid(row=row_index, column=entry_col, pady=5)
-                self.entries[label] = entry
-                row_index += 1
-
-            elif "payment_method" in label.lower():
-                selected_method = tk.StringVar()
-                dropdown = ttk.Combobox(form_frame, textvariable=selected_method, values=['Cash', 'E_Wallet', 'Bank_account', 'Instapay'], state="readonly", width=27)
-                dropdown.grid(row=row_index, column=entry_col, pady=5)
-                dropdown.set("Cash")
-                self.entries[label] = dropdown
-                row_index += 1
-
-            elif "pic" in label.lower():
-                frame = tk.Frame(form_frame)
-                frame.grid(row=row_index, column=entry_col, pady=5)
-                
-                # Image Label in a *new row* below the current field
-                img_label = tk.Label(form_frame)
-                img_label.grid(row=row_index + 1, column=0, columnspan=3, pady=5)
-
-                def browse_file(e=entry, img_lbl=img_label):  # Pass the current entry as argument
-                    filepath = filedialog.askopenfilename(
-                        title="Select a file",
-                        filetypes=[("Image files", "*.jpg *.jpeg *.png *.bmp *.gif"), ("All files", "*.*")]
-                    )
-                    if filepath:
-                        load_image_preview(filepath, img_lbl)
-
-                browse_btn = tk.Button(frame, text=self.t("Browse"),width=25, command=lambda e=entry: browse_file(e))
-                browse_btn.pack(side="left", padx=5)
-                self.entries[label] = img_label
-
-            elif "pdf_path" in label.lower():
-                frame = tk.Frame(form_frame)
-                frame.grid(row=row_index, column=entry_col, pady=5)
-
-                file_label = tk.Label(form_frame, text="No file selected", anchor="w")
-                file_label.grid(row=row_index + 1, column=0, columnspan=3, pady=5)
-
-                def browse_file(lbl=file_label):
-                    filepath = filedialog.askopenfilename(
-                        title="Select a file",
-                        filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")]
-                    )
-                    if filepath:
-                        filename = filepath.split("/")[-1]
-                        lbl.config(text=f"Selected: {filename}")
-                        lbl.filepath = filepath
-
-                browse_btn = tk.Button(frame, text=self.t("Browse"), width=25, command=browse_file)
-                browse_btn.pack(side="left", padx=5)
-
-                self.entries[label] = file_label
-                row_index += 2  # Skip a row for the file label
-
-            else:
-                entry = tk.Entry(form_frame, font=("Arial", 12), width=20)
-                entry.grid(row=row_index, column=entry_col, pady=5)
-                self.entries[label] = entry
-                if label in ZEROED_FIELDS:
-                    entry.insert(0, "0")
-                elif label == PRIMARY_KEYS.get(collection_name):
-                    prim_key_val = self.get_next_prim_key(current_collection, collection_name)
-                    entry.insert(0,prim_key_val)
-                row_index += 1
-
-
-        right_frame = tk.Frame(main_frame)
-        right_frame.pack(side="right", fill="both", expand=True)
-
-        search_frame = tk.Frame(right_frame)
-        search_frame.pack(fill="x", pady=(0, 10))
-
-        self.selected_field = tk.StringVar()
-        
-
-        if self.language =="Arabic":
-            self.selected_field.set(self.t(ordered_fields[0]))
-            translated_columns = [self.t(col) for col in ordered_fields]
-        else: 
-            self.selected_field.set((ordered_fields[0]))
-            translated_columns = ordered_fields
-        
-        field_dropdown = ttk.Combobox(search_frame, textvariable=self.selected_field, values=translated_columns, width=20)
-        field_dropdown.pack(side="left", padx=(0, 5))
-
-        local_search_query = tk.StringVar()
-        search_entry = tk.Entry(search_frame, textvariable=local_search_query)
-        search_entry.pack(side="left", padx=(0, 5))
-
-        table_frame = tk.Frame(right_frame)
-        table_frame.pack(fill="both", expand=True)
-
-        tree = ttk.Treeview(table_frame, columns=ordered_fields, show="headings")
-        for col in ordered_fields:
-            tree.heading(col, text=self.t(col))
-            tree.column(col, anchor="center", stretch=True)
-        tree.pack(fill="both", expand=True)
-        tree.bind("<<TreeviewSelect>>", lambda event: self.on_tree_selection(event, tree, columns, collection_name, img_label)) #Bind tree selection to an event handler
-
-        horizontal_scrollbar = ttk.Scrollbar(tree, orient="horizontal", command=tree.xview)
-        horizontal_scrollbar.pack(side="bottom", fill="x")
-        tree.configure(xscrollcommand=horizontal_scrollbar.set)
-
-        vertical_scrollbar = ttk.Scrollbar(tree, orient="vertical", command=tree.yview)
-        vertical_scrollbar.pack(side="right", fill="y")
-        tree.configure(yscrollcommand=vertical_scrollbar.set)
-
-        # Search button now refreshes table, doesn't rebuild everything!
-        tk.Button(
-            search_frame,
-            text=self.t("Search"),
-            width=14,
-            command=lambda: self.refresh_generic_table(tree, current_collection, collection_name, local_search_query.get())
-        ).pack(side="left")
-        
-        # Bottom buttons
-        self.root.configure(bg="#f0f0f0")  # Set background color for the root window
-        button_frame = tk.LabelFrame(root, text="Actions", padx=10, pady=10, font=("Arial", 12, 'bold'))
-        button_frame.pack(pady=10)
-
-        btn_add = tk.Button(button_frame, text=self.t("Add Entry"), font=("Arial", 12), width=15, command=lambda: self.add_generic_entry(tree, current_collection,collection_name))
-        btn_edit = tk.Button(button_frame, text=self.t("Update Entry"), font=("Arial", 12), width=15, command=lambda: self.edit_generic_entry(tree, current_collection,collection_name))
-        btn_delete = tk.Button(button_frame, text=self.t("Delete Entry"), font=("Arial", 12), width=15, command=lambda: self.delete_generic_entry(tree, current_collection))
-        btn_deselect = tk.Button(button_frame, text=self.t("Deselect Entry"), font=("Arial", 12), width=15, command=lambda:self.deselect_entry(tree))
-
-        btn_add.grid(row=0, column=0, padx=10)
-        btn_edit.grid(row=0, column=1, padx=10)
-        btn_delete.grid(row=0, column=2, padx=10)
-        btn_deselect.grid(row=0, column=3, padx=10)
-
-        # Load initial table content
-        self.refresh_generic_table(tree, current_collection, collection_name, search_text="")
-        # self.root.configure(bg=config.COLORS["background"])
-
-    def on_tree_selection(self, event, tree, columns, collection_name, img_label):
-        first_document = None
-        current_collection = self.get_collection_by_name(collection_name)
-        id_index = 0
-        selected_item = tree.selection()
-        if not selected_item:
-            for field, entry in self.entries.items():
-                if isinstance(entry, ttk.Combobox):
-                    entry.set('')
-                elif isinstance(entry, DateEntry):
-                    entry.set_date(datetime.now())
-                elif "pdf_path" in field.lower():
-                    entry.config(text="")
-                elif hasattr(entry, 'image') and img_label:
-                    img_label.config(image='')
-                    img_label.image = None
-                else:
-                    entry.delete(0, tk.END)
-            
-            if(img_label):
-                img_label.config(image="")
-                img_label.image = None
-            return
-        try:
-            lower_columns = [col.lower() for col in columns]
-            # if "id" in lower_columns:
-            #     id_index = columns.index("Id")  # Dynamically get the index of "Id" #TODO need something different to loop on
-            # elif any(('code' in col) or ('receipt_number' in col) for col in lower_columns):
-            #     for idx, col in enumerate(lower_columns):
-            #         if 'code' in col or 'receipt_number' in col:
-            #             id_index = idx
-            #             break
-
-
-            # Find which column is used as identifier (id / code)
-            if current_collection.name in ["Customer_Payments","Supplier_Payments", "Sales", "Purchases"]:
-                id_index = 0
-            elif current_collection.name in ["Production", "Employee_Salary", "Employee_withdrawls"]:
-                id_index = columns.index("timestamp")
-
-            elif current_collection.name in ["Employee_appointimets"]:
-                id_index = columns.index("duration")
-            elif "id" in [col.lower() for col in columns]:
-                id_index = columns.index("Id")
-            elif any('code' in col.lower() for col in columns):
-                for idx, col in enumerate(columns):
-                    if 'code' in col.lower():
-                        id_index = idx
-                        break
-            else:
-                messagebox.showerror(self.t("Error"), self.t("Unable to determine identifier column."))
-                return
-
-            if id_index is None:
-                messagebox.showerror(self.t("Error"), self.t("Unable to determine identifier column."))
-                return
-
-            # unique_id = tree.item(selected_item)['values'][id_index]
-
-            field_name = columns[id_index]
-            if field_name == "timestamp":
-                #change to datetime obj
-                raw_unique_id = tree.item(selected_item)["values"][id_index]
-                unique_id = datetime.strptime(raw_unique_id, "%Y-%m-%d %H:%M:%S.%f")
-            elif field_name == "duration":
-                unique_id = float(tree.item(selected_item)["values"][id_index])
-            else:
-                unique_id = tree.item(selected_item)["values"][id_index]
-
-            first_document = current_collection.find_one({columns[id_index]: unique_id})
-
-            if not first_document and isinstance(unique_id, str):
-                try:
-                    first_document = current_collection.find_one({columns[id_index]: int(unique_id)})
-                except ValueError:
-                    pass
-
-            # If not found, and type is int, try converting to str
-            elif not first_document and isinstance(unique_id, int):
-                first_document = current_collection.find_one({columns[id_index]: str(unique_id)})
-
-        except IndexError:
-            return
-        
-        for field, entry in self.entries.items():
-            if field in field_mapping: 
-                parent, child = field_mapping[field]
-                value = first_document.get(parent, {}).get(child, "")
-            else:
-                value = first_document.get(field, "")
-            
-            items = first_document.get("Items", [])
-            
-            if isinstance(entry, ttk.Combobox):
-                if value == '':
-                    value = first_document.get(child, "")
-                entry.set(value)
-
-            if isinstance(value, datetime):
-                value = value.strftime('%d-%m-%Y')
-                entry.delete(0, tk.END)
-                entry.insert(0, value)
-            elif field in ['product_name', 'Product_code', 'Unit', 'QTY', 'numbering',
-                    'Total_QTY', 'Unit_price', 'Discount_Type', 'Discount_Value', 'Final_Price'] \
-                    and collection_name == "Sales":
-
-                if isinstance(items, list):
-                    values = [str(item.get(field, '')) for item in items]
-                    value = ', '.join(values)
-                else:
-                    value = ''
-                entry.delete(0, tk.END)
-                entry.insert(0, value)
-            elif field in ['material_name', 'material_code', 'Unit', 'QTY', 'numbering',
-                    'Total_QTY', 'Unit_price', 'Discount_Type', 'Discount_Value', 'Final_Price'] \
-                    and collection_name == "Purchases":
-
-                if isinstance(items, list):
-                    values = [str(item.get(field, '')) for item in items]
-                    value = ', '.join(values)
-                else:
-                    value = ''
-                entry.delete(0, tk.END)
-                entry.insert(0, value)
-            elif field == "Units" and isinstance(value, list):
-                value_str = ' , '.join(map(str, value))
-                entry.delete(0, tk.END)
-                entry.insert(0, value_str)
-            # If it's a pic field, load preview
-            elif "pic" in field.lower():
-                if img_label and value:
-                    load_image_preview_from_url(value, img_label)
-            elif "pdf_path" in field.lower():
-                empty = 0 #dummy code
-            else:
-                entry.delete(0, tk.END)
-                entry.insert(0, value)
-
-    def refresh_generic_table(self, tree, current_collection, collection_name, search_text):
-        try:
-            # Clear existing rows
-            for row in tree.get_children():
-                tree.delete(row)
-
-            if search_text:
-                # raw_selected_field = self.selected_field.get()
-                if self.language == "Arabic":
-                    raw_selected_field = self.show_original()
-                else: 
-                    raw_selected_field = self.selected_field.get()
-                
-                mogno_selected_field = self.get_mongo_field_path(raw_selected_field)
-                first_document = current_collection.find_one()
-                
-                if first_document:
-                    search_fields = self.get_fields_by_name(collection_name)
-                    
-                    if "Items." in mogno_selected_field:
-                        field_inside_items = mogno_selected_field.split(".")[1]
-                        query = { "Items": { "$elemMatch": {} } }
-                        
-                        if field_inside_items in ['Net_total','Previous_balance','Total_balance','Payed_cash','Remaining_balance','Unit','QTY','numbering','Total_QTY','Unit_price','Discount_Value','Final_Price']:
-                            query["Items"]["$elemMatch"][field_inside_items] = float(search_text)
-                        else: 
-                            query["Items"]["$elemMatch"][field_inside_items] = {
-                                "$regex": search_text,
-                                "$options": "i"
-                            }
-                        
-                        try:
-                            data = list(current_collection.find(query).sort("Id", 1))
-                        except PyMongoError as e:
-                            print(f"An error occurred: {e}")
-                    else:
-                        or_conditions = [{"$expr": {"$regexMatch": {"input": {"$toString": f"${mogno_selected_field}"}, "regex": search_text, "options": "i"}}} for field in search_fields]
-                        data = list(current_collection.find({"$or": or_conditions}).sort("Id", 1))
-                else:
-                    data = []
-            else:
-                data = list(current_collection.find().sort("Id", 1))
-
-
-            if data:
-                columns = self.get_fields_by_name(collection_name)
-                if '_id' in columns:
-                    columns.remove('_id')
-                if 'Customer_info' in columns:
-                    columns.remove('Customer_info')
-                    if 'customer_code' not in columns:
-                        columns.append('customer_code')
-                    if 'customer_name' not in columns:
-                        columns.append('customer_name')
-                if 'supplier_info' in columns:
-                    columns.remove('supplier_info')
-                    if 'supplier_code' not in columns:
-                        columns.append('supplier_code')
-                    if 'supplier_name' not in columns:
-                        columns.append('supplier_name')
-                        
-                tree["columns"] = columns
-
-                for col in columns:
-                    tree.heading(col, text=self.t(col))
-                    tree.column(col, width=152, anchor="center", stretch=False)
-
-                
-                for row_data in data:
-                    units = row_data.get('Units', [])
-                    items = row_data.get('Items', {})
-                    
-                    if(collection_name == "Customer_Payments"):
-                        customer_info = row_data.get('Customer_info', {})
-                        row_data['customer_code'] = customer_info.get('code', '')
-                        row_data['customer_name'] = customer_info.get('name', '')
-                    
-                    elif(collection_name == "Supplier_Payments"):
-                        customer_info = row_data.get('supplier_info', {})
-                        row_data['supplier_code'] = customer_info.get('code', '')
-                        row_data['supplier_name'] = customer_info.get('name', '')
-                    
-                    elif(collection_name in ["Sales", "Purchases"] ):
-                        prefix = "Customer" if collection_name == "Sales" else "supplier"
-                        info_obj = row_data.get(f'{prefix}_info', {})
-                        financials = row_data.get('Financials', {})
-                        
-                        #start extracting Data from these objects
-                        # cust_info
-                        row_data[f'{prefix.lower()}_code']    = info_obj.get('code', '')
-                        row_data[f'{prefix.lower()}_name']    = info_obj.get('name', '')
-                        row_data[f'{prefix.lower()}_phone1']  = info_obj.get('phone1', '')
-                        row_data[f'{prefix.lower()}_phone2']  = info_obj.get('phone2', '')
-                        row_data[f'{prefix.lower()}_address'] = info_obj.get('address', '')
-                        #financials
-                        row_data['Net_total'] = financials.get('Net_total', '')
-                        row_data['Previous_balance'] = financials.get('Previous_balance', '')
-                        row_data['Total_balance'] = financials.get('Total_balance', '')
-                        row_data['Payed_cash'] = financials.get('Payed_cash', '')
-                        row_data['Remaining_balance'] = financials.get('Remaining_balance', '')
-                        row_data['Payment_method'] = financials.get('Payment_method', '')
-
-                    # If Units is a non-empty list
-                    if isinstance(units, list) and len(units) > 0:
-                        for unit_value in units:
-                            values = []
-
-                            for col in columns:
-                                value = row_data.get(col, '')
-                                
-                                if col == 'Units':
-                                    value = unit_value  # Set current unit value
-                                
-                                elif isinstance(value, datetime):
-                                    value = value.strftime('%d-%m-%Y')
-                                
-                                values.append(value)
-                            
-                            tree.insert("", "end", values=values)
-                    elif isinstance(items, list) and len(items) > 0 and collection_name in ["Sales", "Purchases"]:
-                        prefix = "Customer" if collection_name == "Sales" else "supplier"
-                        keys = []
-                        if prefix == "Customer":
-                            keys = ['Product_code', 'product_name', 'Unit', 'QTY', 'numbering', \
-                                    'Total_QTY', 'Unit_price', 'Discount_Type', 'Discount_Value', 'Final_Price'] 
-                        else:
-                            keys = ['material_code', 'material_name', 'Unit', 'QTY', 'numbering', \
-                                    'Total_QTY', 'Unit_price', 'Discount_Type', 'Discount_Value', 'Final_Price'] 
-                        for item in items:
-                            values = []
-    
-                            for key in keys:
-                                row_data[key] = item.get(key, '')
-
-                            for col in columns:
-                                value = row_data.get(col,'')
-                                
-                                values.append(value)
-
-                            tree.insert("", "end", values=values)
-                    else:
-                        # Fallback to insert normally if Units is not a list or is empty
-                        values = []
-                        for col in columns:
-                            value = row_data.get(col, '')
-                            if isinstance(value, datetime) and col != "timestamp":
-                                value = value.strftime('%d-%m-%Y')
-                            values.append(value)
-                        
-                        tree.insert("", "end", values=values)
-            else:
-                tree["columns"] = ("No Data",)
-                tree.heading("No Data", text="No Data Available")
-                tree.column("No Data", width=300, anchor="center", stretch=True)
-                tree.insert("", "end", values=("This collection has no documents.",))
-
-        except Exception as e:
-            messagebox.showerror(self.t("Error"), f"{self.t("Error displaying data:")}\n{e}")    
-
-    def add_generic_entry(self, tree, current_collection, collection_name):
-        fields = self.get_fields_by_name(collection_name)
-        info_obj = {}
-        items = []
-        financials_obj = {}
-        temp = None
-
-        new_entry = {}
-        if collection_name in ["general_exp_rev"]:
-            code = self.get_next_code(current_collection)
-            new_entry["code"] = code
-
-        # Handle customer/supplier info
-        if collection_name in ["Customer_Payments", "Supplier_Payments"]:
-            prefix = "Customer" if collection_name == "Customer_Payments" else "supplier"
-            
-            operation_number = self.get_next_operation_number(current_collection)
-            
-            new_entry["Operation_Number"] = operation_number
-            current_time = datetime.now()
-            new_entry["Time"] = current_time
-
-            # Get the code and name from entries
-            code = self.entries.get(f"{prefix.lower()}_code", None)
-            name = self.entries.get(f"{prefix.lower()}_name", None)
-            
-            if code:
-                code_value = code.get()
-            else:
-                code_value = ""
-                
-            if name:
-                name_value = name.get()
-            else:
-                name_value = ""
-
-            # Create the nested info object
-            info_object = {
-                "code": code_value,
-                "name": name_value
-            }
-            new_entry[f"{prefix}_info"] = info_object
-        
-        if collection_name in ["Sales","Purchases"]:
-            prefix = "Customer" if collection_name == "Sales" else "supplier"
-            
-            code = self.entries.get(f"{prefix.lower()}_code")
-            name = self.entries.get(f"{prefix.lower()}_name")
-            phone1 = self.entries.get(f"{prefix.lower()}_phone1")
-            phone2 = self.entries.get(f"{prefix.lower()}_phone2")
-            address = self.entries.get(f"{prefix.lower()}_address")
-
-            info_obj = {
-                "code": code.get().strip() if code else "",
-                "name": name.get().strip() if name else "",
-                "phone1": phone1.get().strip() if phone1 else "",
-                "phone2": phone2.get().strip() if phone2 else "",
-                "address": address.get().strip() if address else "",
-            }
-
-            # --- Financials ---
-            def safe_float(entry):
-                try:
-                    return float(entry.get().strip()) if entry and entry.get().strip() else 0.0
-                except ValueError:
-                    return 0.0
-
-            def safe_str(entry):
-                return entry.get().strip() if entry else ""
-
-            net_total = safe_float(self.entries.get("Net_total"))
-            prev_balance = safe_float(self.entries.get("Previous_balance"))
-            total_balance = safe_float(self.entries.get("Total_balance"))
-            payed_cash = safe_float(self.entries.get("Payed_cash"))
-            remaining_balance = safe_float(self.entries.get("Remaining_balance"))
-            payment_method = safe_str(self.entries.get("Payment_method"))
-
-            financials_obj = {
-                "Net_total": net_total,
-                "Previous_balance": prev_balance,
-                "Total_balance": total_balance,
-                "Payed_cash": payed_cash,
-                "Remaining_balance": remaining_balance,
-                "Payment_method": payment_method
-            }
-
-            def split_entry(name):
-                entry = self.entries.get(name)
-                return entry.get().strip().split(",") if entry and entry.get().strip() else []
-            
-            var = None
-            if prefix.lower() == "customer":
-                Product_codes     = split_entry("Product_code")
-                product_names     = split_entry("product_name")
-                var=product_names
-            else :
-                material_codes     = split_entry("material_code")
-                material_names     = split_entry("material_name")
-                var=material_names
-            
-            Units             = split_entry("Unit")
-            QTYs              = split_entry("QTY")
-            Total_QTYs        = split_entry("Total_QTY")
-            Unit_prices       = split_entry("Unit_price")
-            numberings        = split_entry("numbering")
-            Discount_Types    = split_entry("Discount_Type")
-            Discount_Values   = split_entry("Discount_Value")
-            Final_Prices      = split_entry("Final_Price")
-
-            for i in range(len(var)):
-                try:
-                    item = {}
-                    # Add product/material info depending on prefix
-                    item = { 
-                        "Unit": Units[i].strip(),
-                        "QTY": float(QTYs[i].strip()),
-                        "numbering": float(numberings[i].strip()),
-                        "Total_QTY": float(Total_QTYs[i].strip()),
-                        "Unit_price": float(Unit_prices[i].strip()),
-                        "Discount_Type": Discount_Types[i].strip(),
-                        "Discount_Value": float(Discount_Values[i].strip()),
-                        "Final_Price": float(Final_Prices[i].strip())
-                    }
-                    
-                    if prefix.lower() == "customer":
-                        item["Product_code"] = Product_codes[i].strip()
-                        item["product_name"] = product_names[i].strip()
-                    else:
-                        item["material_code"] = material_codes[i].strip()
-                        item["material_name"] = material_names[i].strip()
-                    
-
-                    items.append(item)
-                except (IndexError, ValueError) as e:
-                    messagebox.showerror(self.t("Upload Error"), f"{self.t("All Data fields must be filled:")} {e}")
-                    return
-                
-            # new_entry["Date"] = datetime.now().strftime("%d/%m/%Y %H:%M")
-            temp = datetime.now()
-            # value_date = datetime.strptime(temp, '%d-%m-%Y').date()
-            # new_entry["Date"] = datetime.combine(value_date, time.min)
-
-
-        for field, widget in self.entries.items():
-            #add fields not added when using add entry here
-            # if field in ["product_name","product_code"] and collection_name == "Products":
-            # if (field in ["product_name","product_code","material_code","material_name"] and (collection_name == "Sales" or collection_name == "Purchases")):
-            #     dummy=0
-            
-            if field == PRIMARY_KEYS.get(collection_name):
-                prim_key_val = widget.get()
-                is_unique = self.is_primary_key_unique(current_collection, collection_name, prim_key_val)
-
-                if is_unique:
-                    value = prim_key_val
-                else:
-                    messagebox.showerror(self.t("Data Error"), f"{prim_key_val} {self.t("is not unique in field")} {field}")
-                    return
-                
-            elif field == "Date" and collection_name in ["Sales","Purchases"]:
-                continue
-            
-            elif field in ZEROED_FIELDS:
-                value = widget.get()
-                if not value:
-                    value = 0
-            elif field in [
-                "customer_code", "customer_name", "customer_phone1", "customer_phone2", "customer_address",
-                "Net_total", "Previous_balance", "Total_balance", "Payed_cash", "Remaining_balance", "Payment_method",
-                "Product_code", "product_name", "Unit", "QTY", "Total_QTY", "Unit_price", "numbering",
-                "Discount_Type", "Discount_Value", "Final_Price",
-                "supplier_code", "supplier_name", "Id",
-                "supplier_phone1","supplier_phone2","supplier_address","material_code","material_name"
-                ] and collection_name in ["Sales","Purchases","Customer_Payments", "Supplier_Payments"]:
-                value = widget.get()
-                
-                if not str(value).strip():
-                    messagebox.showerror(self.t("Validation Error"), f"{self.t("Field")} '{field}' {self.t("cannot be empty.")}")
-                    return  # stop processing if any critical field is empty
-                continue  # Skip these fields
-            
-            if "date" in field.lower() or "timestamp" in field.lower() or "check_out" in field.lower() or "check_in" in field.lower():
-                value = widget.get()
-                if value:
-                    try:
-                        value_date = datetime.strptime(value, '%d-%m-%Y').date()
-                        value = datetime.combine(value_date, time.min)
-                        # Add this only for Employee_withdrawls
-                        if collection_name in ["Employee_withdrawls", "Employee_Salary", "Production"]:
-                            random_hours   = random.randint(0, 23)
-                            random_minutes = random.randint(0, 59)
-                            random_seconds = random.randint(0, 59)
-                            value += timedelta(hours=random_hours, minutes=random_minutes, seconds=random_seconds)
-
-                    except Exception as e:
-                        messagebox.showerror(self.t("Error"), f"{self.t("Invalid date format for")} {field}: {e}")
-                        return
-                else:
-                    messagebox.showwarning(self.t("Warning"), f"{self.t("Please enter a value for")} {field}")
-                    return
-            elif "pic" in field.lower():
-                local_image_path = getattr(widget, 'image_path', None)
-                if not local_image_path:
-                    messagebox.showerror(self.t("Invalid Input"), self.t("No img was selected"))
-                    return
-                try:
-                    value = upload_file_to_cloudinary(local_image_path)
-                except Exception as e:
-                    messagebox.showerror(self.t("Upload Error"), f"{self.t("Failed to upload image:")} {e}")
-                    return
-            elif "pdf_path" in field.lower():
-                local_pdf_path = getattr(widget, 'filepath', None)
-
-                if not local_pdf_path:
-                    messagebox.showerror(self.t("Invalid Input"), self.t("No PDF was selected."))
-                    return
-
-                try:
-                    value = self.upload_pdf_to_cloudinary(local_pdf_path)
-
-                    # ✅ Clear filepath attribute and display text after successful upload
-                    if hasattr(widget, 'filepath'):
-                        widget.filepath = None
-                    widget.config(text="")  # Clear displayed filename or label
-                except Exception as e:
-                    messagebox.showerror(self.t("Upload Error"), f"{self.t("Failed to upload PDF:")} {e}")
-                    return
-
-            elif any(word in field.lower() for word in ["instapay","bank_account","e-wallet"]) or (current_collection.name == "Customers" and field=="Sales") :
-                value = widget.get() 
-                if value:
-                    try: 
-                        value = int(value)
-                    except Exception as e:
-                        messagebox.showerror(self.t("Error"), f"{field} {self.t("should be a number")}")
-                        return
-            elif any(word in field.lower() for word in ["stock_quantity", "salary", "credit", "debit", "balance", "Unit_Price", "duration", "net_total", "previous_balance", "payed_cash", "remaining_balance", "base_salary", "total_withdrawls", "delay_penalty", "overtime_bonus", "net_salary", "amount_withdrawls", "previous_withdrawls", "waste", "product_qty", "material_qty", "amount"]):
-                value = widget.get() 
-                if not value:
-                    messagebox.showwarning(self.t("Warning"), f"{self.t("Please enter a value for")} {field}")
-                    return
-                try: 
-                    value = float(value)
-                except Exception as e:
-                    messagebox.showerror(self.t("Error"), f"{field} {self.t("should be a floating number")}")
-                    return
-            else:
-                value = widget.get()
-                if not value and (field in MANDATORTY_FIELDS) :
-                    messagebox.showwarning(self.t("Warning"), f"{self.t("Please enter a value for")} {self.t(field)}")
-                    return
-                if any(word in field.lower() for word in ["units"]):
-                    # Parse comma-separated input to list
-                    value = [item.strip() for item in value.split(',') if item.strip()]
-
-            new_entry[field] = value
-
-        try:
-            # Generate unique Id
-            if "Id" in fields:
-                # Convert string IDs to integers and find the maximum
-                existing_ids = [int(doc["Id"]) for doc in current_collection.find({}, {"Id": 1})]
-                
-                new_id = max(existing_ids, default=0) + 1
-                new_entry["Id"] = new_id
-
-            #TODO this line is never reached on adding
-            if collection_name in ["Sales","Purchases"]:
-                new_entry["Date"] = temp
-                new_entry[f"{prefix}_info"] = info_obj
-                new_entry["Items"] = items
-                new_entry["Financials"] = financials_obj
-
-            current_collection.insert_one(new_entry)
-            config.report_log(self.logs_collection, self.user_name, current_collection, f"{self.t("Added new record to")}", new_entry)
-
-            self.refresh_generic_table(tree, current_collection, collection_name, search_text="")
-            messagebox.showinfo(self.t("Success"), self.t("Record added successfully"))
-
-            # Clear form fields after successful addition
-            for field, widget in self.entries.items():
-                if "date" in field.lower():
-                    widget.set_date(datetime.now())
-                elif "pic" in field.lower():
-                    widget.config(image='')
-                    widget.image = None
-                elif "pdf_path" in field.lower():
-                    widget.config(text="")
-                else:
-                    widget.delete(0, tk.END)
-
-        except Exception as e:
-            messagebox.showerror(self.t("Error"), f"{self.t("Error adding record:")} {e}")
-  
-    def edit_generic_entry(self, tree, current_collection, collection_name):
-        selected_item = tree.selection()
-
-        if not selected_item:
-            messagebox.showwarning(self.t("Warning"), self.t("Please select a record to edit"))
-            return
-
-        selected_data = tree.item(selected_item)["values"]
-        if not selected_data:
-            messagebox.showwarning(self.t("Warning"), self.t("No data found for selected record"))
-            return
-
-        columns = tree["columns"]  # This returns a tuple/list of column names
-        try:
-            lower_columns = [col.lower() for col in columns]
-            if current_collection.name in ["Customer_Payments","Supplier_Payments","Sales", "Purchases"]:
-                id_index = 0
-            elif current_collection.name in ["Production", "Employee_Salary", "Employee_withdrawls"]:
-                id_index = columns.index("timestamp")
-            elif "id" in lower_columns:
-                id_index = columns.index("Id")  # Dynamically get the index of "Id" #TODO need something different to loop on
-            elif any('code' in col for col in lower_columns):
-                for idx, col in enumerate(lower_columns):
-                    if 'code' in col:
-                        id_index = idx
-                        break
-        except ValueError:
-            messagebox.showerror(self.t("Error"), self.t("'Id' field not found in table columns"))
-            return
-
-        field_name = columns[id_index]
-        if field_name == "timestamp":
-            #change to datetime obj
-            raw_unique_id = tree.item(selected_item)["values"][id_index]
-            unique_id = datetime.strptime(raw_unique_id, "%Y-%m-%d %H:%M:%S.%f")
-        elif field_name == "duration":
-            unique_id = float(tree.item(selected_item)["values"][id_index])
-        else:
-            unique_id = tree.item(selected_item)["values"][id_index]
-
-
-        existing_record = current_collection.find_one({columns[id_index]: unique_id})
-
-        if not existing_record:
-            try:
-                unique_id = str(unique_id)
-                existing_record = current_collection.find_one({columns[id_index]: unique_id})
-                existing_record.pop("_id", None)
-            except ValueError:
-                pass
-
-        if not existing_record: #recheck existing record after potential update
-            messagebox.showerror(self.t("Error"), self.t("Could not find record in database"))
-            return
-        
-        updated_entry = {}
-        prefix = ""
-        # Handle special cases for Customer_Payments and Supplier_Payments
-        if collection_name in ["Customer_Payments", "Supplier_Payments"]:
-            prefix = "Customer" if collection_name == "Customer_Payments" else "supplier"
-            info_object = existing_record.get(f"{prefix}_info", {})
-            
-            # Update info object if code/name fields were modified
-            code_field = f"{prefix.lower()}_code"
-            name_field = f"{prefix.lower()}_name"
-
-            if code_field in self.entries:
-                code_value = self.entries[code_field].get()
-                if code_value:
-                    info_object["code"] = code_value
-            
-            if name_field in self.entries:
-                name_value = self.entries[name_field].get()
-                if name_value:
-                    info_object["name"] = name_value
-            
-            updated_entry[f"{prefix}_info"] = info_object
-
-        if collection_name in ['Sales','Purchases']:
-            prefix = "Customer" if collection_name == "Sales" else "supplier"
-
-            financials_obj = existing_record.get("Financials",{})
-            info_obj = existing_record.get(f"{prefix}_info",{})
-            items = existing_record.get("Items",{})
-            big_obj = {
-                "Financials": financials_obj,
-                f"{prefix}_info": info_obj,
-                "Items": items
-            }
-
-            for field, widget in self.entries.items():  
-                if field in ["Product_code","material_code"] and isinstance(items,list):
-                    item_codes = None
-                    if field == "Product_code":
-                        item_codes = self.entries["Product_code"].get()
-                    else: 
-                        item_codes = self.entries["material_code"].get()
-
-                    split_item_codes = item_codes.split(',')
-                    num_items = len(split_item_codes)
-                    idx = 0
-                    
-                    while num_items > idx:
-                        item = items[idx] if idx < len(items) else {}
-                        for key in item.keys():
-                            value = self.entries[key].get() #check out this line
-                            if isinstance(value, str):
-                                split_values = value.split(',')
-                                if idx < len(split_values):
-                                    if key in ["QTY", "numbering", "Total_QTY", "Unit_price", "Discount_Value", "Final_Price"]:
-                                        item[key] = float(split_values[idx].strip())
-                                    else: 
-                                        item[key] = split_values[idx].strip()
-                                else:
-                                    item[key] = ''
-                            else:
-                                if key in ["QTY", "numbering", "Total_QTY", "Unit_price", "Discount_Value", "Final_Price"]:
-                                    item[key] = float(value)  # or handle non-string cases differently
-                                else:
-                                    item[key] = value
-                                    
-                        if(len(items) < num_items):
-                            items.append(item)
-                        else:
-                            items[idx] = item
-                        idx += 1
-
-                    big_obj["Items"] = items
-   
-                elif field in ["product_name", "Unit", "QTY", "Total_QTY", "Unit_price", "numbering",
-                                "Discount_Type", "Discount_Value", "Final_Price", "material_name"]:
-                    continue
-
-                elif field in field_mapping:
-                    parent, child = field_mapping[field]
-                    value = widget.get()
-                    parent, child = field_mapping[field]
-                    if parent in big_obj:
-                        if child in ["QTY", "numbering", "Total_QTY", "Unit_price", "Discount_Value", "Final_Price", "Net_total", "Previous_balance", "Total_balance", "Payed_cash", "Remaining_balance"]:
-                            big_obj[parent][child] = float(value)
-                        else:
-                            big_obj[parent][child] = value
-
-            updated_entry["Financials"]    = big_obj["Financials"]
-            updated_entry[f"{prefix}_info"] = big_obj[f"{prefix}_info"]
-            updated_entry["Items"]         = big_obj["Items"]
-
-        for field, widget in self.entries.items():
-            if collection_name in ['Sales', 'Purchases'] and field in ["customer_code", "customer_name", "customer_phone1", 
-                "customer_phone2", "customer_address", "Net_total", "Previous_balance", "Total_balance", "Payed_cash",
-                "Remaining_balance", "Payment_method", "Product_code", "product_name", "Unit", "QTY", "Total_QTY", 
-                "Unit_price", "numbering", "Discount_Type", "Discount_Value", "Final_Price", "supplier_code", "supplier_name", "Id"
-                "supplier_phone1","supplier_phone2","supplier_address","material_code","material_name"]  :
-                continue
-            elif collection_name in ['Customer_Payments', 'Supplier_Payments'] and field in ["customer_code", "customer_name","supplier_code", "supplier_name"]:
-                continue
-            elif field in ["Id", "Date"]:
-                continue  # Skip Id and special fields (handled above)
-
-            existing_value = existing_record.get(field, None)
-
-            if "date" in field.lower() or "timestamp" in field.lower() or "check_out" in field.lower() or "check_in" in field.lower():
-                value = widget.get()
-                if value and collection_name != "Sales":
-                    try:
-                        value_date = datetime.strptime(value, '%d-%m-%Y').date()
-                        value = datetime.combine(value_date, time.min)
-                    except Exception as e:
-                        messagebox.showerror(self.t("Error"), f"{self.t("Invalid date format for")} {field}: {e}")
-                        return
-                else:
-                    value = existing_value  # Keep old date if no new input
-
-            elif "pic" in field.lower():
-                local_image_path = getattr(widget, 'image_path', None)
-
-                if local_image_path:
-                    try:
-                        value = upload_file_to_cloudinary(local_image_path)
-                    except Exception as e:
-                        messagebox.showerror(self.t("Upload Error"), f"{self.t("Failed to upload image:")} {e}")
-                        return
-                else:
-                    value = existing_value  # Keep old image URL if no new selection
-            
-            elif "pdf_path" in field.lower():
-                local_pdf_path = getattr(widget, 'filepath', None)
-
-                if local_pdf_path:
-                    try:
-                        value = self.upload_pdf_to_cloudinary(local_pdf_path)
-                    except Exception as e:
-                        messagebox.showerror(self.t("Upload Error"), f"{self.t("Failed to upload PDF:")} {e}")
-                        return
-                else:
-                    value = existing_value  # Keep old PDF URL if no new selection
-            elif any(word in field.lower() for word in ["instapay","bank_account","e-wallet"]) or (current_collection.name == "Customers" and field=="Sales") :
-                value = widget.get() 
-                if not value:
-                    value = existing_value  # Keep old text if no new input
-
-                try: 
-                    if value:
-                        value = int(value)
-                except Exception as e:
-                    messagebox.showerror(self.t("Error"), f"{field} {self.t("should be a number")}")
-                    return
-
-            elif any(word in field.lower() for word in ["stock_quantity", "salary", "credit", "debit", "balance", "Unit_Price", "duration", "net_total", "previous_balance", "payed_cash", "remaining_balance", "base_salary", "total_withdrawls", "delay_penalty", "overtime_bonus", "net_salary", "amount_withdrawls", "previous_withdrawls", "waste", "product_qty", "material_qty", "amount"]):
-                value = widget.get()
-                if not value:
-                    value = existing_value  # Keep old text if no new input
-                try: 
-                    if value:
-                        value = float(value)
-                except Exception as e:
-                    messagebox.showerror(self.t("Error"), f"{field} {self.t("should be a floating number")}")
-                    return
-            else:
-                try:
-                    value = widget.get()
-                except Exception:
-                    value = None  # For non-entry widgets (just in case)
-
-                if not value:
-                    value = existing_value  # Keep old text if no new input
-                else:
-                    if "units" in field.lower():
-                        value = [item.strip() for item in value.split(',') if item.strip()]
-
-            updated_entry[field] = value
-
-        try:
-            self.revert_locked_fields(existing_record, updated_entry)
-
-            identifier_field = columns[id_index]
-            result = current_collection.update_one({identifier_field: unique_id}, {"$set": updated_entry})
-            
-            if result.modified_count > 0:
-                config.report_log(self.logs_collection, self.user_name, current_collection, f"{self.t("Updated a record in")}", existing_record)
-                messagebox.showinfo(self.t("Success"), self.t("Record updated successfully"))
-            else:
-                messagebox.showinfo(self.t("Info"), self.t("No changes were made (record was identical)"))
-
-            # Refresh table
-            self.refresh_generic_table(tree, current_collection, collection_name, search_text="")
-
-            # Clear form fields after update
-            for field, widget in self.entries.items():
-                if "date" in field.lower():
-                    widget.set_date(datetime.now())
-                elif "pdf_path" in field.lower():
-                    widget.config(text="")
-                elif "pic" in field.lower():
-                    widget.config(image='')
-                    widget.image = None
-                    widget.image_path = None
-                else:
-                    widget.delete(0, tk.END)
-
-        except Exception as e:
-            messagebox.showerror(self.t("Error"), f"{self.t("Error updating record:")} {e}")
-    
-    def revert_locked_fields(self, existing, updated):
-        for key, locked_fields in LOCKED_FIELDS.items():
-            if key == "root":
-                for field in locked_fields:
-                    if field in updated:
-                        updated[field] = existing.get(field)
-                # break
-
-            elif key == "Items":
-                # Handle list of objects
-                existing_items = existing.get("Items", [])
-                updated_items = updated.get("Items", [])
-
-                for idx, item in enumerate(updated_items):
-                    if idx < len(existing_items):
-                        for field in locked_fields:
-                            if field in item:
-                                if field in ["QTY", "numbering", "Total_QTY", "Unit_price", "Discount_Value", "Final_Price"]:
-                                    item[field] = float(existing_items[idx].get(field))
-                                else: 
-                                    item[field] = existing_items[idx].get(field)
-                    updated_items[idx] = item
-                if len(updated_items) > 0:
-                    updated["Items"] = updated_items
-                # updated["Items"] = updated_items
-
-            elif key in ["Customer_info", "supplier_info"]:
-                # Handle normal nested dicts like Financials, Customer_info, etc.
-                nested_existing = existing.get(key, {})
-                nested_updated = updated.get(key, {})
-                for field in locked_fields:
-                    if field in nested_updated:
-                        nested_updated[field] = nested_existing.get(field)
-                if len(nested_updated) > 0:
-                    updated[key] = nested_updated
-    
-    def delete_generic_entry(self, tree, current_collection):   
-        selected_item = tree.selection()
-        id_index = None
-        field_name = None
-
-        if not selected_item:
-            messagebox.showwarning(self.t("Warning"), self.t("Please select a record to delete"))
-            return
-        columns = tree["columns"]  # Tuple/list of column names
-        try:
-            # lower_columns = [col.lower() for col in columns]
-            # original_columns = [self.get_original_key(col) for col in columns]
-            
-            # # Find which column is used as identifier (id / code)
-            # primary_key_field = PRIMARY_KEYS.get(current_collection.name)
-            
-            # Find which column is used as identifier (id / code)
-            if current_collection.name in ["Customer_Payments","Supplier_Payments", "Sales", "Purchases"]:
-                id_index = 0
-            elif current_collection.name in ["Production", "Employee_Salary", "Employee_withdrawls"]:
-                id_index = columns.index("timestamp")
-
-            elif current_collection.name in ["Employee_appointimets"]:
-                id_index = columns.index("duration")
-            elif "id" in [col.lower() for col in columns]:
-                id_index = columns.index("Id")
-            elif any('code' in col.lower() for col in columns):
-                for idx, col in enumerate(columns):
-                    if 'code' in col.lower():
-                        id_index = idx
-                        break
-            else:
-                messagebox.showerror(self.t("Error"), self.t("Unable to determine identifier column."))
-                return
-
-            if id_index is None:
-                messagebox.showerror(self.t("Error"), self.t("Unable to determine identifier column."))
-                return
-            
-            raw_unique_id = None
-            unique_id = None
-            
-            field_name = columns[id_index]
-            if field_name == "timestamp":
-                #change to datetime obj
-                raw_unique_id = tree.item(selected_item)["values"][id_index]
-                unique_id = datetime.strptime(raw_unique_id, "%Y-%m-%d %H:%M:%S.%f")
-            elif field_name == "duration":
-                unique_id = float(tree.item(selected_item)["values"][id_index])
-            else:
-                unique_id = tree.item(selected_item)["values"][id_index]
-
-        except (IndexError, ValueError):
-            if field_name == "timestamp":
-                try:
-                    unique_id = datetime.strptime(raw_unique_id, "%Y-%m-%d %H:%M:%S")
-                except:
-                    messagebox.showerror(self.t("Error"), self.t("Unable to read selected row data."))
-                    return
-            else:
-                messagebox.showerror(self.t("Error"), self.t("Unable to read selected row data."))
-                return
-
-        if not messagebox.askyesno(self.t("Confirm"), self.t("Are you sure you want to delete this record?")):
-            return
-
-        try:
-            # ARRAY_FIELDS = ['units']  # Fields you want to treat as arrays (custom handling)
-
-            query = {field_name: unique_id}
-            document = current_collection.find_one(query)
-            
-            if not document:
-                try:
-                    query = {field_name: str(unique_id)}
-                    document = current_collection.find_one(query)
-                except ValueError:
-                    pass
-
-            if not document:
-                messagebox.showwarning(self.t("Not Found"), self.t("No matching record found to delete."))
-                return
-
-            # Step 2: Check if document contains any ARRAY_FIELDS (like 'units')
-            handled = False
-            values = tree.item(selected_item)["values"]
-            
-            prefix = None
-            item_code = None
-            unit_value = None
-            
-            if("Units" in columns):
-                index = columns.index('Units')
-                unit_value = values[index]
-
-            if("Product_code" in columns or "material_code" in columns) and current_collection.name in ["Sales","Purchases"]:
-                prefix = "Product" if current_collection.name == "Sales" else "material"
-                idx1 = columns.index(f'{prefix}_code')
-                idx2 = columns.index('Unit')
-                item_code = values[idx1]
-                unit_value = values[idx2]
-
-            # for array_field in ARRAY_FIELDS:
-            units_list = document.get('Units', None)
-            items_list = document.get('Items', None)
-            print(f"units_list: {isinstance(units_list, list)} , unique_id {unique_id}")
-            if isinstance(units_list, list):
-                # Found Units array and unique_id is inside → handle it
-                if len(units_list) > 1:
-                    handled = True
-                    update_result = current_collection.update_one(
-                        {"_id": document["_id"]},
-                        {"$pull": {'Units': unit_value}}
-                    )
-                    if update_result.modified_count > 0:
-                        config.report_log(self.logs_collection, self.user_name, current_collection, f"{self.t("Deleted a record from")}", document)
-                        self.deselect_entry(tree)
-                        self.refresh_generic_table(tree, current_collection, self.table_name.get(), search_text="")
-                        messagebox.showinfo(self.t("Success"), f"{self.t("Unit")} '{unique_id}' {self.t("removed from record.")}")
-                    else:
-                        messagebox.showwarning(self.t("Warning"), self.t("No changes were made to the document."))
-
-            if isinstance(items_list,list):
-                if len(items_list) > 1 and current_collection.name in ['Sales','Purchases']:
-                    update_result = current_collection.update_one(
-                        {"_id": document["_id"]},
-                        {
-                            "$pull": {
-                                "Items": {
-                                    "$and": [
-                                        {f"{prefix}_code": item_code},
-                                        {"Unit": str(unit_value)}
-                                    ]
-                                }
-                            }
-                        }
-                    )                  
-                    if update_result.modified_count > 0:
-                        config.report_log(self.logs_collection, self.user_name, current_collection, f"{self.t("Deleted a record from")}", document)
-                        self.deselect_entry(tree)
-                        self.refresh_generic_table(tree, current_collection, self.table_name.get(), search_text="")
-                        messagebox.showinfo(self.t("Success"), f"{self.t("Unit")} '{unique_id}' {self.t("removed from record.")}")
-                    else:
-                        messagebox.showwarning(self.t("Warning"), self.t("No changes were made to the document."))
-
-                else:
-                    delete_result = current_collection.delete_one({"_id": document["_id"]})
-                    if delete_result.deleted_count > 0:
-                        config.report_log(self.logs_collection, self.user_name, current_collection, f"{self.t("Deleted a record from")}", document)
-                        self.deselect_entry(tree)
-                        self.refresh_generic_table(tree, current_collection, self.table_name.get(), search_text="")
-                        messagebox.showinfo(self.t("Success"), self.t("Record deleted successfully."))
-                    else:
-                        messagebox.showwarning(self.t("Warning"), self.t("No matching record found to delete."))
-                return  # After handling Units logic, exit
-
-            # Step 3: If no ARRAY_FIELDS handling triggered → do standard delete
-            if not handled:
-                delete_result = current_collection.delete_one(query)
-                if delete_result.deleted_count > 0:
-                    config.report_log(self.logs_collection, self.user_name, current_collection, f"{self.t("Deleted a record from")}", document)
-                    self.deselect_entry(tree)
-                    self.refresh_generic_table(tree, current_collection, self.table_name.get(), search_text="")
-                    messagebox.showinfo(self.t("Success"), self.t("Record deleted successfully."))
-                else:
-                    messagebox.showwarning(self.t("Warning"), self.t("No matching record found to delete."))
-
-        except Exception as e:
-            messagebox.showerror(self.t("Error"), f"{self.t("Error deleting record:")} {e}")         
-
-    def add_entry(self):
-        collection_name = self.table_name.get()
-        current_collection = self.get_collection_by_name(collection_name)
-
-        new_entry = {}
-        fields = self.get_fields_by_name(collection_name)
-    
-        try:
-            latest_entry = current_collection.find_one(sort=[("Id", -1)])  # Sort by Id descending
-            new_id = (latest_entry["Id"] + 1) if latest_entry else 1
-        except Exception:
-            new_id = 1
-
-        new_entry["Id"] = new_id
-
-        for field in fields:
-            if field == "Id":
-                continue
-            if "date" in field.lower():
-                dialog = tk.Toplevel(self.root)  # Create a Toplevel for date input
-                dialog.transient(self.root)
-                dialog.grab_set()
-                dialog.title(f"Enter value for {field}")
-
-                date_label = tk.Label(dialog, text=f"Enter {field}:")
-                date_label.pack(padx=10, pady=5)
-
-                date_entry = DateEntry(dialog, font=("Arial", 12), date_pattern='dd-MM-yyyy')
-                date_entry.pack(padx=10, pady=5)
-
-                selected_date = tk.StringVar()
-
-                def on_ok():
-                    selected_date_obj = date_entry.get_date()
-                    selected_date_str = selected_date_obj.strftime('%d-%m-%Y')
-                    selected_date.set(selected_date_str)
-                    dialog.destroy()
-
-                ok_button = tk.Button(dialog, text="OK", command=on_ok)
-                ok_button.pack(pady=5)
-                ok_button.bind("<Return>", lambda event: ok_button.invoke())
-
-                # Center the date selection dialog
-                screen_width = self.root.winfo_screenwidth()
-                screen_height = self.root.winfo_screenheight()
-                x_position = (screen_width // 2) - (dialog_width // 2)
-                y_position = (screen_height // 2) - (dialog_height // 2)
-                dialog.geometry(f"{dialog_width}x{dialog_height}+{x_position}+{y_position}")
-                self.root.wait_window(dialog)
-
-                value = selected_date.get()
-                if value:
-                    try:
-                        value = datetime.strptime(value, '%d-%m-%Y').date()
-                        value = datetime.combine(value, time.min) #Must do this to be comaptible with mongodb's Date type 
-                    except Exception as e:
-                        print(f"ValueError: {e}")
-                        messagebox.showerror(self.t("Error"), f"{self.t("Invalid date format for")} {field}")
-                        return
-                else:
-                    return  # User cancelled
-            elif "pic" in field.lower():
-                file_path = filedialog.askopenfilename(title=f"Select image for {field}",
-                                                    filetypes=[("Image files", "*.jpg *.jpeg *.png")])
-                if not file_path:
-                    return  # User cancelled
-                try:
-                    value = upload_file_to_cloudinary(file_path)
-                except Exception as e:
-                    messagebox.showerror(self.t("Upload Error"), f"{self.t("Failed to upload image:")} {e}")
-                    return
-            else:
-                dialog = AlwaysOnTopInputDialog(self.root, f"{self.t("Enter value for")} {field}:")
-                value = dialog.get_result()
-                if value is None:
-                    return
-
-            new_entry[field] = value
-
-        try:
-            current_collection.insert_one(new_entry)
-            self.display_table()
-            messagebox.showinfo(self.t("Success"), self.t("Record added successfully"))
-        except Exception as e:
-            messagebox.showerror(self.t("Error"), f"{self.t("Error adding record:")} {e}")
-
-    def edit_entry(self):
-        collection_name = self.table_name.get()
-        current_collection = self.get_collection_by_name(collection_name)
-        
-        selected_item = self.tree.selection()
-        if not selected_item:
-            messagebox.showwarning(self.t("Warning"), self.t("Please select a record to edit"))
-            return
-
-        #TODO fix this ID no longer available in tree
-        try:
-            unique_id = self.tree.item(selected_item)['values'][2]  # Assuming this holds the custom unique ID
-        except IndexError:
-            messagebox.showerror(self.t("Error"), self.t("Unable to read selected row data."))
-            return
-        
-        # Get the fields to edit (excluding _id)
-        first_document = current_collection.find_one({"Id": unique_id})
-        if not first_document:
-            messagebox.showerror(self.t("Error"), self.t("Could not retrieve record for editing."))
-            return
-
-        fields = self.get_fields_by_name(collection_name)
-        updated_values = {}
-
-        for field in fields:
-            if field == "Id":
-                continue
-            if "date" in field.lower():
-                dialog = tk.Toplevel(self.root)  # Create a Toplevel for date input
-                dialog.transient(self.root)
-                dialog.grab_set()
-                dialog.title(f"Enter value for {field}")
-
-                date_label = tk.Label(dialog, text=f"Enter {field}:")
-                date_label.pack(padx=10, pady=5)
-
-                date_entry = DateEntry(dialog, font=("Arial", 12), date_pattern='dd-MM-yyyy')
-                date_entry.pack(padx=10, pady=5)
-
-                selected_date = tk.StringVar()
-
-                def on_ok():
-                    selected_date_obj = date_entry.get_date()
-                    selected_date_str = selected_date_obj.strftime('%d-%m-%Y')
-                    selected_date.set(selected_date_str)
-                    dialog.destroy()
-
-                ok_button = tk.Button(dialog, text="OK", command=on_ok)
-                ok_button.pack(pady=5)
-                ok_button.bind("<Return>", lambda event: ok_button.invoke())
-
-                # Center the date selection dialog
-                screen_width = self.root.winfo_screenwidth()
-                screen_height = self.root.winfo_screenheight()
-                x_position = (screen_width // 2) - (dialog_width // 2)
-                y_position = (screen_height // 2) - (dialog_height // 2)
-                dialog.geometry(f"{dialog_width}x{dialog_height}+{x_position}+{y_position}")
-                self.root.wait_window(dialog)
-
-                value = selected_date.get()
-                if value:
-                    try:
-                        value = datetime.strptime(value, '%d-%m-%Y').date()
-                        value = datetime.combine(value, time.min) #Must do this to be comaptible with mongodb's Date type 
-
-                    except Exception as e:
-                        print(f"ValueError: {e}")
-                        messagebox.showerror(self.t("Error"), f"{self.t("Invalid date format for")} {field}")
-                        return
-                else:
-                    return  # User cancelled
-
-            else:
-                dialog = AlwaysOnTopInputDialog(self.root, f"Enter value for {field}:")
-                value = dialog.get_result()
-                if value is None:
-                    return
-
-            updated_values[field] = value
-
-        try:
-            current_collection.update_one({"Id": unique_id}, {"$set": updated_values})
-            self.display_table()
-            messagebox.showinfo(self.t("Success"), self.t("Record updated successfully"))
-        except Exception as e:
-            messagebox.showerror(self.t("Error"), f"{self.t("Error updating record:")} {e}")
-
-    def delete_entry(self):
-        collection_name = self.table_name.get()
-        current_collection = self.get_collection_by_name(collection_name)
-
-        selected_item = self.tree.selection()
-        if not selected_item:
-            messagebox.showwarning(self.t("Warning"), self.t("Please select a record to delete"))
-            return
-
-        try:
-            unique_id = self.tree.item(selected_item)['values'][2]  # Assuming this holds the custom unique ID
-        except IndexError:
-            messagebox.showerror(self.t("Error"), self.t("Unable to read selected row data."))
-            return
-
-        if messagebox.askyesno(self.t("Confirm"), self.t("Are you sure you want to delete this record?")):
-            try:
-                delete_result = current_collection.delete_one({"Id": unique_id})
-                if delete_result.deleted_count == 0:
-                    messagebox.showwarning(self.t("Not Found"), self.t("No matching record found to delete."))
-                else:
-                    self.display_table()
-                    messagebox.showinfo(self.t("Success"), self.t("Record deleted successfully"))
-            except Exception as e:
-                messagebox.showerror(self.t("Error"), f"{self.t("Error deleting record:")} {e}")
-
 ############################ Utility Functions ########################################
     def check_access_and_open(self, role):
         allowed_roles = ["admin","developer"]  # Define roles that can access this
@@ -5888,159 +4185,9 @@ class SalesSystemApp:
         else:
             messagebox.showwarning(self.t("Access Denied"), self.t("You do not have permission to access this page."))
 
-    def get_collection_by_name(self, collection_name):
-        """Returns the appropriate MongoDB collection object based on the provided name.
-        Args: collection_name (str): The name of the collection to access (e.g., "Employees", "Products").
-        Returns: pymongo.collection.Collection or None: The corresponding MongoDB collection object,
-                                                   or None if the name is not recognized."""
-        if collection_name == "Employees":
-            return self.employees_collection
-        if collection_name == "Employee_appointimets":
-            return self.employees_appointments_collection
-        if collection_name == "Employee_withdrawls":
-            return self.employee_withdrawls_collection
-        if collection_name == "Employee_Salary":
-            return self.employee_salary_collection
-        elif collection_name == "Products":
-            return self.products_collection
-        elif collection_name == "Sales":
-            return self.sales_collection
-        elif collection_name == "Customers":
-            return self.customers_collection
-        elif collection_name == "Suppliers":
-            return self.suppliers_collection
-        elif collection_name =="Materials":
-            return self.materials_collection
-        elif collection_name =="Purchases":
-            return self.purchases_collection
-        elif collection_name == "Shipping":
-            return self.shipping_collection
-        elif collection_name == "Orders":
-            return self.orders_collection
-        elif collection_name == "Expenses":
-            return self.expenses_collection
-        elif collection_name == "Daily_shifts":
-            return self.daily_shifts_collection
-        elif collection_name == "Accounts":
-            return self.accounts_collection
-        elif collection_name == "Transactions":
-            return self.transactions_collection
-        elif collection_name == "Big_deals":
-            return self.big_deals_collection
-        elif collection_name == "Production":
-            return self.production_collection
-        elif collection_name == "Customer_Payments":
-            return self.customer_payments
-        elif collection_name == "Supplier_Payments":
-            return self.supplier_payments
-        elif collection_name == "TEX_Calculations":
-            return self.TEX_Calculations_collection
-        elif collection_name == "general_exp_rev":
-            return self.general_exp_rev_collection
-        else:
-            print(f"Warning: Collection name '{collection_name}' not recognized.")
-            return None
-
-    def get_fields_by_name(self, collection_name):
-        """Returns the appropriate fields array based on the provided collection name.
-        Args: collection_name (str): The name of the collection (e.g., "Employees", "Products").
-        Returns: list: A list of field names for the corresponding collection, or an empty list if the name is not recognized.
-        """
-        if collection_name == "Employees":#DONE
-            return ["Name", "Password", "Id", "Role", "Join_Date", "National_id_pic", "Phone_number", "Address", "Salary"]
-        
-        elif collection_name == "Products":
-            return ["product_name", "category", "stock_quantity", "Specs", "Unit_Price", "product_code", "Units", "prod_pic"]
-        
-        # elif collection_name == "Sales_Header":
-        #     return [self.t("Product_code"), self.t("product_name"), self.t("unit"),self.t("numbering"),self.t("QTY"),self.t("Discount Type"),self.t("Discount Value"),self.t("Total_QTY"),self.t("Unit_Price"),self.t("Total_Price")]
-       
-        # elif collection_name == "Materials_Header":
-        #     return [self.t("Material_code"), self.t("Material_name"), self.t("unit"),self.t("numbering"),self.t("QTY"),self.t("Discount Type"),self.t("Discount Value"),self.t("Total_QTY"),self.t("Unit_Price"),self.t("Total_Price")]
-      
-        elif collection_name == "Sales_Header":
-            return ["Product_code", "product_name", "unit","numbering","QTY","Discount_Type","Discount Value","Total_QTY","Unit_Price","Total_Price"]
-        
-        elif collection_name == "Materials":
-            return ["material_name", "category","stock_quantity","specs","material_code","Units","material_pic","Unit_Price"]
-
-        elif collection_name == "Materials_Header":
-            return ["Material_code", "Material_name", "unit","numbering","QTY","Discount_Type","Discount Value","Total_QTY","Unit_Price","Total_Price"]
-       
-        elif collection_name == "Customers":
-            return ["Name", "Phone_number1", "Phone_number2", "Code", "Last_purchase_date" , "Purchase_mgr_number", "Financial_mgr_number", "Purchase_mgr_name", 
-                    "Financial_mgr_name", "Email", "Company_address", "Extra_address", "Maps_link", "Bank_account",
-                    "Instapay", "E_wallet", "Accountant_name", "Accountant_number", "Sales_grade", "Growth_grade", "Frequency_grade", "Credit",
-                    "Debit", "Balance", "Sales"]
-        
-        elif collection_name == "Suppliers":
-            return ["Name", "Phone_number1", "Phone_number2", "Code", "Last_purchase_date" , "Purchase_mgr_number", "Financial_mgr_number", "Purchase_mgr_name", 
-                    "Financial_mgr_name", "Email", "Company_address", "Extra_address", "Maps_link", "Bank_account",
-                    "Instapay", "E_wallet", "Accountant_name", "Accountant_number", "Sales_grade", "Growth_grade", "Frequency_grade", "Credit",
-                    "Debit", "Balance", "Sales"]
-        
-        elif collection_name == "Shipping":
-            return ["order_id", "shipping_date", "tracking_number", "shipping_address"]
-        
-        elif collection_name == "Orders":
-            return ["order_id", "order_date", "customer_id", "total_amount", "status"]
-        
-        elif collection_name == "Expenses":
-            return ["expense_id", "expense_type", "amount", "date", "description"]
-        
-        # elif collection_name == "Employee_appointimets":
-        elif collection_name == "Employee_appointimets":
-            return ["employee_code", "employee_name", "check_in", "check_out", "duration"]
-        
-        elif collection_name == "Daily_shifts":
-            return ["shift_id", "employee_id", "shift_date", "start_time", "end_time"]
-        
-        elif collection_name == "Accounts":
-            return ["account_id", "account_name", "balance", "account_type"]
-        
-        elif collection_name == "Transactions":
-            return ["transaction_id", "account_id", "transaction_date", "amount", "transaction_type"]
-        
-        elif collection_name == "Big_deals":
-            return ["deal_id", "deal_date", "customer_id", "product_id", "deal_value"]
-        
-        elif collection_name == "Sales":
-            return ["Receipt_Number", "Date", "customer_code", "customer_name", "customer_phone1","customer_phone2","customer_address",
-                    "Product_code","product_name","Unit", "QTY","numbering","Total_QTY", "Unit_price", "Discount_Type", "Discount_Value",
-                    "Final_Price","Net_total", "Previous_balance", "Total_balance", "Payed_cash", "Remaining_balance", "Payment_method", "PDF_Path"]
-        
-        elif collection_name == "Purchases":
-            return ["Receipt_Number", "Date", "supplier_code", "supplier_name", "supplier_phone1","supplier_phone2","supplier_address",
-                    "material_code","material_name","Unit","QTY", "numbering","Total_QTY", "Unit_price", "Discount_Type", "Discount_Value",
-                    "Final_Price", "Net_total", "Previous_balance", "Total_balance", "Payed_cash", "Remaining_balance", "Payment_method", "PDF_Path"]
-        
-        elif collection_name == "Customer_Payments":
-            return ["Operation_Number", "Time", "Credit", "Debit","Payment_method", "Customer_info"]
-
-        elif collection_name == "Supplier_Payments":
-            return ["Operation_Number", "Time", "Credit", "Debit","Payment_method", "supplier_info"]
-
-        elif collection_name == "Production":
-            return ["material_code", "material_qty", "product_code","product_qty", "timestamp", "waste"]
-
-        elif collection_name == "TEX_Calculations":
-            return ["calculation_id", "product_id", "calculation_date", "value"]
-        
-        elif collection_name == "Employee_Salary":
-            return ["employee_code", "employee_name", "month_year", "base_salary","total_withdrawls" , "delay_penalty", "overtime_bonus", "net_salary", "payment_method", "timestamp"]
-        
-        elif collection_name == "Employee_withdrawls":
-            return ["employee_code", "employee_name", "previous_withdrawls", "amount_withdrawls", "payment_method", "timestamp"]
-
-        elif collection_name == "general_exp_rev":
-            return ["code", "type", "amount", "payment_method", "description", "date"]
-        
-        else:
-            print(f"Warning: Collection name '{collection_name}' not recognized.")
-            return []
     def clean_materials_collection(self):
         """Remove leading/trailing spaces and newlines from all string attributes in Materials collection."""
-        materials_col = self.get_collection_by_name("Materials")
+        materials_col = config.get_collection_by_name("Materials")
         for doc in materials_col.find():
             updated_fields = {}
             for key, value in doc.items():
@@ -6052,7 +4199,7 @@ class SalesSystemApp:
                 materials_col.update_one({"_id": doc["_id"]}, {"$set": updated_fields})
     def clean_customers_collection(self):
         """Remove leading/trailing spaces and newlines from all string attributes in Customers collection."""
-        customers_col = self.get_collection_by_name("Customers")
+        customers_col = config.get_collection_by_name("Customers")
         for doc in customers_col.find():
             updated_fields = {}
             for key, value in doc.items():
@@ -6064,7 +4211,7 @@ class SalesSystemApp:
     
     def clean_suppliers_collection(self):
         """Remove leading/trailing spaces and newlines from all string attributes in Suppliers collection."""
-        suppliers_col = self.get_collection_by_name("Suppliers")
+        suppliers_col = config.get_collection_by_name("Suppliers")
         for doc in suppliers_col.find():
             updated_fields = {}
             for key, value in doc.items():
@@ -6076,7 +4223,7 @@ class SalesSystemApp:
     
     def clean_products_collection(self):
         """Remove leading/trailing spaces and newlines from all string attributes in Products collection."""
-        products_col = self.get_collection_by_name("Products")
+        products_col = config.get_collection_by_name("Products")
         for doc in products_col.find():
             updated_fields = {}
             for key, value in doc.items():
@@ -6088,7 +4235,7 @@ class SalesSystemApp:
     
     def clean_employees_collection(self):
         """Remove leading/trailing spaces and newlines from all string attributes in Employees collection."""
-        employees_col = self.get_collection_by_name("Employees")
+        employees_col = config.get_collection_by_name("Employees")
         for doc in employees_col.find():
             updated_fields = {}
             for key, value in doc.items():
@@ -6173,35 +4320,6 @@ class SalesSystemApp:
                 self.supplier_cb.event_generate('<Down>')
             else:
                 self.supplier_cb.event_generate('<Up>')  # Close dropdown
-    
-    def upload_pdf_to_cloudinary(self,file_path_param):
-        # import cloudinary.uploader
-        try:
-            response = cloudinary.uploader.upload(file_path_param, resource_type="raw")
-            return response['secure_url']
-        except Exception as e:
-            print(f"[Cloudinary Upload Error]: {e}")
-            return None
-
-    def get_mongo_field_path(self, key):
-        if key in search_field_mapping:
-            parts = search_field_mapping[key]
-            return ".".join(parts)
-        return key  # fallback: return as-is if not nested
-
-    def deselect_entry(self,tree):
-        tree.selection_remove(tree.selection())
-        # Clear form fields
-        for field, widget in self.entries.items():
-            if "date" in field.lower():
-                widget.set_date(datetime.now())
-            elif "pdf_path" in field.lower():
-                widget.config(text="")
-            elif "pic" in field.lower():
-                widget.config(image='')
-                widget.image = None
-            else:
-                widget.delete(0, tk.END)
 
     def on_canvas_press(self, event):
         self.tree.scan_mark(event.x, event.y)
@@ -6213,45 +4331,16 @@ class SalesSystemApp:
     def update_scroll_region(self, event=None):
         self.tree.configure(scrollregion=self.tree.bbox("all"))
 
-    # Function to Create Circular Image
-    def create_circular_image(self, image_path, size=(100, 100)):  
-        """Creates a circular version of an image"""
-        if not os.path.exists(image_path):
-            return None  # Return None if the image doesn't exist
-
-        img = Image.open(image_path).resize(size, Image.LANCZOS)  
-        mask = Image.new("L", size, 0)
-        draw = ImageDraw.Draw(mask)
-        draw.ellipse((0, 0, size[0], size[1]), fill=255)
-        
-        circular_img = Image.new("RGBA", size)
-        circular_img.paste(img, (0, 0), mask)
-        return ImageTk.PhotoImage(circular_img)
-
-    def is_primary_key_unique(self, collection, collection_name, new_prim_key):
-        primary_key_field = PRIMARY_KEYS.get(collection_name)
-
-        existing = collection.find_one({primary_key_field: new_prim_key})
-        return existing is None
 
     # To get the text button based on language
     def t(self, text):
         return self.translations.get(text, {}).get(self.language, text)
-    
-    def show_original(self):
-        """Print the English key for the selected translated value."""
-        selected_translated = self.selected_field.get()
-        original_key = self.reverse_translations.get(selected_translated, "Unknown")
-        return original_key
-    
-    def get_original_key(self, translated_label):
-        """Return the original field key from a translated label."""
-        return self.reverse_translations.get(translated_label, translated_label)
 
-    # Function tot oggle from Arabic to English and Vicaverse
+    # Function to toggle from Arabic to English and Vicaverse
     def toggle_language(self):
         self.language = "English" if self.language == "Arabic" else "Arabic"
         self.main_menu()   
+
     def toggle_theme(self):
         if self.light:
             self.light = False
@@ -6295,6 +4384,7 @@ class SalesSystemApp:
     # def update_time(self, time_label):
     #     time_label.config(text=datetime.now().strftime('%B %d, %Y %I:%M %p'))
     #     self.root.after(1000, self.update_time, time_label)
+    
     def handle_logout(self):
         if self.user_id:
             self.employees_collection.update_one(
@@ -6751,45 +4841,6 @@ class SalesSystemApp:
         self.stop_sound()
 
 
-def upload_file_to_cloudinary(file_path_param):
-    # import cloudinary.uploader
-    try:
-        response = cloudinary.uploader.upload(file_path_param, resource_type="image")
-        return response['secure_url']
-    except Exception as e:
-        print(f"[Cloudinary Upload Error]: {e}")
-        return None
-def load_image_preview(filepath, img_label):
-    try:
-        img = Image.open(filepath)
-        img.thumbnail((300, 300))  # Make it bigger (adjust size as you wish)
-        img_tk = ImageTk.PhotoImage(img)
-        
-        img_label.config(image=img_tk)
-        img_label.image = img_tk
-        img_label.image_path = filepath   # <== DID YOU ADD THIS LINE? 👈👈👈
-    except Exception as e:
-        print(f"Error loading image preview: {e}")
-
-def load_image_preview_from_url(image_url, label, max_size=(300, 300)):
-    """Load image from a URL and display it in a Tkinter Label.
-    Args:image_url (str): The image URL to load.
-         label (tk.Label): The Tkinter Label to display the image in.
-         image_refs (list): A list to store image references (to avoid garbage collection).
-         max_size (tuple): Max size of the image (width, height)"""
-    try:
-        with urllib.request.urlopen(image_url) as response:
-            image_data = Image.open(io.BytesIO(response.read()))
-            image_data.thumbnail(max_size)  # Resize image
-            image_obj = ImageTk.PhotoImage(image_data)
-
-            label.config(image=image_obj)
-            label.image = image_obj  # Also attach to label itself (extra safety)
-    except Exception as e:
-        print(f"Error loading image from URL: {e}")
-        label.config(image="")
-        label.image = None
-
 def get_type(var):
     return type(var).__name__
 
@@ -6840,8 +4891,6 @@ class AlwaysOnTopInputDialog(tk.Toplevel):
     def get_result(self):
         self.wait_window(self)
         return self.result
-
-
 
 ##################################################################### Main #########################################################
 
