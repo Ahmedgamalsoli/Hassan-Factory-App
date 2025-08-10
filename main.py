@@ -33,7 +33,7 @@ from collections import defaultdict
 from bidi.algorithm import get_display
 from matplotlib.figure import Figure    
 from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter,A5
+from reportlab.lib.pagesizes import letter,A7,A6,A5,A4,A3,A2,A1
 from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
@@ -54,6 +54,11 @@ from reports import reports
 from sales_invoice import SalesInvoice
 from purchases_invoice import PurchaseInvoice
 from DB_operations import DBOperations
+from production_order import ProductionOrder
+from employee_window import EmployeeWindow
+from treasury_window import TreasuryWindow
+from general_exp_rev import GeneralExpRev
+from visualization import Visualization
 # ======================
 # Unused imports
 # ======================
@@ -82,6 +87,15 @@ dialog_height = 150 # Same height as AlwaysOnTopInputDialog
 
 ARRAY_FIELDS = ['Units', 'Items'] #Must be lower case
 
+# PAGE_SIZES = {
+#     "A1": A1,
+#     "A2": A2,
+#     "A3": A3,
+#     "A4": A4,
+#     "A5": A5,
+#     "A6": A6,
+#     "A7": A7,
+# }
 
 # Determine the base directory
 if getattr(sys, "frozen", False):
@@ -461,12 +475,12 @@ class SalesSystemApp:
             "General Expenses Report":{"Arabic":"تقرير المصروفات العامة","English":"General Expenses Report"},
             "Employee Performance Report":{"Arabic":"تقرير أداء الموظفين","English":"Employee Performance Report"},
             "Export to Excel":{"Arabic":"تحويل الي اكسل","English":"Export to Excel"},
-            "Export to PDF":{"Arabic":"حفظ الملف","English":"Save as PDF"},
+            "Export to PDF and Print":{"Arabic":"حفظ الملف وطباعته","English":"Export to PDF and Print"},
             "Daily treasury report":{"Arabic":"تقرير الخزنة اليومية","English":"Daily treasury report"},
             "Please select month and year":{"Arabic":"الرجاء تحديد الشهر والسنة","English":"Please select month and year"},
             "Logs":{"Arabic":"سجلات","English":"Logs"},
-            # "":{"Arabic":"","English":""},
-            # "":{"Arabic":"","English":""},
+            "action":{"Arabic":"العملية","English":"Action"},
+            "Action":{"Arabic":"العملية","English":"Action"},
             # "":{"Arabic":"","English":""},
             # "":{"Arabic":"","English":""},
             # "":{"Arabic":"","English":""},
@@ -581,6 +595,8 @@ class SalesSystemApp:
 
             "Expenses":{"Arabic": "مصروفات", "English": "Expenses"},
             "Revenues":{"Arabic": "إيرادات", "English": "Revenues"},
+            "Expense":{"Arabic": "مصروف", "English": "Expense"},
+            "Revenue":{"Arabic": "إيراد", "English": "Revenue"},
             
             "Checked out with Id":{"Arabic": "تسجيل انصراف ب كود ", "English": "Checked out with Id"},
             "Checked in with Id":{"Arabic": "تسجيل دخول ب كود ", "English": "Checked in with Id"},
@@ -595,7 +611,7 @@ class SalesSystemApp:
 
             "Recorded Expense of":{"Arabic": "تسجيل مصروفات", "English": "Recorded Expense of"},
             "Recorded Revenue of":{"Arabic": "تسجيل إيرادات", "English": "Recorded Revenue of"},
-            "in general_exp_rev Database":{"Arabic": "في قاعدة بيانات general_exp_rev", "English": "in general_exp_rev Database"},
+            "in general_exp_rev Database":{"Arabic": "في قاعدة بيانات المصروفات والايرادات العامة", "English": "in general_exp_rev Database"},
 
             "Paid salary for":{"Arabic": "تم دفع المرتب إلى", "English": "Paid salary for"},
             "with code":{"Arabic": "ب كود", "English": "with code"},
@@ -603,6 +619,35 @@ class SalesSystemApp:
             "with Id":{"Arabic": "ب كود", "English": "with Id"},
 
             "Database with Unique Id": {"Arabic": "قاعدة بيانات ذات معرف فريد", "English": "Database with Unique Id"},
+            "Completed withdrawal in Employee_withdrawls Database for":{"Arabic": "تم إتمام عملية السحب في قاعدة بيانات المسحوبات إلى", "English": "Completed withdrawal in Employee_withdrawls Database for"},
+            "with Id":{"Arabic": "ب كود", "English": "with Id"},
+
+            "Exit the application":{"Arabic": "قفل التطبيق", "English": "Exit the application"},
+            "logout from the application":{"Arabic": "سجل خروج من التطبيق", "English": "logout from the application"},
+            "login to the application":{"Arabic": "سجل دخول الي التطبيق", "English": "login to the application"},
+
+
+
+            "Updated new invoice to":{"Arabic": "تم تحديث الفاتورة الجديدة إلى", "English": "Updated new invoice to"},
+            "Added invoice to":{"Arabic": "تمت إضافة الفاتورة إلى", "English": "Added invoice to"},
+            "Generated Pdf Purchase Invoice with Id":{"Arabic": "فاتورة شراء تم إنشاؤها بصيغة PDF مع معرف", "English": "Generated Pdf Purchase Invoice with Id"},
+            "for supplier":{"Arabic": "للمورد", "English": "for supplier"},
+            "Deleted":{"Arabic": "تم الحذف", "English": "Deleted"},
+
+
+            "Updated invoice to":{"Arabic": "تم تحديث الفاتورة إلى", "English": "Updated invoice to"},
+            "Added new invoice to":{"Arabic": "تمت إضافة فاتورة جديدة إلى", "English": "Added new invoice to"},
+            "Generated Pdf Sales Invoice with Id":{"Arabic": "فاتورة مبيعات مُنشأة بصيغة PDF مع رقم تعريفي", "English": "Generated Pdf Sales Invoice with Id"},
+            "for Customer":{"Arabic": "للعميل", "English": "for Customer"},
+
+            "Employee:":{"Arabic": "الموظف:", "English": "Employee:"},
+            # "":{"Arabic": "", "English": ""},
+            # "":{"Arabic": "", "English": ""},
+            # "":{"Arabic": "", "English": ""},
+
+
+
+
         }        
         
         self.keys = [
@@ -675,6 +720,11 @@ class SalesSystemApp:
         self.reports = reports(self.root, self)
         self.SalesInvoice = SalesInvoice(self.root, self)
         self.PurchaseInvoice = PurchaseInvoice(self.root, self)
+        self.ProductionOrder = ProductionOrder(self.root, self)
+        self.EmployeeWindow = EmployeeWindow(self.root, self)
+        self.TreasuryWindow = TreasuryWindow(self.root, self)
+        self.GeneralExpRev = GeneralExpRev(self.root, self)
+        self.Visualization = Visualization(self.root, self)
         # icon_image = Image.open(icon_path).resize((16, 16))  # Resize to fit in the button
         # self.lang_icon = ImageTk.PhotoImage(icon_image)
     
@@ -685,7 +735,7 @@ class SalesSystemApp:
     def start_without_login(self):
         self.login_window = LoginWindow(self.root, self)
         app.user_role="developer"
-        self.toggle_theme()
+        self.topbar.toggle_theme()
         app.main_menu()
 ########################################## Tables on Data Base ########################################
     def Connect_DB(self):
@@ -736,7 +786,6 @@ class SalesSystemApp:
 ############################################ Windows ########################################### 
 
 
-
     # To use: add a button in your main menu or topbar.topbar to call self.open_chatbot()
     def main_menu(self):
         # Clear current window
@@ -750,14 +799,14 @@ class SalesSystemApp:
         main_container.pack(fill=tk.BOTH, expand=True)
         
         # Visualization frames
-        left_viz_frame = self.create_card_frame(main_container)
+        left_viz_frame = self.Visualization.create_card_frame(main_container)
         left_viz_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
         
         # Button frame
-        button_frame = self.create_card_frame(main_container, padding=20)
+        button_frame = self.Visualization.create_card_frame(main_container, padding=20)
         button_frame.grid(row=0, column=1, sticky="nsew", padx=20, pady=10)
         
-        right_viz_frame = self.create_card_frame(main_container)    
+        right_viz_frame = self.Visualization.create_card_frame(main_container)    
         right_viz_frame.grid(row=0, column=2, sticky="nsew", padx=10, pady=10)
         
         # Configure grid weights
@@ -767,17 +816,13 @@ class SalesSystemApp:
         main_container.grid_rowconfigure(0, weight=1)
 
         # Create visualizations
-        self.create_left_visualization(left_viz_frame)
-        self.create_right_visualization(right_viz_frame)
+        self.Visualization.create_left_visualization(left_viz_frame)
+        self.Visualization.create_right_visualization(right_viz_frame)
         if self.light:
             # Define buttons with images, text, and commands
             buttons = [
-                # {"text": self.t("New Sales Invoice"), "image": "Sales.png",
-                # "command": lambda: self.new_sales_invoice(self.user_role)},
                 {"text": self.t("Sales Invoice"), "image": "sales_invoice-dark.png",
                 "command": lambda: self.SalesInvoice.manage_sales_invoices_window()},
-                # {"text": self.t("New Purchase Invoice"), "image": "Purchase.png", 
-                # "command": lambda: self.new_Purchase_invoice(self.user_role)},
                 {"text": self.t("Purchase Invoice"), "image": "purchases_invoice-dark.png", 
                 "command": lambda: self.PurchaseInvoice.manage_purchases_invoices_window()},
                 {"text": self.t("Receive Payment"), "image": "customer_payment-dark.png", 
@@ -785,13 +830,13 @@ class SalesSystemApp:
                 {"text": self.t("Make Payment"), "image": "supplier_payment-dark.png", 
                 "command": lambda: self.supplier_interactions(self.user_role)},
                 {"text": self.t("Production Order"), "image": "production-dark.png", 
-                "command": lambda: self.new_production_order(self.user_role)},
+                "command": lambda: self.ProductionOrder.new_production_order(self.user_role)},
                 {"text": self.t("Employee interactions"), "image": "employee-dark.png", 
-                "command": lambda: self.manage_Employees_window()},
+                "command": lambda: self.EmployeeWindow.manage_Employees_window()},
                 {"text": self.t("Treasury"), "image": "treasury-dark.png", 
-                "command": lambda: self.Treasury_window(self.user_role)},
+                "command": lambda: self.TreasuryWindow.Treasury_window(self.user_role)},
                 {"text": self.t("General_Exp_And_Rev"), "image": "financial-dark.png", 
-                "command": lambda: self.general_exp_rev(self.user_role)},
+                "command": lambda: self.GeneralExpRev.general_exp_rev(self.user_role)},
                 {"text": self.t("Reports"), "image": "report-dark.png", 
                 "command": lambda: self.reports.manage_Reports_window()},
                 {"text": self.t("Logs"), "image": "logs-dark.png", 
@@ -806,12 +851,8 @@ class SalesSystemApp:
         elif not self.light:
             # Define buttons with images, text, and commands
             buttons = [
-                # {"text": self.t("New Sales Invoice"), "image": "Sales.png",
-                # "command": lambda: self.new_sales_invoice(self.user_role)},
                 {"text": self.t("Sales Invoice"), "image": "sales_invoice-light.png",
                 "command": lambda: self.SalesInvoice.manage_sales_invoices_window()},
-                # {"text": self.t("New Purchase Invoice"), "image": "Purchase.png", 
-                # "command": lambda: self.new_Purchase_invoice(self.user_role)},
                 {"text": self.t("Purchase Invoice"), "image": "purchases_invoice-light.png", 
                 "command": lambda: self.PurchaseInvoice.manage_purchases_invoices_window()},
                 {"text": self.t("Receive Payment"), "image": "customer_payment-light.png", 
@@ -819,13 +860,13 @@ class SalesSystemApp:
                 {"text": self.t("Make Payment"), "image": "supplier_payment-light.png", 
                 "command": lambda: self.supplier_interactions(self.user_role)},
                 {"text": self.t("Production Order"), "image": "production-light.png", 
-                "command": lambda: self.new_production_order(self.user_role)},
+                "command": lambda: self.ProductionOrder.new_production_order(self.user_role)},
                 {"text": self.t("Employee interactions"), "image": "employee-light.png", 
-                "command": lambda: self.manage_Employees_window()},
+                "command": lambda: self.EmployeeWindow.manage_Employees_window()},
                 {"text": self.t("Treasury"), "image": "treasury-light.png", 
-                "command": lambda: self.Treasury_window(self.user_role)},
+                "command": lambda: self.TreasuryWindow.Treasury_window(self.user_role)},
                 {"text": self.t("General_Exp_And_Rev"), "image": "financial-light.png", 
-                "command": lambda: self.general_exp_rev(self.user_role)},
+                "command": lambda: self.GeneralExpRev.general_exp_rev(self.user_role)},
                 {"text": self.t("Reports"), "image": "report-light.png", 
                 "command": lambda: self.reports.manage_Reports_window()},
                 {"text": self.t("Logs"), "image": "logs-light.png", 
@@ -993,452 +1034,7 @@ class SalesSystemApp:
         except Exception as e:
             print(f"Error loading groupchat icon for main window: {e}")
         
-    def create_left_visualization(self, parent):
-        try:
-        
-            data = {
-                'customers': self.get_customer_count() if hasattr(self, 'get_customer_count') else 0,
-                'suppliers': self.get_supplier_count() if hasattr(self, 'get_supplier_count') else 0,
-                'sales': float(self.get_sales_count()) if hasattr(self, 'get_sales_count') else 0.0,
-                'purchases': float(self.get_purchase_count()) if hasattr(self, 'get_purchase_count') else 0.0
-            }
-
-            # Create figure with basic styling
-
-            plt.style.use('dark_background')  # Modern dark theme
-            fig = plt.Figure(figsize=(6, 10), dpi=70, facecolor=config.COLORS["card"])
-            # fig.subplots_adjust(hspace=0.4)
-            fig.subplots_adjust(hspace=0.4, left=0.15, right=0.85)
-            # fig.patch.set_facecolor('#FFFFFF')  # White background
-
-            # Bar Chart
-            ax1 = fig.add_subplot(211)
-            try:
-                arabic_title0 = self.t("Customers")
-                reshaped_text0 = arabic_reshaper.reshape(arabic_title0)
-                bidi_text0 = get_display(reshaped_text0)
-                arabic_title1 = self.t("Suppliers")
-                reshaped_text1 = arabic_reshaper.reshape(arabic_title1)
-                bidi_text1 = get_display(reshaped_text1)
-                bars = ax1.bar([bidi_text0, bidi_text1], 
-                            [data['customers'], data['suppliers']], 
-                            color=['#2E86C1', '#17A589'])
-                arabic_title2 = self.t("Customer & Supplier Overview")
-                reshaped_text2 = arabic_reshaper.reshape(arabic_title2)
-                bidi_text2 = get_display(reshaped_text2)                
-                arabic_title3 = self.t("Count")
-                reshaped_text3 = arabic_reshaper.reshape(arabic_title3)
-                bidi_text3 = get_display(reshaped_text3)                
-                ax1.set_title(bidi_text2, fontsize=20,color=config.COLORS["text"], fontname="Arial")
-                ax1.set_facecolor(config.COLORS["text"])
-                ax1.tick_params(colors=config.COLORS["text"], labelsize=13,)
-                ax1.set_ylabel("xx",text=bidi_text3,color=config.COLORS["text"], fontsize=18, fontname="Arial")
-                for label in ax1.get_xticklabels():
-                    label.set_fontsize(15)         # Change to your desired size
-                    label.set_fontname("Arial")    # Use a font that supports Arabic
-                    label.set_color(config.COLORS["text"])
-                    label.set_weight("bold") 
-                # Add simple data labels
-                for bar in bars:
-                    height = bar.get_height()
-                    ax1.text(bar.get_x() + bar.get_width()/2., height,
-                            f'{int(height)}',
-                            ha='center', va='bottom',
-                            color=config.COLORS["text"], fontsize=10)
-                    
-            except Exception as bar_error:
-                print(f"Bar chart error: {bar_error}")
-
-            # Summary Table
-            ax2 = fig.add_subplot(212)
-            ax2.axis('off')
-            arabic_title4 = self.t("Metric")
-            reshaped_text4 = arabic_reshaper.reshape(arabic_title4)
-            bidi_text4 = get_display(reshaped_text4) 
-
-            arabic_title5 = self.t("Value")
-            reshaped_text5 = arabic_reshaper.reshape(arabic_title5)
-            bidi_text5 = get_display(reshaped_text5) 
-
-            arabic_title6 = self.t("Customers number")
-            reshaped_text6 = arabic_reshaper.reshape(arabic_title6)
-            bidi_text6 = get_display(reshaped_text6) 
-
-            arabic_title7 = self.t("Suppliers number")
-            reshaped_text7 = arabic_reshaper.reshape(arabic_title7)
-            bidi_text7 = get_display(reshaped_text7) 
-
-            arabic_title8 = self.t("Number of Sales")
-            reshaped_text8 = arabic_reshaper.reshape(arabic_title8)
-            bidi_text8 = get_display(reshaped_text8) 
-
-            arabic_title9 = self.t("Number of Purchases")
-            reshaped_text9 = arabic_reshaper.reshape(arabic_title9)
-            bidi_text9 = get_display(reshaped_text9) 
-
-            table_data = [
-                [bidi_text4, bidi_text5],
-                [bidi_text6, f"{int(data['customers'])}"],
-                [bidi_text7, f"{int(data['suppliers'])}"],
-                [bidi_text8, f"{data['sales']:.2f}"],
-                [bidi_text9, f"{data['purchases']:.2f}"]
-            ]
-            
-            # Simple table without advanced styling
-            # rowHeights = [0.25]
-            table = ax2.table(
-                cellText=table_data,
-                loc='center',
-                cellLoc='center',
-                colWidths=[0.4, 0.4],  # Reduced column widths
-                # rowHeights=rowHeights,  # Custom heights
-                
-                # edges='closed'
-            )
-            # Additional adjustments for better spacing
-            # fig.subplots_adjust(left=0.2, bottom=0.1, right=0.8, top=0.9, hspace=0.4)
-            table.auto_set_font_size(False)
-            if self.language == "Arabic":
-                table.set_fontsize(15)
-            else:
-                table.set_fontsize(13)
-            # table.set_fontname("Arial")
-            table.set_zorder(100)
-            table.scale(1, 2)  # Less aggressive scaling
-
-            for (row, col), cell in table.get_celld().items():
-                cell.set_facecolor(config.COLORS["card"])
-                cell.set_text_props(fontname="Arial")
-                # cell.set_facecolor("black") # background content
-                cell.set_text_props(color=config.COLORS["text"])
-                # cell.set_text_props(color="black") #text in header
-                if row == 0:
-                    cell.set_facecolor(config.COLORS["main_frame"])
-                    cell.set_text_props(weight='bold',color="white")
-
-            canvas = FigureCanvasTkAgg(fig, master=parent)
-            canvas.draw()
-            canvas.get_tk_widget().config(bg=config.COLORS["card"])
-            canvas.get_tk_widget().pack(fill="x", expand=True)
-            # canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
-
-        except Exception as e:
-            print(f"Visualization failed: {str(e)}")
-            # Create error label as fallback
-            tk.Label(parent, text="Data visualization unavailable", fg="red").pack()
-
-    def create_right_visualization(self, parent):
-        try:
-            # Safe data retrieval
-            
-            sales = float(self.get_sales_count()) if hasattr(self, 'get_sales_count') else 0.0
-            purchases = float(self.get_purchase_count()) if hasattr(self, 'get_purchase_count') else 0.0
-            top_client = self.get_top_client() if hasattr(self, 'get_top_client') else None
-            fig = plt.Figure(figsize=(6, 8), dpi=60)
-            fig.subplots_adjust(hspace=0.5)
-            fig.patch.set_facecolor(config.COLORS["card"])  
-            # ...existing code...
-            # Pie Chart
-            ax1 = fig.add_subplot(211)
-            try:
-                # If both sales and purchases are zero, show a blank circle
-                if sales == 0 and purchases == 0:
-                    # Draw a blank pie with one wedge (invisible label)
-                    ax1.pie(
-                        [1],
-                        labels=[''],
-                        colors=[config.COLORS["main_frame"]],
-                        startangle=90,
-                        wedgeprops={'width': 1}
-                    )
-                else:
-                    arabic_title1 = self.t("Sales")
-                    reshaped_text1 = arabic_reshaper.reshape(arabic_title1)
-                    bidi_text1 = get_display(reshaped_text1)
-                    arabic_title2 = self.t("Purchases")
-                    reshaped_text2 = arabic_reshaper.reshape(arabic_title2)
-                    bidi_text2 = get_display(reshaped_text2)
-                    ax1.pie(
-                        [sales, purchases],
-                        labels=[bidi_text1, bidi_text2],
-                        autopct='%1.1f%%',
-                        colors=['#28B463', '#E74C3C'],
-                        textprops={'color': config.COLORS["text"], 'fontsize': 16, 'fontname': 'Arial'},
-                        wedgeprops={'width': 1}
-                    )
-                ax1.axis('equal')  # Ensures the pie is drawn as a circle
-                # Before setting the title:
-                arabic_title = self.t("Sales vs Purchases")
-                reshaped_text = arabic_reshaper.reshape(arabic_title)
-                bidi_text = get_display(reshaped_text)
-                ax1.set_title(bidi_text, fontsize=20, color=config.COLORS["text"], fontname="Arial")  # Use a font that supports Arabic
-                # ax1.set_title(self.t("المبيعات مقابل المشتريات"), fontsize=14, color=config.COLORS["text"])
-            except Exception as pie_error:
-                print(f"Pie chart error: {pie_error}")
-            # ...existing code...
-            # Top Client Chart
-            ax2 = fig.add_subplot(212)
-            try:
-                if top_client and isinstance(top_client, (list, tuple)) and len(top_client) >= 2:
-                    name, value = top_client[0], float(top_client[1])  # ✅ Uses corrected field
-                    arabic_title5 = name
-                    reshaped_text5 = arabic_reshaper.reshape(arabic_title5)
-                    bidi_text5 = get_display(reshaped_text5)     
-                    bar = ax2.bar(bidi_text5, [value], color='#8E44AD')
-                    # ax2.tick_params(axis='x', labelsize = 20)  # Set x, -axis label font size (bidi_text5)
-                    for label in ax2.get_xticklabels():
-                        label.set_fontsize(18)     
-                        label.set_fontname("Arial")    # Font family (supports Arabic)
-                        label.set_color(config.COLORS["text"])   
-                        label.set_weight("bold")  # Font size
-                    arabic_title3 = self.t("Top Client")
-                    reshaped_text3 = arabic_reshaper.reshape(arabic_title3)
-                    bidi_text3 = get_display(reshaped_text3)
-                    ax2.set_title(bidi_text3, fontsize=20,color=config.COLORS["text"],fontname="Arial")  # Use a font that supports Arabic
-                    ax2.set_facecolor(config.COLORS["text"])
-                    ax2.tick_params(colors=config.COLORS["text"])
-                    arabic_title4 = self.t("Amount")
-                    reshaped_text4 = arabic_reshaper.reshape(arabic_title4)
-                    bidi_text4 = get_display(reshaped_text4)
-                    ax2.set_ylabel(bidi_text4,fontsize=18,color=config.COLORS["text"],fontname="Arial")
-                    # Add value label
-                    for rect in bar:
-                        height = rect.get_height()
-                        ax2.text(rect.get_x() + rect.get_width()/2., height,
-                                f'${height:.2f}',
-                                ha='center', va='bottom',
-                                color=config.COLORS["text"], fontsize=10)
-                else:
-                    ax2.text(0.5, 0.5, 'No client data',
-                            ha='center', va='center',
-                            fontsize=10, color='gray')
-                    ax2.axis('off')
-            except Exception as bar_error:
-                print(f"Client chart error: {bar_error}")
-
-            canvas = FigureCanvasTkAgg(fig, master=parent)
-            canvas.draw()
-            canvas.get_tk_widget().pack(fill=tk.BOTH, expand=1)
-
-        except Exception as e:
-            print(f"Visualization failed: {str(e)}")
-            tk.Label(parent, text="Right visualization unavailable", fg="red").pack()
-    
-    def create_card_frame(self, parent, padding=0):
-        frame = tk.Frame(parent, bg=config.COLORS["card"], bd=0,
-                        highlightbackground=config.COLORS["main_frame"],
-                        highlightthickness=3)
-        if padding:
-            frame.grid_propagate(False)
-            frame.config(width=400, height=600)
-        return frame
-
-    def create_main_buttons(self, parent,buttons):
-        # buttons = [
-        #     {"text": "New Sales Invoice", "image": "Sales.png",
-        #     "command": lambda: self.trash(self.user_role)},
-        #     {"text": "New Purchase Invoice", "image": "Purchase.png", 
-        #     "command": lambda: self.trash(self.user_role)},
-        #     {"text": "Production Order", "image": "Production Order.png", 
-        #     "command": lambda: self.trash(self.user_role)},
-        #     {"text": "Employee Interactions", "image": "Employees.png", 
-        #     "command": lambda: self.trash(self.user_role)},
-        #     {"text": "Treasury", "image": "Treasury.png", 
-        #     "command": lambda: self.trash(self.user_role)},
-        #     {"text": "Database", "image": "Database.png", 
-        #     "command": lambda: self.trash(self.user_role)},
-        #     # {"text": "Analytics", "image": "Analytics.png", 
-        #     # "command": lambda: self.trash(self.user_role)},
-        # ]
-
-        columns_per_row = 3
-        button_size = 100
-
-        try:
-            for index, btn_info in enumerate(buttons):
-                row = index // columns_per_row
-                column = index % columns_per_row
-
-                btn_frame = tk.Frame(parent, bg=config.COLORS["card"])
-                btn_frame.grid(row=row, column=column, padx=15, pady=15)
-
-                # button_frame = tk.Frame(parent, bg=config.COLORS["card"])
-                # button_frame.pack(pady=30)
-                
-                # Load and process image
-                img_path = os.path.join(BASE_DIR, "Static", "images", btn_info["image"])
-                img = Image.open(img_path).resize((button_size, button_size), Image.LANCZOS)
-                photo_img = ImageTk.PhotoImage(img)
-
-                # Create modern button
-                btn = tk.Button(btn_frame,
-                            image=photo_img,
-                            text=btn_info["text"],
-                            compound=tk.TOP,
-                            bg=config.COLORS["card"],
-                            fg=config.COLORS["text"],
-                            activebackground=config.COLORS["highlight"],
-                            font=("Segoe UI", 10),
-                            borderwidth=0,
-                            command=btn_info["command"])
-                btn.image = photo_img
-                btn.pack()
-
-                # Hover effect
-                btn.bind("<Enter>", lambda e, b=btn: b.config(bg=config.COLORS["primary"]))
-                btn.bind("<Leave>", lambda e, b=btn: b.config(bg=config.COLORS["card"]))
-                
-        except Exception as e:
-            print(f"Button error: {e}")
-
-    # Database query methods
-    def get_customer_count(self):
-        try:
-            return self.customers_collection.count_documents({})
-        except PyMongoError as e:
-            print(f"Database error: {e}")
-            return 0
-
-    def get_supplier_count(self):
-        try:
-            return self.suppliers_collection.count_documents({})
-        except PyMongoError as e:
-            print(f"Database error: {e}")
-            return 0
-
-    def get_sales_count(self):
-        try:
-            return self.sales_collection.count_documents({})
-        except PyMongoError as e:
-            print(f"Database error: {e}")
-            return 0
-
-    def get_purchase_count(self):
-        try:
-            return self.purchases_collection.count_documents({})
-        except PyMongoError as e:
-            print(f"Database error: {e}")
-            return 0
-    def get_top_client(self):
-        try:
-            pipeline = [
-                # Convert Credit string to a numeric value
-                # {
-                #     "$addFields": {
-                #         "creditNumeric": {
-                #             "$toDouble": {
-                #                 "$arrayElemAt": [
-                #                     {"$split": ["$Credit", "_"]}, 
-                #                     0
-                #                 ]
-                #             }
-                #         }
-                #     }
-                # },
-                # Sort by creditNumeric (descending)
-                {"$sort": {"Debit": -1}},
-                # Get the top client
-                {"$limit": 1},
-                # Project the correct identifier field: "Company address"
-                {"$project": {"Name": 1, "Debit": 1, "_id": 0}}  # 🔑 Fix here
-            ]
-            result = list(self.customers_collection.aggregate(pipeline))
-            # print(1)
-            if result:
-                print(f"{result[0]["Name"]} ,{result[0]["Debit"]}")
-                return (result[0]["Name"], result[0]["Debit"])  # 🔑 Fix here
-            return ("No clients found", 0)
-            
-        except PyMongoError as e:
-            print(f"Database error: {e}")
-            return ("Error", 0)
-        
-    # Modify your show_visualizations method:
-    def show_visualizations(self,user_role):
-        # Clear current window
-        for widget in self.root.winfo_children():
-            widget.destroy()
-        print(1)
-        # Create the top bar
-        self.topbar.topbar(show_back_button=True)
-        print(1)
-        try:
-            print(1)
-            # Create new window
-            # vis_window = tk.Toplevel(self.root)
-            # vis_window.title("Business Analytics")
-            # vis_window.state("zoomed")  # Maximized window
-            print(1)
-            # Create main container
-            main_frame = tk.Frame(self.root, bg="white")
-            main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
-            print(1)
-            # Get data from database
-            data = {
-                'customers': self.get_customer_count(),
-                'suppliers': self.get_supplier_count(),
-                'sales': self.get_sales_count(),
-                'purchases': self.get_purchase_count(),
-                'top_client': self.get_top_client()
-            }
-            print(1)
-            # Create figure
-            fig = plt.Figure(figsize=(16, 10), dpi=100)
-            fig.suptitle("Business Performance Dashboard", fontsize=16, y=0.95)
-            print(1)
-            # Create subplots
-            ax1 = fig.add_subplot(221)
-            ax2 = fig.add_subplot(222)
-            ax3 = fig.add_subplot(223)
-            ax4 = fig.add_subplot(224)
-            print(1)
-            # Chart 1: Customers vs Suppliers
-            ax1.bar(['Customers', 'Suppliers'], 
-                    [data['customers'], data['suppliers']], 
-                    color=['#1f77b4', '#ff7f0e'])
-            ax1.set_title(self.t("Customer & Supplier Count"), pad=15,font="Arial")
-            ax1.set_ylabel("Count")
-            print(1)
-            # Chart 2: Sales/Purchases Ratio
-            ax2.pie([data['sales'], data['purchases']],
-                    labels=['Sales', 'Purchases'],
-                    autopct='%1.1f%%',
-                    colors=['#2ca02c', '#d62728'],
-                    startangle=90)
-            ax2.set_title("Sales vs Purchases Ratio", pad=15)
-            print(1)
-            # Chart 3: Top Client
-            if data['top_client']:
-                ax3.bar(data['top_client'][0], data['top_client'][1],
-                        color='#9467bd')
-                ax3.set_title("Top Performing Client", pad=15)
-                ax3.set_ylabel("Sales Amount")
-            print(1)
-            # Chart 4: Summary Table
-            table_data = [
-                ['Metric', 'Value'],
-                ['Total Customers', data['customers']],
-                ['Total Suppliers', data['suppliers']],
-                ['Total Sales', data['sales']],
-                ['Total Purchases', data['purchases']]
-            ]
-            ax4.axis('off')
-            table = ax4.table(cellText=table_data, 
-                            loc='center', 
-                            cellLoc='center',
-                            colWidths=[0.4, 0.4])
-            table.auto_set_font_size(False)
-            table.set_fontsize(12)
-
-            # Embed in Tkinter
-            canvas = FigureCanvasTkAgg(fig, master=main_frame)
-            canvas.draw()
-            canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
-
-
-        except Exception as e:
-            print(f"Error generating visualizations: {e}")
-            tk.messagebox.showerror(self.t("Error"), f"{self.t("Failed to load reports:")} {str(e)}")           
+     
         
 
     def manage_database_window(self):
@@ -1572,97 +1168,6 @@ class SalesSystemApp:
             for btn_info in buttons:
                 tk.Button(fallback_frame, text=btn_info["text"], 
                         command=btn_info["command"]).pack(side="left", padx=10)
-                
-
-    def manage_Employees_window(self):
-                # Clear current window
-        for widget in self.root.winfo_children():
-            widget.destroy()
-        self.root.configure(bg=config.COLORS["background"])
-        # Create the top bar
-        self.topbar.topbar(show_back_button=True)
-
-        button_frame = tk.Frame(self.root, bg=config.COLORS["background"])
-        button_frame.pack(pady=30)
-
-        # Define buttons with images, text, and commands
-        if self.light:
-            buttons = [
-                {"text": self.t("Employee hours"), "image": "emp_hour-dark.png", 
-                "command": lambda: self.employee_hours_window(self.user_role)},
-                {"text": self.t("Employee Withdrawals"), "image": "emp_with-dark.png", 
-                "command": lambda: self.employee_withdrowls_window(self.user_role)},
-                {"text": self.t("Employee Statistics"), "image": "emp_salary-dark.png", 
-                "command": lambda: self.employee_statistics_window(self.user_role)},
-            ]
-        elif not self.light:
-            buttons = [
-                {"text": self.t("Employee hours"), "image": "emp_hour-light.png", 
-                "command": lambda: self.employee_hours_window(self.user_role)},
-                {"text": self.t("Employee Withdrawals"), "image": "emp_with-light.png", 
-                "command": lambda: self.employee_withdrowls_window(self.user_role)},
-                {"text": self.t("Employee Statistics"), "image": "emp_salary-light.png", 
-                "command": lambda: self.employee_statistics_window(self.user_role)},
-            ]
-        images = []  # Keep references to prevent garbage collection
-        columns_per_row = 3  # Number of buttons per row
-        button_size = 120
-        try:
-            for index, btn_info in enumerate(buttons):
-                # Default transparent image
-                img_path = os.path.join(BASE_DIR, "Static", "images", btn_info["image"])
-                original_img = Image.open(img_path).convert("RGBA")
-                transparent_img = original_img.resize((button_size, button_size), Image.LANCZOS)
-                photo_transparent = ImageTk.PhotoImage(transparent_img)
-
-                # Image with background
-                bg_color = (0,0,0,0)  # F5F7FA in RGBA
-                bg_img = Image.new("RGBA", original_img.size, bg_color)
-                composited_img = Image.alpha_composite(bg_img, original_img)
-                resized_composited = composited_img.resize((button_size, button_size), Image.LANCZOS)
-                photo_with_bg = ImageTk.PhotoImage(resized_composited)
-
-                # Save both images
-                images.append(photo_transparent)
-                images.append(photo_with_bg)
-
-                # Calculate grid position
-                row = index // columns_per_row
-                column = index % columns_per_row
-
-                # Create sub-frame for each button
-                sub_frame = tk.Frame(button_frame, bg=config.COLORS["background"])
-                sub_frame.grid(row=row, column=column, padx=20, pady=20)
-
-                # Image button
-                btn = tk.Button(sub_frame, image=photo_transparent, bd=0,
-                                text=btn_info["text"], 
-                                font=("Arial", 15, "bold"),
-                                compound=tk.TOP,
-                                bg=config.COLORS["background"],
-                                fg=config.COLORS["text"],
-                                activebackground=config.COLORS["highlight"],
-                                command=btn_info["command"])
-                btn.image_transparent = photo_transparent
-                btn.image_with_bg = photo_with_bg
-                btn.pack()
-                
-                btn.bind("<Enter>", lambda e, b=btn: b.config(bg=config.COLORS["primary"]))
-                btn.bind("<Leave>", lambda e, b=btn: b.config(bg=config.COLORS["background"]))
-
-                # # Text label
-                # lbl = tk.Label(sub_frame, text=btn_info["text"], 
-                #             font=("Arial", 15, "bold"), bg=config.COLORS["background"], fg="#003366")
-                # lbl.pack(pady=5)
-
-        except Exception as e:
-            print(f"Error loading images: {e}")
-            # Fallback to text buttons if images fail
-            fallback_frame = tk.Frame(self.root, bg=config.COLORS["background"])
-            fallback_frame.pack(pady=20)
-            for btn_info in buttons:
-                tk.Button(fallback_frame, text=btn_info["text"], 
-                        command=btn_info["command"]).pack(side="left", padx=10)
 
 
     def employee_hours_window(self, user_role):
@@ -1674,8 +1179,8 @@ class SalesSystemApp:
         self.topbar.topbar(show_back_button=True, Back_to_Employee_Window=True)
         
         # Database collections
-        employees_col = config.get_collection_by_name("Employees")
-        appointments_col = config.get_collection_by_name("Employee_appointimets")
+        employees_col = self.get_collection_by_name("Employees")
+        appointments_col = self.get_collection_by_name("Employee_appointimets")
         
         # Create mappings
         self.employee_code_name = {}
@@ -1842,8 +1347,8 @@ class SalesSystemApp:
         self.topbar.topbar(show_back_button=True, Back_to_Employee_Window=True)
 
         # Database collections
-        employees_col = config.get_collection_by_name("Employees")
-        withdrawals_col = config.get_collection_by_name("Employee_withdrawls")
+        employees_col = self.get_collection_by_name("Employees")
+        withdrawals_col = self.get_collection_by_name("Employee_withdrawls")
         # Create mappings
         self.employee_code_map = {}
         self.employee_name_map = {}
@@ -1964,7 +1469,7 @@ class SalesSystemApp:
             self.prev_withdrawals.config(state='readonly')
             
             # Update salary display
-            employees_col = config.get_collection_by_name("Employees")
+            employees_col = self.get_collection_by_name("Employees")
             code = int(code)
             emp = employees_col.find_one({'Id': code})
             if emp:
@@ -1975,7 +1480,7 @@ class SalesSystemApp:
                 self.salary_var.set("0.00")
 
     def calculate_previous_withdrawals(self, employee_code):
-        withdrawals_col = config.get_collection_by_name("Employee_withdrawls")
+        withdrawals_col = self.get_collection_by_name("Employee_withdrawls")
         total = 0
         for withdrawal in withdrawals_col.find({'employee_code': employee_code}):
             total += withdrawal.get('amount_withdrawls', 0)
@@ -2044,7 +1549,7 @@ class SalesSystemApp:
         self.topbar.topbar(show_back_button=True, Back_to_Employee_Window=True)
         
         # Database connections
-        employees_col = config.get_collection_by_name("Employees")
+        employees_col = self.get_collection_by_name("Employees")
         
         # Employee mappings
         self.employee_code_map = {}
@@ -2259,8 +1764,8 @@ class SalesSystemApp:
             return
         
         # Get collections
-        withdrawals_col = config.get_collection_by_name("Employee_withdrawls")
-        hours_col = config.get_collection_by_name("Employee_appointimets")
+        withdrawals_col = self.get_collection_by_name("Employee_withdrawls")
+        hours_col = self.get_collection_by_name("Employee_appointimets")
         
         # Get data - include end date by adding 1 day to to_date
         withdrawals = list(withdrawals_col.find({
@@ -2424,9 +1929,9 @@ class SalesSystemApp:
             if not all([salary_data['employee_code'], salary_data['month_year']]):
                 raise ValueError("Missing required fields")
             
-            salary_col = config.get_collection_by_name("Employee_Salary")
+            salary_col = self.get_collection_by_name("Employee_Salary")
             # Database collections
-            withdrawals_col = config.get_collection_by_name("Employee_withdrawls")
+            withdrawals_col = self.get_collection_by_name("Employee_withdrawls")
             
             # Check for existing salary record
             existing = salary_col.find_one({
@@ -2497,109 +2002,6 @@ class SalesSystemApp:
         self.display_table()
 
 
-    def general_exp_rev(self, user_role):
-        # Clear current window
-        for widget in self.root.winfo_children():
-            widget.destroy()
-
-        self.topbar.topbar(show_back_button=True)
-        
-        # Create main container frame
-        main_frame = tk.Frame(self.root, padx=20, pady=20)
-        main_frame.pack(fill=tk.BOTH, expand=True)
-        
-        # Create paned window for resizable split
-        paned_window = tk.PanedWindow(main_frame, orient=tk.HORIZONTAL, sashrelief=tk.RAISED, sashwidth=4)
-        paned_window.pack(fill=tk.BOTH, expand=True)
-        
-        # Expense Frame (left side)
-        expense_frame = tk.LabelFrame(paned_window, text=self.t("Expenses"), font=("Arial", 12, "bold"), padx=10, pady=10)
-        # Revenue Frame (right side)
-        revenue_frame = tk.LabelFrame(paned_window, text=self.t("Revenues"), font=("Arial", 12, "bold"), padx=10, pady=10)
-        
-        paned_window.add(expense_frame)
-        paned_window.add(revenue_frame)
-        
-        # Force Tkinter to calculate window dimensions
-        self.root.update_idletasks()
-        
-        # Set separator to half of the screen immediately
-        width = main_frame.winfo_width()
-        if width > 100:  # Ensure we have a reasonable width
-            paned_window.sash_place(0, width // 2, 0)
-        
-        # Common payment methods
-        payment_methods = ["cash", "instapay", "bank_account", "e_wallet"]
-        
-        # ======================
-        # EXPENSE SECTION
-        # ======================
-        expense_frame.columnconfigure(1, weight=1)
-        for i in range(4):
-            expense_frame.rowconfigure(i, weight=1)
-        
-        tk.Label(expense_frame, text=self.t("Amount Paid:"), font=("Arial", 10)).grid(row=0, column=0, sticky='e', pady=5)
-        self.expense_amount = tk.DoubleVar()
-        expense_entry = tk.Entry(expense_frame, textvariable=self.expense_amount)
-        expense_entry.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
-        
-        tk.Label(expense_frame, text=self.t("Payment Method:"), font=("Arial", 10)).grid(row=1, column=0, sticky='e', pady=5)
-        self.expense_payment = tk.StringVar()
-        expense_payment_cb = ttk.Combobox(expense_frame, textvariable=self.expense_payment, 
-                                        values=payment_methods, state="readonly")
-        expense_payment_cb.grid(row=1, column=1, padx=5, pady=5, sticky='ew')
-        expense_payment_cb.current(0)  # Default to Cash
-        
-        tk.Label(expense_frame, text=self.t("Description:"), font=("Arial", 10)).grid(row=2, column=0, sticky='e', pady=5)
-        self.expense_desc = tk.StringVar()
-        expense_desc_entry = tk.Entry(expense_frame, textvariable=self.expense_desc)
-        expense_desc_entry.grid(row=2, column=1, padx=5, pady=5, sticky='ew')
-        
-        expense_submit = tk.Button(expense_frame, 
-                            text=self.t("💾 Record Expense"), 
-                            font=('Helvetica', 12, 'bold'),
-                            width=20,
-                            command=lambda: self.save_transaction("Expense"),
-                            bg='#2196F3', fg='white')
-        expense_submit.grid(row=3, column=0, columnspan=2, pady=10, sticky='ew')
-        
-        # ======================
-        # REVENUE SECTION
-        # ======================
-        revenue_frame.columnconfigure(1, weight=1)
-        for i in range(4):
-            revenue_frame.rowconfigure(i, weight=1)
-        
-        tk.Label(revenue_frame, text=self.t("Amount Received:"), font=("Arial", 10)).grid(row=0, column=0, sticky='e', pady=5)
-        self.revenue_amount = tk.DoubleVar()
-        revenue_entry = tk.Entry(revenue_frame, textvariable=self.revenue_amount)
-        revenue_entry.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
-        
-        tk.Label(revenue_frame, text=self.t("Payment Method:"), font=("Arial", 10)).grid(row=1, column=0, sticky='e', pady=5)
-        self.revenue_payment = tk.StringVar()
-        revenue_payment_cb = ttk.Combobox(revenue_frame, textvariable=self.revenue_payment, 
-                                        values=payment_methods, state="readonly")
-        revenue_payment_cb.grid(row=1, column=1, padx=5, pady=5, sticky='ew')
-        revenue_payment_cb.current(0)  # Default to Cash
-        
-        tk.Label(revenue_frame, text=self.t("Description:"), font=("Arial", 10)).grid(row=2, column=0, sticky='e', pady=5)
-        self.revenue_desc = tk.StringVar()
-        revenue_desc_entry = tk.Entry(revenue_frame, textvariable=self.revenue_desc)
-        revenue_desc_entry.grid(row=2, column=1, padx=5, pady=5, sticky='ew')
-        
-        revenue_submit = tk.Button(revenue_frame, 
-                            text=self.t("💾 Record Revenue"), 
-                            font=('Helvetica', 12, 'bold'),
-                            width=20,
-                            command=lambda: self.save_transaction("Revenue"),
-                            bg="#21F35D", fg='white')
-        revenue_submit.grid(row=3, column=0, columnspan=2, pady=10, sticky='ew')        
-        # Configure grid weights
-        for frame in [expense_frame, revenue_frame]:
-            frame.grid_columnconfigure(1, weight=1)
-            for i in range(4):
-                frame.grid_rowconfigure(i, weight=1)
-
     # New method to save transactions to MongoDB
     def save_transaction(self, transaction_type):
         if transaction_type == "Expense":
@@ -2618,7 +2020,7 @@ class SalesSystemApp:
         if not payment:
             messagebox.showerror(self.t("Error"), self.t("Please select a payment method"))
             return
-        code = config.get_next_code(self.general_exp_rev_collection)    
+        code = self.get_next_code(self.general_exp_rev_collection)    
         # Create document for MongoDB
         transaction = {
             "type": transaction_type,
@@ -2718,665 +2120,8 @@ class SalesSystemApp:
                 log.get("action", "")
             ))
     
-    def Treasury_window(self, user_role):
-        # Clear current window
-        for widget in self.root.winfo_children():
-            widget.destroy()
 
-        self.topbar.topbar(show_back_button=True)
 
-        # Main container
-        main_frame = tk.Frame(self.root, padx=20, pady=20)
-        main_frame.pack(fill=tk.BOTH, expand=True)
-
-        # Filter controls
-        filter_frame = tk.Frame(main_frame)
-        filter_frame.pack(fill=tk.X, pady=10)
-
-        # Date filters
-        date_frame = tk.Frame(filter_frame)
-        date_frame.pack(side=tk.LEFT, padx=10)
-
-        tk.Label(date_frame, text=self.t("From Date:")).pack(side=tk.LEFT)
-        self.from_date = DateEntry(date_frame, date_pattern="dd/mm/yyyy")
-        self.from_date.pack(side=tk.LEFT, padx=10)
-
-        tk.Label(date_frame, text=self.t("To Date:")).pack(side=tk.LEFT, padx=(20,0))
-        self.to_date = DateEntry(date_frame, date_pattern="dd/mm/yyyy")
-        self.to_date.pack(side=tk.LEFT)
-
-        # Payment method filter
-        method_frame = tk.Frame(filter_frame)
-        method_frame.pack(side=tk.LEFT, padx=20)
-
-        tk.Label(method_frame, text=self.t("Payment Method:")).pack(side=tk.LEFT)
-        self.payment_method = ttk.Combobox(
-            method_frame,
-            values=["All", "Cash", "Instapay", "Bank Account", "E Wallet"]
-        )
-        self.payment_method.set("All")
-        self.payment_method.pack(side=tk.LEFT, padx=10)
-
-        # Search button
-        search_btn = tk.Button(filter_frame, text=self.t("Search"), command=self.fetch_transactions)
-        search_btn.pack(side=tk.RIGHT, padx=10)
-
-        # Results Treeview
-        columns = ("date", "description", "credit", "debit", "payment_method")
-        self.tree = ttk.Treeview(main_frame, columns=columns, show="headings")
-        
-        # Configure columns
-        self.tree.heading("date", text=self.t("Date"))
-        self.tree.heading("description", text=self.t("Description"))
-        self.tree.heading("credit", text=self.t("Credit"))
-        self.tree.heading("debit", text=self.t("Debit"))
-        self.tree.heading("payment_method", text=self.t("Payment Method"))
-
-        self.tree.column("date", width=120, anchor='center')
-        self.tree.column("description", width=250, anchor='center')
-        self.tree.column("credit", width=120, anchor='center')
-        self.tree.column("debit", width=120, anchor='center')
-        self.tree.column("payment_method", width=150, anchor='center')
-
-        # Add scrollbar
-        scrollbar = ttk.Scrollbar(main_frame, orient=tk.VERTICAL, command=self.tree.yview)
-        self.tree.configure(yscroll=scrollbar.set)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self.tree.pack(fill=tk.BOTH, expand=True)
-
-        # Totals display
-        totals_frame = tk.Frame(main_frame)
-        totals_frame.pack(fill=tk.X, pady=10)
-
-        self.total_credit_var = tk.StringVar()
-        self.total_debit_var = tk.StringVar()
-        self.balance_var = tk.StringVar()
-
-        tk.Label(totals_frame, text=self.t("Total Credit:"), font=('Arial', 10, 'bold')).pack(side=tk.LEFT, padx=10)
-        tk.Label(totals_frame, textvariable=self.total_credit_var, font=('Arial', 10)).pack(side=tk.LEFT)
-
-        tk.Label(totals_frame, text=self.t("Total Debit:"), font=('Arial', 10, 'bold')).pack(side=tk.LEFT, padx=10)
-        tk.Label(totals_frame, textvariable=self.total_debit_var, font=('Arial', 10)).pack(side=tk.LEFT)
-
-        tk.Label(totals_frame, text=self.t("Balance:"), font=('Arial', 10, 'bold')).pack(side=tk.LEFT, padx=10)
-        tk.Label(totals_frame, textvariable=self.balance_var, font=('Arial', 10)).pack(side=tk.LEFT)
-        if self.language == "Arabic":
-            headers = ["التاريخ", "الوصف", 'المدين', 'الدائن',  "طريقة الدفع"]
-        else:
-            headers = ["date", "description", 'debit', 'credit',  "payment_method"]
-        filename_excel = f"تقرير الخزنه_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-        filename_pdf = f"تقرير الخزنه_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-        report_folder = "تقارير الخزنه"
-
-        # Debug print to check actual values
-        # print(f"Debug Values - Credit: {self.total_credit_var}, Debit: {self.total_debit_var}, Balance: {self.balance_var}")
-        # print(f"Type Credit: {type(self.total_credit_var)}, Debit: {type(self.total_debit_var)}, Balance: {type(self.balance_var)}")
-
-        # If they're tkinter variables
-        if hasattr(self.total_credit_var, 'get'):
-            print(f"Actual Values - Credit: {self.total_credit_var.get()}, Debit: {self.total_debit_var.get()}, Balance: {self.balance_var.get()}")
-        # def get_numeric_value(var):
-        #     """Safely extract numeric value from either tkinter variable or direct value"""
-        #     try:
-        #         # Handle tkinter variables
-        #         if hasattr(var, 'get'):
-        #             value = var.get()
-        #         else:
-        #             value = var
-                    
-        #         # Clean and convert to float
-        #         if isinstance(value, str):
-        #             value = value.replace(',', '').replace('ر.س', '').strip()
-        #         return float(value) if value else 0.0
-        #     except (ValueError, TypeError, AttributeError):
-        #         return 0.0
-
-        # total_credit = get_numeric_value(self.total_credit_var)
-        # total_debit = get_numeric_value(self.total_debit_var)
-        # balance = get_numeric_value(self.balance_var)
-
-        # # Create footer with properly formatted numbers
-        # footer = [
-        #     f"إجمالي دائن: {total_credit:,.2f}",  # Total Credit in Arabic
-        #     f"إجمالي مدين: {total_debit:,.2f}",   # Total Debit in Arabic
-        #     f"الرصيد: {balance:,.2f}"            # Balance in Arabic
-        # ] 
-
-        excel_btn = tk.Button(totals_frame,
-                            text=self.t("Export to Excel"), 
-                            command=lambda: self.export_to_excel(self.filtered_transactions_table,headers=headers,filename=filename_excel,
-                                                                report_folder=report_folder,title=report_folder,
-                                                                startdate=self.from_date.get() if hasattr(self.from_date, 'get') else str(self.from_date),
-                                                                enddate=self.to_date.get() if hasattr(self.to_date, 'get') else str(self.to_date),
-                                                                footerline_out_of_table=[
-                                                                    f"{self.t("Total Credit:")} {str(self.total_credit_var.get())}",
-                                                                    f"{self.t("Total Debit:")} {str(self.total_debit_var.get())}",
-                                                                    f"{self.t("Balance:")} {str(self.balance_var.get())}"
-                                                                ], source= "Treasury"
-                                                                 ),bg="#21F35D", fg='white')
-        pdf_btn   = tk.Button(totals_frame, 
-                            text=self.t("Export to PDF"),
-                            command=lambda: self.export_to_pdf(self.filtered_transactions_table,headers=headers,filename=filename_pdf,
-                                                                report_folder=report_folder,title=report_folder,
-                                                                startdate=self.from_date.get() if hasattr(self.from_date, 'get') else str(self.from_date),
-                                                                enddate=self.to_date.get() if hasattr(self.to_date, 'get') else str(self.to_date),
-                                                                footerline_out_of_table=[
-                                                                    f"إجمالي دائن: {str(self.total_credit_var.get())}",
-                                                                    f"إجمالي مدين: {str(self.total_debit_var.get())}",
-                                                                    f"الرصيد: {str(self.balance_var.get())}"
-                                                                ], source= "Treasury"
-                                                                ),bg="#2144F3", fg='white')
-        excel_btn.pack(side=tk.LEFT, padx=10, pady=5)
-        pdf_btn.pack(side=tk.LEFT, padx=10, pady=5)
-    def parse_date(self, date_str):
-        # print(date_str)
-        if not date_str:
-            return None
-        # print(date_str)
-        date_str = str(date_str).strip()  # Remove leading/trailing whitespace
-        # print(date_str)
-        # Remove surrounding quotes if present
-        if date_str.startswith(('"', "'")) and date_str.endswith(('"', "'")):
-            date_str = date_str[1:-1].strip()
-
-        # Preprocessing for malformed timezone formats
-        if 'T' in date_str and '+' not in date_str and 'Z' not in date_str:
-            if date_str.endswith(':00'):
-                date_str = date_str[:-3] + '+00:00'
-            elif date_str.count(':') == 4:
-                parts = date_str.rsplit(':', 1)
-                date_str = f"{parts[0]}+00:00"
-
-        # Fix timezone colon format using regex to target only timezone offsets
-        tz_colon_match = re.search(r'([+-]\d{2}):(\d{2})$', date_str)
-        if tz_colon_match:
-            date_str = date_str[:-3] + date_str[-2:]
-
-        formats = [
-            "%d/%m/%Y %H:%M",          # Format: "23/05/2025 23:10"
-            "%Y-%m-%dT%H:%M:%S.%f%z",  # ISO format with timezone
-            "%Y-%m-%dT%H:%M:%S%z",     # ISO without milliseconds
-            "%Y-%m-%d",                # Simple date format
-            "%d/%m/%Y",                # Date without time
-            "%d/%m/%y %H:%M"           # Short year format
-        ]
-
-        for fmt in formats:
-            try:
-                dt = datetime.strptime(date_str, fmt)
-                if dt.tzinfo is None:
-                    dt = pytz.utc.localize(dt)
-                else:
-                    dt = dt.astimezone(pytz.utc)
-                return dt
-            except ValueError:
-                continue
-        
-        try:
-            # return datetime.fromisoformat(date_str).astimezone(pytz.utc)
-            return datetime.fromisoformat(date_str)
-        except:
-            return None
-
-    def fetch_transactions(self):
-        self.tree.delete(*self.tree.get_children())
-        self.totals = {'credit': 0.0, 'debit': 0.0}
-
-        # Get filter parameters
-        start_date = self.from_date.get_date()
-        end_date = self.to_date.get_date()
-        selected_method = self.payment_method.get().lower()
-
-        # Convert dates to UTC datetime
-        tz = pytz.timezone('UTC')
-        start_date = tz.localize(datetime.combine(start_date, datetime.min.time()))
-        end_date = tz.localize(datetime.combine(end_date, datetime.max.time()))
-        start_date_str = start_date.strftime("%d/%m/%Y %H:%M")
-        end_date_str = end_date.strftime("%d/%m/%Y %H:%M")
-        transactions = []
-
-        # 1. Customer Payments (Credit) done
-        customer_payments = self.customer_payments.find({"Time": {"$gte": start_date, "$lte": end_date}})
-        # print(customer_payments)
-        for doc in customer_payments:
-            Customer_info = doc.get("Customer_info", {})
-            transactions.append({
-                "date": self.parse_date(doc.get("Time", "")),
-                "description": "دفعة"+  " - " + Customer_info.get("name", ""),
-                "credit": float(doc.get("Credit", 0)),
-                "debit": 0.0,
-                "payment_method": doc.get("Payment_method", "").lower().replace(" ", "_")
-            })
-        # # print(transactions)
-
-        # 2. Employee Salary (Debit) done
-        salaries = self.employee_salary_collection.find({"timestamp": {"$gte": start_date, "$lte": end_date}})
-        # print(salaries)
-        for doc in salaries:
-            transactions.append({
-                "date": self.parse_date(doc.get("timestamp", "")),
-                "description": f"مرتب {doc.get('employee_name', '')}",
-                "credit": 0.0,
-                "debit": float(doc.get("net_salary", 0)),
-                "payment_method": doc.get("payment_method", "").lower().replace(" ", "_")
-            })
-        # # print(transactions)
-        # 3. Employee Withdrawals (Debit) done  
-        withdrawals = self.employee_withdrawls_collection.find({"timestamp": {"$gte": start_date, "$lte": end_date}})
-        for doc in withdrawals:
-            transactions.append({
-                "date": self.parse_date(doc.get("timestamp", "")),
-                "description": f"سلفة {doc.get('employee_name', '')}",
-                "credit": 0.0,
-                "debit": float(doc.get("amount_withdrawls", 0)),
-                "payment_method": doc.get("payment_method", "").lower().replace(" ", "_")
-            })
-        # print(transactions)
-        # 4. Purchases (Debit)
-        purchases = self.purchases_collection.find({"Date": {"$gte": start_date, "$lte": end_date}})
-        for doc in purchases:
-            financials = doc.get("Financials", {})  # Safely get the nested Financials object
-            supplier_info = doc.get("supplier_info", {})
-            transactions.append({
-                "date": self.parse_date(doc.get("Date", "")),
-                "description": supplier_info.get("name","") + " - " + doc.get("Receipt_Number", ""),
-                "credit": 0.0,
-                "debit": float(financials.get("Payed_cash", 0)),  # Access via Financials
-                "payment_method": financials.get("Payment_method", "").lower().replace(" ", "_")  # Acce
-            })
-        # # print(transactions)
-        # 5. Sales (Credit)
-        sales = self.sales_collection.find({"Date": {"$gte": start_date, "$lte": end_date}})
-        
-        for doc in sales:
-            financials = doc.get("Financials", {})  # Safely get the nested Financials object
-            Customer_info2= doc.get("Customer_info", {})
-            transactions.append({
-                "date": self.parse_date(doc.get("Date", "")),
-                "description": Customer_info2.get("name","") + "-" + doc.get("Receipt_Number", ""),
-                "credit": float(financials.get("Payed_cash", 0)),
-                "debit": 0.0,
-                "payment_method": financials.get("Payment_method", "").lower().replace(" ", "_")  # Acce
-            })
-        # # print(transactions)
-        # 6. Supplier Payments (Debit)
-        supplier_payments = self.supplier_payments.find({"Time": {"$gte": start_date, "$lte": end_date}})
-        for doc in supplier_payments:
-            supplier_info=doc.get("supplier_info", {})
-            transactions.append({
-                "date": self.parse_date(doc.get("Time", "")),
-                "description": "دفعة"+  " - " + supplier_info.get("name", ""),
-                "credit": 0.0,
-                "debit": float(doc.get("Debit", 0)),
-                "payment_method": doc.get("Payment_method", "").lower().replace(" ", "_")
-            })
-        # 7 general exp. and rev.(depit)--> Expense , (credit) --> Revenue
-        general_exp_rev = self.general_exp_rev_collection.find({"date": {"$gte": start_date, "$lte": end_date}})
-        for doc in general_exp_rev:
-            if doc.get("type","")=="Expense":
-                transactions.append({
-                    "date": self.parse_date(doc.get("date", "")),
-                    # "date": self.parse_date(doc.get("timestamp", "")),
-                    "description": doc.get("description", ""),
-                    "credit": 0.0,
-                    "debit": float(doc.get("amount", 0)),
-                    "payment_method": doc.get("payment_method", "").lower().replace(" ", "_")
-                })
-            if doc.get("type","")=="Revenue":
-                transactions.append({
-                    "date": self.parse_date(doc.get("date", "")),
-                    "description": doc.get("description", ""),
-                    "credit": float(doc.get("amount", 0)),
-                    "debit": 0.0,
-                    "payment_method": doc.get("payment_method", "").lower().replace(" ", "_")
-                })
-        # print(transactions)
-        # Filter transactions
-        allowed_methods = ["cash", "instapay", "bank_account", "e_wallet"]
-        self.filtered_transactions = []
-        self.filtered_transactions_table = []
-        for t in transactions:
-            if selected_method != "all":
-                if t["payment_method"] != selected_method.replace(" ", "_"):
-                    continue
-            if t["payment_method"] in allowed_methods and t["date"] is not None:
-                self.filtered_transactions.append(t)
-                if self.language == "Arabic":
-                    self.filtered_transactions_table.append({
-                        "طريقة الدفع": t["payment_method"].replace("_", " ").title(),
-                        "المدين": f"{t['debit']:,.2f} ج.م", 
-                        "الدائن": f"{t['credit']:,.2f} ج.م",
-                        "الوصف": t["description"],
-                        "التاريخ": t["date"].strftime("%d/%m/%Y %H:%M")
-                    })
-                else:
-                    self.filtered_transactions_table.append({
-                        "payment_method": t["payment_method"].replace("_", " ").title(),
-                        "debit": f"{t['debit']:,.2f} ج.م", 
-                        "credit": f"{t['credit']:,.2f} ج.م",
-                        "description": t["description"],
-                        "date": t["date"].strftime("%d/%m/%Y %H:%M")
-                    })
-        # Populate treeview and calculate totals
-        for t in self.filtered_transactions:
-            self.totals['credit'] += t['credit']
-            self.totals['debit'] += t['debit']
-            
-            self.tree.insert("", "end", values=(
-                t["date"].strftime("%d/%m/%Y %H:%M"),
-                t["description"],
-                f"{t['credit']:,.2f} ج.م",
-                f"{t['debit']:,.2f}  ج.م",
-                t["payment_method"].replace("_", " ").title()
-            ))
-
-        # Update totals display
-        self.total_credit_var.set(f"{self.totals['credit']:,.2f} ج.م")
-        self.total_debit_var.set (f"{self.totals['debit']:,.2f}  ج.م")
-        # self.total_debit_var.set(f"${self.totals['debit']:,.2f}")
-        balance = self.totals['credit'] - self.totals['debit']
-        self.balance_var.set(f"{balance:,.2f} ج.م")
-        
-    
-    def new_production_order(self, user_role):
-        # Clear current window
-        for widget in self.root.winfo_children():
-            widget.destroy()
-
-        # Initialize mappings
-        self.material_code_map = {}  # code -> {name, stock}
-        self.material_name_map = {}  # name -> {code, stock}
-        self.product_code_map = {}   # code -> {name, stock}
-        self.product_name_map = {}   # name -> {code, stock}
-
-        # Create top bar
-        self.topbar.topbar(show_back_button=True)
-
-        # Database collections
-        materials_col = config.get_collection_by_name("Materials")
-        products_col = config.get_collection_by_name("Products")
-        production_col = config.get_collection_by_name("Production")
-
-        # Load material data
-        for mat in materials_col.find():
-            code = mat.get('material_code', '')
-            name = mat.get('material_name', '')
-            stock = mat.get('stock_quantity', 0)
-            self.material_code_map[code] = {'name': name, 'stock_quantity': stock}
-            self.material_name_map[name] = {'code': code, 'stock_quantity': stock}
-
-        # Load product data
-        for prod in products_col.find():
-            code = prod.get('product_code', '')
-            name = prod.get('product_name', '')
-            stock = prod.get('stock_quantity', 0)
-            self.product_code_map[code] = {'name': name, 'stock_quantity': stock}
-            self.product_name_map[name] = {'code': code, 'stock_quantity': stock}
-
-        # Main form frame with responsive sizing
-        form_frame = tk.Frame(self.root, padx=20, pady=20)
-        form_frame.pack(fill=tk.BOTH, expand=True)
-        
-        # Configure columns - 9 columns with equal weight
-        for i in range(9):
-            form_frame.columnconfigure(i, weight=1)
-        form_frame.grid_rowconfigure(1, weight=1)  # Make items grid expandable
-
-        # Define columns
-        columns = [
-            "Material Code", "Material Name", "Material Available Qty",
-            "Material Qty", "Product Code", "Product Name",
-            "Product Available Qty", "Product Qty", "Waste"
-        ]
-        num_columns = len(columns)
-
-        # Create header frame with uniform columns
-        header_frame = tk.Frame(form_frame, bg='#f0f0f0')
-        header_frame.grid(row=0, column=0, columnspan=num_columns, sticky='ew', pady=(10, 0))
-        
-        # Configure header columns with uniform weights
-        for col_idx in range(num_columns):
-            header_frame.columnconfigure(col_idx, weight=1, uniform='cols')
-            tk.Label(header_frame, 
-                    text=self.t(columns[col_idx]),
-                    bg='#f0f0f0',
-                    relief='ridge',
-                    anchor='center',
-                    padx=5).grid(row=0, column=col_idx, sticky='ew')
-
-        # Scrollable Canvas with responsive sizing
-        canvas_container = tk.Frame(form_frame)
-        canvas_container.grid(row=1, column=0, columnspan=num_columns, sticky='nsew')
-        canvas_container.grid_rowconfigure(0, weight=1)
-        canvas_container.grid_columnconfigure(0, weight=1)
-        
-        # Create canvas and scrollbar
-        canvas = tk.Canvas(canvas_container, highlightthickness=0)
-        scrollbar = tk.Scrollbar(canvas_container, orient="vertical", command=canvas.yview)
-        
-        # Create a frame inside the canvas for the rows
-        self.rows_frame = tk.Frame(canvas)
-        canvas.create_window((0, 0), window=self.rows_frame, anchor="nw", tags="inner_frame")
-        
-        # Grid layout for canvas and scrollbar
-        canvas.grid(row=0, column=0, sticky="nsew")
-        scrollbar.grid(row=0, column=1, sticky="ns")
-        
-        # Configure scroll region
-        def configure_scroll_region(event):
-            canvas.configure(scrollregion=canvas.bbox("all"))
-        
-        # Configure canvas width
-        def configure_canvas(event):
-            canvas_width = event.width
-            canvas.itemconfig("inner_frame", width=canvas_width)
-        
-        # Bind events
-        self.rows_frame.bind("<Configure>", configure_scroll_region)
-        canvas.bind("<Configure>", configure_canvas)
-
-        # Set initial width
-        canvas.update_idletasks()
-        canvas_width = canvas.winfo_width()
-        if canvas_width > 1:
-            canvas.itemconfig("inner_frame", width=canvas_width)
-
-        self.production_entries = []
-
-        # Create initial rows
-        for _ in range(1):
-            self.add_production_row()
-
-        # Control buttons
-        button_frame = tk.Frame(form_frame)
-        button_frame.grid(row=2, column=0, columnspan=num_columns, pady=10, sticky='ew')
-        
-        button_frame.columnconfigure(0, weight=1)
-        button_frame.columnconfigure(1, weight=1)
-        
-        tk.Button(button_frame, text=self.t("➕ Add Row"),
-                command=self.add_production_row,
-                bg='#4CAF50', fg='white').grid(row=0, column=0, padx=5, sticky='w')
-        tk.Button(button_frame, text=self.t("💾 Save Order"),
-                command=self.save_production_order,
-                bg='#2196F3', fg='white').grid(row=0, column=1, padx=5, sticky='e')
-        
-        self.update_combobox_values()
-
-    def add_production_row(self):
-        row_idx = len(self.production_entries)
-        row_frame = tk.Frame(self.rows_frame, bg='white' if row_idx % 2 == 0 else '#f0f0f0')
-        row_frame.pack(fill=tk.X)  # Use pack with fill to ensure full width
-        
-        # Configure columns with uniform weights
-        for col_idx in range(9):
-            row_frame.columnconfigure(col_idx, weight=1, uniform='cols')
-        
-        entries = []
-        for col_idx in range(9):
-            if col_idx in [0, 1]:  # Material Code/Name comboboxes
-                cb = ttk.Combobox(row_frame)
-                cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
-                if col_idx == 0:
-                    cb.bind('<<ComboboxSelected>>', lambda e, idx=row_idx: self.update_material_code(idx))
-                else:
-                    cb.bind('<<ComboboxSelected>>', lambda e, idx=row_idx: self.update_material_name(idx))
-                entries.append(cb)
-            
-            elif col_idx in [4, 5]:  # Product Code/Name comboboxes
-                cb = ttk.Combobox(row_frame)
-                cb.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
-                if col_idx == 4:
-                    cb.bind('<<ComboboxSelected>>', lambda e, idx=row_idx: self.update_product_code(idx))
-                else:
-                    cb.bind('<<ComboboxSelected>>', lambda e, idx=row_idx: self.update_product_name(idx))
-                entries.append(cb)
-            
-            elif col_idx in [2, 6]:  # Available quantities (readonly)
-                entry = tk.Entry(row_frame, state='readonly')
-                entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
-                entries.append(entry)
-            
-            else:
-                entry = tk.Entry(row_frame)
-                entry.grid(row=0, column=col_idx, sticky='ew', padx=1, pady=1)
-                entries.append(entry)
-        
-        self.production_entries.append(entries)
-        self.update_combobox_values()
-
-    def update_combobox_values(self):
-        material_codes = list(self.material_code_map.keys())
-        material_names = list(self.material_name_map.keys())
-        product_codes = list(self.product_code_map.keys())
-        product_names = list(self.product_name_map.keys())
-        
-        for row in self.production_entries:
-            row[0]['values'] = material_codes
-            row[1]['values'] = material_names
-            row[4]['values'] = product_codes
-            row[5]['values'] = product_names
-
-    def update_material_code(self, row_idx):
-        code = self.production_entries[row_idx][0].get()
-        if code in self.material_code_map:
-            material = self.material_code_map[code]
-            self.production_entries[row_idx][1].set(material['name'])
-            self.production_entries[row_idx][2].config(state='normal')
-            self.production_entries[row_idx][2].delete(0, tk.END)
-            self.production_entries[row_idx][2].insert(0, str(material['stock_quantity']))
-            self.production_entries[row_idx][2].config(state='readonly')
-
-    def update_material_name(self, row_idx):
-        name = self.production_entries[row_idx][1].get()
-        if name in self.material_name_map:
-            material = self.material_name_map[name]
-            self.production_entries[row_idx][0].set(material['code'])
-            self.production_entries[row_idx][2].config(state='normal')
-            self.production_entries[row_idx][2].delete(0, tk.END)
-            self.production_entries[row_idx][2].insert(0, str(material['stock_quantity']))
-            self.production_entries[row_idx][2].config(state='readonly')
-
-    def update_product_code(self, row_idx):
-        code = self.production_entries[row_idx][4].get()
-        if code in self.product_code_map:
-            product = self.product_code_map[code]
-            self.production_entries[row_idx][5].set(product['name'])
-            self.production_entries[row_idx][6].config(state='normal')
-            self.production_entries[row_idx][6].delete(0, tk.END)
-            self.production_entries[row_idx][6].insert(0, str(product['stock_quantity']))
-            self.production_entries[row_idx][6].config(state='readonly')
-
-    def update_product_name(self, row_idx):
-        name = self.production_entries[row_idx][5].get()
-        if name in self.product_name_map:
-            product = self.product_name_map[name]
-            self.production_entries[row_idx][4].set(product['code'])
-            self.production_entries[row_idx][6].config(state='normal')
-            self.production_entries[row_idx][6].delete(0, tk.END)
-            self.production_entries[row_idx][6].insert(0, str(product['stock_quantity']))
-            self.production_entries[row_idx][6].config(state='readonly')
-
-    def save_production_order(self):
-        production_col = config.get_collection_by_name("Production")
-        materials_col = config.get_collection_by_name("Materials")
-        products_col = config.get_collection_by_name("Products")
-        
-        try:
-            orders = []
-            for idx, row in enumerate(self.production_entries):
-                # Validate data
-                try:
-                    material_code = row[0].get()
-                    material_qty = float(row[3].get())
-                    product_code = row[4].get()
-                    product_qty = float(row[7].get())
-                    waste = float(row[8].get())
-                except ValueError:
-                    messagebox.showerror(self.t("Error"), f"{self.t("Invalid values in row")} {idx+1}")
-                    return
-
-                # Update material stock
-                materials_col.update_one(
-                    {'material_code': material_code},
-                    {'$inc': {'stock_quantity': -material_qty}}
-                )
-
-                # Update product stock
-                products_col.update_one(
-                    {'product_code': product_code},
-                    {'$inc': {'stock_quantity': product_qty}}
-                )
-
-                # Create production record
-                orders.append({
-                    'material_code': material_code,
-                    'material_qty': material_qty,
-                    'product_code': product_code,
-                    'product_qty': product_qty,
-                    'waste': waste,
-                    'timestamp': datetime.now()
-                })
-
-            # Insert production records
-            if orders:
-                production_col.insert_many(orders)
-                for order in orders:
-                    config.report_log(self.logs_collection, self.user_name, production_col, f"{self.t("Added new record in")}", order, self.t)
-
-            messagebox.showinfo(self.t("Success"), self.t("Production order saved successfully"))
-            self.new_production_order(None)  # Refresh form
-
-        except PyMongoError as e:
-            messagebox.showerror(self.t("Database Error"), f"{self.t("Operation failed:")} {str(e)}")
-
-    def update_inventory(self):
-        # Update material and product stocks
-        try:
-            for row in self.production_entries:
-                material_code = row[0].get()
-                material_qty = float(row[3].get() or 0)
-                
-                product_code = row[4].get()
-                product_qty = float(row[7].get() or 0)
-                
-                # Update material stock
-                if material_code:
-                    self.db.materials.update_one(
-                        {'code': material_code},
-                        {'$inc': {'stock_quantity': -material_qty}}
-                    )
-
-                # Update product stock
-                if product_code:
-                    self.db.products.update_one(
-                        {'code': product_code},
-                        {'$inc': {'stock_quantity': product_qty}}
-                    )
-                    
-        except PyMongoError as e:
-            messagebox.showerror(self.t("Inventory Error"), 
-                f"{self.t("Failed to update inventory:")} {str(e)}")
 ############################ Main Functions ########################################
     def new_employee(self, user_role):
         self.table_name.set("Employees")
@@ -3654,8 +2399,16 @@ class SalesSystemApp:
                                                                     f"الرصيد: {str(self.balance_entry.get())}"
                                                                 ], source="Supplier Interaction"
                                                                  ),bg="#21F35D", fg='white').grid(row=13, column=9, sticky="w")
+
+        # Create a variable to hold the selected page size
+        self.page_size_var = tk.StringVar(value="A4")  # Default value
+
+        # Create the OptionMenu (drop-down list)
+        page_sizes = ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]
+        page_size_menu = tk.OptionMenu(right_frame, self.page_size_var, *page_sizes)
+        page_size_menu.grid(row=13, column=11, sticky="w", padx=5)  # Placed before the button
         tk.Button(right_frame, 
-                            text=self.t("Export to PDF"),
+                            text=self.t("Export to PDF and Print"),
                             command=lambda: self.export_to_pdf(self.raw_tree_data,headers=headers,filename= f"كشف_حساب_للعميل_{clean_filename(self.report_customer_name)}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
                                                                 report_folder=report_folder,title=report_folder,
                                                                 startdate=self.start_date_entry.get() if hasattr(self.start_date_entry, 'get') else str(self.start_date_entry),
@@ -3664,7 +2417,7 @@ class SalesSystemApp:
                                                                     f"إجمالي دائن: {str(self.total_credit_entry.get())}",
                                                                     f"إجمالي مدين: {str(self.total_debit_entry.get())}",
                                                                     f"الرصيد: {str(self.balance_entry.get())}"
-                                                                ], source="Supplier Interaction"
+                                                                ], source="Supplier Interaction",page_size=config.PAGE_SIZES[self.page_size_var.get()]
                                                                 ),bg="#2144F3", fg='white').grid(row=13, column=10, sticky="w", padx=10)
     def add_supplier_payment(self, tree):
         debit = self.cash_entry.get().strip()
@@ -4162,8 +2915,15 @@ class SalesSystemApp:
                                                                     f"الرصيد: {str(self.balance_entry.get())}"
                                                                 ], source="Customer Interaction"
                                                                  ),bg="#21F35D", fg='white').grid(row=13, column=9, sticky="w")
+        # Create a variable to hold the selected page size
+        self.page_size_var = tk.StringVar(value="A4")  # Default value
+
+        # Create the OptionMenu (drop-down list)
+        page_sizes = ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]
+        page_size_menu = tk.OptionMenu(right_frame, self.page_size_var, *page_sizes)
+        page_size_menu.grid(row=13, column=11, sticky="w", padx=5)  # Placed before the button
         tk.Button(right_frame, 
-                            text=self.t("Export to PDF"),
+                            text=self.t("Export to PDF and Print"),
                             command=lambda: self.export_to_pdf(self.raw_tree_data,headers=headers,filename= f"كشف_حساب_للعميل_{clean_filename(self.report_customer_name)}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
                                                                 report_folder=report_folder,title=report_folder,
                                                                 startdate=self.start_date_entry.get() if hasattr(self.start_date_entry, 'get') else str(self.start_date_entry),
@@ -4172,7 +2932,7 @@ class SalesSystemApp:
                                                                     f"إجمالي دائن: {str(self.total_credit_entry.get())}",
                                                                     f"إجمالي مدين: {str(self.total_debit_entry.get())}",
                                                                     f"الرصيد: {str(self.balance_entry.get())}"
-                                                                ], source="Customer Interaction"
+                                                                ], source="Customer Interaction",page_size=config.PAGE_SIZES[self.page_size_var.get()]
                                                                 ),bg="#2144F3", fg='white').grid(row=13, column=10, sticky="w", padx=10)
 
 
@@ -4244,82 +3004,35 @@ class SalesSystemApp:
                     updated_fields[key] = cleaned
             if updated_fields:
                 employees_col.update_one({"_id": doc["_id"]}, {"$set": updated_fields})
-    def update_search(self, event, collection):
-        # Cancel any previous scheduled search **only if valid**
-        if hasattr(self, '_after_id') and self._after_id is not None:
-            try:
-                self.root.after_cancel(self._after_id)
-            except ValueError:
-                pass  # Ignore if it was already canceled
-        
-        # Mark that user is typing
-        self.is_typing = True
-        
-        # Schedule the search with the current text
-        self._after_id = self.root.after(300, self.perform_search, collection)
+    
+    def upload_pdf_to_cloudinary(self,file_path_param):
+        # import cloudinary.uploader
+        try:
+            response = cloudinary.uploader.upload(file_path_param, resource_type="raw")
+            return response['secure_url']
+        except Exception as e:
+            print(f"[Cloudinary Upload Error]: {e}")
+            return None
 
-    def update_search_purchase(self, event, collection):
-        # Cancel any previous scheduled search **only if valid**
-        if hasattr(self, '_after_id') and self._after_id is not None:
-            try:
-                self.root.after_cancel(self._after_id)
-            except ValueError:
-                pass  # Ignore if it was already canceled
-        
-        # Mark that user is typing
-        self.is_typing = True
-        
-        # Schedule the search with the current text
-        self._after_id = self.root.after(300, self.perform_search_purchase, collection)
+    def get_mongo_field_path(self, key):
+        if key in search_field_mapping:
+            parts = search_field_mapping[key]
+            return ".".join(parts)
+        return key  # fallback: return as-is if not nested
 
-    def perform_search(self, collection):
-        # Mark that user is not typing anymore
-        self.is_typing = False
-
-        search_term = self.customer_name_var.get()
-
-        # If search term is empty, you can clear the combobox
-        if search_term == "":
-            self.customer_cb['values'] = []
-            return
-
-        # Perform search
-        filtered_customers = [cust['Name'] for cust in collection.find(
-            {"Name": {"$regex": f"^{search_term}", "$options": "i"}}
-        )]
-        
-        # Update combobox values only if user is not typing
-        if not self.is_typing:
-            self.customer_cb['values'] = filtered_customers
-            
-            if filtered_customers:
-                self.customer_cb.event_generate('<Down>')
+    def deselect_entry(self,tree):
+        tree.selection_remove(tree.selection())
+        # Clear form fields
+        for field, widget in self.entries.items():
+            if "date" in field.lower():
+                widget.set_date(datetime.now())
+            elif "pdf_path" in field.lower():
+                widget.config(text="")
+            elif "pic" in field.lower():
+                widget.config(image='')
+                widget.image = None
             else:
-                self.customer_cb.event_generate('<Up>')  # Close dropdown
-    def perform_search_purchase(self, collection):
-        # Mark that user is not typing anymore
-        self.is_typing = False
-
-        search_term = self.supplier_name_var.get()
-
-        # If search term is empty, you can clear the combobox
-        if search_term == "":
-            self.supplier_cb['values'] = []
-            return
-
-        # Perform search
-        filtered_suppliers = [supp['Name'] for supp in collection.find(
-            {"Name": {"$regex": f"^{search_term}", "$options": "i"}}
-        )]
-        
-        # Update combobox values only if user is not typing
-        if not self.is_typing:
-            self.supplier_cb['values'] = filtered_suppliers
-            
-            if filtered_suppliers:
-                self.supplier_cb.event_generate('<Down>')
-            else:
-                self.supplier_cb.event_generate('<Up>')  # Close dropdown
+                widget.delete(0, tk.END)
 
     def on_canvas_press(self, event):
         self.tree.scan_mark(event.x, event.y)
@@ -4393,6 +3106,7 @@ class SalesSystemApp:
                     "logged_in": False,
                     "last_number_of_msgs": self.last_number_of_msgs
                 }})
+        config.report_log(self.logs_collection, self.user_name, None, f"{self.user_name} {self.t("logout from the application")}", None)
         self.login_window.open_login_window()
 
     def on_app_exit(self):
@@ -4403,16 +3117,9 @@ class SalesSystemApp:
                     "logged_in": False,
                     "last_number_of_msgs": self.last_number_of_msgs
                 }})
+        config.report_log(self.logs_collection, self.user_name, None, f"{self.user_name} {self.t("Exit the application")}", None)
         self.root.quit()
 
-
-    
-    def generate_report_data(self):
-        return [
-            ["Total Sales", "72000", "From 45 invoices"],
-            ["Top Customer", "عماد خطاب", "EGP 70,000"],
-            ["Total Items Sold", "320", "25 Products"]
-        ]
         
     def export_to_excel(self, data, headers=None, title="Report", filename="report.xlsx", report_folder="reports",
                     startdate=None, enddate=None, footerline_out_of_table=None, source= None):
@@ -4603,7 +3310,7 @@ class SalesSystemApp:
             pdf_path = os.path.join(report_path, filename)
 
             # Prepare PDF document
-            doc = SimpleDocTemplate(pdf_path, pagesize=A5)
+            doc = SimpleDocTemplate(pdf_path, pagesize=page_size)
             elements = []
             styles = getSampleStyleSheet()
 
@@ -4708,56 +3415,7 @@ class SalesSystemApp:
             messagebox.showerror("خطأ", f"فشل في تصدير الملف:\n{str(e)}")
             return None
 
-    def show_sales_chart(self,container, labels, values):
-        fig = Figure(figsize=(4, 3))
-        ax = fig.add_subplot(111)
-        ax.bar(labels, values, color='orange')
-        ax.set_title("Top Customers")
-        chart = FigureCanvasTkAgg(fig, master=container)
-        chart.get_tk_widget().pack()
 
-
-    def sales_report(self, user_role):
-        for widget in self.root.winfo_children():
-            widget.destroy()
-
-        self.topbar.topbar(show_back_button=True, Back_to_Reports_Window=True)
-
-        # === Filters ===
-        filter_frame = ttk.Frame(self.root)
-        filter_frame.pack(pady=10)
-
-        ttk.Label(filter_frame, text="Start Date:").grid(row=0, column=0)
-        start_date = DateEntry(filter_frame)
-        start_date.grid(row=0, column=1, padx=5)
-
-        ttk.Label(filter_frame, text="End Date:").grid(row=0, column=2)
-        end_date = DateEntry(filter_frame)
-        end_date.grid(row=0, column=3, padx=5)
-
-        # === Table ===
-        table = ttk.Treeview(self.root, columns=("A", "B", "C"), show="headings", height=6)
-        table.heading("A", text="Metric")
-        table.heading("B", text="Value")
-        table.heading("C", text="Details")
-        table.pack(pady=10)
-
-        data = self.generate_report_data()
-        for row in data:
-            table.insert("", "end", values=row)
-
-        # === Chart ===
-        chart_frame = tk.Frame(self.root)
-        chart_frame.pack()
-        self.show_sales_chart(chart_frame, ["عماد خطاب", "أحمد سالم"], [70000, 30000])
-
-        # === Export Buttons ===
-        button_frame = ttk.Frame(self.root)
-        button_frame.pack(pady=10)
-        # headers = ["Metric", "Value", "Details", "Date"]
-        
-        ttk.Button(button_frame, text="Export to Excel", command=lambda: self.export_to_excel(data)).grid(row=0, column=0, padx=10)
-        ttk.Button(button_frame, text="Export to PDF", command=lambda: self.export_to_pdf(data)).grid(row=0, column=1, padx=10)
     def trash(self, user_role):
         # Clear current window
         for widget in self.root.winfo_children():
@@ -4898,9 +3556,10 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = SalesSystemApp(root)       # Create main app first
     app.start_without_login()
-    # app.start_with_login()     # Then launch the login screen through app
-
+    app.start_with_login()     # Then launch the login screen through app
+    
     try:
         root.mainloop()
+    
     except Exception as e:
         print("Error during mainloop:", e)

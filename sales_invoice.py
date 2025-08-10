@@ -562,7 +562,7 @@ class SalesInvoice:
         sales_col.delete_one({"Receipt_Number": invoice_number})
         
         messagebox.showinfo(self.app.t("Success"), self.app.t("Invoice deleted successfully"))
-        config.report_log(self.app.logs_collection, self.app.user_name, sales_col, f"Deleted {capitalize_first_letter(source)} Invoice in", invoice_data, self.t)
+        config.report_log(self.app.logs_collection, self.app.user_name, sales_col, f"{self.app.t("Deleted")} {capitalize_first_letter(source)} Invoice in", invoice_data, self.t)
         # Clear the form or reset UI as needed
         self.app.invoice_var.set("")
         self.app.selected_invoice_id = None
@@ -897,11 +897,19 @@ class SalesInvoice:
             padx=15,
             pady=5
         ).pack(side=tk.LEFT, padx=10)
-        
+
+        # Create a variable to hold the selected page size
+        self.page_size_var = tk.StringVar(value="A5")  # Default value
+
+        # Create the OptionMenu (drop-down list)
+        page_sizes = ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]
+        page_size_menu = tk.OptionMenu(btn_frame, self.page_size_var, *page_sizes)
+        page_size_menu.pack(side=tk.RIGHT, padx=10)  
+
         tk.Button(
             btn_frame, 
             text="حفظ الفاتورة", 
-            command=lambda: self.finalize_invoice_save(preview_win),
+            command=lambda: self.finalize_invoice_save(preview_win,page_size=config.PAGE_SIZES[self.page_size_var.get()]),
             bg="#27ae60",
             fg="white",
             font=("Arial", 12, "bold"),
@@ -923,7 +931,7 @@ class SalesInvoice:
         
         canvas.bind_all("<MouseWheel>", _on_mousewheel)
 
-    def finalize_invoice_save(self, preview_window):
+    def finalize_invoice_save(self, preview_window,page_size):
         """Finalize invoice saving process and generate PDF"""
         
         flag = 0
@@ -1007,7 +1015,7 @@ class SalesInvoice:
             )
             
             # 3. Generate PDF
-            pdf_path = self.generate_pdf(invoice_data)
+            pdf_path = self.generate_pdf(invoice_data,page_size=page_size)
             if not pdf_path:
                 preview_window.destroy()
                 return
@@ -1016,7 +1024,7 @@ class SalesInvoice:
             invoice_data["PDF_Path"] = pdf_path
             if self.app.update:
                 sales_col.delete_one({"Receipt_Number":self.app.invoice_var.get()})
-                config.report_log(self.app.logs_collection, self.app.user_name, sales_col, "Updated invoice to", invoice_data, self.t)
+                config.report_log(self.app.logs_collection, self.app.user_name, sales_col, self.app.t("Updated invoice to"), invoice_data, self.t)
                 flag=1
             sales_col.insert_one(invoice_data)
             
@@ -1026,7 +1034,7 @@ class SalesInvoice:
             self.clear_invoice_form()
             
             if not flag:
-                config.report_log(self.app.logs_collection, self.app.user_name, sales_col, "Added new invoice to", invoice_data, self.t)
+                config.report_log(self.app.logs_collection, self.app.user_name, sales_col, self.app.t("Added new invoice to"), invoice_data, self.t)
             
 
             # 6. Clear pending data
@@ -1183,7 +1191,7 @@ class SalesInvoice:
             return None
         
 
-    def generate_pdf(self, invoice_data):
+    def generate_pdf(self, invoice_data,page_size):
         """توليد ملف PDF بحجم A5 بتنسيق عربي مطابق للنموذج"""
         try:
             from reportlab.lib.pagesizes import A5
@@ -1231,7 +1239,7 @@ class SalesInvoice:
             pdf_path = os.path.join(invoice_folder, file_name)
 
             # إعداد مستند PDF
-            c = canvas.Canvas(pdf_path, pagesize=A5)
+            c = canvas.Canvas(pdf_path, pagesize=page_size)
             width, height = A5
             c.setFont("Arabic", 12)
 
@@ -1417,7 +1425,7 @@ class SalesInvoice:
             c.drawString(1.5*cm, totals_y - 0.25*cm, format_arabic("____________________"))
 
             c.save()
-            config.report_log(self.app.logs_collection, self.app.user_name, None, f"Generated Pdf Sales Invoice with Id {invoice_data['Receipt_Number']} for Customer {invoice_data['Customer_info']['code']}", None)
+            config.report_log(self.app.logs_collection, self.app.user_name, None, f"{self.app.t("Generated Pdf Sales Invoice with Id")} {invoice_data['Receipt_Number']} {self.app.t("for Customer")} {invoice_data['Customer_info']['code']}", None)
             try:
                 os.startfile(pdf_path, "print")
             except OSError as e:
@@ -1685,10 +1693,46 @@ class SalesInvoice:
         except Exception as e:
             messagebox.showerror(self.app.t("Update Error"), f"{self.app.t("Failed to update Material info:")} {str(e)}")
             self.clear_row_fields(row_idx)
+    def update_search(self, event, collection):
+        # Cancel any previous scheduled search **only if valid**
+        if hasattr(self.app, '_after_id') and self.app._after_id is not None:
+            try:
+                self.root.after_cancel(self.app._after_id)
+            except ValueError:
+                pass  # Ignore if it was already canceled
+        
+        # Mark that user is typing
+        self.app.is_typing = True
+        
+        # Schedule the search with the current text
+        self.app._after_id = self.root.after(300, self.perform_search, collection)
+    def perform_search(self, collection):
+        # Mark that user is not typing anymore
+        self.app.is_typing = False
 
+        search_term = self.app.customer_name_var.get()
 
+        # If search term is empty, you can clear the combobox
+        if search_term == "":
+            self.app.customer_cb['values'] = []
+            return
+
+        # Perform search
+        filtered_customers = [cust['Name'] for cust in collection.find(
+            {"Name": {"$regex": f"^{search_term}", "$options": "i"}}
+        )]
+        
+        # Update combobox values only if user is not typing
+        if not self.app.is_typing:
+            self.app.customer_cb['values'] = filtered_customers
+            
+            if filtered_customers:
+                self.app.customer_cb.event_generate('<Down>')
+            else:
+                self.app.customer_cb.event_generate('<Up>')  # Close dropdown
 
 def capitalize_first_letter(text):
     if not text:
         return text
     return text[0].upper() + text[1:]
+

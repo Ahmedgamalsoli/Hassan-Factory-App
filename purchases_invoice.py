@@ -892,11 +892,17 @@ class PurchaseInvoice:
             padx=15,
             pady=5
         ).pack(side=tk.LEFT, padx=10)
-        
+        # Create a variable to hold the selected page size
+        self.page_size_var = tk.StringVar(value="A5")  # Default value
+
+        # Create the OptionMenu (drop-down list)
+        page_sizes = ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]
+        page_size_menu = tk.OptionMenu(btn_frame, self.page_size_var, *page_sizes)
+        page_size_menu.pack(side=tk.RIGHT, padx=10)       
         tk.Button(
             btn_frame, 
-            text="حفظ الفاتورة", 
-            command=lambda: self.finalize_purchase_invoice(preview_win),
+            text="حفظ و طباعة الفاتورة", 
+            command=lambda: self.finalize_purchase_invoice(preview_win,page_size=config.PAGE_SIZES[self.page_size_var.get()]),
             bg="#27ae60",
             fg="white",
             font=("Arial", 12, "bold"),
@@ -918,7 +924,7 @@ class PurchaseInvoice:
         
         canvas.bind_all("<MouseWheel>", _on_mousewheel)
 
-    def finalize_purchase_invoice(self, preview_window):
+    def finalize_purchase_invoice(self, preview_window,page_size):
         """Finalize purchase invoice saving process and generate PDF"""
         flag = 0
 
@@ -1002,7 +1008,7 @@ class PurchaseInvoice:
             )
             
             # 3. Generate PDF
-            pdf_path = self.generate_pdf_purchase(invoice_data)
+            pdf_path = self.generate_pdf_purchase(invoice_data,page_size=page_size)
             if not pdf_path:
                 preview_window.destroy()
                 return
@@ -1062,7 +1068,7 @@ class PurchaseInvoice:
             messagebox.showerror("خطأ", f"فشل في تنظيف الحقول: {str(e)}")
 
 
-    def generate_pdf_purchase(self, invoice_data):
+    def generate_pdf_purchase(self, invoice_data,page_size):
         """توليد ملف PDF بحجم A5 بتنسيق عربي مطابق للنموذج"""
         try:
             from reportlab.lib.pagesizes import A5
@@ -1110,7 +1116,7 @@ class PurchaseInvoice:
             pdf_path = os.path.join(invoice_folder, file_name)
 
             # إعداد مستند PDF
-            c = canvas.Canvas(pdf_path, pagesize=A5)
+            c = canvas.Canvas(pdf_path, pagesize=page_size)
             width, height = A5
             c.setFont("Arabic", 12)
 
@@ -1356,3 +1362,42 @@ class PurchaseInvoice:
         except Exception as e:
             messagebox.showerror("خطأ", f"فشل توليد الرقم التسلسلي: {str(e)}")
             return None
+    def update_search_purchase(self, event, collection):
+        # Cancel any previous scheduled search **only if valid**
+        if hasattr(self.app, '_after_id') and self.app._after_id is not None:
+            try:
+                self.root.after_cancel(self.app._after_id)
+            except ValueError:
+                pass  # Ignore if it was already canceled
+        
+        # Mark that user is typing
+        self.app.is_typing = True
+        
+        # Schedule the search with the current text
+        self.app._after_id = self.root.after(300, self.perform_search_purchase, collection)
+
+
+    def perform_search_purchase(self, collection):
+        # Mark that user is not typing anymore
+        self.app.is_typing = False
+
+        search_term = self.app.supplier_name_var.get()
+
+        # If search term is empty, you can clear the combobox
+        if search_term == "":
+            self.app.supplier_cb['values'] = []
+            return
+
+        # Perform search
+        filtered_suppliers = [supp['Name'] for supp in collection.find(
+            {"Name": {"$regex": f"^{search_term}", "$options": "i"}}
+        )]
+        
+        # Update combobox values only if user is not typing
+        if not self.app.is_typing:
+            self.app.supplier_cb['values'] = filtered_suppliers
+            
+            if filtered_suppliers:
+                self.app.supplier_cb.event_generate('<Down>')
+            else:
+                self.app.supplier_cb.event_generate('<Up>')  # Close dropdown

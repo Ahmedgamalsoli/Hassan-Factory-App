@@ -6,6 +6,7 @@ import tkinter as tk
 import os
 import sys
 import matplotlib
+import config
 
 from PIL import Image, ImageTk
 from datetime import datetime
@@ -93,7 +94,7 @@ class topbar:
                 if Back_to_Database_Window:
                     back_icon = tk.Button(top_bar, image=self.app.back_photo, bg=config.COLORS["top_bar"], bd=0, command=self.app.manage_database_window)
                 elif Back_to_Employee_Window:
-                    back_icon = tk.Button(top_bar, image=self.app.back_photo, bg=config.COLORS["top_bar"], bd=0, command=self.app.manage_Employees_window)
+                    back_icon = tk.Button(top_bar, image=self.app.back_photo, bg=config.COLORS["top_bar"], bd=0, command=self.app.EmployeeWindow.manage_Employees_window)
                 elif Back_to_Sales_Window:
                     back_icon = tk.Button(top_bar, image=self.app.back_photo, bg=config.COLORS["top_bar"], bd=0, command=self.app.SalesInvoice.manage_sales_invoices_window)
                 elif Back_to_Purchases_Window:
@@ -107,7 +108,7 @@ class topbar:
                 self.app.silent_popup("Error", "Error loading back icon: {e}", self.app.play_Error)
         else:
             lang_btn = tk.Button(top_bar, text=self.app.t("Change Language"), bg=config.COLORS["top_bar"], fg=config.COLORS["top_bar_icons"],
-                                font=("Arial", 10, "bold"), bd=0, command=self.app.toggle_language)
+                                font=("Arial", 10, "bold"), bd=0, command=self.toggle_language)
             lang_btn.pack(side="left", padx=10)
             if self.app.light:
                 lang_image = Image.open(self.app.dark_mode_img)
@@ -116,7 +117,7 @@ class topbar:
             lang_image = lang_image.resize((40, 40), Image.LANCZOS)
             self.app.lang_photo = ImageTk.PhotoImage(lang_image)
             lang_btn = tk.Button(top_bar, text=self.app.t("Change Language"),image=self.app.lang_photo, bg=config.COLORS["top_bar"], fg="black",
-                                font=("Arial", 10, "bold"), bd=0, command=self.app.toggle_theme)
+                                font=("Arial", 10, "bold"), bd=0, command=self.toggle_theme)
             lang_btn.pack(side="left", padx=10)
 
         # Left side: Language or Back button
@@ -145,3 +146,46 @@ class topbar:
 
         username_label = tk.Label(user_frame, text=self.app.user_name, font=("Arial", 20), fg=config.COLORS["top_bar_icons"], bg=config.COLORS["top_bar"])
         username_label.pack(side="left")
+
+    # Function tot oggle from Arabic to English and Vicaverse
+    def toggle_language(self):
+        self.app.language = "English" if self.app.language == "Arabic" else "Arabic"
+        self.app.main_menu()   
+    def toggle_theme(self):
+        if self.app.light:
+            self.app.light = False
+        elif not self.app.light:
+            self.app.light = True
+        if config.COLORS["background"] == "#F5F7FA":
+            config.COLORS["background"]    = "#121212"   # Dark background (not pure black)
+            config.COLORS["primary"]       = "#3B82F6"   # Soft light text (from light mode #2A3F5F)
+            config.COLORS["main_frame"]    = "#2A3F5F"   # Soft light text (from light mode #2A3F5F)
+            config.COLORS["secondary"]     = "#00C0A3"   # Keep same – good contrast on dark
+            config.COLORS["accent"]        = "#FF6F61"   # Keep same – bright accent
+            config.COLORS["text"]          = "#FFFFFF"   # Bright white for main text
+            config.COLORS["card"]          = "#1E1E1E"   # Dark card background (soft contrast)
+            config.COLORS["chart1"]        = "#00C0A3"   # Same – stands out on dark
+            config.COLORS["chart2"]        = "#FF6F61"   # Same – bright red works well
+            config.COLORS["highlight"]     = "#9B6EF3"   # Softer version of #6C5CE7 for dark
+            config.COLORS["table_header"]  = "#2C2C2C"   # Dark header with slight elevation
+            config.COLORS["positive"]      = "#03DAC6"   # Material-style teal (greenish)
+            config.COLORS["neutral"]       = "#888888"   # Neutral gray for muted UI
+            config.COLORS["top_bar"]       = "#23272A"   # <-- New dark mode top bar color
+            config.COLORS["top_bar_icons"] = "#fbd307"   # <-- New dark mode user info color
+        else:
+            config.COLORS["background"]    = "#F5F7FA"
+            config.COLORS["primary"]       = "#3B82F6"
+            config.COLORS["main_frame"]    = "#2A3F5F"
+            config.COLORS["secondary"]     = "#00C0A3"
+            config.COLORS["accent"]        = "#FF6F61"
+            config.COLORS["text"]          = "#2A3F5F"
+            config.COLORS["card"]          = "#FFFFFF"
+            config.COLORS["chart1"]        = "#00C0A3"
+            config.COLORS["chart2"]        = "#FF6F61"
+            config.COLORS["highlight"]     = "#6C5CE7"
+            config.COLORS["table_header"]  = "#2A3F5F"
+            config.COLORS["positive"]      = "#00C0A3"
+            config.COLORS["neutral"]       = "#A0AEC0"
+            config.COLORS["top_bar"]       = "#dbb40f"   # <-- Original light mode top bar color
+            config.COLORS["top_bar_icons"] = "#000000"   # <-- Original light mode user info color
+        self.app.main_menu()

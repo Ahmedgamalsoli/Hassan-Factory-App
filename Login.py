@@ -1,19 +1,20 @@
 # ======================
 # Used imports
 # ======================
+
 import tkinter as tk
-import matplotlib
+import io
+import re
 import os
+import config
+from annotated_types import doc
+import pytz
+import threading  # To play sound without freezing the GUI
 import sys
 from PIL import Image, ImageTk, ImageDraw # Import Pillow classes
 
 
 matplotlib.use('TkAgg')  # Set the backend before importing pyplot
-
-# ======================
-# Unused imports
-# ======================
-# from reportlab.lib.pagesizes import letter
 
 
 # Determine the base directory
@@ -90,6 +91,7 @@ class LoginWindow:
                     self.app.employees_collection.update_one({"_id": self.app.user_id}, {"$set": {"logged_in": True}})
 
                     self.app.last_number_of_msgs = user.get("last_number_of_msgs", 0)
+                    config.report_log(self.app.logs_collection, self.app.user_name, None, f"{self.app.user_name} {self.app.t("login to the application")}", None)
                     # messagebox.showinfo("Success", f"Login successful! Role: {self.user_role}")
                     self.app.silent_popup(self.app.t("Success"), f"{self.app.t("Login successful! Role:")} {self.app.user_role}",self.app.play_success)
                     # open_main_menu(self.app.user_role)
@@ -189,3 +191,18 @@ class LoginWindow:
                 self.app.main_menu()
             else:
                 self.app.silent_popup(self.app.t("Unknown role"), self.app.t("Access denied."), self.app.play_Error)
+    # Function to Create Circular Image
+    def create_circular_image(self, image_path, size=(100, 100)):  
+        """Creates a circular version of an image"""
+        if not os.path.exists(image_path):
+            return None  # Return None if the image doesn't exist
+
+        img = Image.open(image_path).resize(size, Image.LANCZOS)  
+        mask = Image.new("L", size, 0)
+        draw = ImageDraw.Draw(mask)
+        draw.ellipse((0, 0, size[0], size[1]), fill=255)
+        
+        circular_img = Image.new("RGBA", size)
+        circular_img.paste(img, (0, 0), mask)
+        return ImageTk.PhotoImage(circular_img)
+    

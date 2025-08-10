@@ -2,6 +2,7 @@ from datetime import datetime
 
 import cloudinary
 import db
+from reportlab.lib.pagesizes import letter,A7,A6,A5,A4,A3,A2,A1
 
 COLORS = {
     "background": "#F5F7FA",       # Light grey background
@@ -19,6 +20,16 @@ COLORS = {
     "neutral": "#A0AEC0",            # Grey for secondary elements
     "top_bar": "#dbb40f",        # Dark blue for top bar
     "top_bar_icons": "#000000",  # White for top bar icons
+}
+
+PAGE_SIZES = {
+    "A1": A1,
+    "A2": A2,
+    "A3": A3,
+    "A4": A4,
+    "A5": A5,
+    "A6": A6,
+    "A7": A7,
 }
 
 PRIMARY_KEYS = {
