@@ -53,7 +53,7 @@ class GroupChat:
 
     def open_group_chat_window(self):
         chat_win = tk.Toplevel(self.root)
-        chat_win.title(self.app.t("Group Chat - Employee Notes"))
+        chat_win.title(self.app.AuxiliaryClass.t("Group Chat - Employee Notes"))
         chat_win.geometry("450x500")
         chat_win.resizable(False, False)
 
@@ -122,10 +122,10 @@ class GroupChat:
             chat_display.config(state="normal")
             chat_display.delete(1.0, tk.END)
             for msg in self.app.messages_collection.find().sort("timestamp", 1):
-                name = msg.get("name", self.app.t("Unknown"))
+                name = msg.get("name", self.app.AuxiliaryClass.t("Unknown"))
                 text = msg.get("text", "")
                 time = msg.get("timestamp", "").strftime("%Y-%m-%d %H:%M") if msg.get("timestamp") else ""
-                chat_display.insert(tk.END, f"[{time}] {self.app.t(name)}: {text}\n")
+                chat_display.insert(tk.END, f"[{time}] {self.app.AuxiliaryClass.t(name)}: {text}\n")
             chat_display.config(state="disabled")
             chat_display.see(tk.END)
             self.app.last_number_of_msgs = self.app.messages_collection.count_documents({})

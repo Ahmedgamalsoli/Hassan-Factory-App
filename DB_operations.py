@@ -40,7 +40,7 @@ class DBOperations:
     def __init__(self, root, app):
         self.root = root
         self.app = app  # save reference to SalesSystemApp
-        self.t = self.app.t
+        self.t = self.app.AuxiliaryClass.t
 
     def add_generic_entry(self, tree, current_collection, collection_name):
         fields = config.get_fields_by_name(collection_name)

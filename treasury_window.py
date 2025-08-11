@@ -75,11 +75,11 @@ class TreasuryWindow:
         date_frame = tk.Frame(filter_frame)
         date_frame.pack(side=tk.LEFT, padx=10)
 
-        tk.Label(date_frame, text=self.app.t("From Date:")).pack(side=tk.LEFT)
+        tk.Label(date_frame, text=self.app.AuxiliaryClass.t("From Date:")).pack(side=tk.LEFT)
         self.app.from_date = DateEntry(date_frame, date_pattern="dd/mm/yyyy")
         self.app.from_date.pack(side=tk.LEFT, padx=10)
 
-        tk.Label(date_frame, text=self.app.t("To Date:")).pack(side=tk.LEFT, padx=(20,0))
+        tk.Label(date_frame, text=self.app.AuxiliaryClass.t("To Date:")).pack(side=tk.LEFT, padx=(20,0))
         self.app.to_date = DateEntry(date_frame, date_pattern="dd/mm/yyyy")
         self.app.to_date.pack(side=tk.LEFT)
 
@@ -87,7 +87,7 @@ class TreasuryWindow:
         method_frame = tk.Frame(filter_frame)
         method_frame.pack(side=tk.LEFT, padx=20)
 
-        tk.Label(method_frame, text=self.app.t("Payment Method:")).pack(side=tk.LEFT)
+        tk.Label(method_frame, text=self.app.AuxiliaryClass.t("Payment Method:")).pack(side=tk.LEFT)
         self.app.payment_method = ttk.Combobox(
             method_frame,
             values=["All", "Cash", "Instapay", "Bank Account", "E Wallet"]
@@ -96,7 +96,7 @@ class TreasuryWindow:
         self.app.payment_method.pack(side=tk.LEFT, padx=10)
 
         # Search button
-        search_btn = tk.Button(filter_frame, text=self.app.t("Search"), command=self.fetch_transactions)
+        search_btn = tk.Button(filter_frame, text=self.app.AuxiliaryClass.t("Search"), command=self.fetch_transactions)
         search_btn.pack(side=tk.RIGHT, padx=10)
 
         # Results Treeview
@@ -104,11 +104,11 @@ class TreasuryWindow:
         self.app.tree = ttk.Treeview(main_frame, columns=columns, show="headings")
         
         # Configure columns
-        self.app.tree.heading("date", text=self.app.t("Date"))
-        self.app.tree.heading("description", text=self.app.t("Description"))
-        self.app.tree.heading("credit", text=self.app.t("Credit"))
-        self.app.tree.heading("debit", text=self.app.t("Debit"))
-        self.app.tree.heading("payment_method", text=self.app.t("Payment Method"))
+        self.app.tree.heading("date", text=self.app.AuxiliaryClass.t("Date"))
+        self.app.tree.heading("description", text=self.app.AuxiliaryClass.t("Description"))
+        self.app.tree.heading("credit", text=self.app.AuxiliaryClass.t("Credit"))
+        self.app.tree.heading("debit", text=self.app.AuxiliaryClass.t("Debit"))
+        self.app.tree.heading("payment_method", text=self.app.AuxiliaryClass.t("Payment Method"))
 
         self.app.tree.column("date", width=120, anchor='center')
         self.app.tree.column("description", width=250, anchor='center')
@@ -130,13 +130,13 @@ class TreasuryWindow:
         self.app.total_debit_var = tk.StringVar()
         self.app.balance_var = tk.StringVar()
 
-        tk.Label(totals_frame, text=self.app.t("Total Credit:"), font=('Arial', 10, 'bold')).pack(side=tk.LEFT, padx=10)
+        tk.Label(totals_frame, text=self.app.AuxiliaryClass.t("Total Credit:"), font=('Arial', 10, 'bold')).pack(side=tk.LEFT, padx=10)
         tk.Label(totals_frame, textvariable=self.app.total_credit_var, font=('Arial', 10)).pack(side=tk.LEFT)
 
-        tk.Label(totals_frame, text=self.app.t("Total Debit:"), font=('Arial', 10, 'bold')).pack(side=tk.LEFT, padx=10)
+        tk.Label(totals_frame, text=self.app.AuxiliaryClass.t("Total Debit:"), font=('Arial', 10, 'bold')).pack(side=tk.LEFT, padx=10)
         tk.Label(totals_frame, textvariable=self.app.total_debit_var, font=('Arial', 10)).pack(side=tk.LEFT)
 
-        tk.Label(totals_frame, text=self.app.t("Balance:"), font=('Arial', 10, 'bold')).pack(side=tk.LEFT, padx=10)
+        tk.Label(totals_frame, text=self.app.AuxiliaryClass.t("Balance:"), font=('Arial', 10, 'bold')).pack(side=tk.LEFT, padx=10)
         tk.Label(totals_frame, textvariable=self.app.balance_var, font=('Arial', 10)).pack(side=tk.LEFT)
         if self.app.language == "Arabic":
             headers = ["التاريخ", "الوصف", 'المدين', 'الدائن',  "طريقة الدفع"]
@@ -151,15 +151,15 @@ class TreasuryWindow:
             print(f"Actual Values - Credit: {self.app.total_credit_var.get()}, Debit: {self.app.total_debit_var.get()}, Balance: {self.app.balance_var.get()}")
 
         excel_btn = tk.Button(totals_frame,
-                            text=self.app.t("Export to Excel"), 
-                            command=lambda: self.app.export_to_excel(self.app.filtered_transactions_table,headers=headers,filename=filename_excel,
+                            text=self.app.AuxiliaryClass.t("Export to Excel"), 
+                            command=lambda: self.app.AuxiliaryClass.export_to_excel(self.app.filtered_transactions_table,headers=headers,filename=filename_excel,
                                                                 report_folder=report_folder,title=report_folder,
                                                                 startdate=self.app.from_date.get() if hasattr(self.app.from_date, 'get') else str(self.app.from_date),
                                                                 enddate=self.app.to_date.get() if hasattr(self.app.to_date, 'get') else str(self.app.to_date),
                                                                 footerline_out_of_table=[
-                                                                    f"{self.app.t("Total Credit:")} {str(self.app.total_credit_var.get())}",
-                                                                    f"{self.app.t("Total Debit:")} {str(self.app.total_debit_var.get())}",
-                                                                    f"{self.app.t("Balance:")} {str(self.app.balance_var.get())}"
+                                                                    f"{self.app.AuxiliaryClass.t("Total Credit:")} {str(self.app.total_credit_var.get())}",
+                                                                    f"{self.app.AuxiliaryClass.t("Total Debit:")} {str(self.app.total_debit_var.get())}",
+                                                                    f"{self.app.AuxiliaryClass.t("Balance:")} {str(self.app.balance_var.get())}"
                                                                 ], source= "Treasury"
                                                                  ),bg="#21F35D", fg='white')
         # Create a variable to hold the selected page size
@@ -170,8 +170,8 @@ class TreasuryWindow:
         page_size_menu = tk.OptionMenu(totals_frame, self.page_size_var, *page_sizes)
         
         pdf_btn   = tk.Button(totals_frame, 
-                            text=self.app.t("Export to PDF and Print"),
-                            command=lambda: self.app.export_to_pdf(self.app.filtered_transactions_table,headers=headers,filename=filename_pdf,
+                            text=self.app.AuxiliaryClass.t("Export to PDF and Print"),
+                            command=lambda: self.app.AuxiliaryClass.export_to_pdf(self.app.filtered_transactions_table,headers=headers,filename=filename_pdf,
                                                                 report_folder=report_folder,title=report_folder,
                                                                 startdate=self.app.from_date.get() if hasattr(self.app.from_date, 'get') else str(self.app.from_date),
                                                                 enddate=self.app.to_date.get() if hasattr(self.app.to_date, 'get') else str(self.app.to_date),

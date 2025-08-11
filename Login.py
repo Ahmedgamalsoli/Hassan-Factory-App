@@ -80,17 +80,17 @@ class LoginWindow:
             self.animate_image_slide_in(-750)
 
         # Title
-        title = tk.Label(login_frame, text=self.app.t("Login"), font=("Arial", 18, "bold"), bg="white")
+        title = tk.Label(login_frame, text=self.app.AuxiliaryClass.t("Login"), font=("Arial", 18, "bold"), bg="white")
         title.place(x=150, y=120)
 
         # Username
-        username_label = tk.Label(login_frame, text=self.app.t("Username:"), font=("Arial", 12), bg="white")
+        username_label = tk.Label(login_frame, text=self.app.AuxiliaryClass.t("Username:"), font=("Arial", 12), bg="white")
         username_label.place(x=50, y=160)
         username_entry = tk.Entry(login_frame, font=("Arial", 12), bg="#f0f0f0")
         username_entry.place(x=150, y=160, width=200)
 
         # Password
-        password_label = tk.Label(login_frame, text=self.app.t("Password:"), font=("Arial", 12), bg="white")
+        password_label = tk.Label(login_frame, text=self.app.AuxiliaryClass.t("Password:"), font=("Arial", 12), bg="white")
         password_label.place(x=50, y=190)
         password_entry = tk.Entry(login_frame, font=("Arial", 12), bg="#f0f0f0", show="*")
         password_entry.place(x=150, y=190, width=200)
@@ -105,7 +105,7 @@ class LoginWindow:
             self.app.user_name = username
             
             if not username or not password:
-                self.app.silent_popup(self.app.t("Error"), self.app.t("Both fields are required."),self.app.play_Error)
+                self.app.AuxiliaryClass.silent_popup(self.app.AuxiliaryClass.t("Error"), self.app.AuxiliaryClass.t("Both fields are required."),self.app.AuxiliaryClass.play_Error)
                 return
 
             try:
@@ -118,29 +118,29 @@ class LoginWindow:
                     self.app.employees_collection.update_one({"_id": self.app.user_id}, {"$set": {"logged_in": True}})
 
                     self.app.last_number_of_msgs = user.get("last_number_of_msgs", 0)
-                    config.report_log(self.app.logs_collection, self.app.user_name, None, f"{self.app.user_name} {self.app.t("login to the application")}", None)
+                    config.report_log(self.app.logs_collection, self.app.user_name, None, f"{self.app.user_name} {self.app.AuxiliaryClass.t("login to the application")}", None)
                     # messagebox.showinfo("Success", f"Login successful! Role: {self.user_role}")
-                    self.app.silent_popup(self.app.t("Success"), f"{self.app.t("Login successful! Role:")} {self.app.user_role}",self.app.play_success)
+                    self.app.AuxiliaryClass.silent_popup(self.app.AuxiliaryClass.t("Success"), f"{self.app.AuxiliaryClass.t("Login successful! Role:")} {self.app.user_role}",self.app.AuxiliaryClass.play_success)
                     # open_main_menu(self.app.user_role)
                     self.show_logo_transition(self.app.user_role)
                 else:
-                    self.app.silent_popup(self.app.t("Error"), self.app.t("Invalid username or password."), self.app.play_Error)
+                    self.app.AuxiliaryClass.silent_popup(self.app.AuxiliaryClass.t("Error"), self.app.AuxiliaryClass.t("Invalid username or password."), self.app.AuxiliaryClass.play_Error)
 
             except Exception as e:
-                self.app.silent_popup(self.app.t("Database Error"), f"{self.app.t("An error occurred:")} {e}", self.app.play_Error)
+                self.app.AuxiliaryClass.silent_popup(self.app.AuxiliaryClass.t("Database Error"), f"{self.app.AuxiliaryClass.t("An error occurred:")} {e}", self.app.AuxiliaryClass.play_Error)
 
 
-        login_button = tk.Button(login_frame, text=self.app.t("Login"), font=("Arial", 12), bg="lightblue", command=validate_login)
+        login_button = tk.Button(login_frame, text=self.app.AuxiliaryClass.t("Login"), font=("Arial", 12), bg="lightblue", command=validate_login)
         login_button.place(x=150, y=270, width=100)
 
         # Exit Button
-        exit_button = tk.Button(login_frame, text=self.app.t("Exit"), font=("Arial", 12), bg="lightgray", command=self.app.root.quit)
+        exit_button = tk.Button(login_frame, text=self.app.AuxiliaryClass.t("Exit"), font=("Arial", 12), bg="lightgray", command=self.app.root.quit)
         exit_button.place(x=270, y=270, width=80)
         def open_main_menu(role):
             if role:
                 self.app.main_menu()
             else:
-                self.app.silent_popup(self.app.t("Unknown role"), self.app.t("Access denied."), self.app.play_Error)
+                self.app.AuxiliaryClass.silent_popup(self.app.AuxiliaryClass.t("Unknown role"), self.app.AuxiliaryClass.t("Access denied."), self.app.AuxiliaryClass.play_Error)
     def animate_image_slide_in(self, x):
         if x < 20:
             self.logo_label.place(x=x)
@@ -217,7 +217,7 @@ class LoginWindow:
             if role:
                 self.app.main_menu()
             else:
-                self.app.silent_popup(self.app.t("Unknown role"), self.app.t("Access denied."), self.app.play_Error)
+                self.app.AuxiliaryClass.silent_popup(self.app.AuxiliaryClass.t("Unknown role"), self.app.AuxiliaryClass.t("Access denied."), self.app.AuxiliaryClass.play_Error)
     # Function to Create Circular Image
     def create_circular_image(self, image_path, size=(100, 100)):  
         """Creates a circular version of an image"""

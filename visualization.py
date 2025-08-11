@@ -78,19 +78,19 @@ class Visualization:
             # Bar Chart
             ax1 = fig.add_subplot(211)
             try:
-                arabic_title0 = self.app.t("Customers")
+                arabic_title0 = self.app.AuxiliaryClass.t("Customers")
                 reshaped_text0 = arabic_reshaper.reshape(arabic_title0)
                 bidi_text0 = get_display(reshaped_text0)
-                arabic_title1 = self.app.t("Suppliers")
+                arabic_title1 = self.app.AuxiliaryClass.t("Suppliers")
                 reshaped_text1 = arabic_reshaper.reshape(arabic_title1)
                 bidi_text1 = get_display(reshaped_text1)
                 bars = ax1.bar([bidi_text0, bidi_text1], 
                             [data['customers'], data['suppliers']], 
                             color=['#2E86C1', '#17A589'])
-                arabic_title2 = self.app.t("Customer & Supplier Overview")
+                arabic_title2 = self.app.AuxiliaryClass.t("Customer & Supplier Overview")
                 reshaped_text2 = arabic_reshaper.reshape(arabic_title2)
                 bidi_text2 = get_display(reshaped_text2)                
-                arabic_title3 = self.app.t("Count")
+                arabic_title3 = self.app.AuxiliaryClass.t("Count")
                 reshaped_text3 = arabic_reshaper.reshape(arabic_title3)
                 bidi_text3 = get_display(reshaped_text3)                
                 ax1.set_title(bidi_text2, fontsize=20,color=config.COLORS["text"], fontname="Arial")
@@ -116,27 +116,27 @@ class Visualization:
             # Summary Table
             ax2 = fig.add_subplot(212)
             ax2.axis('off')
-            arabic_title4 = self.app.t("Metric")
+            arabic_title4 = self.app.AuxiliaryClass.t("Metric")
             reshaped_text4 = arabic_reshaper.reshape(arabic_title4)
             bidi_text4 = get_display(reshaped_text4) 
 
-            arabic_title5 = self.app.t("Value")
+            arabic_title5 = self.app.AuxiliaryClass.t("Value")
             reshaped_text5 = arabic_reshaper.reshape(arabic_title5)
             bidi_text5 = get_display(reshaped_text5) 
 
-            arabic_title6 = self.app.t("Customers number")
+            arabic_title6 = self.app.AuxiliaryClass.t("Customers number")
             reshaped_text6 = arabic_reshaper.reshape(arabic_title6)
             bidi_text6 = get_display(reshaped_text6) 
 
-            arabic_title7 = self.app.t("Suppliers number")
+            arabic_title7 = self.app.AuxiliaryClass.t("Suppliers number")
             reshaped_text7 = arabic_reshaper.reshape(arabic_title7)
             bidi_text7 = get_display(reshaped_text7) 
 
-            arabic_title8 = self.app.t("Number of Sales")
+            arabic_title8 = self.app.AuxiliaryClass.t("Number of Sales")
             reshaped_text8 = arabic_reshaper.reshape(arabic_title8)
             bidi_text8 = get_display(reshaped_text8) 
 
-            arabic_title9 = self.app.t("Number of Purchases")
+            arabic_title9 = self.app.AuxiliaryClass.t("Number of Purchases")
             reshaped_text9 = arabic_reshaper.reshape(arabic_title9)
             bidi_text9 = get_display(reshaped_text9) 
 
@@ -216,10 +216,10 @@ class Visualization:
                         wedgeprops={'width': 1}
                     )
                 else:
-                    arabic_title1 = self.app.t("Sales")
+                    arabic_title1 = self.app.AuxiliaryClass.t("Sales")
                     reshaped_text1 = arabic_reshaper.reshape(arabic_title1)
                     bidi_text1 = get_display(reshaped_text1)
-                    arabic_title2 = self.app.t("Purchases")
+                    arabic_title2 = self.app.AuxiliaryClass.t("Purchases")
                     reshaped_text2 = arabic_reshaper.reshape(arabic_title2)
                     bidi_text2 = get_display(reshaped_text2)
                     ax1.pie(
@@ -232,11 +232,11 @@ class Visualization:
                     )
                 ax1.axis('equal')  # Ensures the pie is drawn as a circle
                 # Before setting the title:
-                arabic_title = self.app.t("Sales vs Purchases")
+                arabic_title = self.app.AuxiliaryClass.t("Sales vs Purchases")
                 reshaped_text = arabic_reshaper.reshape(arabic_title)
                 bidi_text = get_display(reshaped_text)
                 ax1.set_title(bidi_text, fontsize=20, color=config.COLORS["text"], fontname="Arial")  # Use a font that supports Arabic
-                # ax1.set_title(self.app.t("المبيعات مقابل المشتريات"), fontsize=14, color=config.COLORS["text"])
+                # ax1.set_title(self.app.AuxiliaryClass.t("المبيعات مقابل المشتريات"), fontsize=14, color=config.COLORS["text"])
             except Exception as pie_error:
                 print(f"Pie chart error: {pie_error}")
             # ...existing code...
@@ -255,13 +255,13 @@ class Visualization:
                         label.set_fontname("Arial")    # Font family (supports Arabic)
                         label.set_color(config.COLORS["text"])   
                         label.set_weight("bold")  # Font size
-                    arabic_title3 = self.app.t("Top Client")
+                    arabic_title3 = self.app.AuxiliaryClass.t("Top Client")
                     reshaped_text3 = arabic_reshaper.reshape(arabic_title3)
                     bidi_text3 = get_display(reshaped_text3)
                     ax2.set_title(bidi_text3, fontsize=20,color=config.COLORS["text"],fontname="Arial")  # Use a font that supports Arabic
                     ax2.set_facecolor(config.COLORS["text"])
                     ax2.tick_params(colors=config.COLORS["text"])
-                    arabic_title4 = self.app.t("Amount")
+                    arabic_title4 = self.app.AuxiliaryClass.t("Amount")
                     reshaped_text4 = arabic_reshaper.reshape(arabic_title4)
                     bidi_text4 = get_display(reshaped_text4)
                     ax2.set_ylabel(bidi_text4,fontsize=18,color=config.COLORS["text"],fontname="Arial")
@@ -360,157 +360,4 @@ class Visualization:
             return ("Error", 0)
         
 
-    #######################################unused#######################################
-    # Modify your show_visualizations method:
-    # def show_visualizations(self,user_role):
-    #     # Clear current window
-    #     for widget in self.root.winfo_children():
-    #         widget.destroy()
-    #     print(1)
-    #     # Create the top bar
-    #     self.topbar.topbar(show_back_button=True)
-    #     print(1)
-    #     try:
-    #         print(1)
-    #         # Create new window
-    #         # vis_window = tk.Toplevel(self.root)
-    #         # vis_window.title("Business Analytics")
-    #         # vis_window.state("zoomed")  # Maximized window
-    #         print(1)
-    #         # Create main container
-    #         main_frame = tk.Frame(self.root, bg="white")
-    #         main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
-    #         print(1)
-    #         # Get data from database
-    #         data = {
-    #             'customers': self.get_customer_count(),
-    #             'suppliers': self.get_supplier_count(),
-    #             'sales': self.get_sales_count(),
-    #             'purchases': self.get_purchase_count(),
-    #             'top_client': self.get_top_client()
-    #         }
-    #         print(1)
-    #         # Create figure
-    #         fig = plt.Figure(figsize=(16, 10), dpi=100)
-    #         fig.suptitle("Business Performance Dashboard", fontsize=16, y=0.95)
-    #         print(1)
-    #         # Create subplots
-    #         ax1 = fig.add_subplot(221)
-    #         ax2 = fig.add_subplot(222)
-    #         ax3 = fig.add_subplot(223)
-    #         ax4 = fig.add_subplot(224)
-    #         print(1)
-    #         # Chart 1: Customers vs Suppliers
-    #         ax1.bar(['Customers', 'Suppliers'], 
-    #                 [data['customers'], data['suppliers']], 
-    #                 color=['#1f77b4', '#ff7f0e'])
-    #         ax1.set_title(self.t("Customer & Supplier Count"), pad=15,font="Arial")
-    #         ax1.set_ylabel("Count")
-    #         print(1)
-    #         # Chart 2: Sales/Purchases Ratio
-    #         ax2.pie([data['sales'], data['purchases']],
-    #                 labels=['Sales', 'Purchases'],
-    #                 autopct='%1.1f%%',
-    #                 colors=['#2ca02c', '#d62728'],
-    #                 startangle=90)
-    #         ax2.set_title("Sales vs Purchases Ratio", pad=15)
-    #         print(1)
-    #         # Chart 3: Top Client
-    #         if data['top_client']:
-    #             ax3.bar(data['top_client'][0], data['top_client'][1],
-    #                     color='#9467bd')
-    #             ax3.set_title("Top Performing Client", pad=15)
-    #             ax3.set_ylabel("Sales Amount")
-    #         print(1)
-    #         # Chart 4: Summary Table
-    #         table_data = [
-    #             ['Metric', 'Value'],
-    #             ['Total Customers', data['customers']],
-    #             ['Total Suppliers', data['suppliers']],
-    #             ['Total Sales', data['sales']],
-    #             ['Total Purchases', data['purchases']]
-    #         ]
-    #         ax4.axis('off')
-    #         table = ax4.table(cellText=table_data, 
-    #                         loc='center', 
-    #                         cellLoc='center',
-    #                         colWidths=[0.4, 0.4])
-    #         table.auto_set_font_size(False)
-    #         table.set_fontsize(12)
-
-    #         # Embed in Tkinter
-    #         canvas = FigureCanvasTkAgg(fig, master=main_frame)
-    #         canvas.draw()
-    #         canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
-
-
-    #     except Exception as e:
-    #         print(f"Error generating visualizations: {e}")
-    #         tk.messagebox.showerror(self.t("Error"), f"{self.t("Failed to load reports:")} {str(e)}")      
-
-
-
-
-
-
-
-
-
-
-    # def create_main_buttons(self, parent,buttons):
-    #     # buttons = [
-    #     #     {"text": "New Sales Invoice", "image": "Sales.png",
-    #     #     "command": lambda: self.trash(self.user_role)},
-    #     #     {"text": "New Purchase Invoice", "image": "Purchase.png", 
-    #     #     "command": lambda: self.trash(self.user_role)},
-    #     #     {"text": "Production Order", "image": "Production Order.png", 
-    #     #     "command": lambda: self.trash(self.user_role)},
-    #     #     {"text": "Employee Interactions", "image": "Employees.png", 
-    #     #     "command": lambda: self.trash(self.user_role)},
-    #     #     {"text": "Treasury", "image": "Treasury.png", 
-    #     #     "command": lambda: self.trash(self.user_role)},
-    #     #     {"text": "Database", "image": "Database.png", 
-    #     #     "command": lambda: self.trash(self.user_role)},
-    #     #     # {"text": "Analytics", "image": "Analytics.png", 
-    #     #     # "command": lambda: self.trash(self.user_role)},
-    #     # ]
-
-    #     columns_per_row = 3
-    #     button_size = 100
-
-    #     try:
-    #         for index, btn_info in enumerate(buttons):
-    #             row = index // columns_per_row
-    #             column = index % columns_per_row
-
-    #             btn_frame = tk.Frame(parent, bg=config.COLORS["card"])
-    #             btn_frame.grid(row=row, column=column, padx=15, pady=15)
-
-    #             # button_frame = tk.Frame(parent, bg=config.COLORS["card"])
-    #             # button_frame.pack(pady=30)
-                
-    #             # Load and process image
-    #             img_path = os.path.join(BASE_DIR, "Static", "images", btn_info["image"])
-    #             img = Image.open(img_path).resize((button_size, button_size), Image.LANCZOS)
-    #             photo_img = ImageTk.PhotoImage(img)
-
-    #             # Create modern button
-    #             btn = tk.Button(btn_frame,
-    #                         image=photo_img,
-    #                         text=btn_info["text"],
-    #                         compound=tk.TOP,
-    #                         bg=config.COLORS["card"],
-    #                         fg=config.COLORS["text"],
-    #                         activebackground=config.COLORS["highlight"],
-    #                         font=("Segoe UI", 10),
-    #                         borderwidth=0,
-    #                         command=btn_info["command"])
-    #             btn.image = photo_img
-    #             btn.pack()
-
-    #             # Hover effect
-    #             btn.bind("<Enter>", lambda e, b=btn: b.config(bg=config.COLORS["primary"]))
-    #             btn.bind("<Leave>", lambda e, b=btn: b.config(bg=config.COLORS["card"]))
-                
-    #     except Exception as e:
-    #         print(f"Button error: {e}")
+    

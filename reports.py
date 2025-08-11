@@ -71,53 +71,53 @@ class reports:
         # Define buttons with images, text, and commands
         if self.app.light:
             buttons = [
-                {"text": self.app.t("Sales Report"), "image": "sales_rep-dark.png", 
-                "command": lambda: self.app.trash(self.app.user_role)},
-                {"text": self.app.t("Daily treasury report"), "image": "daily-report-dark.png", 
+                {"text": self.app.AuxiliaryClass.t("Sales Report"), "image": "sales_rep-dark.png", 
+                "command": lambda: self.app.AuxiliaryClass.trash(self.app.user_role)},
+                {"text": self.app.AuxiliaryClass.t("Daily treasury report"), "image": "daily-report-dark.png", 
                 "command": lambda: self.Treasury_window_report(self.app.user_role)},
-                # {"text": self.app.t("Sales Report"), "image": "sales_rep-dark.png", 
+                # {"text": self.app.AuxiliaryClass.t("Sales Report"), "image": "sales_rep-dark.png", 
                 # "command": lambda: self.app.sales_report(self.app.user_role)},
-                {"text": self.app.t("Purchase Report"), "image": "Purchase_rep-dark.png", 
-                "command": lambda: self.app.trash(self.app.user_role)},
-                {"text": self.app.t("Profit and Loss (P&L) Report"), "image": "p&l_repo-dark.png", 
-                "command": lambda: self.app.trash(self.app.user_role)},
-                {"text": self.app.t("Customer Reports"), "image": "Customer_repo-dark.png", 
-                "command": lambda: self.app.trash(self.app.user_role)},
-                {"text": self.app.t("Supplier Reports"), "image": "Supplier_repo-dark.png", 
-                "command": lambda: self.app.trash(self.app.user_role)},
-                {"text": self.app.t("Inventory Report"), "image": "Inventory_repo-dark.png", 
-                "command": lambda: self.app.trash(self.app.user_role)},
-                {"text": self.app.t("Payment & Collection Report"), "image": "payment_repo-dark.png", 
-                "command": lambda: self.app.trash(self.app.user_role)},
-                {"text": self.app.t("General Expenses Report"), "image": "General Expenses_repo-dark.png", 
-                "command": lambda: self.app.trash(self.app.user_role)},
-                {"text": self.app.t("Employee Performance Report"), "image": "Employee_Performance_repo-dark.png", 
-                "command": lambda: self.app.trash(self.app.user_role)},
+                {"text": self.app.AuxiliaryClass.t("Purchase Report"), "image": "Purchase_rep-dark.png", 
+                "command": lambda: self.app.AuxiliaryClass.trash(self.app.user_role)},
+                {"text": self.app.AuxiliaryClass.t("Profit and Loss (P&L) Report"), "image": "p&l_repo-dark.png", 
+                "command": lambda: self.app.AuxiliaryClass.trash(self.app.user_role)},
+                {"text": self.app.AuxiliaryClass.t("Customer Reports"), "image": "Customer_repo-dark.png", 
+                "command": lambda: self.app.AuxiliaryClass.trash(self.app.user_role)},
+                {"text": self.app.AuxiliaryClass.t("Supplier Reports"), "image": "Supplier_repo-dark.png", 
+                "command": lambda: self.app.AuxiliaryClass.trash(self.app.user_role)},
+                {"text": self.app.AuxiliaryClass.t("Inventory Report"), "image": "Inventory_repo-dark.png", 
+                "command": lambda: self.app.AuxiliaryClass.trash(self.app.user_role)},
+                {"text": self.app.AuxiliaryClass.t("Payment & Collection Report"), "image": "payment_repo-dark.png", 
+                "command": lambda: self.app.AuxiliaryClass.trash(self.app.user_role)},
+                {"text": self.app.AuxiliaryClass.t("General Expenses Report"), "image": "General Expenses_repo-dark.png", 
+                "command": lambda: self.app.AuxiliaryClass.trash(self.app.user_role)},
+                {"text": self.app.AuxiliaryClass.t("Employee Performance Report"), "image": "Employee_Performance_repo-dark.png", 
+                "command": lambda: self.app.AuxiliaryClass.trash(self.app.user_role)},
             ]
         elif not self.app.light:
             buttons = [
-                {"text": self.app.t("Sales Report"), "image": "sales_rep-light.png", 
-                "command": lambda: self.app.trash(self.app.user_role)},
-                {"text": self.app.t("Daily treasury report"), "image": "daily-report-light.png", 
+                {"text": self.app.AuxiliaryClass.t("Sales Report"), "image": "sales_rep-light.png", 
+                "command": lambda: self.app.AuxiliaryClass.trash(self.app.user_role)},
+                {"text": self.app.AuxiliaryClass.t("Daily treasury report"), "image": "daily-report-light.png", 
                 "command": lambda: self.Treasury_window_report(self.app.user_role)},
-                # {"text": self.t("Sales Report"), "image": "sales_rep-light.png", 
+                # {"text": self.AuxiliaryClass.t("Sales Report"), "image": "sales_rep-light.png", 
                 # "command": lambda: self.sales_report(self.user_role)},
-                {"text": self.app.t("Purchase Report"), "image": "Purchase_rep-light.png", 
-                "command": lambda: self.app.trash(self.app.user_role)},
-                {"text": self.app.t("Profit and Loss (P&L) Report"), "image": "p&l_repo-light.png", 
-                "command": lambda: self.app.trash(self.app.user_role)},
-                {"text": self.app.t("Customer Reports"), "image": "Customer_repo-light.png", 
-                "command": lambda: self.app.trash(self.app.user_role)},
-                {"text": self.app.t("Supplier Reports"), "image": "Supplier_repo-light.png", 
-                "command": lambda: self.app.trash(self.app.user_role)},
-                {"text": self.app.t("Inventory Report"), "image": "Inventory_repo-light.png", 
-                "command": lambda: self.app.trash(self.app.user_role)},
-                {"text": self.app.t("Payment & Collection Report"), "image": "payment_repo-light.png", 
-                "command": lambda: self.app.trash(self.app.user_role)},
-                {"text": self.app.t("General Expenses Report"), "image": "General Expenses_repo-light.png", 
-                "command": lambda: self.app.trash(self.app.user_role)},
-                {"text": self.app.t("Employee Performance Report"), "image": "Employee_Performance_repo-light.png", 
-                "command": lambda: self.app.trash(self.app.user_role)},
+                {"text": self.app.AuxiliaryClass.t("Purchase Report"), "image": "Purchase_rep-light.png", 
+                "command": lambda: self.app.AuxiliaryClass.trash(self.app.user_role)},
+                {"text": self.app.AuxiliaryClass.t("Profit and Loss (P&L) Report"), "image": "p&l_repo-light.png", 
+                "command": lambda: self.app.AuxiliaryClass.trash(self.app.user_role)},
+                {"text": self.app.AuxiliaryClass.t("Customer Reports"), "image": "Customer_repo-light.png", 
+                "command": lambda: self.app.AuxiliaryClass.trash(self.app.user_role)},
+                {"text": self.app.AuxiliaryClass.t("Supplier Reports"), "image": "Supplier_repo-light.png", 
+                "command": lambda: self.app.AuxiliaryClass.trash(self.app.user_role)},
+                {"text": self.app.AuxiliaryClass.t("Inventory Report"), "image": "Inventory_repo-light.png", 
+                "command": lambda: self.app.AuxiliaryClass.trash(self.app.user_role)},
+                {"text": self.app.AuxiliaryClass.t("Payment & Collection Report"), "image": "payment_repo-light.png", 
+                "command": lambda: self.app.AuxiliaryClass.trash(self.app.user_role)},
+                {"text": self.app.AuxiliaryClass.t("General Expenses Report"), "image": "General Expenses_repo-light.png", 
+                "command": lambda: self.app.AuxiliaryClass.trash(self.app.user_role)},
+                {"text": self.app.AuxiliaryClass.t("Employee Performance Report"), "image": "Employee_Performance_repo-light.png", 
+                "command": lambda: self.app.AuxiliaryClass.trash(self.app.user_role)},
             ]
         images = []  # Keep references to prevent garbage collection
         columns_per_row = 3  # Number of buttons per row
@@ -194,11 +194,11 @@ class reports:
         self.tree = ttk.Treeview(main_frame, columns=columns, show="headings")
         
         # Configure columns
-        self.tree.heading("date", text=self.app.t("Date"))
-        self.tree.heading("description", text=self.app.t("Description"))
-        self.tree.heading("credit", text=self.app.t("Credit"))
-        self.tree.heading("debit", text=self.app.t("Debit"))
-        self.tree.heading("payment_method", text=self.app.t("Payment Method"))
+        self.tree.heading("date", text=self.app.AuxiliaryClass.t("Date"))
+        self.tree.heading("description", text=self.app.AuxiliaryClass.t("Description"))
+        self.tree.heading("credit", text=self.app.AuxiliaryClass.t("Credit"))
+        self.tree.heading("debit", text=self.app.AuxiliaryClass.t("Debit"))
+        self.tree.heading("payment_method", text=self.app.AuxiliaryClass.t("Payment Method"))
 
         self.tree.column("date", width=120, anchor='center')
         self.tree.column("description", width=250, anchor='center')
@@ -220,13 +220,13 @@ class reports:
         self.total_debit_var = tk.StringVar()
         self.balance_var = tk.StringVar()
 
-        tk.Label(totals_frame, text=self.app.t("Total Credit:"), font=('Arial', 10, 'bold')).pack(side=tk.LEFT, padx=10)
+        tk.Label(totals_frame, text=self.app.AuxiliaryClass.t("Total Credit:"), font=('Arial', 10, 'bold')).pack(side=tk.LEFT, padx=10)
         tk.Label(totals_frame, textvariable=self.total_credit_var, font=('Arial', 10)).pack(side=tk.LEFT)
 
-        tk.Label(totals_frame, text=self.app.t("Total Debit:"), font=('Arial', 10, 'bold')).pack(side=tk.LEFT, padx=10)
+        tk.Label(totals_frame, text=self.app.AuxiliaryClass.t("Total Debit:"), font=('Arial', 10, 'bold')).pack(side=tk.LEFT, padx=10)
         tk.Label(totals_frame, textvariable=self.total_debit_var, font=('Arial', 10)).pack(side=tk.LEFT)
 
-        tk.Label(totals_frame, text=self.app.t("Balance:"), font=('Arial', 10, 'bold')).pack(side=tk.LEFT, padx=10)
+        tk.Label(totals_frame, text=self.app.AuxiliaryClass.t("Balance:"), font=('Arial', 10, 'bold')).pack(side=tk.LEFT, padx=10)
         tk.Label(totals_frame, textvariable=self.balance_var, font=('Arial', 10)).pack(side=tk.LEFT)
         if self.app.language == "Arabic":
             headers = ["التاريخ", "الوصف", 'المدين', 'الدائن',  "طريقة الدفع"]
@@ -242,15 +242,15 @@ class reports:
         date=datetime.now().strftime('%Y-%m-%d')
         self.fetch_transactions()
         excel_btn = tk.Button(totals_frame,
-                            text=self.app.t("Export to Excel"), 
-                            command=lambda: self.app.export_to_excel(self.filtered_transactions_table,headers=headers,filename=filename_excel,
+                            text=self.app.AuxiliaryClass.t("Export to Excel"), 
+                            command=lambda: self.app.AuxiliaryClass.export_to_excel(self.filtered_transactions_table,headers=headers,filename=filename_excel,
                                                                 report_folder=report_folder,title=report_folder,
                                                                 startdate =date,
                                                                 enddate   =date,
                                                                 footerline_out_of_table=[
-                                                                    f"{self.app.t("Total Credit:")} {str(self.total_credit_var.get())}",
-                                                                    f"{self.app.t("Total Debit:")} {str(self.total_debit_var.get())}",
-                                                                    f"{self.app.t("Balance:")} {str(self.balance_var.get())}"
+                                                                    f"{self.app.AuxiliaryClass.t("Total Credit:")} {str(self.total_credit_var.get())}",
+                                                                    f"{self.app.AuxiliaryClass.t("Total Debit:")} {str(self.total_debit_var.get())}",
+                                                                    f"{self.app.AuxiliaryClass.t("Balance:")} {str(self.balance_var.get())}"
                                                                 ], source="Treasury"
                                                                  ),bg="#21F35D", fg='white')
         # Create a variable to hold the selected page size
@@ -260,8 +260,8 @@ class reports:
         page_sizes = ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]
         page_size_menu = tk.OptionMenu(totals_frame, self.page_size_var, *page_sizes)
         pdf_btn   = tk.Button(totals_frame, 
-                            text=self.app.t("Export to PDF and Print"),
-                            command=lambda: self.app.export_to_pdf(self.filtered_transactions_table,headers=headers,filename=filename_pdf,
+                            text=self.app.AuxiliaryClass.t("Export to PDF and Print"),
+                            command=lambda: self.app.AuxiliaryClass.export_to_pdf(self.filtered_transactions_table,headers=headers,filename=filename_pdf,
                                                                 report_folder=report_folder,title=report_folder,
                                                                 startdate =date,
                                                                 enddate   =date,
@@ -585,8 +585,8 @@ class reports:
         button_frame.pack(pady=10)
         # headers = ["Metric", "Value", "Details", "Date"]
         
-        ttk.Button(button_frame, text="Export to Excel", command=lambda: self.app.export_to_excel(data)).grid(row=0, column=0, padx=10)
-        ttk.Button(button_frame, text="Export to PDF and Print", command=lambda: self.app.export_to_pdf(data)).grid(row=0, column=1, padx=10)
+        ttk.Button(button_frame, text="Export to Excel", command=lambda: self.app.AuxiliaryClass.export_to_excel(data)).grid(row=0, column=0, padx=10)
+        ttk.Button(button_frame, text="Export to PDF and Print", command=lambda: self.app.AuxiliaryClass.export_to_pdf(data)).grid(row=0, column=1, padx=10)
 
     def generate_report_data(self):
         return [
