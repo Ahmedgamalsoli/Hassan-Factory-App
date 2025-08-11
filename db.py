@@ -1,34 +1,100 @@
+# ======================
+# Used imports
+# ======================
+
+import tkinter as tk
+import io
+import re
+import os
+from annotated_types import doc
+import pytz
+import threading  # To play sound without freezing the GUI
+import sys
+import cloudinary
+import cloudinary.uploader
+import urllib.request
+import matplotlib
+import matplotlib.pyplot as plt
+import random
+import arabic_reshaper
+import openpyxl
+
+from tkinter import filedialog, ttk, messagebox
+from PIL import Image, ImageTk  # Import Pillow classes
+from datetime import datetime,time , time, timedelta, date
+from tkcalendar import DateEntry  # Import DateEntry
+from playsound import playsound
 from pymongo import MongoClient
 from urllib.parse import quote_plus
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from pymongo import MongoClient
+from pymongo.errors import PyMongoError
+from collections import defaultdict
+from bidi.algorithm import get_display
+from matplotlib.figure import Figure    
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter,A7,A6,A5,A4,A3,A2,A1
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.lib.units import inch
+matplotlib.use('TkAgg')  # Set the backend before importing pyplot
 
-raw_password = "HassanFactory@1@6@6"
-encoded_password = quote_plus(raw_password)
-uri = f"mongodb+srv://hassanfactory116:{encoded_password}@hassan.fkplsys.mongodb.net/"
+# Determine the base directory
+if getattr(sys, "frozen", False):
+    # Running as an executable
+    BASE_DIR = sys._MEIPASS
+else:
+    # Running as a script
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+class DataBase:
+    def __init__(self, root, app):
+        self.root = root
+        self.app = app  # save reference to SalesSystemApp
 
-client = MongoClient(uri,serverSelectionTimeoutMS=5000)        
-db = client["Hassan"]   
+    def Connect_DB(self):
+        raw_password = "HassanFactory@1@6@6"
+        encoded_password = quote_plus(raw_password)
+        uri = f"mongodb+srv://hassanfactory116:{encoded_password}@hassan.fkplsys.mongodb.net/"
+        cloudinary.config(
+            cloud_name = 'dv5dpzmhm', 
+            api_key = "229798327524238",
+            api_secret = "CVbnCea6qpqIG2VhOOJoP_tQKuI"
+        )
 
-customers_collection             = db['Customers']
-employees_collection             = db['Employees']
-employees_appointments_collection= db['Employee_appointimets']
-employee_withdrawls_collection   = db['Employee_withdrawls']
-employee_salary_collection       = db['Employee_Salary']
-products_collection              = db['Products']
-sales_collection                 = db['Sales']
-suppliers_collection             = db['Suppliers']
-materials_collection             = db['Materials']
-purchases_collection             = db['Purchases']
-shipping_collection              = db['Shipping']
-orders_collection                = db['Orders']
-expenses_collection              = db['Expenses']
-daily_shifts_collection          = db['Daily_shifts']
-accounts_collection              = db['Accounts']
-transactions_collection          = db['Transactions']
-big_deals_collection             = db['Big_deals']
-TEX_Calculations_collection      = db['TEX_Calculations']
-production_collection            = db['Production']
-customer_payments                = db["Customer_Payments"]
-supplier_payments                = db["Supplier_Payments"]
-general_exp_rev_collection       = db["general_exp_rev"]
-messages_collection              = db["Messages"]
-logs_collection                  = db["Logs"]
+        client = MongoClient(uri,serverSelectionTimeoutMS=5000)
+        print(client.server_info()["version"])
+        try:
+            client.admin.command('ping')
+            print("✅ Connected to MongoDB")
+        except Exception as e:
+            messagebox.showerror(self.AuxiliaryClass.t("No Internet Connection"), str(e))
+
+        self.db = client["Hassan"]   
+
+        self.app.customers_collection             = self.db['Customers']
+        self.app.employees_collection             = self.db['Employees']
+        self.app.employees_appointments_collection= self.db['Employee_appointimets']
+        self.app.employee_withdrawls_collection   = self.db['Employee_withdrawls']
+        self.app.employee_salary_collection       = self.db['Employee_Salary']
+        self.app.products_collection              = self.db['Products']
+        self.app.sales_collection                 = self.db['Sales']
+        self.app.suppliers_collection             = self.db['Suppliers']
+        self.app.materials_collection             = self.db['Materials']
+        self.app.purchases_collection             = self.db['Purchases']
+        self.app.shipping_collection              = self.db['Shipping']
+        self.app.orders_collection                = self.db['Orders']
+        self.app.expenses_collection              = self.db['Expenses']
+        self.app.daily_shifts_collection          = self.db['Daily_shifts']
+        self.app.accounts_collection              = self.db['Accounts']
+        self.app.transactions_collection          = self.db['Transactions']
+        self.app.big_deals_collection             = self.db['Big_deals']
+        self.app.TEX_Calculations_collection      = self.db['TEX_Calculations']
+        self.app.production_collection            = self.db['Production']
+        self.app.customer_payments                = self.db["Customer_Payments"]
+        self.app.supplier_payments                = self.db["Supplier_Payments"]
+        self.app.general_exp_rev_collection       = self.db["general_exp_rev"]
+        self.app.messages_collection              = self.db["Messages"]
+        self.app.logs_collection                  = self.db["Logs"]

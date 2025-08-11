@@ -61,9 +61,9 @@ class ProductionOrder:
         self.app.topbar.topbar(show_back_button=True)
 
         # Database collections
-        materials_col = config.get_collection_by_name("Materials")
-        products_col = config.get_collection_by_name("Products")
-        production_col = config.get_collection_by_name("Production")
+        materials_col = self.app.AuxiliaryClass.get_collection_by_name("Materials")
+        products_col = self.app.AuxiliaryClass.get_collection_by_name("Products")
+        production_col = self.app.AuxiliaryClass.get_collection_by_name("Production")
 
         # Load material data
         for mat in materials_col.find():
@@ -266,9 +266,9 @@ class ProductionOrder:
             self.app.production_entries[row_idx][6].config(state='readonly')
 
     def save_production_order(self):
-        production_col = config.get_collection_by_name("Production")
-        materials_col = config.get_collection_by_name("Materials")
-        products_col = config.get_collection_by_name("Products")
+        production_col = self.app.AuxiliaryClass.get_collection_by_name("Production")
+        materials_col = self.app.AuxiliaryClass.get_collection_by_name("Materials")
+        products_col = self.app.AuxiliaryClass.get_collection_by_name("Products")
         
         try:
             orders = []
@@ -310,7 +310,7 @@ class ProductionOrder:
             if orders:
                 production_col.insert_many(orders)
                 for order in orders:
-                    config.report_log(self.app.logs_collection, self.app.user_name, production_col, f"{self.app.AuxiliaryClass.t("Added new record in")}", order)
+                    config.report_log(self.app.logs_collection, self.app.user_name, production_col, f"{self.app.AuxiliaryClass.t("Added new record in")}", order,self.app.AuxiliaryClass.t)
 
             messagebox.showinfo(self.app.AuxiliaryClass.t("Success"), self.app.AuxiliaryClass.t("Production order saved successfully"))
             self.new_production_order(None)  # Refresh form
@@ -330,14 +330,14 @@ class ProductionOrder:
                 
                 # Update material stock
                 if material_code:
-                    self.app.db.materials.update_one(
+                    self.app.materials_collection.update_one(
                         {'code': material_code},
                         {'$inc': {'stock_quantity': -material_qty}}
                     )
 
                 # Update product stock
                 if product_code:
-                    self.app.db.products.update_one(
+                    self.app.products_collection.update_one(
                         {'code': product_code},
                         {'$inc': {'stock_quantity': product_qty}}
                     )

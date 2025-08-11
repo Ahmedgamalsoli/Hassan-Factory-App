@@ -183,7 +183,7 @@ class GeneralExpRev:
             collection = self.app.general_exp_rev_collection
             collection.insert_one(transaction)
             messagebox.showinfo(self.app.AuxiliaryClass.t("Success"), f"{self.app.AuxiliaryClass.t(transaction_type)} {self.app.AuxiliaryClass.t("recorded successfully!")}")
-            config.report_log(self.app.logs_collection, self.app.user_name, None, f"{self.app.AuxiliaryClass.t(f"Recorded {transaction_type} of")} {amount} {self.app.AuxiliaryClass.t(f"in {self.app.general_exp_rev_collection.name} Database")}", None)
+            config.report_log(self.app.logs_collection, self.app.user_name, None, f"{self.app.AuxiliaryClass.t(f"Recorded {transaction_type} of")} {amount} {self.app.AuxiliaryClass.t(f"in {self.app.general_exp_rev_collection.name} Database")}", None,self.app.AuxiliaryClass.t)
 
             # Clear fields
             if transaction_type == "Expense":

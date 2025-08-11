@@ -59,6 +59,7 @@ from employee_window import EmployeeWindow
 from treasury_window import TreasuryWindow
 from general_exp_rev import GeneralExpRev
 from visualization import Visualization
+from db import DataBase
 # ======================
 # Unused imports
 # ======================
@@ -148,10 +149,12 @@ class SalesSystemApp:
         self.title_font = ("Segoe UI", 16, "bold")
         
         style.map('Treeview', background=[('selected', '#2196F3')], foreground=[('selected', 'white')])
-        
-        # style.theme_use("modern")
 
-        self.Connect_DB()
+        self.AuxiliaryClass = config.AuxiliaryClass(self.root, self)  
+              
+        # style.theme_use("modern")
+        self.DataBase = DataBase(self.root, self)
+        self.DataBase.Connect_DB()
                     
         self.stop_event = threading.Event()
         
@@ -185,8 +188,6 @@ class SalesSystemApp:
         ]
 
 
-        
-        self.db = None
         self.db_name = tk.StringVar()
         self.table_name = tk.StringVar()
         self.search_query = tk.StringVar()
@@ -213,8 +214,6 @@ class SalesSystemApp:
         self.light = True  # Default to light mode
         self.update_purchase =False
         
-        self.AuxiliaryClass = config.AuxiliaryClass(self.root, self)
-
         self.AuxiliaryClass.clean_materials_collection()
         self.AuxiliaryClass.clean_products_collection()
         self.AuxiliaryClass.clean_customers_collection()
@@ -224,6 +223,7 @@ class SalesSystemApp:
         self.reverse_translations = {self.AuxiliaryClass.t(k): k for k in self.keys}  
 
         self.groupchat = GroupChat(self.root, self)
+
         self.db_operations = DBOperations(self.root, self)
         self.chatbot = chatbot(self.root, self)
         self.topbar = topbar(self.root, self)
@@ -246,50 +246,7 @@ class SalesSystemApp:
         self.topbar.toggle_theme()
         app.main_menu()
 ########################################## Tables on Data Base ########################################
-    def Connect_DB(self):
-        raw_password = "HassanFactory@1@6@6"
-        encoded_password = quote_plus(raw_password)
-        uri = f"mongodb+srv://hassanfactory116:{encoded_password}@hassan.fkplsys.mongodb.net/"
-        cloudinary.config(
-            cloud_name = 'dv5dpzmhm', 
-            api_key = "229798327524238",
-            api_secret = "CVbnCea6qpqIG2VhOOJoP_tQKuI"
-        )
 
-        client = MongoClient(uri,serverSelectionTimeoutMS=5000)
-        print(client.server_info()["version"])
-        try:
-            client.admin.command('ping')
-            print("✅ Connected to MongoDB")
-        except Exception as e:
-            messagebox.showerror(self.AuxiliaryClass.t("No Internet Connection"), str(e))
-
-        db = client["Hassan"]   
-
-        self.customers_collection             = db['Customers']
-        self.employees_collection             = db['Employees']
-        self.employees_appointments_collection= db['Employee_appointimets']
-        self.employee_withdrawls_collection   = db['Employee_withdrawls']
-        self.employee_salary_collection       = db['Employee_Salary']
-        self.products_collection              = db['Products']
-        self.sales_collection                 = db['Sales']
-        self.suppliers_collection             = db['Suppliers']
-        self.materials_collection             = db['Materials']
-        self.purchases_collection             = db['Purchases']
-        self.shipping_collection              = db['Shipping']
-        self.orders_collection                = db['Orders']
-        self.expenses_collection              = db['Expenses']
-        self.daily_shifts_collection          = db['Daily_shifts']
-        self.accounts_collection              = db['Accounts']
-        self.transactions_collection          = db['Transactions']
-        self.big_deals_collection             = db['Big_deals']
-        self.TEX_Calculations_collection      = db['TEX_Calculations']
-        self.production_collection            = db['Production']
-        self.customer_payments                = db["Customer_Payments"]
-        self.supplier_payments                = db["Supplier_Payments"]
-        self.general_exp_rev_collection       = db["general_exp_rev"]
-        self.messages_collection              = db["Messages"]
-        self.logs_collection                  = db["Logs"]
 
 ############################################ Windows ########################################### 
 
@@ -854,9 +811,9 @@ class SalesSystemApp:
 
         self.topbar.topbar(show_back_button=True, Back_to_Database_Window=False)
         
-        self.supplier_collection = config.get_collection_by_name("Suppliers")
-        self.supplier_payment_collection = config.get_collection_by_name("Supplier_Payments")
-        self.purchases_collection = config.get_collection_by_name("Purchases")
+        self.supplier_collection = self.AuxiliaryClass.get_collection_by_name("Suppliers")
+        self.supplier_payment_collection = self.AuxiliaryClass.get_collection_by_name("Supplier_Payments")
+        self.purchases_collection = self.AuxiliaryClass.get_collection_by_name("Purchases")
 
         supplier_codes = []
         supplier_names = []
@@ -1038,8 +995,8 @@ class SalesSystemApp:
         payment_method = self.payment_entry.get().strip()
         supplier_code = self.supplier_code_cb.get().strip()
         supplier_name = self.supplier_name_cb.get().strip()
-        supplier_payment_collection = config.get_collection_by_name("Supplier_Payments")
-        purchases_collection = config.get_collection_by_name("Purchases")
+        supplier_payment_collection = self.AuxiliaryClass.get_collection_by_name("Supplier_Payments")
+        purchases_collection = self.AuxiliaryClass.get_collection_by_name("Purchases")
         
         if not debit or not payment_method or not supplier_code or not supplier_name:
             messagebox.showerror(self.AuxiliaryClass.t("Error"), self.AuxiliaryClass.t("All fields must be filled!"))
@@ -1071,7 +1028,7 @@ class SalesSystemApp:
         supplier_payment_collection.insert_one(doc)
         tree.insert("", tk.END, values=(formatted, operation_number, debit_val, 0.0, payment_method))
 
-        # self.supplier_collection = config.get_collection_by_name("Suppliers")
+        # self.supplier_collection = self.AuxiliaryClass.get_collection_by_name("Suppliers")
         self.supplier_collection.update_one(
             {"Code": supplier_code},
             {
@@ -1086,7 +1043,7 @@ class SalesSystemApp:
             event=None,
             code_cb=self.supplier_code_cb,
             name_cb=self.supplier_name_cb,
-            collection=config.get_collection_by_name("Suppliers"),
+            collection=self.AuxiliaryClass.get_collection_by_name("Suppliers"),
             invoices_collection=purchases_collection,
             payment_collection=supplier_payment_collection,
             field_path="supplier_info.code",
@@ -1100,8 +1057,8 @@ class SalesSystemApp:
         payment_method = self.payment_entry.get().strip()
         customer_code = self.customer_code_cb.get().strip()
         customer_name = self.customer_name_cb.get().strip()
-        customer_payment_collection = config.get_collection_by_name("Customer_Payments")
-        sales_collection = config.get_collection_by_name("Sales")
+        customer_payment_collection = self.AuxiliaryClass.get_collection_by_name("Customer_Payments")
+        sales_collection = self.AuxiliaryClass.get_collection_by_name("Sales")
         
         if not credit or not payment_method or not customer_code or not customer_name:
             messagebox.showerror(self.AuxiliaryClass.t("Error"), self.AuxiliaryClass.t("All fields must be filled!"))
@@ -1148,7 +1105,7 @@ class SalesSystemApp:
             event=None,
             code_cb=self.customer_code_cb,
             name_cb=self.customer_name_cb,
-            collection=config.get_collection_by_name("Customers"),
+            collection=self.AuxiliaryClass.get_collection_by_name("Customers"),
             invoices_collection=sales_collection,
             payment_collection=customer_payment_collection,
             field_path="Customer_info.code",
@@ -1374,9 +1331,9 @@ class SalesSystemApp:
 
         self.topbar.topbar(show_back_button=True,Back_to_Database_Window=False)
         
-        self.customer_collection         = config.get_collection_by_name("Customers")
-        self.customer_payment_collection = config.get_collection_by_name("Customer_Payments")
-        self.sales_collection            = config.get_collection_by_name("Sales")
+        self.customer_collection         = self.AuxiliaryClass.get_collection_by_name("Customers")
+        self.customer_payment_collection = self.AuxiliaryClass.get_collection_by_name("Customer_Payments")
+        self.sales_collection            = self.AuxiliaryClass.get_collection_by_name("Sales")
 
         customer_codes = []
         customer_names = []
@@ -1549,12 +1506,7 @@ class SalesSystemApp:
                                                                 ], source="Customer Interaction",page_size=config.PAGE_SIZES[self.page_size_var.get()]
                                                                 ),bg="#2144F3", fg='white').grid(row=13, column=10, sticky="w", padx=10)
 
-
 ############################ Utility Functions ########################################
-
-
-
-
 
     def handle_logout(self):
         if self.user_id:
@@ -1564,7 +1516,7 @@ class SalesSystemApp:
                     "logged_in": False,
                     "last_number_of_msgs": self.last_number_of_msgs
                 }})
-        config.report_log(self.logs_collection, self.user_name, None, f"{self.user_name} {self.AuxiliaryClass.t("logout from the application")}", None)
+        config.report_log(self.logs_collection, self.user_name, None, f"{self.user_name} {self.AuxiliaryClass.t("logout from the application")}", None,self.AuxiliaryClass.t)
         self.login_window.open_login_window()
 
     def on_app_exit(self):
@@ -1575,9 +1527,8 @@ class SalesSystemApp:
                     "logged_in": False,
                     "last_number_of_msgs": self.last_number_of_msgs
                 }})
-        config.report_log(self.logs_collection, self.user_name, None, f"{self.user_name} {self.AuxiliaryClass.t("Exit the application")}", None)
+        config.report_log(self.logs_collection, self.user_name, None, f"{self.user_name} {self.AuxiliaryClass.t("Exit the application")}", None,self.AuxiliaryClass.t)
         self.root.quit()
-
 
 ##################################################################### Main #########################################################
 

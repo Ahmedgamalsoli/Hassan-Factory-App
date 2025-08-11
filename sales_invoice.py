@@ -137,9 +137,9 @@ class SalesInvoice:
         self.app.topbar.topbar(show_back_button=True, Back_to_Sales_Window=True)
 
         # MongoDB collections
-        customers_col = config.get_collection_by_name("Customers")
-        sales_col = config.get_collection_by_name("Sales")
-        products_col = config.get_collection_by_name("Products")
+        customers_col = self.app.AuxiliaryClass.get_collection_by_name("Customers")
+        sales_col = self.app.AuxiliaryClass.get_collection_by_name("Sales")
+        products_col = self.app.AuxiliaryClass.get_collection_by_name("Products")
 
         # Main form frame with responsive sizing
         form_frame = tk.Frame(self.root, padx=20, pady=20)
@@ -562,7 +562,7 @@ class SalesInvoice:
         sales_col.delete_one({"Receipt_Number": invoice_number})
         
         messagebox.showinfo(self.app.AuxiliaryClass.t("Success"), self.app.AuxiliaryClass.t("Invoice deleted successfully"))
-        config.report_log(self.app.logs_collection, self.app.user_name, sales_col, f"{self.app.AuxiliaryClass.t("Deleted")} {capitalize_first_letter(source)} Invoice in", invoice_data, self.AuxiliaryClass.t)
+        config.report_log(self.app.logs_collection, self.app.user_name, sales_col, f"{self.app.AuxiliaryClass.t("Deleted")} {capitalize_first_letter(source)} Invoice in", invoice_data, self.app.AuxiliaryClass.t)
         # Clear the form or reset UI as needed
         self.app.invoice_var.set("")
         self.app.selected_invoice_id = None
@@ -1024,7 +1024,7 @@ class SalesInvoice:
             invoice_data["PDF_Path"] = pdf_path
             if self.app.update:
                 sales_col.delete_one({"Receipt_Number":self.app.invoice_var.get()})
-                config.report_log(self.app.logs_collection, self.app.user_name, sales_col, self.app.AuxiliaryClass.t("Updated invoice to"), invoice_data, self.AuxiliaryClass.t)
+                config.report_log(self.app.logs_collection, self.app.user_name, sales_col, self.app.AuxiliaryClass.t("Updated invoice to"), invoice_data, self.app.AuxiliaryClass.t)
                 flag=1
             sales_col.insert_one(invoice_data)
             
@@ -1034,7 +1034,7 @@ class SalesInvoice:
             self.clear_invoice_form()
             
             if not flag:
-                config.report_log(self.app.logs_collection, self.app.user_name, sales_col, self.app.AuxiliaryClass.t("Added new invoice to"), invoice_data, self.AuxiliaryClass.t)
+                config.report_log(self.app.logs_collection, self.app.user_name, sales_col, self.app.AuxiliaryClass.t("Added new invoice to"), invoice_data, self.app.AuxiliaryClass.t)
             
 
             # 6. Clear pending data
@@ -1161,7 +1161,7 @@ class SalesInvoice:
         """توليد رقم فاتورة تسلسلي"""
         try:
             print(0)
-            sales_col = config.get_collection_by_name('Sales')
+            sales_col = self.app.AuxiliaryClass.get_collection_by_name('Sales')
             print(10)
             last_invoice = sales_col.find_one(sort=[("Receipt_Number", -1)])
             print(20)
@@ -1425,7 +1425,7 @@ class SalesInvoice:
             c.drawString(1.5*cm, totals_y - 0.25*cm, format_arabic("____________________"))
 
             c.save()
-            config.report_log(self.app.logs_collection, self.app.user_name, None, f"{self.app.AuxiliaryClass.t("Generated Pdf Sales Invoice with Id")} {invoice_data['Receipt_Number']} {self.app.AuxiliaryClass.t("for Customer")} {invoice_data['Customer_info']['code']}", None)
+            config.report_log(self.app.logs_collection, self.app.user_name, None, f"{self.app.AuxiliaryClass.t("Generated Pdf Sales Invoice with Id")} {invoice_data['Receipt_Number']} {self.app.AuxiliaryClass.t("for Customer")} {invoice_data['Customer_info']['code']}", None,self.app.AuxiliaryClass.t)
             try:
                 os.startfile(pdf_path, "print")
             except OSError as e:

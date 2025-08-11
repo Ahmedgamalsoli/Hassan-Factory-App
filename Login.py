@@ -118,7 +118,7 @@ class LoginWindow:
                     self.app.employees_collection.update_one({"_id": self.app.user_id}, {"$set": {"logged_in": True}})
 
                     self.app.last_number_of_msgs = user.get("last_number_of_msgs", 0)
-                    config.report_log(self.app.logs_collection, self.app.user_name, None, f"{self.app.user_name} {self.app.AuxiliaryClass.t("login to the application")}", None)
+                    config.report_log(self.app.logs_collection, self.app.user_name, None, f"{self.app.user_name} {self.app.AuxiliaryClass.t("login to the application")}", None,self.app.AuxiliaryClass.t)
                     # messagebox.showinfo("Success", f"Login successful! Role: {self.user_role}")
                     self.app.AuxiliaryClass.silent_popup(self.app.AuxiliaryClass.t("Success"), f"{self.app.AuxiliaryClass.t("Login successful! Role:")} {self.app.user_role}",self.app.AuxiliaryClass.play_success)
                     # open_main_menu(self.app.user_role)

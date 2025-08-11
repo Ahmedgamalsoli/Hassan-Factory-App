@@ -132,9 +132,9 @@ class PurchaseInvoice:
         self.app.topbar.topbar(show_back_button=True,Back_to_Purchases_Window=True)
 
         # MongoDB collections
-        suppliers_col = config.get_collection_by_name("Suppliers")
-        purchases_col = config.get_collection_by_name("Purchases")
-        materials_col = config.get_collection_by_name("Materials")
+        suppliers_col = self.app.AuxiliaryClass.get_collection_by_name("Suppliers")
+        purchases_col = self.app.AuxiliaryClass.get_collection_by_name("Purchases")
+        materials_col = self.app.AuxiliaryClass.get_collection_by_name("Materials")
 
         # Main form frame with responsive sizing
         form_frame = tk.Frame(self.root, padx=20, pady=20)
@@ -1016,7 +1016,7 @@ class PurchaseInvoice:
             # 4. Save invoice with PDF path
             if self.app.update_purchase:
                 purchase_col.delete_one({"Receipt_Number":self.app.invoice_var.get()})
-                config.report_log(self.app.logs_collection, self.app.user_name, purchase_col, "Updated new invoice to", invoice_data, self.AuxiliaryClass.t)
+                config.report_log(self.app.logs_collection, self.app.user_name, purchase_col, self.app.AuxiliaryClass.t("Updated new invoice to"), invoice_data, self.app.AuxiliaryClass.t)
                 flag=1
             invoice_data["PDF_Path"] = pdf_path
             purchase_col.insert_one(invoice_data)
@@ -1026,7 +1026,7 @@ class PurchaseInvoice:
             self.clear_invoice_form_purchase()
             
             if not flag:
-                config.report_log(self.app.logs_collection, self.app.user_name, purchase_col, "Added invoice to", invoice_data, self.AuxiliaryClass.t)
+                config.report_log(self.app.logs_collection, self.app.user_name, purchase_col, self.app.AuxiliaryClass.t("Added invoice to"), invoice_data, self.app.AuxiliaryClass.t)
             
             # 6. Clear pending data
             del self.app.pending_invoice_data
@@ -1295,7 +1295,7 @@ class PurchaseInvoice:
             
             c.save()
 
-            config.report_log(self.app.logs_collection, self.app.user_name, None, f"{self.app.AuxiliaryClass.t('Generated Pdf Purchase Invoice with Id')} {invoice_data['Receipt_Number']} {self.app.AuxiliaryClass.t('for supplier')} {invoice_data['supplier_info']['code']}", None)
+            config.report_log(self.app.logs_collection, self.app.user_name, None, f"{self.app.AuxiliaryClass.t('Generated Pdf Purchase Invoice with Id')} {invoice_data['Receipt_Number']} {self.app.AuxiliaryClass.t('for supplier')} {invoice_data['supplier_info']['code']}", None,self.app.AuxiliaryClass.t)
 
             try:
                 os.startfile(pdf_path, "print")
@@ -1336,7 +1336,7 @@ class PurchaseInvoice:
         """توليد رقم فاتورة تسلسلي"""
         try:
             print(0)
-            purchaes_col = config.get_collection_by_name('Purchases')
+            purchaes_col = self.app.AuxiliaryClass.get_collection_by_name('Purchases')
             print(10)
             last_invoice = purchaes_col.find_one(sort=[("Receipt_Number", -1)])
             print(20)

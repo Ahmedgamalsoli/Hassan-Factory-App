@@ -42,10 +42,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.units import inch
 matplotlib.use('TkAgg')  # Set the backend before importing pyplot
 
-# ======================
-# Files Imports
-# ======================
-import db
+
 translations = {
     "Add New Product": {"Arabic": "امر انتاج", "English": "Production order"},
     "Reports": {"Arabic": "التقارير", "English": "Reports"},
@@ -678,58 +675,7 @@ def upload_pdf_to_cloudinary(file_path_param):
         print(f"[Cloudinary Upload Error]: {e}")
         return None
 
-def get_collection_by_name(collection_name):
-    """Returns the appropriate MongoDB collection object based on the provided name.
-    Args: collection_name (str): The name of the collection to access (e.g., "Employees", "Products").
-    Returns: pymongo.collection.Collection or None: The corresponding MongoDB collection object,
-                                                or None if the name is not recognized."""
-    if collection_name == "Employees":
-        return db.employees_collection
-    if collection_name == "Employee_appointimets":
-        return db.employees_appointments_collection
-    if collection_name == "Employee_withdrawls":
-        return db.employee_withdrawls_collection
-    if collection_name == "Employee_Salary":
-        return db.employee_salary_collection
-    elif collection_name == "Products":
-        return db.products_collection
-    elif collection_name == "Sales":
-        return db.sales_collection
-    elif collection_name == "Customers":
-        return db.customers_collection
-    elif collection_name == "Suppliers":
-        return db.suppliers_collection
-    elif collection_name =="Materials":
-        return db.materials_collection
-    elif collection_name =="Purchases":
-        return db.purchases_collection
-    elif collection_name == "Shipping":
-        return db.shipping_collection
-    elif collection_name == "Orders":
-        return db.orders_collection
-    elif collection_name == "Expenses":
-        return db.expenses_collection
-    elif collection_name == "Daily_shifts":
-        return db.daily_shifts_collection
-    elif collection_name == "Accounts":
-        return db.accounts_collection
-    elif collection_name == "Transactions":
-        return db.transactions_collection
-    elif collection_name == "Big_deals":
-        return db.big_deals_collection
-    elif collection_name == "Production":
-        return db.production_collection
-    elif collection_name == "Customer_Payments":
-        return db.customer_payments
-    elif collection_name == "Supplier_Payments":
-        return db.supplier_payments
-    elif collection_name == "TEX_Calculations":
-        return db.TEX_Calculations_collection
-    elif collection_name == "general_exp_rev":
-        return db.general_exp_rev_collection
-    else:
-        print(f"Warning: Collection name '{collection_name}' not recognized.")
-        return None
+
 
 def get_fields_by_name(collection_name):
     """Returns the appropriate fields array based on the provided collection name.
@@ -1225,7 +1171,7 @@ class AuxiliaryClass:
 
     def clean_materials_collection(self):
         """Remove leading/trailing spaces and newlines from all string attributes in Materials collection."""
-        materials_col = get_collection_by_name("Materials")
+        materials_col = self.get_collection_by_name("Materials")
         for doc in materials_col.find():
             updated_fields = {}
             for key, value in doc.items():
@@ -1237,7 +1183,7 @@ class AuxiliaryClass:
                 materials_col.update_one({"_id": doc["_id"]}, {"$set": updated_fields})
     def clean_customers_collection(self):
         """Remove leading/trailing spaces and newlines from all string attributes in Customers collection."""
-        customers_col = get_collection_by_name("Customers")
+        customers_col = self.get_collection_by_name("Customers")
         for doc in customers_col.find():
             updated_fields = {}
             for key, value in doc.items():
@@ -1249,7 +1195,7 @@ class AuxiliaryClass:
     
     def clean_suppliers_collection(self):
         """Remove leading/trailing spaces and newlines from all string attributes in Suppliers collection."""
-        suppliers_col = get_collection_by_name("Suppliers")
+        suppliers_col = self.get_collection_by_name("Suppliers")
         for doc in suppliers_col.find():
             updated_fields = {}
             for key, value in doc.items():
@@ -1261,7 +1207,7 @@ class AuxiliaryClass:
     
     def clean_products_collection(self):
         """Remove leading/trailing spaces and newlines from all string attributes in Products collection."""
-        products_col = get_collection_by_name("Products")
+        products_col = self.get_collection_by_name("Products")
         for doc in products_col.find():
             updated_fields = {}
             for key, value in doc.items():
@@ -1273,7 +1219,7 @@ class AuxiliaryClass:
     
     def clean_employees_collection(self):
         """Remove leading/trailing spaces and newlines from all string attributes in Employees collection."""
-        employees_col = get_collection_by_name("Employees")
+        employees_col = self.get_collection_by_name("Employees")
         for doc in employees_col.find():
             updated_fields = {}
             for key, value in doc.items():
@@ -1330,3 +1276,56 @@ class AuxiliaryClass:
             COLORS["top_bar"]       = "#dbb40f"   # <-- Original light mode top bar color
             COLORS["top_bar_icons"] = "#000000"   # <-- Original light mode user info color
         self.app.main_menu()
+
+    def get_collection_by_name(self,collection_name):
+        """Returns the appropriate MongoDB collection object based on the provided name.
+        Args: collection_name (str): The name of the collection to access (e.g., "Employees", "Products").
+        Returns: pymongo.collection.Collection or None: The corresponding MongoDB collection object,
+                                                    or None if the name is not recognized."""
+        if collection_name == "Employees":
+            return self.app.employees_collection
+        if collection_name == "Employee_appointimets":
+            return self.app.employees_appointments_collection
+        if collection_name == "Employee_withdrawls":
+            return self.app.employee_withdrawls_collection
+        if collection_name == "Employee_Salary":
+            return self.app.employee_salary_collection
+        elif collection_name == "Products":
+            return self.app.products_collection
+        elif collection_name == "Sales":
+            return self.app.sales_collection
+        elif collection_name == "Customers":
+            return self.app.customers_collection
+        elif collection_name == "Suppliers":
+            return self.app.suppliers_collection
+        elif collection_name =="Materials":
+            return self.app.materials_collection
+        elif collection_name =="Purchases":
+            return self.app.purchases_collection
+        elif collection_name == "Shipping":
+            return self.app.shipping_collection
+        elif collection_name == "Orders":
+            return self.app.orders_collection
+        elif collection_name == "Expenses":
+            return self.app.expenses_collection
+        elif collection_name == "Daily_shifts":
+            return self.app.daily_shifts_collection
+        elif collection_name == "Accounts":
+            return self.app.accounts_collection
+        elif collection_name == "Transactions":
+            return self.app.transactions_collection
+        elif collection_name == "Big_deals":
+            return self.app.big_deals_collection
+        elif collection_name == "Production":
+            return self.app.production_collection
+        elif collection_name == "Customer_Payments":
+            return self.app.customer_payments
+        elif collection_name == "Supplier_Payments":
+            return self.app.supplier_payments
+        elif collection_name == "TEX_Calculations":
+            return self.app.TEX_Calculations_collection
+        elif collection_name == "general_exp_rev":
+            return self.app.general_exp_rev_collection
+        else:
+            print(f"Warning: Collection name '{collection_name}' not recognized.")
+            return None
