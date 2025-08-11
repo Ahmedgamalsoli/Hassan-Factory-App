@@ -184,7 +184,7 @@ class SalesSystemApp:
             "code", "type"
         ]
 
-        self.reverse_translations = {self.AuxiliaryClass.t(k): k for k in self.keys}
+
         
         self.db = None
         self.db_name = tk.StringVar()
@@ -212,6 +212,17 @@ class SalesSystemApp:
         self.update =False
         self.light = True  # Default to light mode
         self.update_purchase =False
+        
+        self.AuxiliaryClass = config.AuxiliaryClass(self.root, self)
+
+        self.AuxiliaryClass.clean_materials_collection()
+        self.AuxiliaryClass.clean_products_collection()
+        self.AuxiliaryClass.clean_customers_collection()
+        self.AuxiliaryClass.clean_employees_collection()
+        self.AuxiliaryClass.clean_suppliers_collection()
+
+        self.reverse_translations = {self.AuxiliaryClass.t(k): k for k in self.keys}  
+
         self.groupchat = GroupChat(self.root, self)
         self.db_operations = DBOperations(self.root, self)
         self.chatbot = chatbot(self.root, self)
@@ -224,13 +235,7 @@ class SalesSystemApp:
         self.TreasuryWindow = TreasuryWindow(self.root, self)
         self.GeneralExpRev = GeneralExpRev(self.root, self)
         self.Visualization = Visualization(self.root, self)
-        self.AuxiliaryClass = config.AuxiliaryClass(self.root, self)
-        self.AuxiliaryClass.clean_materials_collection()
-        self.AuxiliaryClass.clean_products_collection()
-        self.AuxiliaryClass.clean_customers_collection()
-        self.AuxiliaryClass.clean_employees_collection()
-        self.AuxiliaryClass.clean_suppliers_collection()
-    
+ 
     def start_with_login(self):
         self.login_window = LoginWindow(self.root, self)
         self.login_window.open_login_window()
