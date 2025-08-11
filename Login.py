@@ -55,13 +55,46 @@ class LoginWindow:
     def __init__(self, root, app):
         self.root = root
         self.app = app  # save reference to SalesSystemApp
-
+    # def resize_background(self, event=None):
+    #     # Get current window dimensions
+    #     window_width = self.root.winfo_width()
+    #     window_height = self.root.winfo_height()
+        
+    #     # Only proceed if window has dimensions
+    #     if window_width > 1 and window_height > 1:
+    #         # Resize the image to window dimensions
+    #         resized_image = self.original_image.resize(
+    #             (window_width, window_height),
+    #             Image.Resampling.LANCZOS  # High-quality resampling
+    #         )
+            
+    #         # Update the PhotoImage
+    #         self.bg_photo = ImageTk.PhotoImage(resized_image)
+            
+    #         # Update the label
+    #         if hasattr(self, 'bg_label'):
+    #             self.bg_label.config(image=self.bg_photo)
+    #         else:
+    #             self.bg_label = tk.Label(self.root, image=self.bg_photo)
+    #             self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
     def open_login_window(self):
         for widget in self.app.root.winfo_children():
             widget.destroy()
 
         # Load and set the background image
         image_path = os.path.join(BASE_DIR, "Static", "images", "Login.png")  # Path to your JPG image
+
+        # self.original_image = Image.open(image_path)
+        
+        # # Create a placeholder for the resized image
+        # self.bg_photo = None
+        
+        # # Bind window resize event
+        # self.root.bind("<Configure>", self.resize_background)
+        
+        # # Set initial background
+        # self.resize_background()
+
         bg_image = Image.open(image_path)
         self.app.bg_photo = ImageTk.PhotoImage(bg_image)  # Convert to a format Tkinter can use
         bg_label = tk.Label(self.app.root, image=self.app.bg_photo)
