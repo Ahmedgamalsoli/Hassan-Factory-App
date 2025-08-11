@@ -169,7 +169,7 @@ class CustomerInteractions:
         self.CommonInteractions.update_totals(self.sales_collection, self.customer_payment_collection, tree=tree)
         tk.Button(right_frame,
                             text=self.t("Export to Excel"), 
-                            command=lambda: self.app.export_to_excel(self.app.raw_tree_data,headers=headers,filename= f"كشف_حساب_للعميل_{clean_filename(self.app.report_customer_name)}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                            command=lambda: self.app.AuxiliaryClass.export_to_excel(self.app.raw_tree_data,headers=headers,filename= f"كشف_حساب_للعميل_{clean_filename(self.app.report_customer_name)}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
                                                                 report_folder=report_folder,title=report_folder,
                                                                 startdate=self.app.start_date_entry.get() if hasattr(self.app.start_date_entry, 'get') else str(self.app.start_date_entry),
                                                                 enddate=self.app.end_date_entry.get() if hasattr(self.app.end_date_entry, 'get') else str(self.app.end_date_entry),
@@ -188,7 +188,7 @@ class CustomerInteractions:
         page_size_menu.grid(row=13, column=11, sticky="w", padx=5)  # Placed before the button
         tk.Button(right_frame, 
                             text=self.t("Export to PDF and Print"),
-                            command=lambda: self.app.export_to_pdf(self.app.raw_tree_data,headers=headers,filename= f"كشف_حساب_للعميل_{clean_filename(self.app.report_customer_name)}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+                            command=lambda: self.app.AuxiliaryClass.export_to_pdf(self.app.raw_tree_data,headers=headers,filename= f"كشف_حساب_للعميل_{clean_filename(self.app.report_customer_name)}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
                                                                 report_folder=report_folder,title=report_folder,
                                                                 startdate=self.app.start_date_entry.get() if hasattr(self.app.start_date_entry, 'get') else str(self.app.start_date_entry),
                                                                 enddate=self.app.end_date_entry.get() if hasattr(self.app.end_date_entry, 'get') else str(self.app.end_date_entry),

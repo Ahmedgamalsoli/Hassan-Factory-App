@@ -131,6 +131,10 @@ class SalesSystemApp:
         self.root.attributes('-fullscreen', True)
         self.root.state("zoomed")
         self.root.configure(bg=config.COLORS["background"])
+
+        self.root.bind("<FocusOut>", self.on_focus_out)
+        self.root.bind("<FocusIn>", self.on_focus_in)
+
         self.current_window = None
         self.last_number_of_msgs = 0
         self.is_group_chat_read = False
@@ -843,6 +847,19 @@ class SalesSystemApp:
         config.report_log(self.logs_collection, self.user_name, None, f"{self.user_name} {self.AuxiliaryClass.t("Exit the application")}", None,self.AuxiliaryClass.t)
         self.root.quit()
 
+    def on_focus_out(self,event):
+            self.employees_collection.update_one(
+                {"_id": self.user_id},
+                {"$set": {
+                    "logged_in": False
+                }})
+
+    def on_focus_in(self,event):
+            self.employees_collection.update_one(
+                {"_id": self.user_id},
+                {"$set": {
+                    "logged_in": True
+                }})
 ##################################################################### Main #########################################################
 
 if __name__ == "__main__":

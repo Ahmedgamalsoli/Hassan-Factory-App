@@ -1152,7 +1152,7 @@ class AuxiliaryClass:
 
             # Generate PDF
             doc.build(elements)
-            report_log(self.app.logs_collection, self.app.user_name, None, f"{self.app.t('Generated PDF')} {source} {self.app.t('report')}", None)
+            report_log(self.app.logs_collection, self.app.user_name, None, f"{self.t('Generated PDF')} {source} {self.t('report')}", None)
             # Try to open/print
             try:
                 if os.name == 'nt':
