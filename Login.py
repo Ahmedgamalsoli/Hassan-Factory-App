@@ -12,7 +12,8 @@ import pytz
 import threading  # To play sound without freezing the GUI
 import sys
 from PIL import Image, ImageTk, ImageDraw # Import Pillow classes
-
+import matplotlib
+import matplotlib.pyplot as plt
 
 matplotlib.use('TkAgg')  # Set the backend before importing pyplot
 

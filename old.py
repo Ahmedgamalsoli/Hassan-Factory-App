@@ -301,3 +301,52 @@
     #     tk.Button(self.root, text="Delete Record", command=self.delete_entry).place(width=120, height=40, x=400, y=550)
 
     #     self.display_table()
+
+
+# ######################### Auxiliary classes #########################################################
+# class AlwaysOnTopInputDialog(tk.Toplevel):
+#     def __init__(self, parent, prompt):
+#         super().__init__(parent)
+#         self.transient(parent)
+#         self.grab_set()
+
+#         self.title("Input")
+
+#         self.prompt_label = tk.Label(self, text=prompt)
+#         self.prompt_label.pack(padx=10, pady=10)
+
+#         self.input_widget = tk.Entry(self)
+#         self.input_widget.pack(padx=10, pady=10)
+#         self.input_widget.focus_set()
+
+#         self.result = None
+
+#         self.ok_button = tk.Button(self, text="OK", command=self.on_ok)
+#         self.ok_button.pack(pady=5)
+#         self.ok_button.bind("<Return>", lambda event: self.ok_button.invoke())
+
+#         self.after(1, self.adjust_geometry)
+#         self.center_dialog(parent)
+
+#     def adjust_geometry(self):
+#         self.geometry("300x150")
+
+#     def center_dialog(self, parent):
+#         screen_width = parent.winfo_screenwidth()
+#         screen_height = parent.winfo_screenheight()
+#         dialog_width = self.winfo_reqwidth()
+#         dialog_height = self.winfo_reqheight()
+#         x_position = (screen_width // 2) - (dialog_width // 2)
+#         y_position = (screen_height // 2) - (dialog_height // 2)
+#         self.geometry(f"{dialog_width}x{dialog_height}+{x_position}+{y_position}")
+
+#     def on_ok(self):
+#         if isinstance(self.input_widget, DateEntry):
+#             self.result = self.input_widget.get_date()
+#         else:
+#             self.result = self.input_widget.get()
+#         self.destroy()
+
+#     def get_result(self):
+#         self.wait_window(self)
+#         return self.result
