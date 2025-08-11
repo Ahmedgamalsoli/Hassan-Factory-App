@@ -15,7 +15,7 @@ class CustomerInteractions:
     def __init__(self, root, app):
         self.root = root
         self.app = app  # save reference to SalesSystemApp
-        self.t = self.app.t
+        self.t = self.app.AuxiliaryClass.t
         self.CommonInteractions = CommonInteractions(self.root, self.app)
 
     def customer_interactions(self, user_role):

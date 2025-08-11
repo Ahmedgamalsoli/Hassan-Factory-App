@@ -26,7 +26,7 @@ class CommonInteractions:
     def __init__(self, root, app):
         self.root = root
         self.app = app  # save reference to SalesSystemApp
-        self.t = self.app.t
+        self.t = self.app.AuxiliaryClass.t
 
 
     def on_code_selected(self, event, code_cb, name_cb, collection, invoices_collection, payment_collection, field_path, tree):
