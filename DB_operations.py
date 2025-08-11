@@ -15,7 +15,6 @@ from PIL import Image, ImageTk # Import Pillow classes
 from datetime import datetime,time , time, timedelta, date
 from tkcalendar import DateEntry  # Import DateEntry
 import urllib.request
-import db
 
 MANDATORTY_FIELDS = { # list all mandatory fields (fields that can't be empty)
     "Name", "Phone_number1", "Code", "Company_address", "Name", "Password", "Role", "Phone_number", "Address", "Salary",
@@ -40,7 +39,7 @@ class DBOperations:
     def __init__(self, root, app):
         self.root = root
         self.app = app  # save reference to SalesSystemApp
-        self.t = self.app.t
+        self.t = self.app.AuxiliaryClass.t
 
     def add_generic_entry(self, tree, current_collection, collection_name):
         fields = config.get_fields_by_name(collection_name)
@@ -278,6 +277,7 @@ class DBOperations:
                     except Exception as e:
                         messagebox.showerror(self.t("Error"), f"{field} {self.t("should be a number")}")
                         return
+                    
             elif any(word in field.lower() for word in ["stock_quantity", "salary", "credit", "debit", "balance", "Unit_Price", "duration", "net_total", "previous_balance", "payed_cash", "remaining_balance", "base_salary", "total_withdrawls", "delay_penalty", "overtime_bonus", "net_salary", "amount_withdrawls", "previous_withdrawls", "waste", "product_qty", "material_qty", "amount"]):
                 value = widget.get() 
                 if not value:
@@ -316,7 +316,7 @@ class DBOperations:
                 new_entry["Financials"] = financials_obj
 
             current_collection.insert_one(new_entry)
-            config.report_log(db.logs_collection, self.app.user_name, current_collection, f"{self.t("Added new record to")}", new_entry, self.t)
+            config.report_log(self.app.logs_collection, self.app.user_name, current_collection, f"{self.t("Added new record to")}", new_entry, self.t)
 
             self.refresh_generic_table(tree, current_collection, collection_name, search_text="")
             messagebox.showinfo(self.t("Success"), self.t("Record added successfully"))
@@ -338,7 +338,7 @@ class DBOperations:
 
     def on_tree_selection(self, event, tree, columns, collection_name, img_label):
         first_document = None
-        current_collection = config.get_collection_by_name(collection_name)
+        current_collection = self.app.AuxiliaryClass.get_collection_by_name(collection_name)
         id_index = 0
         selected_item = tree.selection()
         if not selected_item:
@@ -714,7 +714,7 @@ class DBOperations:
             result = current_collection.update_one({identifier_field: unique_id}, {"$set": updated_entry})
             
             if result.modified_count > 0:
-                config.report_log(db.logs_collection, self.app.user_name, current_collection, f"{self.t("Updated a record in")}", existing_record, self.t)
+                config.report_log(self.app.logs_collection, self.app.user_name, current_collection, f"{self.t("Updated a record in")}", existing_record, self.t)
                 messagebox.showinfo(self.t("Success"), self.t("Record updated successfully"))
             else:
                 messagebox.showinfo(self.t("Info"), self.t("No changes were made (record was identical)"))
@@ -890,7 +890,7 @@ class DBOperations:
                         {"$pull": {'Units': unit_value}}
                     )
                     if update_result.modified_count > 0:
-                        config.report_log(db.logs_collection, self.app.user_name, current_collection, f"{self.t("Deleted a record from")}", document, self.t)
+                        config.report_log(self.app.logs_collection, self.app.user_name, current_collection, f"{self.t("Deleted a record from")}", document, self.t)
                         self.deselect_entry(tree)
                         self.refresh_generic_table(tree, current_collection, current_collection.name, search_text="")
                         messagebox.showinfo(self.t("Success"), f"{self.t("Unit")} '{unique_id}' {self.t("removed from record.")}")
@@ -913,7 +913,7 @@ class DBOperations:
                         }
                     )                  
                     if update_result.modified_count > 0:
-                        config.report_log(db.logs_collection, self.app.user_name, current_collection, f"{self.t("Deleted a record from")}", document, self.t)
+                        config.report_log(self.app.logs_collection, self.app.user_name, current_collection, f"{self.t("Deleted a record from")}", document, self.t)
                         self.deselect_entry(tree)
                         self.refresh_generic_table(tree, current_collection, current_collection.name, search_text="")
                         messagebox.showinfo(self.t("Success"), f"{self.t("Unit")} '{unique_id}' {self.t("removed from record.")}")
@@ -923,7 +923,7 @@ class DBOperations:
                 else:
                     delete_result = current_collection.delete_one({"_id": document["_id"]})
                     if delete_result.deleted_count > 0:
-                        config.report_log(db.logs_collection, self.app.user_name, current_collection, f"{self.t("Deleted a record from")}", document, self.t)
+                        config.report_log(self.app.logs_collection, self.app.user_name, current_collection, f"{self.t("Deleted a record from")}", document, self.t)
                         self.deselect_entry(tree)
                         self.refresh_generic_table(tree, current_collection, current_collection.name, search_text="")
                         messagebox.showinfo(self.t("Success"), self.t("Record deleted successfully."))
@@ -935,7 +935,7 @@ class DBOperations:
             if not handled:
                 delete_result = current_collection.delete_one(query)
                 if delete_result.deleted_count > 0:
-                    config.report_log(db.logs_collection, self.app.user_name, current_collection, f"{self.t("Deleted a record from")}", document, self.t)
+                    config.report_log(self.app.logs_collection, self.app.user_name, current_collection, f"{self.t("Deleted a record from")}", document, self.t)
                     self.deselect_entry(tree)
                     self.refresh_generic_table(tree, current_collection, current_collection.name, search_text="")
                     messagebox.showinfo(self.t("Success"), self.t("Record deleted successfully."))

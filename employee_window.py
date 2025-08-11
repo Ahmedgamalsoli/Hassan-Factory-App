@@ -46,6 +46,7 @@ class EmployeeWindow:
         self.root = root
         self.app = app  # save reference to SalesSystemApp
 
+
     def manage_Employees_window(self):
                 # Clear current window
         for widget in self.root.winfo_children():
@@ -60,20 +61,20 @@ class EmployeeWindow:
         # Define buttons with images, text, and commands
         if self.app.light:
             buttons = [
-                {"text": self.app.t("Employee hours"), "image": "emp_hour-dark.png", 
+                {"text": self.app.AuxiliaryClass.t("Employee hours"), "image": "emp_hour-dark.png", 
                 "command": lambda: self.employee_hours_window(self.app.user_role)},
-                {"text": self.app.t("Employee Withdrawals"), "image": "emp_with-dark.png", 
+                {"text": self.app.AuxiliaryClass.t("Employee Withdrawals"), "image": "emp_with-dark.png", 
                 "command": lambda: self.employee_withdrowls_window(self.app.user_role)},
-                {"text": self.app.t("Employee Statistics"), "image": "emp_salary-dark.png", 
+                {"text": self.app.AuxiliaryClass.t("Employee Statistics"), "image": "emp_salary-dark.png", 
                 "command": lambda: self.employee_statistics_window(self.app.user_role)},
             ]
         elif not self.app.light:
             buttons = [
-                {"text": self.app.t("Employee hours"), "image": "emp_hour-light.png", 
+                {"text": self.app.AuxiliaryClass.t("Employee hours"), "image": "emp_hour-light.png", 
                 "command": lambda: self.employee_hours_window(self.app.user_role)},
-                {"text": self.app.t("Employee Withdrawals"), "image": "emp_with-light.png", 
+                {"text": self.app.AuxiliaryClass.t("Employee Withdrawals"), "image": "emp_with-light.png", 
                 "command": lambda: self.employee_withdrowls_window(self.app.user_role)},
-                {"text": self.app.t("Employee Statistics"), "image": "emp_salary-light.png", 
+                {"text": self.app.AuxiliaryClass.t("Employee Statistics"), "image": "emp_salary-light.png", 
                 "command": lambda: self.employee_statistics_window(self.app.user_role)},
             ]
         images = []  # Keep references to prevent garbage collection
@@ -146,8 +147,8 @@ class EmployeeWindow:
         self.app.topbar.topbar(show_back_button=True, Back_to_Employee_Window=True)
         
         # Database collections
-        employees_col = config.get_collection_by_name("Employees")
-        appointments_col = config.get_collection_by_name("Employee_appointments")
+        employees_col = self.app.AuxiliaryClass.get_collection_by_name("Employees")
+        appointments_col = self.app.AuxiliaryClass.get_collection_by_name("Employee_appointments")
 
         # Create mappings
         self.app.employee_code_name = {}
@@ -168,14 +169,14 @@ class EmployeeWindow:
         selection_frame.pack(fill=tk.X, pady=10)
 
         # Employee name dropdown
-        tk.Label(selection_frame, text=self.app.t("Employee Name:")).pack(side=tk.LEFT, padx=5)
+        tk.Label(selection_frame, text=self.app.AuxiliaryClass.t("Employee Name:")).pack(side=tk.LEFT, padx=5)
         self.app.name_var = tk.StringVar()
         name_cb = ttk.Combobox(selection_frame, textvariable=self.app.name_var, width=25)
         name_cb.pack(side=tk.LEFT, padx=5)
         name_cb.bind('<<ComboboxSelected>>', self.update_employee_code)
 
         # Employee code dropdown
-        tk.Label(selection_frame, text=self.app.t("Employee Code:")).pack(side=tk.LEFT, padx=5)
+        tk.Label(selection_frame, text=self.app.AuxiliaryClass.t("Employee Code:")).pack(side=tk.LEFT, padx=5)
         self.app.code_var = tk.StringVar()
         code_cb = ttk.Combobox(selection_frame, textvariable=self.app.code_var, width=15)
         code_cb.pack(side=tk.LEFT, padx=5)
@@ -186,8 +187,8 @@ class EmployeeWindow:
         code_cb['values'] = list(self.app.employee_code_name.keys())
 
         # Check-in/out button
-        tk.Button(selection_frame, text=self.app.t("Check In/Out"), command=lambda: self.toggle_check_in_out(employees_col, appointments_col)).pack(side=tk.RIGHT, padx=10)
-        # tk.Button(selection_frame, text=self.app.t("Check In/Out"), command=lambda: self.toggle_check_in_out(employees_col, appointments_col)).pack(side=tk.RIGHT, padx=10)
+        tk.Button(selection_frame, text=self.app.AuxiliaryClass.t("Check In/Out"), command=lambda: self.toggle_check_in_out(employees_col, appointments_col)).pack(side=tk.RIGHT, padx=10)
+        # tk.Button(selection_frame, text=self.app.AuxiliaryClass.t("Check In/Out"), command=lambda: self.toggle_check_in_out(employees_col, appointments_col)).pack(side=tk.RIGHT, padx=10)
 
         # Checked-in employees treeview
         tree_frame = tk.Frame(main_frame)
@@ -197,7 +198,7 @@ class EmployeeWindow:
         self.app.checkin_tree = ttk.Treeview(tree_frame, columns=columns, show='headings')
         
         for col in columns:
-            self.app.checkin_tree.heading(col, text=self.app.t(col))
+            self.app.checkin_tree.heading(col, text=self.app.AuxiliaryClass.t(col))
             self.app.checkin_tree.column(col, width=150, anchor='center')
         
         vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=self.app.checkin_tree.yview)
@@ -224,7 +225,7 @@ class EmployeeWindow:
         name = self.app.name_var.get()
         
         if not code or not name:
-            messagebox.showerror(self.app.t("Error"), self.app.t("Please select an employee"))
+            messagebox.showerror(self.app.AuxiliaryClass.t("Error"), self.app.AuxiliaryClass.t("Please select an employee"))
             return
         
         # Check existing appointment
@@ -249,7 +250,7 @@ class EmployeeWindow:
                         'duration': duration.total_seconds() / 3600  # in hours
                     }}
                 )
-                config.report_log(self.app.logs_collection, self.app.user_name, None, f"{existing['employee_name']} {self.app.t("Checked out with Id")} {existing['employee_code']}", None)
+                config.report_log(self.app.logs_collection, self.app.user_name, None, f"{existing['employee_name']} {self.app.AuxiliaryClass.t("Checked out with Id")} {existing['employee_code']}", None,self.app.AuxiliaryClass.t)
 
             else:
                 # Check in
@@ -260,13 +261,13 @@ class EmployeeWindow:
                     'check_out': None,
                     'duration': None
                 })
-                config.report_log(self.app.logs_collection, self.app.user_name, None, f"{name} {self.app.t("Checked in with Id")} {code}", None)
+                config.report_log(self.app.logs_collection, self.app.user_name, None, f"{name} {self.app.AuxiliaryClass.t("Checked in with Id")} {code}", None,self.app.AuxiliaryClass.t)
 
             self.update_checkin_tree(appointments_col)
-            messagebox.showinfo(self.app.t("Success"), f"{name} {self.app.t("checked")} {self.app.t('out') if existing else self.app.t('in')} {self.app.t("successfully")}")
+            messagebox.showinfo(self.app.AuxiliaryClass.t("Success"), f"{name} {self.app.AuxiliaryClass.t("checked")} {self.app.AuxiliaryClass.t('out') if existing else self.app.AuxiliaryClass.t('in')} {self.app.AuxiliaryClass.t("successfully")}")
             
         except PyMongoError as e:
-            messagebox.showerror(self.app.t("Database Error"), str(e))
+            messagebox.showerror(self.app.AuxiliaryClass.t("Database Error"), str(e))
 
     def update_checkin_tree(self, appointments_col):
         # Clear existing data
@@ -303,7 +304,7 @@ class EmployeeWindow:
             self.app.checkin_tree.insert('', 'end', values=(
                 appt.get('employee_name', ''),
                 formatted_time,
-                self.app.t('Still checked in')
+                self.app.AuxiliaryClass.t('Still checked in')
             ))
 
     def employee_withdrowls_window(self, user_role):
@@ -314,8 +315,8 @@ class EmployeeWindow:
         self.app.topbar.topbar(show_back_button=True, Back_to_Employee_Window=True)
 
         # Database collections
-        employees_col = config.get_collection_by_name("Employees")
-        withdrawals_col = config.get_collection_by_name("Employee_withdrawls")
+        employees_col = self.app.AuxiliaryClass.get_collection_by_name("Employees")
+        withdrawals_col = self.app.AuxiliaryClass.get_collection_by_name("Employee_withdrawls")
         # Create mappings
         self.app.employee_code_map = {}
         self.app.employee_name_map = {}
@@ -333,12 +334,12 @@ class EmployeeWindow:
         main_frame.grid_columnconfigure(1, weight=3)
 
         # Employee Selection Section
-        tk.Label(main_frame, text=self.app.t("Employee Selection"), font=('Helvetica', 14, 'bold')).grid(row=0, column=0, columnspan=2, pady=10, sticky='w')
-        tk.Label(main_frame, text=self.app.t("Employee Selection"), font=('Helvetica', 14, 'bold')).grid(row=0, column=0, columnspan=2, pady=10, sticky='w')
+        tk.Label(main_frame, text=self.app.AuxiliaryClass.t("Employee Selection"), font=('Helvetica', 14, 'bold')).grid(row=0, column=0, columnspan=2, pady=10, sticky='w')
+        tk.Label(main_frame, text=self.app.AuxiliaryClass.t("Employee Selection"), font=('Helvetica', 14, 'bold')).grid(row=0, column=0, columnspan=2, pady=10, sticky='w')
         
         # Employee Name Dropdown
-        tk.Label(main_frame, text=self.app.t("Employee Name:"), font=('Helvetica', 12)).grid(row=1, column=0, pady=5, sticky='w')
-        tk.Label(main_frame, text=self.app.t("Employee Name:"), font=('Helvetica', 12)).grid(row=1, column=0, pady=5, sticky='w')
+        tk.Label(main_frame, text=self.app.AuxiliaryClass.t("Employee Name:"), font=('Helvetica', 12)).grid(row=1, column=0, pady=5, sticky='w')
+        tk.Label(main_frame, text=self.app.AuxiliaryClass.t("Employee Name:"), font=('Helvetica', 12)).grid(row=1, column=0, pady=5, sticky='w')
         self.app.withdraw_name_var = tk.StringVar()
         name_cb = ttk.Combobox(main_frame, textvariable=self.app.withdraw_name_var, 
                             width=30, font=('Helvetica', 12))
@@ -346,8 +347,8 @@ class EmployeeWindow:
         name_cb.bind('<<ComboboxSelected>>', self.update_withdraw_code)
 
         # Employee Code Dropdown
-        tk.Label(main_frame, text=self.app.t("Employee Code:"), font=('Helvetica', 12)).grid(row=2, column=0, pady=5, sticky='w')
-        tk.Label(main_frame, text=self.app.t("Employee Code:"), font=('Helvetica', 12)).grid(row=2, column=0, pady=5, sticky='w')
+        tk.Label(main_frame, text=self.app.AuxiliaryClass.t("Employee Code:"), font=('Helvetica', 12)).grid(row=2, column=0, pady=5, sticky='w')
+        tk.Label(main_frame, text=self.app.AuxiliaryClass.t("Employee Code:"), font=('Helvetica', 12)).grid(row=2, column=0, pady=5, sticky='w')
         self.app.withdraw_code_var = tk.StringVar()
         code_cb = ttk.Combobox(main_frame, textvariable=self.app.withdraw_code_var, 
                             width=30, font=('Helvetica', 12))
@@ -355,26 +356,26 @@ class EmployeeWindow:
         code_cb.bind('<<ComboboxSelected>>', self.update_withdraw_name)
 
         # Salary Display
-        tk.Label(main_frame, text=self.app.t("Salary:"), font=('Helvetica', 12)).grid(row=3, column=0, pady=5, sticky='w')
-        tk.Label(main_frame, text=self.app.t("Salary:"), font=('Helvetica', 12)).grid(row=3, column=0, pady=5, sticky='w')
+        tk.Label(main_frame, text=self.app.AuxiliaryClass.t("Salary:"), font=('Helvetica', 12)).grid(row=3, column=0, pady=5, sticky='w')
+        tk.Label(main_frame, text=self.app.AuxiliaryClass.t("Salary:"), font=('Helvetica', 12)).grid(row=3, column=0, pady=5, sticky='w')
         self.app.salary_var = tk.StringVar()
         salary_entry = tk.Entry(main_frame, textvariable=self.app.salary_var, 
                             state='readonly', width=33, font=('Helvetica', 12))
         salary_entry.grid(row=3, column=1, pady=5, padx=10, sticky='w')
 
         # Withdrawal Details Section (updated row numbers)
-        tk.Label(main_frame, text=self.app.t("Withdrawal Details"), font=('Helvetica', 14, 'bold')).grid(row=4, column=0, columnspan=2, pady=10, sticky='w')
-        tk.Label(main_frame, text=self.app.t("Withdrawal Details"), font=('Helvetica', 14, 'bold')).grid(row=4, column=0, columnspan=2, pady=10, sticky='w')
+        tk.Label(main_frame, text=self.app.AuxiliaryClass.t("Withdrawal Details"), font=('Helvetica', 14, 'bold')).grid(row=4, column=0, columnspan=2, pady=10, sticky='w')
+        tk.Label(main_frame, text=self.app.AuxiliaryClass.t("Withdrawal Details"), font=('Helvetica', 14, 'bold')).grid(row=4, column=0, columnspan=2, pady=10, sticky='w')
 
         # Amount Entry
-        tk.Label(main_frame, text=self.app.t("Withdrawal Amount:"), font=('Helvetica', 12)).grid(row=5, column=0, pady=5, sticky='w')
-        tk.Label(main_frame, text=self.app.t("Withdrawal Amount:"), font=('Helvetica', 12)).grid(row=5, column=0, pady=5, sticky='w')
+        tk.Label(main_frame, text=self.app.AuxiliaryClass.t("Withdrawal Amount:"), font=('Helvetica', 12)).grid(row=5, column=0, pady=5, sticky='w')
+        tk.Label(main_frame, text=self.app.AuxiliaryClass.t("Withdrawal Amount:"), font=('Helvetica', 12)).grid(row=5, column=0, pady=5, sticky='w')
         self.app.amount_entry = tk.Entry(main_frame, width=33, font=('Helvetica', 12))
         self.app.amount_entry.grid(row=5, column=1, pady=5, padx=10, sticky='w')
 
         # Payment Method
-        tk.Label(main_frame, text=self.app.t("Payment Method"), font=('Helvetica', 12)).grid(row=6, column=0, pady=5, sticky='w')
-        tk.Label(main_frame, text=self.app.t("Payment Method"), font=('Helvetica', 12)).grid(row=6, column=0, pady=5, sticky='w')
+        tk.Label(main_frame, text=self.app.AuxiliaryClass.t("Payment Method"), font=('Helvetica', 12)).grid(row=6, column=0, pady=5, sticky='w')
+        tk.Label(main_frame, text=self.app.AuxiliaryClass.t("Payment Method"), font=('Helvetica', 12)).grid(row=6, column=0, pady=5, sticky='w')
         self.app.payment_method = ttk.Combobox(main_frame, 
                                         values=["Cash", "Instapay", "E_wallet", "Bank Account"],
                                         width=30, 
@@ -383,8 +384,8 @@ class EmployeeWindow:
         self.app.payment_method.grid(row=6, column=1, pady=5, padx=10, sticky='w')
 
         # Previous Withdrawals
-        tk.Label(main_frame, text=self.app.t("Previous Withdrawals:"), font=('Helvetica', 12)).grid(row=7, column=0, pady=5, sticky='w')
-        tk.Label(main_frame, text=self.app.t("Previous Withdrawals:"), font=('Helvetica', 12)).grid(row=7, column=0, pady=5, sticky='w')
+        tk.Label(main_frame, text=self.app.AuxiliaryClass.t("Previous Withdrawals:"), font=('Helvetica', 12)).grid(row=7, column=0, pady=5, sticky='w')
+        tk.Label(main_frame, text=self.app.AuxiliaryClass.t("Previous Withdrawals:"), font=('Helvetica', 12)).grid(row=7, column=0, pady=5, sticky='w')
         self.app.prev_withdrawals = tk.Entry(main_frame, 
                                     state='readonly', 
                                     width=33, 
@@ -393,7 +394,7 @@ class EmployeeWindow:
 
         # Save Button (updated row number)
         save_btn = tk.Button(main_frame, 
-                            text=self.app.t("💾 Save Withdrawal"), 
+                            text=self.app.AuxiliaryClass.t("💾 Save Withdrawal"), 
                             font=('Helvetica', 12, 'bold'),
                             width=20,
                             command=lambda: self.save_withdrawal(withdrawals_col, employees_col),
@@ -436,7 +437,7 @@ class EmployeeWindow:
             self.app.prev_withdrawals.config(state='readonly')
             
             # Update salary display
-            employees_col = config.get_collection_by_name("Employees")
+            employees_col = self.app.AuxiliaryClass.get_collection_by_name("Employees")
             code = int(code)
             emp = employees_col.find_one({'Id': code})
             if emp:
@@ -447,7 +448,7 @@ class EmployeeWindow:
                 self.app.salary_var.set("0.00")
 
     def calculate_previous_withdrawals(self, employee_code):
-        withdrawals_col = config.get_collection_by_name("Employee_withdrawls")
+        withdrawals_col = self.app.AuxiliaryClass.get_collection_by_name("Employee_withdrawls")
         total = 0
         for withdrawal in withdrawals_col.find({'employee_code': employee_code}):
             total += withdrawal.get('amount_withdrawls', 0)
@@ -460,7 +461,7 @@ class EmployeeWindow:
         method = self.app.payment_method.get()
 
         if not code or not name:
-            messagebox.showerror(self.app.t("Error"), self.app.t("Please select an employee"))
+            messagebox.showerror(self.app.AuxiliaryClass.t("Error"), self.app.AuxiliaryClass.t("Please select an employee"))
             return
         
         try:
@@ -468,11 +469,11 @@ class EmployeeWindow:
             if amount <= 0:
                 raise ValueError
         except ValueError:
-            messagebox.showerror(self.app.t("Error"), self.app.t("Invalid amount entered"))
+            messagebox.showerror(self.app.AuxiliaryClass.t("Error"), self.app.AuxiliaryClass.t("Invalid amount entered"))
             return
 
         if not method:
-            messagebox.showerror(self.app.t("Error"), self.app.t("Please select payment method"))
+            messagebox.showerror(self.app.AuxiliaryClass.t("Error"), self.app.AuxiliaryClass.t("Please select payment method"))
             return
 
         try:
@@ -497,16 +498,16 @@ class EmployeeWindow:
                 {'$set': {'previous_withdrawls': previous_total + amount}}
             )
 
-            messagebox.showinfo(self.app.t("Success"), self.app.t("Withdrawal recorded successfully"))
+            messagebox.showinfo(self.app.AuxiliaryClass.t("Success"), self.app.AuxiliaryClass.t("Withdrawal recorded successfully"))
             
-            config.report_log(self.app.logs_collection, self.app.user_name, None, f"{self.app.t("Completed withdrawal in Employee_withdrawls Database for")} {withdrawal_data['employee_name']} {self.app.t("with Id")} {withdrawal_data['employee_code']}", None)
+            config.report_log(self.app.logs_collection, self.app.user_name, None, f"{self.app.AuxiliaryClass.t("Completed withdrawal in Employee_withdrawls Database for")} {withdrawal_data['employee_name']} {self.app.AuxiliaryClass.t("with Id")} {withdrawal_data['employee_code']}", None,self.app.AuxiliaryClass.t)
 
             self.app.amount_entry.delete(0, tk.END)
             self.app.payment_method.set('')
             self.update_previous_withdrawals()
 
         except PyMongoError as e:
-            messagebox.showerror(self.app.t("Database Error"), f"{self.app.t("Failed to save withdrawal:")} {str(e)}")
+            messagebox.showerror(self.app.AuxiliaryClass.t("Database Error"), f"{self.app.AuxiliaryClass.t("Failed to save withdrawal:")} {str(e)}")
 
     def employee_statistics_window(self, user_role):
         # Clear current window
@@ -516,7 +517,7 @@ class EmployeeWindow:
         self.app.topbar.topbar(show_back_button=True, Back_to_Employee_Window=True)
         
         # Database connections
-        employees_col = config.get_collection_by_name("Employees")
+        employees_col = self.app.AuxiliaryClass.get_collection_by_name("Employees")
         
         # Employee mappings
         self.app.employee_code_map = {}
@@ -538,27 +539,27 @@ class EmployeeWindow:
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         # Employee Selection
-        selection_frame = ttk.LabelFrame(main_frame, text=self.app.t("Employee Selection"), padding=10)
+        selection_frame = ttk.LabelFrame(main_frame, text=self.app.AuxiliaryClass.t("Employee Selection"), padding=10)
         selection_frame.grid(row=0, column=0, sticky='ew', pady=5)
         
-        ttk.Label(selection_frame, text=self.app.t("Name:")).grid(row=0, column=0, padx=5, sticky='e')
+        ttk.Label(selection_frame, text=self.app.AuxiliaryClass.t("Name:")).grid(row=0, column=0, padx=5, sticky='e')
         self.app.emp_name_var = tk.StringVar()
         self.app.name_cb = ttk.Combobox(selection_frame, textvariable=self.app.emp_name_var, width=25)
         self.app.name_cb.grid(row=0, column=1, padx=5, sticky='ew')
         self.app.name_cb.bind('<<ComboboxSelected>>', self.update_salary_name)
         # code_cb.grid(row=2, column=1, pady=5, padx=10, sticky='w')
         # code_cb.bind('<<ComboboxSelected>>', self.update_withdraw_name)
-        ttk.Label(selection_frame, text=self.app.t("Code:")).grid(row=0, column=2, padx=(15,5), sticky='e')
+        ttk.Label(selection_frame, text=self.app.AuxiliaryClass.t("Code:")).grid(row=0, column=2, padx=(15,5), sticky='e')
         self.app.emp_code_var = tk.StringVar()
         self.app.code_cb = ttk.Combobox(selection_frame, textvariable=self.app.emp_code_var, width=10)
         self.app.code_cb.grid(row=0, column=3, padx=5, sticky='ew')
         self.app.code_cb.bind('<<ComboboxSelected>>', self.update_salary_code)
 
         # Date Selection
-        date_frame = ttk.LabelFrame(main_frame, text=self.app.t("Month/Year Selection"), padding=10)
+        date_frame = ttk.LabelFrame(main_frame, text=self.app.AuxiliaryClass.t("Month/Year Selection"), padding=10)
         date_frame.grid(row=1, column=0, sticky='ew', pady=5)
         
-        ttk.Label(date_frame, text=self.app.t("Month:")).grid(row=0, column=0, padx=5, sticky='e')
+        ttk.Label(date_frame, text=self.app.AuxiliaryClass.t("Month:")).grid(row=0, column=0, padx=5, sticky='e')
         self.app.month_var = tk.StringVar()
         self.app.month_cb = ttk.Combobox(date_frame, textvariable=self.app.month_var, 
                                 values=["January", "February", "March", "April", "May", "June",
@@ -566,30 +567,30 @@ class EmployeeWindow:
                                 width=12)
         self.app.month_cb.grid(row=0, column=1, padx=5, sticky='w')
         
-        ttk.Label(date_frame, text=self.app.t("Year:")).grid(row=0, column=2, padx=(15,5), sticky='e')
+        ttk.Label(date_frame, text=self.app.AuxiliaryClass.t("Year:")).grid(row=0, column=2, padx=(15,5), sticky='e')
         self.app.year_var = tk.StringVar()
         self.app.year_cb = ttk.Combobox(date_frame, textvariable=self.app.year_var, 
                                 values=[str(year) for year in range(2020, 2040)],
                                 width=6)
         self.app.year_cb.grid(row=0, column=3, padx=5, sticky='w')
 
-        ttk.Label(date_frame, text=self.app.t("From Date:")).grid(row=0, column=4, padx=5, sticky='e')
+        ttk.Label(date_frame, text=self.app.AuxiliaryClass.t("From Date:")).grid(row=0, column=4, padx=5, sticky='e')
         self.app.from_date_var = tk.StringVar()
         self.app.to_date_var = tk.StringVar()
         # Replace the Entry widgets with:
         DateEntry(date_frame, textvariable=self.app.from_date_var, date_pattern='dd-mm-yyyy').grid(row=0, column=5)
-        ttk.Label(date_frame, text=self.app.t("To Date:")).grid(row=0, column=6, padx=5, sticky='e')
+        ttk.Label(date_frame, text=self.app.AuxiliaryClass.t("To Date:")).grid(row=0, column=6, padx=5, sticky='e')
         DateEntry(date_frame, textvariable=self.app.to_date_var, date_pattern='dd-mm-yyyy').grid(row=0, column=7)
         # Working Hours
-        hours_frame = ttk.LabelFrame(main_frame, text=self.app.t("Working Hours"), padding=10)
+        hours_frame = ttk.LabelFrame(main_frame, text=self.app.AuxiliaryClass.t("Working Hours"), padding=10)
         hours_frame.grid(row=2, column=0, sticky='ew', pady=5)
         
-        ttk.Label(hours_frame, text=self.app.t("Start Time:")).grid(row=0, column=0, padx=5, sticky='e')
+        ttk.Label(hours_frame, text=self.app.AuxiliaryClass.t("Start Time:")).grid(row=0, column=0, padx=5, sticky='e')
         self.app.start_time_var = tk.StringVar()
         ttk.Entry(hours_frame, textvariable=self.app.start_time_var, width=10).grid(row=0, column=1, padx=5, sticky='w')
         ttk.Label(hours_frame, text="(e.g., 9:00 AM)").grid(row=0, column=2, padx=5, sticky='w')
         
-        ttk.Label(hours_frame, text=self.app.t("End Time:")).grid(row=0, column=3, padx=(15,5), sticky='e')
+        ttk.Label(hours_frame, text=self.app.AuxiliaryClass.t("End Time:")).grid(row=0, column=3, padx=(15,5), sticky='e')
         self.app.end_time_var = tk.StringVar()
         ttk.Entry(hours_frame, textvariable=self.app.end_time_var, width=10).grid(row=0, column=4, padx=5, sticky='w')
         ttk.Label(hours_frame, text="(e.g., 5:00 PM)").grid(row=0, column=5, padx=5, sticky='w')
@@ -607,22 +608,22 @@ class EmployeeWindow:
         self.app.table.configure(yscrollcommand=vsb.set)
         
         for col in columns:
-            self.app.table.heading(col, text=self.app.t(col), anchor='center')
+            self.app.table.heading(col, text=self.app.AuxiliaryClass.t(col), anchor='center')
             self.app.table.column(col, width=100, anchor='center')
 
         # Totals Section
         totals_frame = ttk.Frame(main_frame)
         totals_frame.grid(row=4, column=0, sticky='ew', pady=5)
         
-        ttk.Label(totals_frame, text=self.app.t("Total Withdrawls:")).grid(row=0, column=0, padx=5, sticky='e')
+        ttk.Label(totals_frame, text=self.app.AuxiliaryClass.t("Total Withdrawls:")).grid(row=0, column=0, padx=5, sticky='e')
         self.app.total_withdrawls = ttk.Entry(totals_frame, width=12, state='readonly')
         self.app.total_withdrawls.grid(row=0, column=1, padx=5, sticky='w')
         
-        ttk.Label(totals_frame, text=self.app.t("Delay Amount:")).grid(row=0, column=2, padx=(20,5), sticky='e')
+        ttk.Label(totals_frame, text=self.app.AuxiliaryClass.t("Delay Amount:")).grid(row=0, column=2, padx=(20,5), sticky='e')
         self.app.delay_amount = ttk.Entry(totals_frame, width=12)
         self.app.delay_amount.grid(row=0, column=3, padx=5, sticky='w')
         
-        ttk.Label(totals_frame, text=self.app.t("Overtime Amount:")).grid(row=0, column=4, padx=(20,5), sticky='e')
+        ttk.Label(totals_frame, text=self.app.AuxiliaryClass.t("Overtime Amount:")).grid(row=0, column=4, padx=(20,5), sticky='e')
         self.app.overtime_amount = ttk.Entry(totals_frame, width=12)
         self.app.overtime_amount.grid(row=0, column=5, padx=5, sticky='w')
 
@@ -630,25 +631,25 @@ class EmployeeWindow:
         payment_frame = ttk.Frame(main_frame)
         payment_frame.grid(row=5, column=0, sticky='ew', pady=5)
         
-        ttk.Label(payment_frame, text=self.app.t("Payment Method:")).grid(row=0, column=0, padx=5, sticky='e')
+        ttk.Label(payment_frame, text=self.app.AuxiliaryClass.t("Payment Method:")).grid(row=0, column=0, padx=5, sticky='e')
         self.app.payment_method = ttk.Combobox(payment_frame, 
                                         values=["Cash", "Instapay", "E_wallet", "Bank_account"],
                                         state="readonly",
                                         width=15)
         self.app.payment_method.grid(row=0, column=1, padx=5, sticky='w')
         
-        ttk.Label(payment_frame, text=self.app.t("Base Salary:")).grid(row=0, column=2, padx=(20,5), sticky='e')
+        ttk.Label(payment_frame, text=self.app.AuxiliaryClass.t("Base Salary:")).grid(row=0, column=2, padx=(20,5), sticky='e')
         self.app.salary = ttk.Entry(payment_frame, width=15, state='readonly')
         self.app.salary.grid(row=0, column=3, padx=5, sticky='w')
         
-        ttk.Label(payment_frame, text=self.app.t("Net Salary:")).grid(row=0, column=4, padx=(20,5), sticky='e')
+        ttk.Label(payment_frame, text=self.app.AuxiliaryClass.t("Net Salary:")).grid(row=0, column=4, padx=(20,5), sticky='e')
         self.app.net_salary = ttk.Entry(payment_frame, width=15, state='readonly')
         self.app.net_salary.grid(row=0, column=5, padx=5, sticky='w')
 
         # Save Button
         btn_frame = ttk.Frame(main_frame)
         btn_frame.grid(row=6, column=0, pady=15)
-        ttk.Button(btn_frame, text=self.app.t("Save Salary Record"), command=self.save_salary).pack()
+        ttk.Button(btn_frame, text=self.app.AuxiliaryClass.t("Save Salary Record"), command=self.save_salary).pack()
 
         # Configure grid weights
         main_frame.columnconfigure(0, weight=1)
@@ -731,8 +732,8 @@ class EmployeeWindow:
             return
         
         # Get collections
-        withdrawals_col = config.get_collection_by_name("Employee_withdrawls")
-        hours_col = config.get_collection_by_name("Employee_appointimets")
+        withdrawals_col = self.app.AuxiliaryClass.get_collection_by_name("Employee_withdrawls")
+        hours_col = self.app.AuxiliaryClass.get_collection_by_name("Employee_appointimets")
         
         # Get data - include end date by adding 1 day to to_date
         withdrawals = list(withdrawals_col.find({
@@ -896,9 +897,9 @@ class EmployeeWindow:
             if not all([salary_data['employee_code'], salary_data['month_year']]):
                 raise ValueError("Missing required fields")
             
-            salary_col = config.get_collection_by_name("Employee_Salary")
+            salary_col = self.app.AuxiliaryClass.get_collection_by_name("Employee_Salary")
             # Database collections
-            withdrawals_col = config.get_collection_by_name("Employee_withdrawls")
+            withdrawals_col = self.app.AuxiliaryClass.get_collection_by_name("Employee_withdrawls")
             
             # Check for existing salary record
             existing = salary_col.find_one({
@@ -906,22 +907,22 @@ class EmployeeWindow:
                 "month_year": salary_data["month_year"]
             })
             if not self.app.month_var.get() or not self.app.year_var.get():
-                messagebox.showinfo(self.app.t("Warning"), self.app.t("Please select month and year")) 
+                messagebox.showinfo(self.app.AuxiliaryClass.t("Warning"), self.app.AuxiliaryClass.t("Please select month and year")) 
                 return           
             if existing:
-                messagebox.showwarning(self.app.t("Warning"), 
-                    self.app.t("Employee already took the salary in this month"))
+                messagebox.showwarning(self.app.AuxiliaryClass.t("Warning"), 
+                    self.app.AuxiliaryClass.t("Employee already took the salary in this month"))
                 return
 
             if not self.app.payment_method.get():
-                messagebox.showinfo(self.app.t("Warning"),self.app.t("Enter the payment Method"))
+                messagebox.showinfo(self.app.AuxiliaryClass.t("Warning"),self.app.AuxiliaryClass.t("Enter the payment Method"))
                 return
             # Insert new record if not exists
             salary_col.insert_one(salary_data)
             withdrawals_col.insert_one(withdrawal_data)
             # self.save_withdrawal(withdrawals_col,employees_col)
-            messagebox.showinfo(self.app.t("Success"), self.app.t("Salary record saved successfully"))
-            config.report_log(self.app.logs_collection, self.app.user_name, None, f"{self.app.t("Paid salary for")} {salary_data['employee_name']} {self.app.t("with code")} {salary_data['employee_code']}", None)
+            messagebox.showinfo(self.app.AuxiliaryClass.t("Success"), self.app.AuxiliaryClass.t("Salary record saved successfully"))
+            config.report_log(self.app.logs_collection, self.app.user_name, None, f"{self.app.AuxiliaryClass.t("Paid salary for")} {salary_data['employee_name']} {self.app.AuxiliaryClass.t("with code")} {salary_data['employee_code']}", None,self.app.AuxiliaryClass.t)
             
         except Exception as e:
-            messagebox.showerror(self.app.t("Error"), f"{self.app.t("Failed to save salary:")} {str(e)}")
+            messagebox.showerror(self.app.AuxiliaryClass.t("Error"), f"{self.app.AuxiliaryClass.t("Failed to save salary:")} {str(e)}")

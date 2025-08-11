@@ -45,7 +45,7 @@ class SalesInvoice:
     def __init__(self, root, app):
         self.root = root
         self.app = app  # save reference to SalesSystemApp
-        self.t = self.app.t
+        # self.AuxiliaryClass.t = self.app.AuxiliaryClass.t
 
     def manage_sales_invoices_window(self):
                 # Clear current window
@@ -62,16 +62,16 @@ class SalesInvoice:
         # Define buttons with images, text, and commands
         if self.app.light:
             buttons = [
-                {"text": self.app.t("New Sales Invoice"), "image": "new_invoice-dark.png",
+                {"text": self.app.AuxiliaryClass.t("New Sales Invoice"), "image": "new_invoice-dark.png",
                 "command": lambda: self.sales_invoice(self.app.user_role,"add")},
-                {"text": self.app.t("Update Sales Invoice"), "image": "update_invoice-dark.png",
+                {"text": self.app.AuxiliaryClass.t("Update Sales Invoice"), "image": "update_invoice-dark.png",
                 "command": lambda: self.sales_invoice(self.app.user_role,"update")}
             ]
         elif not self.app.light:
             buttons = [
-                {"text": self.app.t("New Sales Invoice"), "image": "new_invoice-light.png",
+                {"text": self.app.AuxiliaryClass.t("New Sales Invoice"), "image": "new_invoice-light.png",
                 "command": lambda: self.sales_invoice(self.app.user_role,"add")},
-                {"text": self.app.t("Update Sales Invoice"), "image": "update_invoice-light.png",
+                {"text": self.app.AuxiliaryClass.t("Update Sales Invoice"), "image": "update_invoice-light.png",
                 "command": lambda: self.sales_invoice(self.app.user_role,"update")}
             ]
         images = []  # Keep references to prevent garbage collection
@@ -137,9 +137,9 @@ class SalesInvoice:
         self.app.topbar.topbar(show_back_button=True, Back_to_Sales_Window=True)
 
         # MongoDB collections
-        customers_col = config.get_collection_by_name("Customers")
-        sales_col = config.get_collection_by_name("Sales")
-        products_col = config.get_collection_by_name("Products")
+        customers_col = self.app.AuxiliaryClass.get_collection_by_name("Customers")
+        sales_col = self.app.AuxiliaryClass.get_collection_by_name("Sales")
+        products_col = self.app.AuxiliaryClass.get_collection_by_name("Products")
 
         # Main form frame with responsive sizing
         form_frame = tk.Frame(self.root, padx=20, pady=20)
@@ -167,20 +167,20 @@ class SalesInvoice:
             invoice_numbers = [str(doc["Receipt_Number"]) for doc in sales_col.find({}, {"Receipt_Number": 1})]
             
             # Invoice selection
-            tk.Label(invoice_frame, text=self.app.t("Select Invoice"), 
+            tk.Label(invoice_frame, text=self.app.AuxiliaryClass.t("Select Invoice"), 
                     font=("Arial", 10, "bold")).grid(row=0, column=0, sticky='w')
             self.app.invoice_var = tk.StringVar()
             invoice_cb = ttk.Combobox(invoice_frame, textvariable=self.app.invoice_var, values=invoice_numbers)
             invoice_cb.grid(row=0, column=1, padx=5, sticky='ew', columnspan=3)
             
             # Load button
-            load_btn = tk.Button(invoice_frame, text=self.app.t("Load Invoice"), 
+            load_btn = tk.Button(invoice_frame, text=self.app.AuxiliaryClass.t("Load Invoice"), 
                                 command=lambda: self.load_invoice_data(sales_col),
                                 bg='#2196F3', fg='white')
             load_btn.grid(row=0, column=4, padx=5, sticky='ew')
             
             # Delete button
-            delete_btn = tk.Button(invoice_frame, text=self.app.t("Delete Invoice"), 
+            delete_btn = tk.Button(invoice_frame, text=self.app.AuxiliaryClass.t("Delete Invoice"), 
                                 command=lambda: self.delete_invoice(products_col,sales_col, customers_col,"sales"),
                                 bg='red', fg='white')
             delete_btn.grid(row=0, column=5, padx=5, sticky='ew')
@@ -215,7 +215,7 @@ class SalesInvoice:
             all_codes.append(code)
 
         # Customer Name Combobox
-        tk.Label(customer_frame, text=self.app.t("Customer Name"), 
+        tk.Label(customer_frame, text=self.app.AuxiliaryClass.t("Customer Name"), 
                 font=("Arial", 10, "bold")).grid(row=0, column=0, sticky='w')
         self.app.customer_name_var = tk.StringVar()
         self.app.customer_name_cb = ttk.Combobox(customer_frame, 
@@ -224,7 +224,7 @@ class SalesInvoice:
         self.app.customer_name_cb.grid(row=0, column=1, padx=5, sticky='ew')
 
         # Customer Code Combobox
-        tk.Label(customer_frame, text=self.app.t("Customer Code"), 
+        tk.Label(customer_frame, text=self.app.AuxiliaryClass.t("Customer Code"), 
                 font=("Arial", 10, "bold")).grid(row=0, column=2, sticky='w')
         self.app.customer_code_var = tk.StringVar()
         self.app.customer_code_cb = ttk.Combobox(customer_frame, 
@@ -233,7 +233,7 @@ class SalesInvoice:
         self.app.customer_code_cb.grid(row=0, column=3, padx=5, sticky='ew')
 
         # Previous Balance Field
-        tk.Label(customer_frame, text=self.app.t("Balance"), 
+        tk.Label(customer_frame, text=self.app.AuxiliaryClass.t("Balance"), 
                 font=("Arial", 10, "bold")).grid(row=0, column=4, sticky='e')
         self.app.previous_balance_var = tk.StringVar()
         self.app.previous_balance_entry = tk.Entry(customer_frame, 
@@ -242,7 +242,7 @@ class SalesInvoice:
         self.app.previous_balance_entry.grid(row=0, column=5, sticky='ew', padx=5)
 
         # Paid Money Field
-        tk.Label(customer_frame, text=self.app.t("Paid Money"), 
+        tk.Label(customer_frame, text=self.app.AuxiliaryClass.t("Paid Money"), 
                 font=("Arial", 10, "bold")).grid(row=0, column=6, sticky='e')
         self.app.payed_cash_var = tk.DoubleVar()
         self.app.payed_cash_entry = tk.Entry(customer_frame, 
@@ -251,7 +251,7 @@ class SalesInvoice:
         self.app.payed_cash_entry.grid(row=0, column=7, sticky='ew', padx=5)
 
         # Transportation Fees Field
-        tk.Label(customer_frame, text=self.app.t("Transport"), 
+        tk.Label(customer_frame, text=self.app.AuxiliaryClass.t("Transport"), 
                 font=("Arial", 10, "bold")).grid(row=0, column=10, sticky='e')
         self.app.transport_fees_var = tk.DoubleVar(value=0.0)
         self.app.transport_fees_entry = tk.Entry(customer_frame, 
@@ -260,7 +260,7 @@ class SalesInvoice:
         self.app.transport_fees_entry.grid(row=0, column=11, sticky='ew', padx=5)
 
         # Payment Method Dropdown
-        tk.Label(customer_frame, text=self.app.t("Payment Method"), 
+        tk.Label(customer_frame, text=self.app.AuxiliaryClass.t("Payment Method"), 
                 font=("Arial", 10, "bold")).grid(row=0, column=8, sticky='e')
         self.app.payment_method_var = tk.StringVar()
         payment_methods = ['Cash', 'E_Wallet', 'bank_account', 'Instapay']
@@ -348,7 +348,7 @@ class SalesInvoice:
             all_units = sorted(list(all_units))
 
         except Exception as e:
-            messagebox.showerror(self.app.t("Database Error"), f"{self.app.t("Failed to load products:")} {str(e)}")
+            messagebox.showerror(self.app.AuxiliaryClass.t("Database Error"), f"{self.app.AuxiliaryClass.t("Failed to load products:")} {str(e)}")
             return
 
         # ===== ITEMS GRID SECTION =====
@@ -367,7 +367,7 @@ class SalesInvoice:
         # Configure header columns
         for col_idx in range(num_columns):
             header_frame.columnconfigure(col_idx, weight=1, uniform='cols')
-            tk.Label(header_frame, text=self.app.t(columns[col_idx]), relief='ridge', 
+            tk.Label(header_frame, text=self.app.AuxiliaryClass.t(columns[col_idx]), relief='ridge', 
                     bg='#f0f0f0', anchor='w', padx=5).grid(row=0, column=col_idx, sticky='ew')
 
         # Scrollable Canvas
@@ -408,18 +408,18 @@ class SalesInvoice:
         button_frame.columnconfigure(0, weight=1)
         button_frame.columnconfigure(1, weight=1)
         
-        add_btn = tk.Button(button_frame, text=self.app.t("➕ Add 3 More Rows"), 
+        add_btn = tk.Button(button_frame, text=self.app.AuxiliaryClass.t("➕ Add 3 More Rows"), 
                         command=self.add_three_rows, bg='#4CAF50', fg='white')
         add_btn.grid(row=0, column=0, padx=5, sticky='w')
         
         if add_or_update == "add":
-            save_btn = tk.Button(button_frame, text=self.app.t("💾 Save Invoice"), 
+            save_btn = tk.Button(button_frame, text=self.app.AuxiliaryClass.t("💾 Save Invoice"), 
                                 command=lambda: self.save_invoice(sales_col, customers_col, products_col),
                                 bg='#2196F3', fg='white')
             save_btn.grid(row=0, column=1, padx=5, sticky='e')
         else:
             self.app.update = True
-            update_btn = tk.Button(button_frame, text=self.app.t("🔄 Update Invoice"), 
+            update_btn = tk.Button(button_frame, text=self.app.AuxiliaryClass.t("🔄 Update Invoice"), 
                                 command=lambda: self.save_invoice(sales_col, customers_col, products_col),
                                 bg='#FF9800', fg='white')
             update_btn.grid(row=0, column=1, padx=5, sticky='e')
@@ -429,13 +429,13 @@ class SalesInvoice:
         """Load selected invoice data into the form"""
         invoice_number = self.app.invoice_var.get()
         if not invoice_number:
-            messagebox.showwarning(self.app.t("Selection Needed"), self.app.t("Please select an invoice first"))
+            messagebox.showwarning(self.app.AuxiliaryClass.t("Selection Needed"), self.app.AuxiliaryClass.t("Please select an invoice first"))
             return
         
         # Fetch invoice data from MongoDB
         invoice_data = sales_col.find_one({"Receipt_Number": invoice_number})
         if not invoice_data:
-            messagebox.showerror(self.app.t("Not Found"), self.app.t("Invoice not found in database"))
+            messagebox.showerror(self.app.AuxiliaryClass.t("Not Found"), self.app.AuxiliaryClass.t("Invoice not found in database"))
             return
         
         # Store invoice ID for later reference
@@ -479,11 +479,11 @@ class SalesInvoice:
         """Delete selected invoice from the database"""
         invoice_number = self.app.invoice_var.get()
         if not invoice_number:
-            messagebox.showwarning(self.app.t("Selection Needed"), self.app.t("Please select an invoice first"))
+            messagebox.showwarning(self.app.AuxiliaryClass.t("Selection Needed"), self.app.AuxiliaryClass.t("Please select an invoice first"))
             return
         
         # Confirm deletion
-        if not messagebox.askyesno(self.app.t("Confirm Delete"), f"{self.app.t("Delete invoice")} {invoice_number} {self.app.t("permanently?")}"):
+        if not messagebox.askyesno(self.app.AuxiliaryClass.t("Confirm Delete"), f"{self.app.AuxiliaryClass.t("Delete invoice")} {invoice_number} {self.app.AuxiliaryClass.t("permanently?")}"):
             return
         
         # Fetch invoice to get customer and amount details
@@ -555,14 +555,14 @@ class SalesInvoice:
                 }
             )  
         if not invoice_data:
-            messagebox.showerror(self.app.t("Not Found"), self.app.t("Invoice not found"))
+            messagebox.showerror(self.app.AuxiliaryClass.t("Not Found"), self.app.AuxiliaryClass.t("Invoice not found"))
             return
         
         # Delete from MongoDB
         sales_col.delete_one({"Receipt_Number": invoice_number})
         
-        messagebox.showinfo(self.app.t("Success"), self.app.t("Invoice deleted successfully"))
-        config.report_log(self.app.logs_collection, self.app.user_name, sales_col, f"{self.app.t("Deleted")} {capitalize_first_letter(source)} Invoice in", invoice_data, self.t)
+        messagebox.showinfo(self.app.AuxiliaryClass.t("Success"), self.app.AuxiliaryClass.t("Invoice deleted successfully"))
+        config.report_log(self.app.logs_collection, self.app.user_name, sales_col, f"{self.app.AuxiliaryClass.t("Deleted")} {capitalize_first_letter(source)} Invoice in", invoice_data, self.app.AuxiliaryClass.t)
         # Clear the form or reset UI as needed
         self.app.invoice_var.set("")
         self.app.selected_invoice_id = None
@@ -842,7 +842,7 @@ class SalesInvoice:
         # Define columns
         col_widths = [40, 150, 70, 60, 60, 80, 80, 80]
         for idx, col in enumerate(columns):
-            tree.heading(col, text=self.app.t(col))
+            tree.heading(col, text=self.app.AuxiliaryClass.t(col))
             tree.column(col, width=col_widths[idx], anchor="center")
         
         tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -1024,7 +1024,7 @@ class SalesInvoice:
             invoice_data["PDF_Path"] = pdf_path
             if self.app.update:
                 sales_col.delete_one({"Receipt_Number":self.app.invoice_var.get()})
-                config.report_log(self.app.logs_collection, self.app.user_name, sales_col, self.app.t("Updated invoice to"), invoice_data, self.t)
+                config.report_log(self.app.logs_collection, self.app.user_name, sales_col, self.app.AuxiliaryClass.t("Updated invoice to"), invoice_data, self.app.AuxiliaryClass.t)
                 flag=1
             sales_col.insert_one(invoice_data)
             
@@ -1034,7 +1034,7 @@ class SalesInvoice:
             self.clear_invoice_form()
             
             if not flag:
-                config.report_log(self.app.logs_collection, self.app.user_name, sales_col, self.app.t("Added new invoice to"), invoice_data, self.t)
+                config.report_log(self.app.logs_collection, self.app.user_name, sales_col, self.app.AuxiliaryClass.t("Added new invoice to"), invoice_data, self.app.AuxiliaryClass.t)
             
 
             # 6. Clear pending data
@@ -1161,7 +1161,7 @@ class SalesInvoice:
         """توليد رقم فاتورة تسلسلي"""
         try:
             print(0)
-            sales_col = config.get_collection_by_name('Sales')
+            sales_col = self.app.AuxiliaryClass.get_collection_by_name('Sales')
             print(10)
             last_invoice = sales_col.find_one(sort=[("Receipt_Number", -1)])
             print(20)
@@ -1425,11 +1425,11 @@ class SalesInvoice:
             c.drawString(1.5*cm, totals_y - 0.25*cm, format_arabic("____________________"))
 
             c.save()
-            config.report_log(self.app.logs_collection, self.app.user_name, None, f"{self.app.t("Generated Pdf Sales Invoice with Id")} {invoice_data['Receipt_Number']} {self.app.t("for Customer")} {invoice_data['Customer_info']['code']}", None)
+            config.report_log(self.app.logs_collection, self.app.user_name, None, f"{self.app.AuxiliaryClass.t("Generated Pdf Sales Invoice with Id")} {invoice_data['Receipt_Number']} {self.app.AuxiliaryClass.t("for Customer")} {invoice_data['Customer_info']['code']}", None,self.app.AuxiliaryClass.t)
             try:
                 os.startfile(pdf_path, "print")
             except OSError as e:
-                messagebox.showerror(self.app.t("Print Error"), f"{self.app.t("Failed to print PDF:")}\n{e}")
+                messagebox.showerror(self.app.AuxiliaryClass.t("Print Error"), f"{self.app.AuxiliaryClass.t("Failed to print PDF:")}\n{e}")
 
             pdf_path = config.upload_pdf_to_cloudinary(pdf_path)
             return pdf_path
@@ -1506,7 +1506,7 @@ class SalesInvoice:
             
             self.calculate_totals(row_idx)
         except Exception as e:
-            messagebox.showerror(self.app.t("Update Error"), f"{self.app.t("Failed to update product info:")} {str(e)}")
+            messagebox.showerror(self.app.AuxiliaryClass.t("Update Error"), f"{self.app.AuxiliaryClass.t("Failed to update product info:")} {str(e)}")
             self.clear_row_fields(row_idx)
 
     def handle_combobox_change(self, event, row_idx, field_type):
@@ -1580,7 +1580,7 @@ class SalesInvoice:
 
         except ValueError as e:
             if "Percentage" in str(e):
-                messagebox.showerror(self.app.t("Discount Error"), str(e))
+                messagebox.showerror(self.app.AuxiliaryClass.t("Discount Error"), str(e))
                 self.app.entries[row_idx][6].delete(0, tk.END)
                 self.app.entries[row_idx][6].insert(0, "0")
                 
@@ -1691,7 +1691,7 @@ class SalesInvoice:
             
             self.calculate_totals(row_idx)
         except Exception as e:
-            messagebox.showerror(self.app.t("Update Error"), f"{self.app.t("Failed to update Material info:")} {str(e)}")
+            messagebox.showerror(self.app.AuxiliaryClass.t("Update Error"), f"{self.app.AuxiliaryClass.t("Failed to update Material info:")} {str(e)}")
             self.clear_row_fields(row_idx)
     def update_search(self, event, collection):
         # Cancel any previous scheduled search **only if valid**

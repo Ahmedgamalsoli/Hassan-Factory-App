@@ -62,9 +62,9 @@ class GeneralExpRev:
         paned_window.pack(fill=tk.BOTH, expand=True)
         
         # Expense Frame (left side)
-        expense_frame = tk.LabelFrame(paned_window, text=self.app.t("Expenses"), font=("Arial", 12, "bold"), padx=10, pady=10)
+        expense_frame = tk.LabelFrame(paned_window, text=self.app.AuxiliaryClass.t("Expenses"), font=("Arial", 12, "bold"), padx=10, pady=10)
         # Revenue Frame (right side)
-        revenue_frame = tk.LabelFrame(paned_window, text=self.app.t("Revenues"), font=("Arial", 12, "bold"), padx=10, pady=10)
+        revenue_frame = tk.LabelFrame(paned_window, text=self.app.AuxiliaryClass.t("Revenues"), font=("Arial", 12, "bold"), padx=10, pady=10)
         
         paned_window.add(expense_frame)
         paned_window.add(revenue_frame)
@@ -87,25 +87,25 @@ class GeneralExpRev:
         for i in range(4):
             expense_frame.rowconfigure(i, weight=1)
         
-        tk.Label(expense_frame, text=self.app.t("Amount Paid:"), font=("Arial", 10)).grid(row=0, column=0, sticky='e', pady=5)
+        tk.Label(expense_frame, text=self.app.AuxiliaryClass.t("Amount Paid:"), font=("Arial", 10)).grid(row=0, column=0, sticky='e', pady=5)
         self.app.expense_amount = tk.DoubleVar()
         expense_entry = tk.Entry(expense_frame, textvariable=self.app.expense_amount)
         expense_entry.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
         
-        tk.Label(expense_frame, text=self.app.t("Payment Method:"), font=("Arial", 10)).grid(row=1, column=0, sticky='e', pady=5)
+        tk.Label(expense_frame, text=self.app.AuxiliaryClass.t("Payment Method:"), font=("Arial", 10)).grid(row=1, column=0, sticky='e', pady=5)
         self.app.expense_payment = tk.StringVar()
         expense_payment_cb = ttk.Combobox(expense_frame, textvariable=self.app.expense_payment, 
                                         values=payment_methods, state="readonly")
         expense_payment_cb.grid(row=1, column=1, padx=5, pady=5, sticky='ew')
         expense_payment_cb.current(0)  # Default to Cash
         
-        tk.Label(expense_frame, text=self.app.t("Description:"), font=("Arial", 10)).grid(row=2, column=0, sticky='e', pady=5)
+        tk.Label(expense_frame, text=self.app.AuxiliaryClass.t("Description:"), font=("Arial", 10)).grid(row=2, column=0, sticky='e', pady=5)
         self.app.expense_desc = tk.StringVar()
         expense_desc_entry = tk.Entry(expense_frame, textvariable=self.app.expense_desc)
         expense_desc_entry.grid(row=2, column=1, padx=5, pady=5, sticky='ew')
         
         expense_submit = tk.Button(expense_frame, 
-                            text=self.app.t("💾 Record Expense"), 
+                            text=self.app.AuxiliaryClass.t("💾 Record Expense"), 
                             font=('Helvetica', 12, 'bold'),
                             width=20,
                             command=lambda: self.save_transaction("Expense"),
@@ -119,25 +119,25 @@ class GeneralExpRev:
         for i in range(4):
             revenue_frame.rowconfigure(i, weight=1)
         
-        tk.Label(revenue_frame, text=self.app.t("Amount Received:"), font=("Arial", 10)).grid(row=0, column=0, sticky='e', pady=5)
+        tk.Label(revenue_frame, text=self.app.AuxiliaryClass.t("Amount Received:"), font=("Arial", 10)).grid(row=0, column=0, sticky='e', pady=5)
         self.app.revenue_amount = tk.DoubleVar()
         revenue_entry = tk.Entry(revenue_frame, textvariable=self.app.revenue_amount)
         revenue_entry.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
         
-        tk.Label(revenue_frame, text=self.app.t("Payment Method:"), font=("Arial", 10)).grid(row=1, column=0, sticky='e', pady=5)
+        tk.Label(revenue_frame, text=self.app.AuxiliaryClass.t("Payment Method:"), font=("Arial", 10)).grid(row=1, column=0, sticky='e', pady=5)
         self.app.revenue_payment = tk.StringVar()
         revenue_payment_cb = ttk.Combobox(revenue_frame, textvariable=self.app.revenue_payment, 
                                         values=payment_methods, state="readonly")
         revenue_payment_cb.grid(row=1, column=1, padx=5, pady=5, sticky='ew')
         revenue_payment_cb.current(0)  # Default to Cash
         
-        tk.Label(revenue_frame, text=self.app.t("Description:"), font=("Arial", 10)).grid(row=2, column=0, sticky='e', pady=5)
+        tk.Label(revenue_frame, text=self.app.AuxiliaryClass.t("Description:"), font=("Arial", 10)).grid(row=2, column=0, sticky='e', pady=5)
         self.app.revenue_desc = tk.StringVar()
         revenue_desc_entry = tk.Entry(revenue_frame, textvariable=self.app.revenue_desc)
         revenue_desc_entry.grid(row=2, column=1, padx=5, pady=5, sticky='ew')
         
         revenue_submit = tk.Button(revenue_frame, 
-                            text=self.app.t("💾 Record Revenue"), 
+                            text=self.app.AuxiliaryClass.t("💾 Record Revenue"), 
                             font=('Helvetica', 12, 'bold'),
                             width=20,
                             command=lambda: self.save_transaction("Revenue"),
@@ -161,13 +161,13 @@ class GeneralExpRev:
             desc = self.app.revenue_desc.get()
         
         if amount <= 0:
-            messagebox.showerror(self.app.t("Error"), self.app.t("Amount must be greater than zero"))
+            messagebox.showerror(self.app.AuxiliaryClass.t("Error"), self.app.AuxiliaryClass.t("Amount must be greater than zero"))
             return
             
         if not payment:
-            messagebox.showerror(self.app.t("Error"), self.app.t("Please select a payment method"))
+            messagebox.showerror(self.app.AuxiliaryClass.t("Error"), self.app.AuxiliaryClass.t("Please select a payment method"))
             return
-        code = self.app.get_next_code(self.app.general_exp_rev_collection)    
+        code = config.get_next_code(self.app.general_exp_rev_collection)    
         # Create document for MongoDB
         transaction = {
             "type": transaction_type,
@@ -182,8 +182,8 @@ class GeneralExpRev:
         try:
             collection = self.app.general_exp_rev_collection
             collection.insert_one(transaction)
-            messagebox.showinfo(self.app.t("Success"), f"{self.app.t(transaction_type)} {self.app.t("recorded successfully!")}")
-            config.report_log(self.app.logs_collection, self.app.user_name, None, f"{self.app.t(f"Recorded {transaction_type} of")} {amount} {self.app.t(f"in {self.app.general_exp_rev_collection.name} Database")}", None)
+            messagebox.showinfo(self.app.AuxiliaryClass.t("Success"), f"{self.app.AuxiliaryClass.t(transaction_type)} {self.app.AuxiliaryClass.t("recorded successfully!")}")
+            config.report_log(self.app.logs_collection, self.app.user_name, None, f"{self.app.AuxiliaryClass.t(f"Recorded {transaction_type} of")} {amount} {self.app.AuxiliaryClass.t(f"in {self.app.general_exp_rev_collection.name} Database")}", None,self.app.AuxiliaryClass.t)
 
             # Clear fields
             if transaction_type == "Expense":
@@ -196,4 +196,4 @@ class GeneralExpRev:
                 self.app.revenue_desc.set("")
                 
         except Exception as e:
-            messagebox.showerror(self.app.t("Database Error"), f"{self.app.t("Failed to save transaction:")} {str(e)}")
+            messagebox.showerror(self.app.AuxiliaryClass.t("Database Error"), f"{self.app.AuxiliaryClass.t("Failed to save transaction:")} {str(e)}")

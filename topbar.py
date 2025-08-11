@@ -51,7 +51,7 @@ class topbar:
             exit_icon.pack(side="right", padx=10)
             exit_icon.bind("<Button-1>", lambda e: self.app.on_app_exit())
         except Exception as e:
-            self.app.silent_popup("Error", "Error loading exit icon: {e}", self.app.play_Error)
+            self.app.AuxiliaryClass.silent_popup("Error", "Error loading exit icon: {e}", self.app.AuxiliaryClass.play_Error)
 
         # Logout icon
         try:
@@ -66,7 +66,7 @@ class topbar:
             logout_icon = tk.Button(top_bar, image=self.app.logout_photo, bg=config.COLORS["top_bar"], bd=0, command=self.app.handle_logout)
             logout_icon.pack(side="right", padx=10)
         except Exception as e:
-            self.app.silent_popup("Error", "Error loading Logout icon: {e}", self.app.play_Error)
+            self.app.AuxiliaryClass.silent_popup("Error", "Error loading Logout icon: {e}", self.app.AuxiliaryClass.play_Error)
         # Minimize icon
         try:
             if self.app.light:
@@ -79,7 +79,7 @@ class topbar:
             minimize_icon = tk.Button(top_bar, image=self.app.minimize_photo, bg=config.COLORS["top_bar"], bd=0, command=self.root.iconify)
             minimize_icon.pack(side="right", padx=10)
         except Exception as e:
-            self.app.silent_popup("Error", "Error loading Minimize icon: {e}", self.app.play_Error)
+            self.app.AuxiliaryClass.silent_popup("Error", "Error loading Minimize icon: {e}", self.app.AuxiliaryClass.play_Error)
 
 
         if show_back_button:
@@ -105,9 +105,9 @@ class topbar:
                     back_icon = tk.Button(top_bar, image=self.app.back_photo, bg=config.COLORS["top_bar"], bd=0, command=self.app.main_menu)
                 back_icon.pack(side="left", padx=10)
             except Exception as e:
-                self.app.silent_popup("Error", "Error loading back icon: {e}", self.app.play_Error)
+                self.app.AuxiliaryClass.silent_popup("Error", "Error loading back icon: {e}", self.app.AuxiliaryClass.play_Error)
         else:
-            lang_btn = tk.Button(top_bar, text=self.app.t("Change Language"), bg=config.COLORS["top_bar"], fg=config.COLORS["top_bar_icons"],
+            lang_btn = tk.Button(top_bar, text=self.app.AuxiliaryClass.t("Change Language"), bg=config.COLORS["top_bar"], fg=config.COLORS["top_bar_icons"],
                                 font=("Arial", 10, "bold"), bd=0, command=self.toggle_language)
             lang_btn.pack(side="left", padx=10)
             if self.app.light:
@@ -116,7 +116,7 @@ class topbar:
                 lang_image = Image.open(self.app.light_mode_img)
             lang_image = lang_image.resize((40, 40), Image.LANCZOS)
             self.app.lang_photo = ImageTk.PhotoImage(lang_image)
-            lang_btn = tk.Button(top_bar, text=self.app.t("Change Language"),image=self.app.lang_photo, bg=config.COLORS["top_bar"], fg="black",
+            lang_btn = tk.Button(top_bar, text=self.app.AuxiliaryClass.t("Change Language"),image=self.app.lang_photo, bg=config.COLORS["top_bar"], fg="black",
                                 font=("Arial", 10, "bold"), bd=0, command=self.toggle_theme)
             lang_btn.pack(side="left", padx=10)
 

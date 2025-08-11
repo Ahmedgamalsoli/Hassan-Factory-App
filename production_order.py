@@ -61,9 +61,9 @@ class ProductionOrder:
         self.app.topbar.topbar(show_back_button=True)
 
         # Database collections
-        materials_col = self.app.get_collection_by_name("Materials")
-        products_col = self.app.get_collection_by_name("Products")
-        production_col = self.app.get_collection_by_name("Production")
+        materials_col = self.app.AuxiliaryClass.get_collection_by_name("Materials")
+        products_col = self.app.AuxiliaryClass.get_collection_by_name("Products")
+        production_col = self.app.AuxiliaryClass.get_collection_by_name("Production")
 
         # Load material data
         for mat in materials_col.find():
@@ -106,7 +106,7 @@ class ProductionOrder:
         for col_idx in range(num_columns):
             header_frame.columnconfigure(col_idx, weight=1, uniform='cols')
             tk.Label(header_frame, 
-                    text=self.app.t(columns[col_idx]),
+                    text=self.app.AuxiliaryClass.t(columns[col_idx]),
                     bg='#f0f0f0',
                     relief='ridge',
                     anchor='center',
@@ -162,10 +162,10 @@ class ProductionOrder:
         button_frame.columnconfigure(0, weight=1)
         button_frame.columnconfigure(1, weight=1)
         
-        tk.Button(button_frame, text=self.app.t("➕ Add Row"),
+        tk.Button(button_frame, text=self.app.AuxiliaryClass.t("➕ Add Row"),
                 command=self.add_production_row,
                 bg='#4CAF50', fg='white').grid(row=0, column=0, padx=5, sticky='w')
-        tk.Button(button_frame, text=self.app.t("💾 Save Order"),
+        tk.Button(button_frame, text=self.app.AuxiliaryClass.t("💾 Save Order"),
                 command=self.save_production_order,
                 bg='#2196F3', fg='white').grid(row=0, column=1, padx=5, sticky='e')
         
@@ -266,9 +266,9 @@ class ProductionOrder:
             self.app.production_entries[row_idx][6].config(state='readonly')
 
     def save_production_order(self):
-        production_col = self.app.get_collection_by_name("Production")
-        materials_col = self.app.get_collection_by_name("Materials")
-        products_col = self.app.get_collection_by_name("Products")
+        production_col = self.app.AuxiliaryClass.get_collection_by_name("Production")
+        materials_col = self.app.AuxiliaryClass.get_collection_by_name("Materials")
+        products_col = self.app.AuxiliaryClass.get_collection_by_name("Products")
         
         try:
             orders = []
@@ -281,7 +281,7 @@ class ProductionOrder:
                     product_qty = float(row[7].get())
                     waste = float(row[8].get())
                 except ValueError:
-                    messagebox.showerror(self.app.t("Error"), f"{self.app.t("Invalid values in row")} {idx+1}")
+                    messagebox.showerror(self.app.AuxiliaryClass.t("Error"), f"{self.app.AuxiliaryClass.t("Invalid values in row")} {idx+1}")
                     return
 
                 # Update material stock
@@ -310,13 +310,13 @@ class ProductionOrder:
             if orders:
                 production_col.insert_many(orders)
                 for order in orders:
-                    config.report_log(self.app.logs_collection, self.app.user_name, production_col, f"{self.app.t("Added new record in")}", order)
+                    config.report_log(self.app.logs_collection, self.app.user_name, production_col, f"{self.app.AuxiliaryClass.t("Added new record in")}", order,self.app.AuxiliaryClass.t)
 
-            messagebox.showinfo(self.app.t("Success"), self.app.t("Production order saved successfully"))
+            messagebox.showinfo(self.app.AuxiliaryClass.t("Success"), self.app.AuxiliaryClass.t("Production order saved successfully"))
             self.new_production_order(None)  # Refresh form
 
         except PyMongoError as e:
-            messagebox.showerror(self.app.t("Database Error"), f"{self.app.t("Operation failed:")} {str(e)}")
+            messagebox.showerror(self.app.AuxiliaryClass.t("Database Error"), f"{self.app.AuxiliaryClass.t("Operation failed:")} {str(e)}")
 
     def update_inventory(self):
         # Update material and product stocks
@@ -330,18 +330,18 @@ class ProductionOrder:
                 
                 # Update material stock
                 if material_code:
-                    self.app.db.materials.update_one(
+                    self.app.materials_collection.update_one(
                         {'code': material_code},
                         {'$inc': {'stock_quantity': -material_qty}}
                     )
 
                 # Update product stock
                 if product_code:
-                    self.app.db.products.update_one(
+                    self.app.products_collection.update_one(
                         {'code': product_code},
                         {'$inc': {'stock_quantity': product_qty}}
                     )
                     
         except PyMongoError as e:
-            messagebox.showerror(self.app.t("Inventory Error"), 
-                f"{self.app.t("Failed to update inventory:")} {str(e)}")
+            messagebox.showerror(self.app.AuxiliaryClass.t("Inventory Error"), 
+                f"{self.app.AuxiliaryClass.t("Failed to update inventory:")} {str(e)}")

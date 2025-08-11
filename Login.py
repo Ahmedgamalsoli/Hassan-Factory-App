@@ -5,16 +5,42 @@
 import tkinter as tk
 import io
 import re
-import os
 import config
+import os
 from annotated_types import doc
 import pytz
 import threading  # To play sound without freezing the GUI
 import sys
-from PIL import Image, ImageTk, ImageDraw # Import Pillow classes
+import cloudinary
+import cloudinary.uploader
+import urllib.request
 import matplotlib
 import matplotlib.pyplot as plt
+import random
+import arabic_reshaper
+import openpyxl
 
+from tkinter import filedialog, ttk, messagebox
+from PIL import Image, ImageTk, ImageDraw  # Import Pillow classes
+from datetime import datetime,time , time, timedelta, date
+from tkcalendar import DateEntry  # Import DateEntry
+from playsound import playsound
+from pymongo import MongoClient
+from urllib.parse import quote_plus
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from pymongo import MongoClient
+from pymongo.errors import PyMongoError
+from collections import defaultdict
+from bidi.algorithm import get_display
+from matplotlib.figure import Figure    
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter,A7,A6,A5,A4,A3,A2,A1
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.lib.units import inch
 matplotlib.use('TkAgg')  # Set the backend before importing pyplot
 
 
@@ -54,17 +80,17 @@ class LoginWindow:
             self.animate_image_slide_in(-750)
 
         # Title
-        title = tk.Label(login_frame, text=self.app.t("Login"), font=("Arial", 18, "bold"), bg="white")
+        title = tk.Label(login_frame, text=self.app.AuxiliaryClass.t("Login"), font=("Arial", 18, "bold"), bg="white")
         title.place(x=150, y=120)
 
         # Username
-        username_label = tk.Label(login_frame, text=self.app.t("Username:"), font=("Arial", 12), bg="white")
+        username_label = tk.Label(login_frame, text=self.app.AuxiliaryClass.t("Username:"), font=("Arial", 12), bg="white")
         username_label.place(x=50, y=160)
         username_entry = tk.Entry(login_frame, font=("Arial", 12), bg="#f0f0f0")
         username_entry.place(x=150, y=160, width=200)
 
         # Password
-        password_label = tk.Label(login_frame, text=self.app.t("Password:"), font=("Arial", 12), bg="white")
+        password_label = tk.Label(login_frame, text=self.app.AuxiliaryClass.t("Password:"), font=("Arial", 12), bg="white")
         password_label.place(x=50, y=190)
         password_entry = tk.Entry(login_frame, font=("Arial", 12), bg="#f0f0f0", show="*")
         password_entry.place(x=150, y=190, width=200)
@@ -79,7 +105,7 @@ class LoginWindow:
             self.app.user_name = username
             
             if not username or not password:
-                self.app.silent_popup(self.app.t("Error"), self.app.t("Both fields are required."),self.app.play_Error)
+                self.app.AuxiliaryClass.silent_popup(self.app.AuxiliaryClass.t("Error"), self.app.AuxiliaryClass.t("Both fields are required."),self.app.AuxiliaryClass.play_Error)
                 return
 
             try:
@@ -92,29 +118,29 @@ class LoginWindow:
                     self.app.employees_collection.update_one({"_id": self.app.user_id}, {"$set": {"logged_in": True}})
 
                     self.app.last_number_of_msgs = user.get("last_number_of_msgs", 0)
-                    config.report_log(self.app.logs_collection, self.app.user_name, None, f"{self.app.user_name} {self.app.t("login to the application")}", None)
+                    config.report_log(self.app.logs_collection, self.app.user_name, None, f"{self.app.user_name} {self.app.AuxiliaryClass.t("login to the application")}", None,self.app.AuxiliaryClass.t)
                     # messagebox.showinfo("Success", f"Login successful! Role: {self.user_role}")
-                    self.app.silent_popup(self.app.t("Success"), f"{self.app.t("Login successful! Role:")} {self.app.user_role}",self.app.play_success)
+                    self.app.AuxiliaryClass.silent_popup(self.app.AuxiliaryClass.t("Success"), f"{self.app.AuxiliaryClass.t("Login successful! Role:")} {self.app.user_role}",self.app.AuxiliaryClass.play_success)
                     # open_main_menu(self.app.user_role)
                     self.show_logo_transition(self.app.user_role)
                 else:
-                    self.app.silent_popup(self.app.t("Error"), self.app.t("Invalid username or password."), self.app.play_Error)
+                    self.app.AuxiliaryClass.silent_popup(self.app.AuxiliaryClass.t("Error"), self.app.AuxiliaryClass.t("Invalid username or password."), self.app.AuxiliaryClass.play_Error)
 
             except Exception as e:
-                self.app.silent_popup(self.app.t("Database Error"), f"{self.app.t("An error occurred:")} {e}", self.app.play_Error)
+                self.app.AuxiliaryClass.silent_popup(self.app.AuxiliaryClass.t("Database Error"), f"{self.app.AuxiliaryClass.t("An error occurred:")} {e}", self.app.AuxiliaryClass.play_Error)
 
 
-        login_button = tk.Button(login_frame, text=self.app.t("Login"), font=("Arial", 12), bg="lightblue", command=validate_login)
+        login_button = tk.Button(login_frame, text=self.app.AuxiliaryClass.t("Login"), font=("Arial", 12), bg="lightblue", command=validate_login)
         login_button.place(x=150, y=270, width=100)
 
         # Exit Button
-        exit_button = tk.Button(login_frame, text=self.app.t("Exit"), font=("Arial", 12), bg="lightgray", command=self.app.root.quit)
+        exit_button = tk.Button(login_frame, text=self.app.AuxiliaryClass.t("Exit"), font=("Arial", 12), bg="lightgray", command=self.app.root.quit)
         exit_button.place(x=270, y=270, width=80)
         def open_main_menu(role):
             if role:
                 self.app.main_menu()
             else:
-                self.app.silent_popup(self.app.t("Unknown role"), self.app.t("Access denied."), self.app.play_Error)
+                self.app.AuxiliaryClass.silent_popup(self.app.AuxiliaryClass.t("Unknown role"), self.app.AuxiliaryClass.t("Access denied."), self.app.AuxiliaryClass.play_Error)
     def animate_image_slide_in(self, x):
         if x < 20:
             self.logo_label.place(x=x)
@@ -191,7 +217,7 @@ class LoginWindow:
             if role:
                 self.app.main_menu()
             else:
-                self.app.silent_popup(self.app.t("Unknown role"), self.app.t("Access denied."), self.app.play_Error)
+                self.app.AuxiliaryClass.silent_popup(self.app.AuxiliaryClass.t("Unknown role"), self.app.AuxiliaryClass.t("Access denied."), self.app.AuxiliaryClass.play_Error)
     # Function to Create Circular Image
     def create_circular_image(self, image_path, size=(100, 100)):  
         """Creates a circular version of an image"""
