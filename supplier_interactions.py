@@ -23,9 +23,9 @@ class SupplierInteractions:
 
         self.app.topbar.topbar(show_back_button=True, Back_to_Database_Window=False)
         
-        self.supplier_collection = config.get_collection_by_name("Suppliers")
-        self.supplier_payment_collection = config.get_collection_by_name("Supplier_Payments")
-        self.purchases_collection = config.get_collection_by_name("Purchases")
+        self.supplier_collection = self.app.AuxiliaryClass.get_collection_by_name("Suppliers")
+        self.supplier_payment_collection = self.app.AuxiliaryClass.get_collection_by_name("Supplier_Payments")
+        self.purchases_collection = self.app.AuxiliaryClass.get_collection_by_name("Purchases")
 
         supplier_codes = []
         supplier_names = []
@@ -207,8 +207,8 @@ class SupplierInteractions:
         payment_method = self.app.payment_entry.get().strip()
         supplier_code = self.app.supplier_code_cb.get().strip()
         supplier_name = self.app.supplier_name_cb.get().strip()
-        supplier_payment_collection = config.get_collection_by_name("Supplier_Payments")
-        purchases_collection = config.get_collection_by_name("Purchases")
+        supplier_payment_collection = self.app.AuxiliaryClass.get_collection_by_name("Supplier_Payments")
+        purchases_collection = self.app.AuxiliaryClass.get_collection_by_name("Purchases")
         
         if not debit or not payment_method or not supplier_code or not supplier_name:
             messagebox.showerror(self.t("Error"), self.t("All fields must be filled!"))
@@ -240,7 +240,6 @@ class SupplierInteractions:
         supplier_payment_collection.insert_one(doc)
         tree.insert("", tk.END, values=(formatted, operation_number, debit_val, 0.0, payment_method))
 
-        # self.supplier_collection = config.get_collection_by_name("Suppliers")
         self.supplier_collection.update_one(
             {"Code": supplier_code},
             {
@@ -255,7 +254,7 @@ class SupplierInteractions:
             event=None,
             code_cb=self.app.supplier_code_cb,
             name_cb=self.app.supplier_name_cb,
-            collection=config.get_collection_by_name("Suppliers"),
+            collection=self.app.AuxiliaryClass.get_collection_by_name("Suppliers"),
             invoices_collection=purchases_collection,
             payment_collection=supplier_payment_collection,
             field_path="supplier_info.code",

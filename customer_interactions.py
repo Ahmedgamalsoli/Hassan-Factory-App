@@ -24,9 +24,9 @@ class CustomerInteractions:
 
         self.app.topbar.topbar(show_back_button=True,Back_to_Database_Window=False)
         
-        self.customer_collection         = config.get_collection_by_name("Customers")
-        self.customer_payment_collection = config.get_collection_by_name("Customer_Payments")
-        self.sales_collection            = config.get_collection_by_name("Sales")
+        self.customer_collection         = self.app.AuxiliaryClass.get_collection_by_name("Customers")
+        self.customer_payment_collection = self.app.AuxiliaryClass.get_collection_by_name("Customer_Payments")
+        self.sales_collection            = self.app.AuxiliaryClass.get_collection_by_name("Sales")
 
         customer_codes = []
         customer_names = []
@@ -205,8 +205,8 @@ class CustomerInteractions:
         payment_method = self.app.payment_entry.get().strip()
         customer_code = self.app.customer_code_cb.get().strip()
         customer_name = self.app.customer_name_cb.get().strip()
-        customer_payment_collection = config.get_collection_by_name("Customer_Payments")
-        sales_collection = config.get_collection_by_name("Sales")
+        customer_payment_collection = self.app.AuxiliaryClass.get_collection_by_name("Customer_Payments")
+        sales_collection = self.app.AuxiliaryClass.get_collection_by_name("Sales")
         
         if not credit or not payment_method or not customer_code or not customer_name:
             messagebox.showerror(self.t("Error"), self.t("All fields must be filled!"))
@@ -253,7 +253,7 @@ class CustomerInteractions:
             event=None,
             code_cb=self.app.customer_code_cb,
             name_cb=self.app.customer_name_cb,
-            collection=config.get_collection_by_name("Customers"),
+            collection=self.app.AuxiliaryClass.get_collection_by_name("Customers"),
             invoices_collection=sales_collection,
             payment_collection=customer_payment_collection,
             field_path="Customer_info.code",

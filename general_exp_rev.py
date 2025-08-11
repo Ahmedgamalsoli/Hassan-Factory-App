@@ -15,7 +15,6 @@ from PIL import Image, ImageTk, ImageDraw  # Import Pillow classes
 from datetime import datetime,time , time, timedelta, date
 from tkcalendar import DateEntry  # Import DateEntry
 from playsound import playsound
-from pymongo import MongoClient
 from urllib.parse import quote_plus
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from pymongo import MongoClient

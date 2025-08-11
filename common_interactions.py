@@ -200,9 +200,9 @@ class CommonInteractions:
         else:
             #load total_debit/credit of the user selected
             if (payment_collection.name == "Customer_Payments"):
-                doc = db.customers_collection.find_one({"Code": person_code}, {"Debit": 1, "Credit": 1, "Balance": 1})
+                doc = self.app.customers_collection.find_one({"Code": person_code}, {"Debit": 1, "Credit": 1, "Balance": 1})
             else:
-                doc = db.suppliers_collection.find_one({"Code": person_code}, {"Debit": 1, "Credit": 1, "Balance": 1})
+                doc = self.app.suppliers_collection.find_one({"Code": person_code}, {"Debit": 1, "Credit": 1, "Balance": 1})
 
             tree.delete(*tree.get_children())
             
