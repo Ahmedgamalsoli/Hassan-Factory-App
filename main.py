@@ -262,8 +262,6 @@ class SalesSystemApp:
         app.user_role="developer"
         self.topbar.toggle_theme()
         app.main_menu()
-########################################## Tables on Data Base ########################################
-
 
 ############################################ Windows ########################################### 
 
@@ -708,8 +706,6 @@ class SalesSystemApp:
                 log.get("action", "")
             ))
     
-
-
 ############################ Main Functions ########################################
     def new_employee(self, user_role):
         self.table_name.set("Employees")
@@ -846,140 +842,6 @@ class SalesSystemApp:
                 }})
         config.report_log(self.logs_collection, self.user_name, None, f"{self.user_name} {self.AuxiliaryClass.t("Exit the application")}", None,self.AuxiliaryClass.t)
         self.root.quit()
-
-    def trash(self, user_role):
-        # Clear current window
-        for widget in self.root.winfo_children():
-            widget.destroy()
-
-        # make the top bar with change language button
-        self.topbar.topbar(show_back_button=True)
-        
-        # Create a main frame to center the message
-        main_frame = tk.Frame(self.root)
-        main_frame.pack(expand=True, fill='both')
-        
-        # Add big "Not Supported Yet" text
-        not_supported_label = tk.Label(
-            main_frame,
-            text=self.t("NOT SUPPORTED YET"),
-            font=("Arial", 32, "bold"),
-            fg="red",
-            pady=50
-        )
-        not_supported_label.pack(expand=True)
-
-
-    def play_Error(self):
-        sound_path = os.path.join(BASE_DIR, 'Static', 'sounds', 'Error.mp3')
-        if os.path.exists(sound_path):
-            threading.Thread(target=playsound, args=(sound_path,), daemon=True).start()
-            print("done")
-        else:
-            print("Sound file not found:", sound_path)
-
-    # def play_(self):
-    #     sound_path = os.path.join(BASE_DIR, 'Static', 'sounds', 'Error.mp3')
-    #     threading.Thread(target=playsound, args=(sound_path,), daemon=True).start()
-
-    def play_success(self):
-        sound_path = os.path.join(BASE_DIR, 'Static', 'sounds', 'Success.mp3')
-
-        def play_sound():
-            if os.path.exists(sound_path):
-                while not self.stop_event.is_set():  # Check if stop_event is set
-                    playsound(sound_path)
-                    break  # In this case, we'll play the sound only once.
-            else:
-                print("Sound file not found:", sound_path)
-
-        # Create and start the thread to play sound
-        self.stop_event.clear()  # Clear the stop event before starting the thread
-        threading.Thread(target=play_sound, daemon=True).start()
-
-    def stop_sound(self):
-        """Method to stop the sound playing."""
-        self.stop_event.set()
-
-    def silent_popup(self, title, message, callback):
-        callback()
-
-        popup = tk.Toplevel()
-        popup.title(title)
-        # popup.geometry("300x120")
-        popup.resizable(False, False)
-        popup.grab_set()  # Makes it modal
-
-        main_x = self.root.winfo_x()
-        main_y = self.root.winfo_y()
-        main_width = self.root.winfo_width()
-        main_height = self.root.winfo_height()
-
-        popup_width = 300
-        popup_height = 120
-
-        pos_x = main_x + (main_width // 2) - (popup_width // 2)
-        pos_y = main_y + (main_height // 2) - (popup_height // 2)
-
-        popup.geometry(f"{popup_width}x{popup_height}+{pos_x}+{pos_y}")
-
-        tk.Label(popup, text=message, fg="#b58612", font=("Arial", 12)).pack(pady=10)
-        tk.Button(popup, text="OK", width=10, command=popup.destroy).pack(pady=20)
-
-        popup.wait_window()  # Blocks further execution until the popup is closed
-        self.stop_sound()
-
-
-def get_type(var):
-    return type(var).__name__
-
-######################### Auxiliary classes #########################################################
-class AlwaysOnTopInputDialog(tk.Toplevel):
-    def __init__(self, parent, prompt):
-        super().__init__(parent)
-        self.transient(parent)
-        self.grab_set()
-
-        self.title("Input")
-
-        self.prompt_label = tk.Label(self, text=prompt)
-        self.prompt_label.pack(padx=10, pady=10)
-
-        self.input_widget = tk.Entry(self)
-        self.input_widget.pack(padx=10, pady=10)
-        self.input_widget.focus_set()
-
-        self.result = None
-
-        self.ok_button = tk.Button(self, text="OK", command=self.on_ok)
-        self.ok_button.pack(pady=5)
-        self.ok_button.bind("<Return>", lambda event: self.ok_button.invoke())
-
-        self.after(1, self.adjust_geometry)
-        self.center_dialog(parent)
-
-    def adjust_geometry(self):
-        self.geometry("300x150")
-
-    def center_dialog(self, parent):
-        screen_width = parent.winfo_screenwidth()
-        screen_height = parent.winfo_screenheight()
-        dialog_width = self.winfo_reqwidth()
-        dialog_height = self.winfo_reqheight()
-        x_position = (screen_width // 2) - (dialog_width // 2)
-        y_position = (screen_height // 2) - (dialog_height // 2)
-        self.geometry(f"{dialog_width}x{dialog_height}+{x_position}+{y_position}")
-
-    def on_ok(self):
-        if isinstance(self.input_widget, DateEntry):
-            self.result = self.input_widget.get_date()
-        else:
-            self.result = self.input_widget.get()
-        self.destroy()
-
-    def get_result(self):
-        self.wait_window(self)
-        return self.result
 
 ##################################################################### Main #########################################################
 
