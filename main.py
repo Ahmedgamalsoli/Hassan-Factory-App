@@ -165,7 +165,7 @@ class SalesSystemApp:
         # style.theme_use("modern")
         self.DataBase = DataBase(self.root, self)
         self.DataBase.Connect_DB()
-                    
+        self.DataBase.download_db_json_file()
         self.stop_event = threading.Event()
         
         self.image_refs = []
@@ -254,6 +254,7 @@ class SalesSystemApp:
         self.Visualization = Visualization(self.root, self)
         self.SupplierInteractions = SupplierInteractions(self.root, self)
         self.CustomerInteractions = CustomerInteractions(self.root, self)
+        
         # icon_image = Image.open(icon_path).resize((16, 16))  # Resize to fit in the button
         # self.lang_icon = ImageTk.PhotoImage(icon_image)
     
@@ -860,6 +861,7 @@ class SalesSystemApp:
                 {"$set": {
                     "logged_in": True
                 }})
+    
 ##################################################################### Main #########################################################
 
 if __name__ == "__main__":
@@ -867,7 +869,6 @@ if __name__ == "__main__":
     app = SalesSystemApp(root)       # Create main app first
     app.start_without_login()
     # app.start_with_login()     # Then launch the login screen through app
-    
     try:
         root.mainloop()
     except Exception as e:
