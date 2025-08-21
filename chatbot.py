@@ -27,7 +27,7 @@ class chatbot:
     def open_chatbot(self):
         chatbot_win = tk.Toplevel(self.root)
         chatbot_win.title("مساعد التطبيق")
-        chatbot_win.title(self.app.t("Application Assistant"))
+        chatbot_win.title(self.app.AuxiliaryClass.t("Application Assistant"))
         chatbot_win.geometry("400x500")
         chatbot_win.resizable(False, False)
     

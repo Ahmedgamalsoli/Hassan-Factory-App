@@ -1,6 +1,7 @@
 # ======================
 # Used imports
 # ======================
+import json
 
 import tkinter as tk
 import io
@@ -19,6 +20,7 @@ import random
 import arabic_reshaper
 import openpyxl
 
+from bson import ObjectId
 from tkinter import filedialog, ttk, messagebox
 from PIL import Image, ImageTk  # Import Pillow classes
 from datetime import datetime,time , time, timedelta, date
@@ -98,3 +100,38 @@ class DataBase:
         self.app.general_exp_rev_collection       = self.db["general_exp_rev"]
         self.app.messages_collection              = self.db["Messages"]
         self.app.logs_collection                  = self.db["Logs"]
+    def download_db_json_file(self, output_folder="mongodb_exports"):
+        """
+        Export all collections in the connected MongoDB database to JSON files.
+        Each collection will be saved as <collection_name>.json in the output_folder.
+        """
+        try:
+            if not hasattr(self, "db"):
+                print("❌ Database is not connected. Please run Connect_DB() first.")
+                return
+
+            # Create output folder if not exists
+            if not os.path.exists(output_folder):
+                os.makedirs(output_folder)
+
+            # Custom serializer for JSON
+            def custom_serializer(obj):
+                if isinstance(obj, datetime):
+                    return obj.isoformat()  # Convert datetime to ISO string
+                return str(obj)  # Fallback for ObjectId or other types
+
+            # Loop over all collections
+            for coll_name in self.db.list_collection_names():
+                collection = self.db[coll_name]
+                data = list(collection.find())
+
+                file_path = os.path.join(output_folder, f"{coll_name}.json")
+                with open(file_path, "w", encoding="utf-8") as f:
+                    json.dump(data, f, indent=4, ensure_ascii=False, default=custom_serializer)
+
+                print(f"✅ Exported {coll_name} to {file_path}")
+
+            print("🎉 All collections exported successfully!")
+
+        except Exception as e:
+            print(f"❌ Error exporting database: {e}")
