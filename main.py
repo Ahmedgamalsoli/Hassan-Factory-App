@@ -18,6 +18,8 @@ import matplotlib.pyplot as plt
 import random
 import arabic_reshaper
 import openpyxl
+import cProfile
+import pstats
 
 from tkinter import filedialog, ttk, messagebox
 from PIL import Image, ImageTk  # Import Pillow classes
@@ -545,23 +547,23 @@ class SalesSystemApp:
             ]
         elif not self.light:
             buttons = [
-                {"text": self.AuxiliaryClass.t("Customers"), "image": "cus_db-light.png",
+                {"text": self.AuxiliaryClass.t("Customers"), "image": "cus_db-light.png", 
                 "command": lambda: self.new_customer(self.user_role)},
-                {"text": self.AuxiliaryClass.t("Suppliers"), "image": "supp_db-light.png",
+                {"text": self.AuxiliaryClass.t("Suppliers"), "image": "supp_db-light.png", 
                 "command": lambda: self.new_supplier(self.user_role)},
-                {"text": self.AuxiliaryClass.t("Employees"), "image": "emp_db-light.png",
+                {"text": self.AuxiliaryClass.t("Employees"), "image": "emp_db-light.png", 
                 "command": lambda: self.new_employee(self.user_role)},
                 {"text": self.AuxiliaryClass.t("Products"), "image": "prod_db-light.png", 
                 "command": lambda: self.new_products(self.user_role)},
                 {"text": self.AuxiliaryClass.t("Materials"), "image": "mat_db-light.png", 
                 "command": lambda: self.new_material(self.user_role)},
-                {"text": self.AuxiliaryClass.t("Employee Salary"), "image": "emp_salary_db-light.png",
+                {"text": self.AuxiliaryClass.t("Employee Salary"), "image": "emp_salary_db-light.png", 
                 "command": lambda: self.new_emp_salary(self.user_role)},
-                {"text": self.AuxiliaryClass.t("Employee Appointments"), "image": "emp_hour-light.png",
+                {"text": self.AuxiliaryClass.t("Employee Appointments"), "image": "emp_hour-light.png", 
                 "command": lambda: self.new_emp_appointment(self.user_role)},
-                {"text": self.AuxiliaryClass.t("Employee Withdrawals"), "image": "emp_with-light.png",
+                {"text": self.AuxiliaryClass.t("Employee Withdrawals"), "image": "emp_with-light.png", 
                 "command": lambda: self.new_emp_withdrawal(self.user_role)},
-                {"text": self.AuxiliaryClass.t("General_Exp_And_Rev"), "image": "financial-light.png",
+                {"text": self.AuxiliaryClass.t("General_Exp_And_Rev"), "image": "financial-light.png", 
                 "command": lambda: self.new_general_exp(self.user_role)}
             ]
         if self.user_role == "developer":
@@ -799,10 +801,24 @@ class SalesSystemApp:
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = SalesSystemApp(root)       # Create main app first
-    app.start_without_login()
-    # app.start_with_login()     # Then launch the login screen through app
+    app = SalesSystemApp(root)
+
+    # Profile the application
+    profiler = cProfile.Profile()
+    profiler.enable()  # Start profiling
+
+    app.start_without_login()  # Or app.start_with_login()
+
     try:
         root.mainloop()
     except Exception as e:
         print("Error during mainloop:", e)
+    finally:
+        profiler.disable()  # Stop profiling
+
+        # Save profiling results to a file
+        with open("performance_profile.txt", "w") as f:
+            ps = pstats.Stats(profiler, stream=f)
+            ps.strip_dirs()
+            ps.sort_stats("cumulative")  # Sort by cumulative time
+            ps.print_stats(50)  # Print top 50 functions
