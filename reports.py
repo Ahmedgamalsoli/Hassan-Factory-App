@@ -165,11 +165,6 @@ class reports:
                 btn.bind("<Enter>", lambda e, b=btn: b.config(bg=config.COLORS["primary"]))
                 btn.bind("<Leave>", lambda e, b=btn: b.config(bg=config.COLORS["background"]))
 
-                # # Text label
-                # lbl = tk.Label(sub_frame, text=btn_info["text"], 
-                #             font=("Arial", 15, "bold"), bg=config.COLORS["background"], fg="#003366")
-                # lbl.pack(pady=5)
-
         except Exception as e:
             print(f"Error loading images: {e}")
             # Fallback to text buttons if images fail

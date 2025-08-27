@@ -18,6 +18,8 @@ import matplotlib.pyplot as plt
 import random
 import arabic_reshaper
 import openpyxl
+import cProfile
+import pstats
 
 from tkinter import filedialog, ttk, messagebox
 from PIL import Image, ImageTk  # Import Pillow classes
@@ -799,10 +801,24 @@ class SalesSystemApp:
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = SalesSystemApp(root)       # Create main app first
-    app.start_without_login()
-    # app.start_with_login()     # Then launch the login screen through app
+    app = SalesSystemApp(root)
+
+    # Profile the application
+    profiler = cProfile.Profile()
+    profiler.enable()  # Start profiling
+
+    app.start_without_login()  # Or app.start_with_login()
+
     try:
         root.mainloop()
     except Exception as e:
         print("Error during mainloop:", e)
+    finally:
+        profiler.disable()  # Stop profiling
+
+        # Save profiling results to a file
+        with open("performance_profile.txt", "w") as f:
+            ps = pstats.Stats(profiler, stream=f)
+            ps.strip_dirs()
+            ps.sort_stats("cumulative")  # Sort by cumulative time
+            ps.print_stats(50)  # Print top 50 functions
