@@ -58,3 +58,6 @@ new/Static/sounds/Test.mp3
 __pycache__/Login.cpython-313.pyc
 __pycache__/Login.cpython-313.pyc
 Accountant_Part_time_appointments.xlsx
+updater_tkinter.py
+mongodb_exports
+__pycache__
